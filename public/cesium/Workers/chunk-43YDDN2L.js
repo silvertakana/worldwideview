@@ -1,1 +1,26 @@
-import{a as t}from"./chunk-QROIA2H7.js";import{a as e}from"./chunk-ANKVUFZB.js";import{j as h}from"./chunk-TITUTZNR.js";import{a as i,b as n,c as r}from"./chunk-3MO6V622.js";import{b as o}from"./chunk-YSN2K4FT.js";import{e as a}from"./chunk-VAPRBQYE.js";function c(t,e,h,i){this.x=t??0,this.y=e??0,this.width=h??0,this.height=i??0}c.packedLength=4,c.pack=function(t,e,h){return o.typeOf.object("value",t),o.defined("array",e),h=h??0,e[h++]=t.x,e[h++]=t.y,e[h++]=t.width,e[h]=t.height,e},c.unpack=function(t,e,h){return o.defined("array",t),e=e??0,a(h)||(h=new c),h.x=t[e++],h.y=t[e++],h.width=t[e++],h.height=t[e],h},c.fromPoints=function(t,e){if(a(e)||(e=new c),!a(t)||0===t.length)return e.x=0,e.y=0,e.width=0,e.height=0,e;let h=t.length,i=t[0].x,n=t[0].y,r=t[0].x,o=t[0].y;for(let e=1;e<h;e++){let h=t[e],a=h.x,c=h.y;i=Math.min(a,i),r=Math.max(a,r),n=Math.min(c,n),o=Math.max(c,o)}return e.x=i,e.y=n,e.width=r-i,e.height=o-n,e};var u=new t,y=new i,f=new i;c.fromRectangle=function(t,e,i){if(a(i)||(i=new c),!a(t))return i.x=0,i.y=0,i.width=0,i.height=0,i;u._ellipsoid=r.default;let o=(e=e??u).project(h.southwest(t,y)),s=e.project(h.northeast(t,f));return n.subtract(s,o,s),i.x=o.x,i.y=o.y,i.width=s.x,i.height=s.y,i},c.clone=function(t,e){if(a(t))return a(e)?(e.x=t.x,e.y=t.y,e.width=t.width,e.height=t.height,e):new c(t.x,t.y,t.width,t.height)},c.union=function(t,e,h){o.typeOf.object("left",t),o.typeOf.object("right",e),a(h)||(h=new c);let i=Math.min(t.x,e.x),n=Math.min(t.y,e.y),r=Math.max(t.x+t.width,e.x+e.width),u=Math.max(t.y+t.height,e.y+e.height);return h.x=i,h.y=n,h.width=r-i,h.height=u-n,h},c.expand=function(t,e,h){o.typeOf.object("rectangle",t),o.typeOf.object("point",e),h=c.clone(t,h);let i=e.x-h.x,n=e.y-h.y;return i>h.width?h.width=i:i<0&&(h.width-=i,h.x=e.x),n>h.height?h.height=n:n<0&&(h.height-=n,h.y=e.y),h},c.intersect=function(t,h){o.typeOf.object("left",t),o.typeOf.object("right",h);let i=t.x,n=t.y,r=h.x,a=h.y;return i>r+h.width||i+t.width<r||n+t.height<a||n>a+h.height?e.OUTSIDE:e.INTERSECTING},c.equals=function(t,e){return t===e||a(t)&&a(e)&&t.x===e.x&&t.y===e.y&&t.width===e.width&&t.height===e.height},c.prototype.clone=function(t){return c.clone(this,t)},c.prototype.intersect=function(t){return c.intersect(this,t)},c.prototype.equals=function(t){return c.equals(this,t)};var s=c;export{s as a};
+/**
+ * @license
+ * Cesium - https://github.com/CesiumGS/cesium
+ * Version 1.139.0
+ *
+ * Copyright 2011-2022 Cesium Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Columbus View (Pat. Pend.)
+ *
+ * Portions licensed separately.
+ * See https://github.com/CesiumGS/cesium/blob/main/LICENSE.md for full licensing details.
+ */
+
+import{a as g}from"./chunk-QROIA2H7.js";import{a as d}from"./chunk-ANKVUFZB.js";import{j as x}from"./chunk-TITUTZNR.js";import{a as p,b as M,c as O}from"./chunk-3MO6V622.js";import{b as m}from"./chunk-YSN2K4FT.js";import{e as f}from"./chunk-VAPRBQYE.js";function n(i,h,o,t){this.x=i??0,this.y=h??0,this.width=o??0,this.height=t??0}n.packedLength=4;n.pack=function(i,h,o){return m.typeOf.object("value",i),m.defined("array",h),o=o??0,h[o++]=i.x,h[o++]=i.y,h[o++]=i.width,h[o]=i.height,h};n.unpack=function(i,h,o){return m.defined("array",i),h=h??0,f(o)||(o=new n),o.x=i[h++],o.y=i[h++],o.width=i[h++],o.height=i[h],o};n.fromPoints=function(i,h){if(f(h)||(h=new n),!f(i)||i.length===0)return h.x=0,h.y=0,h.width=0,h.height=0,h;let o=i.length,t=i[0].x,c=i[0].y,e=i[0].x,w=i[0].y;for(let y=1;y<o;y++){let R=i[y],b=R.x,j=R.y;t=Math.min(b,t),e=Math.max(b,e),c=Math.min(j,c),w=Math.max(j,w)}return h.x=t,h.y=c,h.width=e-t,h.height=w-c,h};var L=new g,X=new p,Y=new p;n.fromRectangle=function(i,h,o){if(f(o)||(o=new n),!f(i))return o.x=0,o.y=0,o.width=0,o.height=0,o;L._ellipsoid=O.default,h=h??L;let t=h.project(x.southwest(i,X)),c=h.project(x.northeast(i,Y));return M.subtract(c,t,c),o.x=t.x,o.y=t.y,o.width=c.x,o.height=c.y,o};n.clone=function(i,h){if(f(i))return f(h)?(h.x=i.x,h.y=i.y,h.width=i.width,h.height=i.height,h):new n(i.x,i.y,i.width,i.height)};n.union=function(i,h,o){m.typeOf.object("left",i),m.typeOf.object("right",h),f(o)||(o=new n);let t=Math.min(i.x,h.x),c=Math.min(i.y,h.y),e=Math.max(i.x+i.width,h.x+h.width),w=Math.max(i.y+i.height,h.y+h.height);return o.x=t,o.y=c,o.width=e-t,o.height=w-c,o};n.expand=function(i,h,o){m.typeOf.object("rectangle",i),m.typeOf.object("point",h),o=n.clone(i,o);let t=h.x-o.x,c=h.y-o.y;return t>o.width?o.width=t:t<0&&(o.width-=t,o.x=h.x),c>o.height?o.height=c:c<0&&(o.height-=c,o.y=h.y),o};n.intersect=function(i,h){m.typeOf.object("left",i),m.typeOf.object("right",h);let o=i.x,t=i.y,c=h.x,e=h.y;return o>c+h.width||o+i.width<c||t+i.height<e||t>e+h.height?d.OUTSIDE:d.INTERSECTING};n.equals=function(i,h){return i===h||f(i)&&f(h)&&i.x===h.x&&i.y===h.y&&i.width===h.width&&i.height===h.height};n.prototype.clone=function(i){return n.clone(this,i)};n.prototype.intersect=function(i){return n.intersect(this,i)};n.prototype.equals=function(i){return n.equals(this,i)};var S=n;export{S as a};

@@ -56,6 +56,7 @@ export class AviationPlugin implements WorldPlugin {
     }
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
+        console.log(`[TIME] AviationPlugin.fetch started at ${performance.now()}`);
         try {
             const state = useStore.getState();
             let res;
@@ -90,14 +91,26 @@ export class AviationPlugin implements WorldPlugin {
                     };
                 });
             } else {
+                console.log(`[TIME] AviationPlugin API request starting at ${performance.now()}`);
                 res = await fetch("/api/aviation");
+                console.log(`[TIME] AviationPlugin API request finished at ${performance.now()} with status ${res.status}`);
                 if (!res.ok) throw new Error(`Aviation API returned ${res.status}`);
                 data = await res.json();
+
+                if (data.error && !data.states) {
+                    console.warn("[AviationPlugin] API Warning:", data.error);
+                    return [];
+                }
+
+                if (data._isFallback) {
+                    console.warn("[AviationPlugin] Warning: Using historical fallback data from Supabase due to live API rate-limiting.");
+                }
             }
 
             if (!data.states || !Array.isArray(data.states)) return [];
 
-            return data.states
+            console.log(`[TIME] AviationPlugin processing ${data.states.length} states at ${performance.now()}`);
+            const entities = data.states
                 .filter((s: unknown[]) => s[6] !== null && s[5] !== null)
                 .map((s: unknown[]): GeoEntity => {
                     const state: OpenSkyState = {
@@ -145,6 +158,8 @@ export class AviationPlugin implements WorldPlugin {
                         },
                     };
                 });
+            console.log(`[TIME] AviationPlugin mapping entities finished at ${performance.now()}`);
+            return entities;
         } catch (err) {
             console.error("[AviationPlugin] Fetch error:", err);
             return [];
@@ -152,7 +167,7 @@ export class AviationPlugin implements WorldPlugin {
     }
 
     getPollingInterval(): number {
-        return 5000; // 5 seconds
+        return 15000; // 15 seconds (matches OpenSky anon limit + backend cache)
     }
 
     getLayerConfig(): LayerConfig {

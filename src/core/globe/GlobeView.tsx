@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useEffect, useRef, useCallback, useMemo, useState } from "react";
 import {
     Viewer,
     Entity,
@@ -10,6 +10,7 @@ import {
 } from "resium";
 import {
     Ion,
+    GeoJsonDataSource,
     createGooglePhotorealistic3DTileset,
     Cartesian3,
     Color,
@@ -64,22 +65,26 @@ function getEntityColor(entity: GeoEntity, options: CesiumEntityOptions): Color 
 export default function GlobeView() {
     const viewerRef = useRef<CesiumViewer | null>(null);
     const handlerRef = useRef<ScreenSpaceEventHandler | null>(null);
+    const [viewerReady, setViewerReady] = useState(false);
     const setSelectedEntity = useStore((s) => s.setSelectedEntity);
     const entitiesByPlugin = useStore((s) => s.entitiesByPlugin);
     const layers = useStore((s) => s.layers);
     const showLabels = useStore((s) => s.mapConfig.showLabels);
     const labelsLayerRef = useRef<import("cesium").ImageryLayer | null>(null);
 
-    // Collect all visible entities
-    const visibleEntities: Array<{ entity: GeoEntity; options: CesiumEntityOptions }> = [];
-    pluginManager.getAllPlugins().forEach((managed) => {
-        if (!layers[managed.plugin.id]?.enabled) return;
-        const entities = entitiesByPlugin[managed.plugin.id] || [];
-        entities.forEach((entity) => {
-            const options = managed.plugin.renderEntity(entity);
-            visibleEntities.push({ entity, options });
+    // Collect all visible entities (memoized to avoid unnecessary effect re-runs)
+    const visibleEntities = useMemo(() => {
+        const result: Array<{ entity: GeoEntity; options: CesiumEntityOptions }> = [];
+        pluginManager.getAllPlugins().forEach((managed) => {
+            if (!layers[managed.plugin.id]?.enabled) return;
+            const entities = entitiesByPlugin[managed.plugin.id] || [];
+            entities.forEach((entity) => {
+                const options = managed.plugin.renderEntity(entity);
+                result.push({ entity, options });
+            });
         });
-    });
+        return result;
+    }, [layers, entitiesByPlugin]);
 
     // Fly to camera preset
     const flyToPreset = useCallback((presetId: string) => {
@@ -149,22 +154,48 @@ export default function GlobeView() {
         };
     }, [setSelectedEntity]);
 
-    // Handle Native Labels Layer
+    // Handle Labels & Custom Borders Layer
     useEffect(() => {
         const viewer = viewerRef.current;
         if (!viewer) return;
 
+        // Ensure globe stays hidden (we only need it for draping if required)
+        viewer.scene.globe.show = false;
+
         if (showLabels) {
+            // Add the label imagery layer if not already present
             if (!labelsLayerRef.current) {
                 IonImageryProvider.fromAssetId(2411391).then((provider) => {
                     if (!viewerRef.current || !showLabels) return;
                     labelsLayerRef.current = viewer.imageryLayers.addImageryProvider(provider);
                 });
             }
+            // Load custom border GeoJSON (once)
+            if (!viewer.dataSources.get(0)) {
+                GeoJsonDataSource.load('/borders.geojson', {
+                    clampToGround: true,
+                    stroke: Color.CYAN.withAlpha(0.6),
+                    strokeWidth: 1.5,
+                    fill: Color.TRANSPARENT,
+                }).then((ds) => {
+                    const viewer = viewerRef.current;
+                    if (viewer) {
+                        viewer.dataSources.add(ds);
+                    }
+                }).catch((err) => {
+                    console.warn('[GlobeView] Failed to load borders GeoJSON', err);
+                });
+            }
         } else {
+            // Remove label layer
             if (labelsLayerRef.current) {
                 viewer.imageryLayers.remove(labelsLayerRef.current);
                 labelsLayerRef.current = null;
+            }
+            // Remove border data source
+            const ds = viewer.dataSources.get(0);
+            if (ds) {
+                viewer.dataSources.remove(ds);
             }
         }
     }, [showLabels]);
@@ -173,22 +204,13 @@ export default function GlobeView() {
     const handleViewerReady = useCallback(async (viewer: CesiumViewer) => {
         viewerRef.current = viewer;
 
-        // Performance & Atmospheric Optimizations
-        viewer.scene.requestRenderMode = false;
+        // Performance optimizations
+        viewer.scene.requestRenderMode = false; // Disabled to allow dynamic entity updates
         viewer.scene.maximumRenderTimeChange = Infinity;
         viewer.scene.debugShowFramesPerSecond = false;
 
-        // Configure Globe for Overlays & Atmosphere
-        viewer.scene.globe.show = true;
-        viewer.scene.globe.baseColor = Color.TRANSPARENT;
-        viewer.scene.globe.depthTestAgainstTerrain = true;
-        if (viewer.scene.skyAtmosphere) {
-            viewer.scene.skyAtmosphere.show = true;
-            viewer.scene.skyAtmosphere.brightnessShift = 0.0;
-        }
-
-        // Remove default imagery (we only want custom overlays)
-        viewer.imageryLayers.removeAll();
+        // Remove default imagery/terrain
+        viewer.scene.globe.show = false;
 
         // Add Google Photorealistic 3D Tiles
         try {
@@ -210,12 +232,17 @@ export default function GlobeView() {
         viewer.camera.setView({
             destination: Cartesian3.fromDegrees(0, 20, 20000000),
         });
+
+        // Signal that the viewer is ready — this triggers the rendering effect
+        setViewerReady(true);
     }, []);
 
     // Native Cesium Rendering for Entities
+    // NOTE: viewerReady is in deps so this effect re-runs once the viewer initialises,
+    // ensuring entities that loaded before the viewer was ready get rendered.
     useEffect(() => {
         const viewer = viewerRef.current;
-        if (!viewer) return;
+        if (!viewer || !viewerReady) return;
 
         const points = (viewer as any)._wwvPoints as import("cesium").PointPrimitiveCollection;
         const billboards = (viewer as any)._wwvBillboards as import("cesium").BillboardCollection;
@@ -390,7 +417,7 @@ export default function GlobeView() {
                 viewer.scene.preUpdate.removeEventListener(updatePositions);
             }
         };
-    }, [visibleEntities]);
+    }, [visibleEntities, viewerReady]);
 
     return (
         <Viewer

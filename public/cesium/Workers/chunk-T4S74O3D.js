@@ -1,1 +1,26 @@
-import{a as m}from"./chunk-ANKVUFZB.js";import{a as n}from"./chunk-OJH7UFER.js";import{b as i}from"./chunk-YSN2K4FT.js";import{e as e}from"./chunk-VAPRBQYE.js";function t(m,i,t){this.minimum=n.clone(m??n.ZERO),this.maximum=n.clone(i??n.ZERO),t=e(t)?n.clone(t):n.midpoint(this.minimum,this.maximum,new n),this.center=t}t.fromCorners=function(m,u,r){return i.defined("minimum",m),i.defined("maximum",u),e(r)||(r=new t),r.minimum=n.clone(m,r.minimum),r.maximum=n.clone(u,r.maximum),r.center=n.midpoint(m,u,r.center),r},t.fromPoints=function(m,i){if(e(i)||(i=new t),!e(m)||0===m.length)return i.minimum=n.clone(n.ZERO,i.minimum),i.maximum=n.clone(n.ZERO,i.maximum),i.center=n.clone(n.ZERO,i.center),i;let u=m[0].x,r=m[0].y,a=m[0].z,o=m[0].x,c=m[0].y,x=m[0].z,s=m.length;for(let n=1;n<s;n++){let i=m[n],e=i.x,t=i.y,s=i.z;u=Math.min(e,u),o=Math.max(e,o),r=Math.min(t,r),c=Math.max(t,c),a=Math.min(s,a),x=Math.max(s,x)}let l=i.minimum;l.x=u,l.y=r,l.z=a;let f=i.maximum;return f.x=o,f.y=c,f.z=x,i.center=n.midpoint(l,f,i.center),i},t.clone=function(m,i){if(e(m))return e(i)?(i.minimum=n.clone(m.minimum,i.minimum),i.maximum=n.clone(m.maximum,i.maximum),i.center=n.clone(m.center,i.center),i):new t(m.minimum,m.maximum,m.center)},t.equals=function(m,i){return m===i||e(m)&&e(i)&&n.equals(m.center,i.center)&&n.equals(m.minimum,i.minimum)&&n.equals(m.maximum,i.maximum)};var u=new n;t.intersectPlane=function(e,t){i.defined("box",e),i.defined("plane",t),u=n.subtract(e.maximum,e.minimum,u);let r=n.multiplyByScalar(u,.5,u),a=t.normal,o=r.x*Math.abs(a.x)+r.y*Math.abs(a.y)+r.z*Math.abs(a.z),c=n.dot(e.center,a)+t.distance;return c-o>0?m.INSIDE:c+o<0?m.OUTSIDE:m.INTERSECTING},t.intersectAxisAlignedBoundingBox=function(m,n){return i.defined("box",m),i.defined("other",n),m.minimum.x<=n.maximum.x&&m.maximum.x>=n.minimum.x&&m.minimum.y<=n.maximum.y&&m.maximum.y>=n.minimum.y&&m.minimum.z<=n.maximum.z&&m.maximum.z>=n.minimum.z},t.prototype.clone=function(m){return t.clone(this,m)},t.prototype.intersectPlane=function(m){return t.intersectPlane(this,m)},t.prototype.intersectAxisAlignedBoundingBox=function(m){return t.intersectAxisAlignedBoundingBox(this,m)},t.prototype.equals=function(m){return t.equals(this,m)};var r=t;export{r as a};
+/**
+ * @license
+ * Cesium - https://github.com/CesiumGS/cesium
+ * Version 1.139.0
+ *
+ * Copyright 2011-2022 Cesium Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Columbus View (Pat. Pend.)
+ *
+ * Portions licensed separately.
+ * See https://github.com/CesiumGS/cesium/blob/main/LICENSE.md for full licensing details.
+ */
+
+import{a as d}from"./chunk-ANKVUFZB.js";import{a as i}from"./chunk-OJH7UFER.js";import{b as a}from"./chunk-YSN2K4FT.js";import{e as c}from"./chunk-VAPRBQYE.js";function t(m,n,e){this.minimum=i.clone(m??i.ZERO),this.maximum=i.clone(n??i.ZERO),c(e)?e=i.clone(e):e=i.midpoint(this.minimum,this.maximum,new i),this.center=e}t.fromCorners=function(m,n,e){return a.defined("minimum",m),a.defined("maximum",n),c(e)||(e=new t),e.minimum=i.clone(m,e.minimum),e.maximum=i.clone(n,e.maximum),e.center=i.midpoint(m,n,e.center),e};t.fromPoints=function(m,n){if(c(n)||(n=new t),!c(m)||m.length===0)return n.minimum=i.clone(i.ZERO,n.minimum),n.maximum=i.clone(i.ZERO,n.maximum),n.center=i.clone(i.ZERO,n.center),n;let e=m[0].x,u=m[0].y,o=m[0].z,r=m[0].x,h=m[0].y,l=m[0].z,A=m.length;for(let z=1;z<A;z++){let B=m[z],E=B.x,M=B.y,p=B.z;e=Math.min(E,e),r=Math.max(E,r),u=Math.min(M,u),h=Math.max(M,h),o=Math.min(p,o),l=Math.max(p,l)}let x=n.minimum;x.x=e,x.y=u,x.z=o;let f=n.maximum;return f.x=r,f.y=h,f.z=l,n.center=i.midpoint(x,f,n.center),n};t.clone=function(m,n){if(c(m))return c(n)?(n.minimum=i.clone(m.minimum,n.minimum),n.maximum=i.clone(m.maximum,n.maximum),n.center=i.clone(m.center,n.center),n):new t(m.minimum,m.maximum,m.center)};t.equals=function(m,n){return m===n||c(m)&&c(n)&&i.equals(m.center,n.center)&&i.equals(m.minimum,n.minimum)&&i.equals(m.maximum,n.maximum)};var y=new i;t.intersectPlane=function(m,n){a.defined("box",m),a.defined("plane",n),y=i.subtract(m.maximum,m.minimum,y);let e=i.multiplyByScalar(y,.5,y),u=n.normal,o=e.x*Math.abs(u.x)+e.y*Math.abs(u.y)+e.z*Math.abs(u.z),r=i.dot(m.center,u)+n.distance;return r-o>0?d.INSIDE:r+o<0?d.OUTSIDE:d.INTERSECTING};t.intersectAxisAlignedBoundingBox=function(m,n){return a.defined("box",m),a.defined("other",n),m.minimum.x<=n.maximum.x&&m.maximum.x>=n.minimum.x&&m.minimum.y<=n.maximum.y&&m.maximum.y>=n.minimum.y&&m.minimum.z<=n.maximum.z&&m.maximum.z>=n.minimum.z};t.prototype.clone=function(m){return t.clone(this,m)};t.prototype.intersectPlane=function(m){return t.intersectPlane(this,m)};t.prototype.intersectAxisAlignedBoundingBox=function(m){return t.intersectAxisAlignedBoundingBox(this,m)};t.prototype.equals=function(m){return t.equals(this,m)};var O=t;export{O as a};

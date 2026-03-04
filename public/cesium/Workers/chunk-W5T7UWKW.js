@@ -1,1 +1,26 @@
-import{a as e}from"./chunk-OJH7UFER.js";import{b as o}from"./chunk-YSN2K4FT.js";import{e as n}from"./chunk-VAPRBQYE.js";function r(){this.high=e.clone(e.ZERO),this.low=e.clone(e.ZERO)}r.encode=function(e,r){let t;return o.typeOf.number("value",e),n(r)||(r={high:0,low:0}),e>=0?(t=65536*Math.floor(e/65536),r.high=t,r.low=e-t):(t=65536*Math.floor(-e/65536),r.high=-t,r.low=e+t),r};var t={high:0,low:0};r.fromCartesian=function(e,h){o.typeOf.object("cartesian",e),n(h)||(h=new r);let i=h.high,a=h.low;return r.encode(e.x,t),i.x=t.high,a.x=t.low,r.encode(e.y,t),i.y=t.high,a.y=t.low,r.encode(e.z,t),i.z=t.high,a.z=t.low,h};var h=new r;r.writeElements=function(e,n,t){o.defined("cartesianArray",n),o.typeOf.number("index",t),o.typeOf.number.greaterThanOrEquals("index",t,0),r.fromCartesian(e,h);let i=h.high,a=h.low;n[t]=i.x,n[t+1]=i.y,n[t+2]=i.z,n[t+3]=a.x,n[t+4]=a.y,n[t+5]=a.z};var i=r;export{i as a};
+/**
+ * @license
+ * Cesium - https://github.com/CesiumGS/cesium
+ * Version 1.139.0
+ *
+ * Copyright 2011-2022 Cesium Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Columbus View (Pat. Pend.)
+ *
+ * Portions licensed separately.
+ * See https://github.com/CesiumGS/cesium/blob/main/LICENSE.md for full licensing details.
+ */
+
+import{a as c}from"./chunk-OJH7UFER.js";import{b as t}from"./chunk-YSN2K4FT.js";import{e as g}from"./chunk-VAPRBQYE.js";function f(){this.high=c.clone(c.ZERO),this.low=c.clone(c.ZERO)}f.encode=function(n,o){t.typeOf.number("value",n),g(o)||(o={high:0,low:0});let h;return n>=0?(h=Math.floor(n/65536)*65536,o.high=h,o.low=n-h):(h=Math.floor(-n/65536)*65536,o.high=-h,o.low=n+h),o};var e={high:0,low:0};f.fromCartesian=function(n,o){t.typeOf.object("cartesian",n),g(o)||(o=new f);let h=o.high,i=o.low;return f.encode(n.x,e),h.x=e.high,i.x=e.low,f.encode(n.y,e),h.y=e.high,i.y=e.low,f.encode(n.z,e),h.z=e.high,i.z=e.low,o};var m=new f;f.writeElements=function(n,o,h){t.defined("cartesianArray",o),t.typeOf.number("index",h),t.typeOf.number.greaterThanOrEquals("index",h,0),f.fromCartesian(n,m);let i=m.high,w=m.low;o[h]=i.x,o[h+1]=i.y,o[h+2]=i.z,o[h+3]=w.x,o[h+4]=w.y,o[h+5]=w.z};var O=f;export{O as a};

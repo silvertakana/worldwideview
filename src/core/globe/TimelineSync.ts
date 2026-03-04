@@ -69,11 +69,9 @@ export function TimelineSync() {
         if (!isPlaybackMode) return;
 
         const now = currentTime.getTime();
-        // Trigger a fetch if time has moved by more than 5 seconds (to match API frequency)
-        if (Math.abs(now - lastFetchTimeRef.current) > 5000) {
+        // Trigger a fetch if time has moved by more than 15 seconds (matches backend recording frequency)
+        if (Math.abs(now - lastFetchTimeRef.current) > 15000) {
             lastFetchTimeRef.current = now;
-            // Hacky but works: just tell plugins timeRange changed so they re-fetch
-            // In the future this could be a dedicated "playbackTimeChanged" event
             pluginManager.updateTimeRange(timeRange);
         }
     }, [currentTime, isPlaybackMode, timeRange]);

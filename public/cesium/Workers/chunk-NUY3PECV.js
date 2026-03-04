@@ -1,1 +1,26 @@
-import{a as t}from"./chunk-IR47TAV5.js";import{a as e}from"./chunk-OHMLE6SB.js";import{a as i}from"./chunk-3MO6V622.js";import{a as o}from"./chunk-OJH7UFER.js";import{a as r}from"./chunk-6J7K26F7.js";import{e as n}from"./chunk-VAPRBQYE.js";var s={},a=new i,h=new i,l=[,,],g=[,,],u={positions:void 0,height:void 0,granularity:void 0,ellipsoid:void 0};s.computePositions=function(s,p,m,c,f,A){let d=function(t,s,l,g){let u=(s=e(s,o.equalsEpsilon)).length;if(u<2)return;let p=n(g),m=n(l),c=Array(u),f=Array(u),A=Array(u),d=s[0];c[0]=d;let y=t.cartesianToCartographic(d,a);m&&(y.height=l[0]),f[0]=y.height,p?A[0]=g[0]:A[0]=0;let E=f[0]===A[0],j=1;for(let e=1;e<u;++e){let o=s[e],n=t.cartesianToCartographic(o,h);m&&(n.height=l[e]),E=E&&0===n.height,r.equalsEpsilon(y.latitude,n.latitude,r.EPSILON10)&&r.equalsEpsilon(y.longitude,n.longitude,r.EPSILON10)?y.height<n.height&&(f[j-1]=n.height):(c[j]=o,f[j]=n.height,p?A[j]=g[e]:A[j]=0,E=E&&f[j]===A[j],i.clone(n,y),++j)}if(!(E||j<2))return c.length=j,f.length=j,A.length=j,{positions:c,topHeights:f,bottomHeights:A}}(s,p,m,c);if(!n(d))return;p=d.positions,m=d.topHeights,c=d.bottomHeights;let y=p.length,E,j,P=r.chordLength(f,s.maximumRadius);if(u.minDistance=P,u.ellipsoid=s,A){let e=0,i;for(i=0;i<y-1;i++)e+=t.numberOfPoints(p[i],p[i+1],P)+1;E=new Float64Array(3*e),j=new Float64Array(3*e),u.positions=l,u.height=g;let o=0;for(i=0;i<y-1;i++){l[0]=p[i],l[1]=p[i+1],g[0]=m[i],g[1]=m[i+1];let e=t.generateArc(u);E.set(e,o),g[0]=c[i],g[1]=c[i+1],j.set(t.generateArc(u),o),o+=e.length}}else u.positions=p,u.height=m,E=new Float64Array(t.generateArc(u)),u.height=c,j=new Float64Array(t.generateArc(u));return{bottomPositions:j,topPositions:E,numCorners:y-2}};var p=s;export{p as a};
+/**
+ * @license
+ * Cesium - https://github.com/CesiumGS/cesium
+ * Version 1.139.0
+ *
+ * Copyright 2011-2022 Cesium Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Columbus View (Pat. Pend.)
+ *
+ * Portions licensed separately.
+ * See https://github.com/CesiumGS/cesium/blob/main/LICENSE.md for full licensing details.
+ */
+
+import{a as C}from"./chunk-IR47TAV5.js";import{a as P}from"./chunk-OHMLE6SB.js";import{a as L}from"./chunk-3MO6V622.js";import{a as O}from"./chunk-OJH7UFER.js";import{a as y}from"./chunk-6J7K26F7.js";import{e as S}from"./chunk-VAPRBQYE.js";var T={};function b(a,e){return y.equalsEpsilon(a.latitude,e.latitude,y.EPSILON10)&&y.equalsEpsilon(a.longitude,e.longitude,y.EPSILON10)}var q=new L,v=new L;function w(a,e,i,h){e=P(e,O.equalsEpsilon);let p=e.length;if(p<2)return;let E=S(h),u=S(i),l=new Array(p),g=new Array(p),r=new Array(p),d=e[0];l[0]=d;let f=a.cartesianToCartographic(d,q);u&&(f.height=i[0]),g[0]=f.height,E?r[0]=h[0]:r[0]=0;let o=g[0],m=r[0],t=o===m,n=1;for(let c=1;c<p;++c){let A=e[c],s=a.cartesianToCartographic(A,v);u&&(s.height=i[c]),t=t&&s.height===0,b(f,s)?f.height<s.height&&(g[n-1]=s.height):(l[n]=A,g[n]=s.height,E?r[n]=h[c]:r[n]=0,t=t&&g[n]===r[n],L.clone(s,f),++n)}if(!(t||n<2))return l.length=n,g.length=n,r.length=n,{positions:l,topHeights:g,bottomHeights:r}}var D=new Array(2),F=new Array(2),B={positions:void 0,height:void 0,granularity:void 0,ellipsoid:void 0};T.computePositions=function(a,e,i,h,p,E){let u=w(a,e,i,h);if(!S(u))return;e=u.positions,i=u.topHeights,h=u.bottomHeights;let l=e.length,g=l-2,r,d,f=y.chordLength(p,a.maximumRadius),o=B;if(o.minDistance=f,o.ellipsoid=a,E){let m=0,t;for(t=0;t<l-1;t++)m+=C.numberOfPoints(e[t],e[t+1],f)+1;r=new Float64Array(m*3),d=new Float64Array(m*3);let n=D,c=F;o.positions=n,o.height=c;let A=0;for(t=0;t<l-1;t++){n[0]=e[t],n[1]=e[t+1],c[0]=i[t],c[1]=i[t+1];let s=C.generateArc(o);r.set(s,A),c[0]=h[t],c[1]=h[t+1],d.set(C.generateArc(o),A),A+=s.length}}else o.positions=e,o.height=i,r=new Float64Array(C.generateArc(o)),o.height=h,d=new Float64Array(C.generateArc(o));return{bottomPositions:d,topPositions:r,numCorners:g}};var j=T;export{j as a};
