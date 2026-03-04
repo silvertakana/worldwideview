@@ -7,6 +7,7 @@ import type {
 import { dataBus } from "@/core/data/DataBus";
 import { pollingManager } from "@/core/data/PollingManager";
 import { cacheLayer } from "@/core/data/CacheLayer";
+import { useStore } from "@/core/state/store";
 
 interface ManagedPlugin {
     plugin: WorldPlugin;
@@ -76,10 +77,23 @@ class PluginManager {
         );
     }
 
-    enablePlugin(pluginId: string): void {
+    async enablePlugin(pluginId: string): Promise<void> {
         const managed = this.plugins.get(pluginId);
         if (!managed) return;
         managed.enabled = true;
+
+        // Try to load from cache immediately so UI feels responsive
+        let cached = cacheLayer.get(pluginId);
+        if (!cached) {
+            cached = await cacheLayer.getFromPersistent(pluginId);
+        }
+
+        // If still enabled and we got cached data, emit it
+        if (cached && managed.enabled) {
+            managed.entities = cached;
+            dataBus.emit("dataUpdated", { pluginId, entities: cached });
+        }
+
         pollingManager.start(pluginId);
         dataBus.emit("layerToggled", { pluginId, enabled: true });
     }
@@ -155,7 +169,9 @@ class PluginManager {
         const managed = this.plugins.get(pluginId);
         if (!managed) return;
         managed.entities = entities;
-        cacheLayer.set(pluginId, entities, managed.plugin.getPollingInterval() * 2);
+        // Use the configured cacheMaxAge instead of just 2x polling interval
+        const cacheMaxAge = useStore.getState().dataConfig.cacheMaxAge || 3600000;
+        cacheLayer.set(pluginId, entities, cacheMaxAge);
         dataBus.emit("dataUpdated", { pluginId, entities });
     }
 }

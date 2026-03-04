@@ -223,7 +223,7 @@ export const useStore = create<AppStore>((set, get) => ({
     // ── Config ───────────────────────────────────────────────
     dataConfig: {
         pollingIntervals: {
-            aviation: 30000,
+            aviation: 5000,
             maritime: 60000,
             wildfire: 300000,
         },

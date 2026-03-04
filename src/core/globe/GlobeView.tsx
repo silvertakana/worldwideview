@@ -173,13 +173,22 @@ export default function GlobeView() {
     const handleViewerReady = useCallback(async (viewer: CesiumViewer) => {
         viewerRef.current = viewer;
 
-        // Performance optimizations
-        viewer.scene.requestRenderMode = false; // Disabled to allow dynamic entity updates
+        // Performance & Atmospheric Optimizations
+        viewer.scene.requestRenderMode = false;
         viewer.scene.maximumRenderTimeChange = Infinity;
         viewer.scene.debugShowFramesPerSecond = false;
 
-        // Remove default imagery/terrain
-        viewer.scene.globe.show = false;
+        // Configure Globe for Overlays & Atmosphere
+        viewer.scene.globe.show = true;
+        viewer.scene.globe.baseColor = Color.TRANSPARENT;
+        viewer.scene.globe.depthTestAgainstTerrain = true;
+        if (viewer.scene.skyAtmosphere) {
+            viewer.scene.skyAtmosphere.show = true;
+            viewer.scene.skyAtmosphere.brightnessShift = 0.0;
+        }
+
+        // Remove default imagery (we only want custom overlays)
+        viewer.imageryLayers.removeAll();
 
         // Add Google Photorealistic 3D Tiles
         try {
@@ -376,8 +385,10 @@ export default function GlobeView() {
         viewer.camera.changed.addEventListener(updateVisibility);
 
         return () => {
-            viewer.camera.changed.removeEventListener(updateVisibility);
-            viewer.scene.preUpdate.removeEventListener(updatePositions);
+            if (viewer && !viewer.isDestroyed()) {
+                viewer.camera.changed.removeEventListener(updateVisibility);
+                viewer.scene.preUpdate.removeEventListener(updatePositions);
+            }
         };
     }, [visibleEntities]);
 
