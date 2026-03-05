@@ -20,7 +20,13 @@ interface AnimatableItem {
     options: CesiumEntityOptions;
     basePosition?: Cartesian3;
     velocityVector?: Cartesian3;
+    baseColor?: Color;
+    baseOutlineColor?: Color;
+    lastHighlightState?: 'normal' | 'hovered' | 'selected';
 }
+
+const HIGHLIGHT_COLOR_SELECTED = Color.fromCssColorString("#00fff7");
+const HIGHLIGHT_COLOR_HOVERED = Color.YELLOW;
 
 const R_WGS84_MIN = 6356752.0;
 const R2 = R_WGS84_MIN * R_WGS84_MIN;
@@ -113,7 +119,11 @@ export function createUpdateLoop(
             if (labelPrimitive) {
                 const showLabel = isVisible && (distanceToPoint < 500000 || isSelected || isHovered);
                 labelPrimitive.show = showLabel;
-                labelPrimitive.fillColor = isSelected ? Color.fromCssColorString("#00fff7") : Color.WHITE;
+
+                const targetFillColor = isSelected ? HIGHLIGHT_COLOR_SELECTED : Color.WHITE;
+                if (!Color.equals(labelPrimitive.fillColor, targetFillColor)) {
+                    labelPrimitive.fillColor = targetFillColor;
+                }
             }
         }
     };
@@ -162,33 +172,38 @@ function extrapolatePosition(item: AnimatableItem, nowMs: number): void {
 function applyHighlight(item: AnimatableItem, isSelected: boolean, isHovered: boolean): void {
     const { primitive, options } = item;
 
-    if (isSelected) {
-        primitive.color = Color.fromCssColorString("#00fff7");
+    let targetState: 'selected' | 'hovered' | 'normal' = 'normal';
+    if (isSelected) targetState = 'selected';
+    else if (isHovered) targetState = 'hovered';
+
+    if (item.lastHighlightState === targetState) return;
+    item.lastHighlightState = targetState;
+
+    if (targetState === 'selected') {
+        primitive.color = HIGHLIGHT_COLOR_SELECTED;
         if (options.type === "billboard") {
             primitive.scale = 0.7;
         } else {
             primitive.pixelSize = (options.size || 6) * 2.0;
-            primitive.outlineColor = Color.fromCssColorString("#00fff7");
+            primitive.outlineColor = HIGHLIGHT_COLOR_SELECTED;
             primitive.outlineWidth = 3;
         }
-    } else if (isHovered) {
-        primitive.color = Color.YELLOW;
+    } else if (targetState === 'hovered') {
+        primitive.color = HIGHLIGHT_COLOR_HOVERED;
         if (options.type === "billboard") {
             primitive.scale = 0.6;
         } else {
             primitive.pixelSize = (options.size || 6) * 1.5;
-            primitive.outlineColor = Color.YELLOW;
+            primitive.outlineColor = HIGHLIGHT_COLOR_HOVERED;
             primitive.outlineWidth = 2;
         }
     } else {
-        primitive.color = getEntityColor(options);
+        primitive.color = item.baseColor;
         if (options.type === "billboard") {
             primitive.scale = 0.5;
         } else {
             primitive.pixelSize = options.size || 6;
-            primitive.outlineColor = options.outlineColor
-                ? Color.fromCssColorString(options.outlineColor)
-                : Color.BLACK;
+            primitive.outlineColor = item.baseOutlineColor;
             primitive.outlineWidth = options.outlineWidth || 1;
         }
     }

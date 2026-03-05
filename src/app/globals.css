@@ -241,8 +241,8 @@ html, body {
 /* ─── Sidebar ─────────────────────────────────────────────── */
 .sidebar {
   position: fixed;
-  top: 80px;
-  bottom: 120px; /* Increased to avoid clipping with the timeline */
+  top: 84px; /* Consistent 16px gap from header (52px + 16px + 16px padding) */
+  bottom: 154px; /* Consistent 16px gap from timeline */
   width: 280px;
   z-index: 50;
   padding: var(--space-lg);

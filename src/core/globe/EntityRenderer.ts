@@ -24,6 +24,9 @@ interface AnimatableItem {
     options: CesiumEntityOptions;
     basePosition?: Cartesian3;
     velocityVector?: Cartesian3;
+    baseColor?: Color;
+    baseOutlineColor?: Color;
+    lastHighlightState?: 'normal' | 'hovered' | 'selected';
 }
 
 /**
@@ -108,7 +111,16 @@ export function renderEntities(
             });
         }
 
-        animatables.push({ primitive: addedPrimitive, labelPrimitive: addedLabel, entity, posRef: position, options });
+        animatables.push({
+            primitive: addedPrimitive,
+            labelPrimitive: addedLabel,
+            entity,
+            posRef: position,
+            options,
+            baseColor: color,
+            baseOutlineColor: options.outlineColor ? Color.fromCssColorString(options.outlineColor) : Color.BLACK,
+            lastHighlightState: 'normal'
+        });
     }
 
     return animatables;

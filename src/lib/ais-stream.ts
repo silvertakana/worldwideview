@@ -1,4 +1,4 @@
-import WebSocket from 'ws';
+// Next.js uses Native Node.js ^18 WebSocket APIs, so we don't import 'ws'
 
 // Map to store the latest position of each vessel
 // MMSI -> Vessel Data
