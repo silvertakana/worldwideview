@@ -52,13 +52,6 @@ export function Header() {
     return (
         <header className="header glass-panel">
             <div className="header__brand">
-                <button
-                    className="btn btn--icon"
-                    onClick={toggleLeftSidebar}
-                    title="Toggle layers"
-                >
-                    <Menu size={20} />
-                </button>
                 <div>
                     <div className="header__logo">WorldWideView</div>
                     <div className="header__subtitle">Geospatial Intelligence</div>
@@ -104,28 +97,6 @@ export function Header() {
                 </div>
                 {/* Always-visible right-side actions */}
                 <div className="header__actions">
-                    {/* Separator */}
-                    <div style={{ width: 1, height: 20, background: "var(--border-subtle)" }} />
-                    {/* Config Toggle */}
-                    <button
-                        className="btn btn--icon btn--glow"
-                        onClick={toggleConfigPanel}
-                        title="Data Configuration"
-                    >
-                        <Settings size={18} />
-                    </button>
-                    {/* Filter Toggle */}
-                    <button
-                        className="btn btn--icon btn--glow"
-                        onClick={toggleFilterPanel}
-                        title="Entity Filters"
-                        style={{ position: "relative" }}
-                    >
-                        <Filter size={18} />
-                        {filterCount > 0 && (
-                            <span className="filter-badge filter-badge--header">{filterCount}</span>
-                        )}
-                    </button>
                     {/* Separator */}
                     <div style={{ width: 1, height: 20, background: "var(--border-subtle)" }} />
                     {/* Live indicator */}

@@ -15,6 +15,7 @@ import { MaritimePlugin } from "@/plugins/maritime";
 import { WildfirePlugin } from "@/plugins/wildfire";
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
+import { PanelToggleArrows } from "@/components/layout/PanelToggleArrows";
 import dynamic from "next/dynamic";
 
 // Dynamically import GlobeView with SSR disabled (CesiumJS requires window)
@@ -87,6 +88,7 @@ export function AppShell() {
             <TimelineSync />
 
             {/* Foreground UI Components */}
+            <PanelToggleArrows />
             <Header />
             <LayerPanel />
             <DataConfigPanel />
