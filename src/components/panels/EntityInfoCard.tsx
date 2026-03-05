@@ -2,7 +2,7 @@
 
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
-import { MapPin } from "lucide-react";
+import { PluginIcon } from "@/components/common/PluginIcon";
 
 const CARD_WIDTH = 260;
 const CARD_HEIGHT_EST = 180;
@@ -26,7 +26,7 @@ export function EntityInfoCard() {
 
     // Find plugin info
     const managed = pluginManager.getPlugin(hoveredEntity.pluginId);
-    const PluginIcon = managed?.plugin.icon;
+    const pluginIcon = managed?.plugin.icon;
     const pluginName = managed?.plugin.name || hoveredEntity.pluginId;
 
     // Clamp position to keep card within viewport
@@ -50,11 +50,7 @@ export function EntityInfoCard() {
     // Format values
     const altitude = hoveredEntity.altitude;
     const altitudeDisplay =
-        altitude !== undefined
-            ? altitude >= 1000
-                ? `${(altitude / 10).toFixed(0)} m` // Undo the 10x visual scale
-                : `${(altitude / 10).toFixed(0)} m`
-            : null;
+        altitude !== undefined ? `${(altitude / 10).toFixed(0)} m` : null;
 
     const speed = hoveredEntity.speed;
     const speedDisplay =
@@ -76,13 +72,7 @@ export function EntityInfoCard() {
             {/* Header */}
             <div className="entity-info-card__header">
                 <span className="entity-info-card__icon">
-                    {typeof PluginIcon === "string" ? (
-                        PluginIcon
-                    ) : PluginIcon ? (
-                        <PluginIcon size={16} />
-                    ) : (
-                        <MapPin size={16} />
-                    )}
+                    {pluginIcon && <PluginIcon icon={pluginIcon} size={16} />}
                 </span>
                 <div className="entity-info-card__title-group">
                     <div className="entity-info-card__title">

@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# performance
+/performance/
+
 # production
 /build
 

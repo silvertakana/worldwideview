@@ -93,10 +93,35 @@ export async function GET() {
         const csv = await res.text();
         const fires = parseCSV(csv);
 
-        // Limit to 2000 fires for performance
-        const limited = fires.slice(0, 2000);
+        // Dynamic Multi-Tier Clustering
+        const tiers = [
+            { level: 1, size: 2.0 },   // Macro: ~220km
+            { level: 2, size: 0.5 },   // Meso: ~55km
+            { level: 3, size: 0.05 },  // Micro: ~5.5km
+        ];
 
-        const data = { fires: limited, totalCount: fires.length };
+        const allClusteredFires: (FIRMSRecord & { tier: number })[] = [];
+
+        for (const tier of tiers) {
+            const clustered = new Map<string, FIRMSRecord & { tier: number }>();
+
+            for (const fire of fires) {
+                const key = `${Math.floor(fire.latitude / tier.size)}_${Math.floor(fire.longitude / tier.size)}`;
+                const existing = clustered.get(key);
+                if (existing) {
+                    existing.frp += fire.frp;
+                    if (fire.confidence === "high" || (fire.confidence === "nominal" && existing.confidence === "low")) {
+                        existing.confidence = fire.confidence;
+                    }
+                } else {
+                    clustered.set(key, { ...fire, tier: tier.level });
+                }
+            }
+            allClusteredFires.push(...Array.from(clustered.values()));
+        }
+
+        // Send all grouped fires
+        const data = { fires: allClusteredFires, totalCount: allClusteredFires.length };
         cachedData = data;
         cacheTimestamp = now;
 

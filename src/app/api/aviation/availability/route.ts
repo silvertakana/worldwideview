@@ -1,17 +1,11 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseClient } from "@/lib/supabase";
 
 export async function GET() {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
         return NextResponse.json({ availability: [] });
     }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-        auth: { persistSession: false },
-    });
 
     try {
         // For a true gap analysis without RPC, it's expensive.

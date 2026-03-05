@@ -59,13 +59,11 @@ class PollingManager {
     }
 
     start(pluginId: string): void {
-        console.log(`[TIME] PollingManager.start called for ${pluginId} at ${performance.now()}`);
         const task = this.tasks.get(pluginId);
         if (!task || task.timerId) return;
 
         const run = async () => {
             if (task.isPaused) return;
-            console.log(`[TIME] PollingManager executing task for ${pluginId} at ${performance.now()}`);
             try {
                 await task.callback();
                 task.errorCount = 0;

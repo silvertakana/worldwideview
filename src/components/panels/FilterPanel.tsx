@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { TextFilter, SelectFilter, RangeFilter, BooleanFilter } from "./FilterControls";
+import { PluginIcon } from "@/components/common/PluginIcon";
 import type { FilterDefinition, FilterValue } from "@/core/plugins/PluginTypes";
 
 function FilterControl({ def, value, onChange }: {
@@ -57,7 +58,7 @@ export function FilterSection() {
                             onClick={() => setCollapsed((c) => ({ ...c, [pluginId]: !c[pluginId] }))}
                         >
                             <span className="filter-section__icon">
-                                {typeof managed.plugin.icon === "string" ? managed.plugin.icon : <managed.plugin.icon size={14} />}
+                                <PluginIcon icon={managed.plugin.icon} size={14} />
                             </span>
                             <span className="filter-section__name">{managed.plugin.name}</span>
                             {activeCount > 0 && <span className="filter-badge">{activeCount}</span>}

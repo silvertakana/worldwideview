@@ -6,19 +6,21 @@ export async function GET() {
     const cache = getCachedAviationData();
 
     if (cache && cache.data) {
-        // We just return whatever is freshest in memory since 
-        // the background worker manages the interval.
         return NextResponse.json(cache.data);
     }
 
-    // 2. If background polling hasn't loaded data yet, try Supabase history fallback.
-    console.log("[API/aviation] No background cache yet. Falling back to Supabase history...");
+    // 2. Clearer logging for the fallback chain
+    const cacheReason = cache.timestamp === 0 ? "Memory & Disk cache empty" : "Cache potentially stagnant";
+    console.log(`[API/aviation] ${cacheReason}. Attempting 10s timeout fallback to Supabase history...`);
+
     const fallbackData = await getLatestFromSupabase();
     if (fallbackData) {
+        console.log(`[API/aviation] Fallback successful: Returning ${fallbackData.states?.length || 0} historical states.`);
         return NextResponse.json(fallbackData);
     }
 
     // 3. Complete fallback empty state
+    console.warn("[API/aviation] All caches were empty and Supabase fallback failed (likely timeout). Returning empty state.");
     return NextResponse.json(
         { states: [], time: Math.floor(Date.now() / 1000) },
         { status: 200 }

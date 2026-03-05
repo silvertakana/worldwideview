@@ -25,6 +25,7 @@ export function Header() {
     const setTimeWindow = useStore((s) => s.setTimeWindow);
     const toggleLeftSidebar = useStore((s) => s.toggleLeftSidebar);
     const toggleConfigPanel = useStore((s) => s.toggleConfigPanel);
+    const toggleFilterPanel = useStore((s) => s.toggleFilterPanel);
     const filterCount = useStore((s) =>
         Object.values(s.filters).reduce((sum, pf) => sum + Object.keys(pf).length, 0)
     );
@@ -116,7 +117,7 @@ export function Header() {
                     {/* Filter Toggle */}
                     <button
                         className="btn btn--icon btn--glow"
-                        onClick={toggleConfigPanel}
+                        onClick={toggleFilterPanel}
                         title="Entity Filters"
                         style={{ position: "relative" }}
                     >

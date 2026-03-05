@@ -1,0 +1,82 @@
+import {
+    ScreenSpaceEventHandler,
+    ScreenSpaceEventType,
+    defined,
+} from "cesium";
+import type { Viewer as CesiumViewer, Cartesian2 } from "cesium";
+import type { GeoEntity } from "@/core/plugins/PluginTypes";
+import { useStore } from "@/core/state/store";
+
+/**
+ * Pick a WorldWideView entity at a screen position using the Cesium scene.pick API.
+ */
+function findEntityAtPosition(viewer: CesiumViewer, position: { x: number; y: number }): GeoEntity | null {
+    const picked = viewer.scene.pick(position as Cartesian2);
+    if (defined(picked) && picked.id && picked.id._wwvEntity) {
+        return picked.id._wwvEntity as GeoEntity;
+    }
+    return null;
+}
+
+/**
+ * Sets up click and hover handlers on the viewer canvas.
+ * Returns a cleanup function that destroys the handler and resets the cursor.
+ */
+export function setupInteractionHandlers(
+    viewer: CesiumViewer,
+    hoveredEntityIdRef: React.MutableRefObject<string | null>
+): () => void {
+    const canvas = viewer.scene.canvas;
+
+    const setSelectedEntity = useStore.getState().setSelectedEntity;
+    const setHoveredEntity = useStore.getState().setHoveredEntity;
+
+    const handler = new ScreenSpaceEventHandler(canvas);
+
+    // Click → select entity
+    handler.setInputAction(
+        (event: { position: { x: number; y: number } }) => {
+            const entity = findEntityAtPosition(viewer, event.position);
+            useStore.getState().setSelectedEntity(entity);
+            if (entity) {
+                useStore.getState().setHoveredEntity(null, null);
+                hoveredEntityIdRef.current = null;
+            }
+        },
+        ScreenSpaceEventType.LEFT_CLICK
+    );
+
+    // Hover → show tooltip card
+    let moveRafId: number | null = null;
+    handler.setInputAction(
+        (event: { endPosition: { x: number; y: number } }) => {
+            if (moveRafId !== null) return;
+
+            moveRafId = requestAnimationFrame(() => {
+                const entity = findEntityAtPosition(viewer, event.endPosition);
+                const prevId = hoveredEntityIdRef.current;
+                const newId = entity ? entity.id : null;
+
+                if (prevId !== newId) {
+                    hoveredEntityIdRef.current = newId;
+                    canvas.style.cursor = entity ? "pointer" : "default";
+                    useStore.getState().setHoveredEntity(
+                        entity,
+                        entity ? { x: event.endPosition.x, y: event.endPosition.y } : null
+                    );
+                } else if (entity) {
+                    useStore.setState({
+                        hoveredScreenPosition: { x: event.endPosition.x, y: event.endPosition.y },
+                    });
+                }
+                moveRafId = null;
+            });
+        },
+        ScreenSpaceEventType.MOUSE_MOVE
+    );
+
+    return () => {
+        handler.destroy();
+        canvas.style.cursor = "default";
+    };
+}

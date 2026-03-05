@@ -2,7 +2,8 @@
 
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
-import { MapPin, X } from "lucide-react";
+import { X } from "lucide-react";
+import { PluginIcon } from "@/components/common/PluginIcon";
 
 export function IntelPanel() {
     const rightSidebarOpen = useStore((s) => s.rightSidebarOpen);
@@ -13,7 +14,7 @@ export function IntelPanel() {
 
     // Find the plugin for this entity
     const managed = pluginManager.getPlugin(selectedEntity.pluginId);
-    const PluginIcon = managed?.plugin.icon;
+    const pluginIcon = managed?.plugin.icon;
     const pluginName = managed?.plugin.name || selectedEntity.pluginId;
 
     // Filter out internal/redundant properties
@@ -41,13 +42,7 @@ export function IntelPanel() {
             <div className="intel-panel__entity">
                 <div className="intel-panel__entity-header">
                     <span className="intel-panel__entity-icon">
-                        {typeof PluginIcon === "string" ? (
-                            PluginIcon
-                        ) : PluginIcon ? (
-                            <PluginIcon size={20} />
-                        ) : (
-                            <MapPin size={20} />
-                        )}
+                        {pluginIcon && <PluginIcon icon={pluginIcon} size={20} />}
                     </span>
                     <div>
                         <div className="intel-panel__entity-title">

@@ -60,8 +60,9 @@ export class WildfirePlugin implements WorldPlugin {
                     satellite: string;
                     bright_ti4?: number;
                     bright_ti5?: number;
+                    tier?: number;
                 }): GeoEntity => ({
-                    id: `wildfire-${fire.latitude.toFixed(4)}-${fire.longitude.toFixed(4)}-${fire.acq_date}`,
+                    id: `wildfire-${fire.latitude.toFixed(4)}-${fire.longitude.toFixed(4)}-${fire.acq_date}-${fire.tier || 3}`,
                     pluginId: "wildfire",
                     latitude: fire.latitude,
                     longitude: fire.longitude,
@@ -75,6 +76,7 @@ export class WildfirePlugin implements WorldPlugin {
                         acq_time: fire.acq_time,
                         bright_ti4: fire.bright_ti4,
                         bright_ti5: fire.bright_ti5,
+                        tier: fire.tier,
                     },
                 })
             );
@@ -98,12 +100,24 @@ export class WildfirePlugin implements WorldPlugin {
 
     renderEntity(entity: GeoEntity): CesiumEntityOptions {
         const frp = (entity.properties.frp as number) || 0;
+        const tier = (entity.properties.tier as number) || 3;
+
+        let distanceDisplayCondition: { near: number; far: number } | undefined;
+
+        // Tier 1: Macro (visible from very far down to ~3,500km)
+        if (tier === 1) distanceDisplayCondition = { near: 3500000, far: Number.POSITIVE_INFINITY };
+        // Tier 2: Meso (visible from ~3,500km down to ~1,000km)
+        else if (tier === 2) distanceDisplayCondition = { near: 1000000, far: 3500000 };
+        // Tier 3: Micro (visible from ~1,000km to surface)
+        else if (tier === 3) distanceDisplayCondition = { near: 0, far: 1000000 };
+
         return {
             type: "point",
             color: frpToColor(frp),
-            size: frpToSize(frp),
+            size: frpToSize(frp) * (tier === 1 ? 2 : tier === 2 ? 1.5 : 1), // Make higher tiers slightly larger
             outlineColor: "#000000",
             outlineWidth: 1,
+            distanceDisplayCondition,
         };
     }
 

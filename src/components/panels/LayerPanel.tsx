@@ -2,6 +2,8 @@
 
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
+import { ImageryPicker } from "./ImageryPicker";
+import { PluginIcon } from "@/components/common/PluginIcon";
 
 export function LayerPanel() {
     const leftSidebarOpen = useStore((s) => s.leftSidebarOpen);
@@ -100,6 +102,8 @@ export function LayerPanel() {
                     })}
                 </div>
             ))}
+
+            <ImageryPicker />
         </aside>
     );
 }

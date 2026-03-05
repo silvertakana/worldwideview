@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseClient } from "@/lib/supabase";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -16,14 +16,10 @@ export async function GET(request: Request) {
 
     const targetDate = new Date(targetTimeMs);
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
         return NextResponse.json({ records: [], targetTime: targetTimeMs });
     }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     try {
         // Find the closest timestamp before or exactly at target time

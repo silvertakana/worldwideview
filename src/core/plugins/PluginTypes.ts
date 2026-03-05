@@ -54,6 +54,7 @@ export interface CesiumEntityOptions {
     outlineWidth?: number;
     labelText?: string;
     labelFont?: string;
+    distanceDisplayCondition?: { near: number; far: number };
 }
 
 // ─── Selection Behavior ──────────────────────────────────────

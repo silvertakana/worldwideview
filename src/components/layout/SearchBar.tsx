@@ -222,8 +222,6 @@ export function SearchBar() {
         }
     }, [selectedIndex, isOpen]);
 
-    let globalIndex = 0;
-
     return (
         <div className="search-bar" ref={containerRef} style={{ position: "relative" }}>
             <div className="search-bar__input-wrapper" style={{ display: "flex", alignItems: "center", background: "rgba(255, 255, 255, 0.05)", borderRadius: "var(--radius-md)", padding: "4px 8px", border: "1px solid var(--border-subtle)" }}>

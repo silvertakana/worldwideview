@@ -1,309 +1,33 @@
 import { create } from "zustand";
-import type {
-    GeoEntity,
-    TimeRange,
-    TimeWindow,
-    FilterValue,
-} from "@/core/plugins/PluginTypes";
+import { createGlobeSlice, type GlobeSlice } from "./globeSlice";
+import { createLayersSlice, type LayersSlice } from "./layersSlice";
+import { createTimelineSlice, type TimelineSlice } from "./timelineSlice";
+import { createUISlice, type UISlice } from "./uiSlice";
+import { createFilterSlice, type FilterSlice } from "./filterSlice";
+import { createDataSlice, type DataSlice } from "./dataSlice";
+import { createConfigSlice, type ConfigSlice } from "./configSlice";
 
-// ─── Data Configuration ──────────────────────────────────────
-export interface DataConfig {
-    pollingIntervals: Record<string, number>; // pluginId -> ms
-    cacheEnabled: boolean;
-    cacheMaxAge: number; // ms
-    maxConcurrentRequests: number;
-    retryAttempts: number;
-    // Placeholder for future development
-    experimentalFeatures: {
-        predictiveLoading: boolean;
-        realtimeStreaming: boolean;
-        clusteringEnabled: boolean;
-        showTimelineHighlight: boolean;
-    };
-}
+// Re-export slice types for convenience
+export type { MapConfig, DataConfig } from "./configSlice";
+export type { LayerState } from "./layersSlice";
 
-// ─── Globe Slice ─────────────────────────────────────────────
-interface GlobeSlice {
-    cameraLat: number;
-    cameraLon: number;
-    cameraAlt: number;
-    cameraHeading: number;
-    cameraPitch: number;
-    isAnimating: boolean;
-    setCameraPosition: (
-        lat: number,
-        lon: number,
-        alt: number,
-        heading?: number,
-        pitch?: number
-    ) => void;
-    setAnimating: (val: boolean) => void;
-}
 
-// ─── Layers Slice ────────────────────────────────────────────
-interface LayerState {
-    enabled: boolean;
-    entityCount: number;
-}
-
-interface LayersSlice {
-    layers: Record<string, LayerState>;
-    toggleLayer: (pluginId: string) => void;
-    setLayerEnabled: (pluginId: string, enabled: boolean) => void;
-    setEntityCount: (pluginId: string, count: number) => void;
-    initLayer: (pluginId: string) => void;
-}
-
-// ─── Timeline Slice ──────────────────────────────────────────
-interface TimelineSlice {
-    currentTime: Date;
-    timeWindow: TimeWindow;
-    timeRange: TimeRange;
-    isPlaying: boolean;
-    playbackSpeed: number;
-    isPlaybackMode: boolean;
-    playbackTime: number; // ms timestamp
-    timelineAvailability: { start: number; end: number }[];
-    setCurrentTime: (time: Date) => void;
-    setTimeWindow: (window: TimeWindow) => void;
-    setTimeRange: (range: TimeRange) => void;
-    setPlaying: (playing: boolean) => void;
-    setPlaybackSpeed: (speed: number) => void;
-    setPlaybackMode: (mode: boolean) => void;
-    setPlaybackTime: (time: number) => void;
-    setTimelineAvailability: (availability: { start: number; end: number }[]) => void;
-}
-
-// ─── UI Slice ────────────────────────────────────────────────
-interface UISlice {
-    leftSidebarOpen: boolean;
-    rightSidebarOpen: boolean;
-    configPanelOpen: boolean;
-    filterPanelOpen: boolean;
-    selectedEntity: GeoEntity | null;
-    hoveredEntity: GeoEntity | null;
-    hoveredScreenPosition: { x: number; y: number } | null;
-    toggleLeftSidebar: () => void;
-    toggleRightSidebar: () => void;
-    toggleConfigPanel: () => void;
-    toggleFilterPanel: () => void;
-    setSelectedEntity: (entity: GeoEntity | null) => void;
-    setHoveredEntity: (entity: GeoEntity | null, screenPos?: { x: number; y: number } | null) => void;
-}
-
-// ─── Filter Slice ────────────────────────────────────────────
-interface FilterSlice {
-    filters: Record<string, Record<string, FilterValue>>; // pluginId → filterId → value
-    setFilter: (pluginId: string, filterId: string, value: FilterValue) => void;
-    clearFilters: (pluginId: string) => void;
-    clearAllFilters: () => void;
-}
-
-// ─── Data Slice ──────────────────────────────────────────────
-interface DataSlice {
-    entitiesByPlugin: Record<string, GeoEntity[]>;
-    setEntities: (pluginId: string, entities: GeoEntity[]) => void;
-    clearEntities: (pluginId: string) => void;
-    getAllEntities: () => GeoEntity[];
-}
-
-// ─── Config Slice ────────────────────────────────────────────
-interface MapConfig {
-    showLabels: boolean;
-    showFps: boolean;
-    resolutionScale: number;
-    msaaSamples: number;
-    enableFxaa: boolean;
-    maxScreenSpaceError: number;
-}
-
-interface ConfigSlice {
-    dataConfig: DataConfig;
-    mapConfig: MapConfig;
-    updateDataConfig: (config: Partial<DataConfig>) => void;
-    updateMapConfig: (config: Partial<MapConfig>) => void;
-    setPollingInterval: (pluginId: string, intervalMs: number) => void;
-}
 
 // ─── Combined Store ──────────────────────────────────────────
-type AppStore = GlobeSlice & LayersSlice & TimelineSlice & UISlice & DataSlice & ConfigSlice & FilterSlice;
+export type AppStore = GlobeSlice &
+    LayersSlice &
+    TimelineSlice &
+    UISlice &
+    FilterSlice &
+    DataSlice &
+    ConfigSlice;
 
-function getTimeRange(window: TimeWindow): TimeRange {
-    const now = new Date();
-    const msMap: Record<TimeWindow, number> = {
-        "1h": 3600000,
-        "6h": 21600000,
-        "24h": 86400000,
-        "48h": 172800000,
-        "7d": 604800000,
-    };
-    return {
-        start: new Date(now.getTime() - msMap[window]),
-        end: now,
-    };
-}
-
-export const useStore = create<AppStore>((set, get) => ({
-    // ── Globe ────────────────────────────────────────────────
-    cameraLat: 20,
-    cameraLon: 0,
-    cameraAlt: 20000000,
-    cameraHeading: 0,
-    cameraPitch: -90,
-    isAnimating: false,
-    setCameraPosition: (lat, lon, alt, heading = 0, pitch = -90) =>
-        set({ cameraLat: lat, cameraLon: lon, cameraAlt: alt, cameraHeading: heading, cameraPitch: pitch }),
-    setAnimating: (val) => set({ isAnimating: val }),
-
-    // ── Layers ───────────────────────────────────────────────
-    layers: {},
-    toggleLayer: (pluginId) =>
-        set((state) => ({
-            layers: {
-                ...state.layers,
-                [pluginId]: {
-                    ...state.layers[pluginId],
-                    enabled: !state.layers[pluginId]?.enabled,
-                },
-            },
-        })),
-    setLayerEnabled: (pluginId, enabled) =>
-        set((state) => ({
-            layers: {
-                ...state.layers,
-                [pluginId]: { ...state.layers[pluginId], enabled },
-            },
-        })),
-    setEntityCount: (pluginId, count) =>
-        set((state) => ({
-            layers: {
-                ...state.layers,
-                [pluginId]: { ...state.layers[pluginId], entityCount: count },
-            },
-        })),
-    initLayer: (pluginId) =>
-        set((state) => ({
-            layers: {
-                ...state.layers,
-                [pluginId]: state.layers[pluginId] || { enabled: false, entityCount: 0 },
-            },
-        })),
-
-    // ── Timeline ─────────────────────────────────────────────
-    currentTime: new Date(),
-    timeWindow: "24h" as TimeWindow,
-    timeRange: getTimeRange("24h"),
-    isPlaying: false,
-    playbackSpeed: 1,
-    isPlaybackMode: false,
-    playbackTime: Date.now(),
-    timelineAvailability: [],
-    setCurrentTime: (time) => set({ currentTime: time }),
-    setTimeWindow: (window) =>
-        set({ timeWindow: window, timeRange: getTimeRange(window) }),
-    setTimeRange: (range) => set({ timeRange: range }),
-    setPlaying: (playing) => set({ isPlaying: playing }),
-    setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
-    setPlaybackMode: (mode) => set({ isPlaybackMode: mode }),
-    setPlaybackTime: (time) => set({ playbackTime: time }),
-    setTimelineAvailability: (availability) => set({ timelineAvailability: availability }),
-
-    // ── UI ───────────────────────────────────────────────────
-    leftSidebarOpen: true,
-    rightSidebarOpen: false,
-    configPanelOpen: false,
-    filterPanelOpen: false,
-    selectedEntity: null,
-    hoveredEntity: null,
-    hoveredScreenPosition: null,
-    toggleLeftSidebar: () =>
-        set((state) => ({ leftSidebarOpen: !state.leftSidebarOpen })),
-    toggleRightSidebar: () =>
-        set((state) => ({ rightSidebarOpen: !state.rightSidebarOpen })),
-    toggleConfigPanel: () =>
-        set((state) => ({ configPanelOpen: !state.configPanelOpen })),
-    toggleFilterPanel: () =>
-        set((state) => ({ filterPanelOpen: !state.filterPanelOpen })),
-    setSelectedEntity: (entity) =>
-        set({ selectedEntity: entity, rightSidebarOpen: entity !== null }),
-    setHoveredEntity: (entity, screenPos) =>
-        set({ hoveredEntity: entity, hoveredScreenPosition: screenPos ?? null }),
-
-    // ── Filters ──────────────────────────────────────────────
-    filters: {},
-    setFilter: (pluginId, filterId, value) =>
-        set((state) => ({
-            filters: {
-                ...state.filters,
-                [pluginId]: {
-                    ...state.filters[pluginId],
-                    [filterId]: value,
-                },
-            },
-        })),
-    clearFilters: (pluginId) =>
-        set((state) => {
-            const copy = { ...state.filters };
-            delete copy[pluginId];
-            return { filters: copy };
-        }),
-    clearAllFilters: () => set({ filters: {} }),
-
-    // ── Data ─────────────────────────────────────────────────
-    entitiesByPlugin: {},
-    setEntities: (pluginId, entities) =>
-        set((state) => ({
-            entitiesByPlugin: { ...state.entitiesByPlugin, [pluginId]: entities },
-        })),
-    clearEntities: (pluginId) =>
-        set((state) => {
-            const copy = { ...state.entitiesByPlugin };
-            delete copy[pluginId];
-            return { entitiesByPlugin: copy };
-        }),
-    getAllEntities: () => {
-        const state = get();
-        return Object.values(state.entitiesByPlugin).flat();
-    },
-
-    // ── Config ───────────────────────────────────────────────
-    dataConfig: {
-        pollingIntervals: {},  // Populated dynamically by PluginManager on registration
-        cacheEnabled: true,
-        cacheMaxAge: 3600000,
-        maxConcurrentRequests: 5,
-        retryAttempts: 3,
-        experimentalFeatures: {
-            predictiveLoading: false,
-            realtimeStreaming: false,
-            clusteringEnabled: true,
-            showTimelineHighlight: true,
-        },
-    },
-    mapConfig: {
-        showLabels: false,
-        showFps: false,
-        resolutionScale: 1.0,
-        msaaSamples: 1,
-        enableFxaa: false,
-        maxScreenSpaceError: 16,
-    },
-    updateDataConfig: (config) =>
-        set((state) => ({
-            dataConfig: { ...state.dataConfig, ...config },
-        })),
-    updateMapConfig: (config) =>
-        set((state) => ({
-            mapConfig: { ...state.mapConfig, ...config },
-        })),
-    setPollingInterval: (pluginId, intervalMs) =>
-        set((state) => ({
-            dataConfig: {
-                ...state.dataConfig,
-                pollingIntervals: {
-                    ...state.dataConfig.pollingIntervals,
-                    [pluginId]: intervalMs,
-                },
-            },
-        })),
+export const useStore = create<AppStore>((...args) => ({
+    ...createGlobeSlice(...args),
+    ...createLayersSlice(...args),
+    ...createTimelineSlice(...args),
+    ...createUISlice(...args),
+    ...createFilterSlice(...args),
+    ...createDataSlice(...args),
+    ...createConfigSlice(...args),
 }));
