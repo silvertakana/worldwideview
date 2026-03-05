@@ -1340,3 +1340,96 @@ html, body {
 .imagery-item--active .imagery-item__name {
   color: var(--text-primary);
 }
+
+/* ─── Camera Stats Panel ─────────────────────────────────── */
+.camera-stats {
+  position: fixed;
+  /* Header is at top: var(--space-lg) [16px] and is 52px tall (total 68px). We tuck this 12px underneath the header so its top edge is hidden behind it */
+  top: calc(var(--space-lg) + 40px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  /* Add extra padding top so the content clears the header's overlap */
+  padding: 16px var(--space-xl) var(--space-md);
+  background: var(--bg-glass);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: var(--glass-border);
+  border-top: none;
+  /* Round only bottom to form a continuous shape downwards from the header */
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  z-index: 90; /* Less than header (100) */
+  pointer-events: auto;
+  user-select: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-bounce);
+}
+
+.camera-stats:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.15);
+  color: var(--text-primary);
+  /* Slight peek on hover to invite interaction */
+  transform: translateX(-50%) translateY(2px);
+}
+
+.camera-stats--collapsed {
+  /* When collapsed, we can reduce horizontal padding to make it a small tab, but keep the top gap the same */
+  padding: 16px var(--space-lg) var(--space-sm);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  gap: var(--space-sm);
+}
+
+.camera-stats--collapsed:hover {
+  transform: translateX(-50%) translateY(4px);
+  background: var(--bg-glass-hover);
+}
+
+.camera-stats__collapsed-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-top: 4px; /* Push it down a bit past the header overlap */
+}
+
+.camera-stats:hover .camera-stats__collapsed-label {
+  color: var(--accent-cyan);
+}
+
+.camera-stats__group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.camera-stats__label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.camera-stats__value {
+  color: var(--text-primary);
+  min-width: 60px;
+}
+
+.camera-stats__divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border-subtle);
+}
