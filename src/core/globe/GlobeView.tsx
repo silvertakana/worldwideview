@@ -7,13 +7,15 @@ import {
     createGooglePhotorealistic3DTileset,
     Cartesian3,
     Entity as CesiumEntity,
+    Matrix4,
+    Ellipsoid,
 } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import type { GeoEntity, CesiumEntityOptions } from "@/core/plugins/PluginTypes";
 import { applyFilters } from "@/core/filters/filterEngine";
-import { flyToPreset, flyToPosition, subscribeToCameraPresets, faceTowards, goToEntity } from "./CameraController";
+import { flyToPreset, flyToPosition, subscribeToCameraPresets } from "./CameraController";
 import { setupInteractionHandlers } from "./InteractionHandler";
 import { BordersManager } from "./BordersManager";
 import { initPrimitiveCollections, renderEntities } from "./EntityRenderer";
@@ -31,6 +33,7 @@ export default function GlobeView() {
     const viewerRef = useRef<CesiumViewer | null>(null);
     const hoveredEntityIdRef = useRef<string | null>(null);
     const trailEntityRef = useRef<CesiumEntity | null>(null);
+    const selectionEntityRef = useRef<CesiumEntity | null>(null);
     const bordersManagerRef = useRef(new BordersManager());
     const [viewerReady, setViewerReady] = useState(false);
 
@@ -70,6 +73,37 @@ export default function GlobeView() {
 
     // Unified Imagery & Scene Mode Management
     useImageryManager(viewerRef.current);
+
+    // Initialization of Selection Entity
+    useEffect(() => {
+        const viewer = viewerRef.current;
+        if (!viewer || !viewerReady) return;
+
+        // Create a hidden entity for camera tracking/flying
+        const entity = viewer.entities.add({
+            id: "__wwv_selection_anchor",
+            show: false,
+        });
+        selectionEntityRef.current = entity;
+
+        return () => {
+            if (!viewer.isDestroyed()) {
+                viewer.entities.remove(entity);
+            }
+        };
+    }, [viewerReady]);
+
+    // Update Selection Entity Position
+    useEffect(() => {
+        const selectionEntity = selectionEntityRef.current;
+        if (!selectionEntity || !selectedEntity) return;
+
+        selectionEntity.position = Cartesian3.fromDegrees(
+            selectedEntity.longitude,
+            selectedEntity.latitude,
+            selectedEntity.altitude || 0
+        ) as any;
+    }, [selectedEntity, entitiesByPlugin]);
 
     // Camera preset events
     useEffect(() => {
@@ -161,17 +195,33 @@ export default function GlobeView() {
         if (selectedEntity) handleEntitySelection(viewer, selectedEntity, trailEntityRef);
     }, [selectedEntity, viewerReady]);
 
-    // Camera action events (Face Towards, Go To)
+    // Camera action events (Face Towards, Go To, Lock)
     useEffect(() => {
-        if (!viewerRef.current) return;
         const viewer = viewerRef.current;
+        if (!viewer || !viewerReady) return;
 
         const unsubFace = dataBus.on("cameraFaceTowards", ({ lat, lon, alt }) => {
-            faceTowards(viewer, lat, lon, alt);
+            console.log("[GlobeView] Native faceTowards", lat, lon, alt);
+            const target = Cartesian3.fromDegrees(lon, lat, alt);
+            const offset = Cartesian3.subtract(
+                viewer.camera.positionWC,
+                target,
+                new Cartesian3()
+            );
+            // lookAt sets the view relative to the target's ENU frame
+            viewer.camera.lookAt(target, offset);
+            // Immediately release the transform to allow free camera movement again
+            // while preserving the orientation
+            viewer.camera.lookAtTransform(Matrix4.IDENTITY);
         });
 
-        const unsubGoTo = dataBus.on("cameraGoTo", ({ lat, lon, alt }) => {
-            goToEntity(viewer, lat, lon, alt);
+        const unsubGoTo = dataBus.on("cameraGoTo", () => {
+            console.log("[GlobeView] Native flyTo selectionEntity");
+            if (selectionEntityRef.current) {
+                viewer.flyTo(selectionEntityRef.current, {
+                    duration: 1.5,
+                });
+            }
         });
 
         return () => {
@@ -180,33 +230,19 @@ export default function GlobeView() {
         };
     }, [viewerReady]);
 
-    // Camera lock: continuously follow the locked entity
+    // Camera lock: Use native viewer.trackedEntity
     useEffect(() => {
         const viewer = viewerRef.current;
-        if (!viewer || !viewerReady || !lockedEntityId) return;
+        if (!viewer || !viewerReady) return;
 
-        // Find the locked entity in all plugin entities
-        const findLockedEntity = () => {
-            for (const entities of Object.values(entitiesByPlugin)) {
-                const found = entities.find((e) => e.id === lockedEntityId);
-                if (found) return found;
-            }
-            return null;
-        };
-
-        const onPostRender = () => {
-            const entity = findLockedEntity();
-            if (!entity) return;
-            faceTowards(viewer, entity.latitude, entity.longitude, entity.altitude || 0);
-        };
-
-        viewer.scene.postRender.addEventListener(onPostRender);
-        return () => {
-            if (!viewer.isDestroyed()) {
-                viewer.scene.postRender.removeEventListener(onPostRender);
-            }
-        };
-    }, [lockedEntityId, viewerReady, entitiesByPlugin]);
+        if (lockedEntityId && selectionEntityRef.current) {
+            console.log("[GlobeView] Locking camera to", lockedEntityId);
+            viewer.trackedEntity = selectionEntityRef.current;
+        } else {
+            console.log("[GlobeView] Unlocking camera");
+            viewer.trackedEntity = undefined;
+        }
+    }, [lockedEntityId, viewerReady]);
 
     return (
         <Viewer

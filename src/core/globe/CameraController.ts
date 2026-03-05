@@ -1,9 +1,6 @@
 import {
     Cartesian3,
     Math as CesiumMath,
-    Matrix4,
-    BoundingSphere,
-    HeadingPitchRange,
 } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
 import { dataBus } from "@/core/data/DataBus";
@@ -67,59 +64,5 @@ export function flyToPosition(
 export function subscribeToCameraPresets(viewer: CesiumViewer): () => void {
     return dataBus.on("cameraPreset", ({ presetId }) => {
         flyToPreset(viewer, presetId);
-    });
-}
-
-/**
- * Rotate the camera to face a lat/lon from its current position (no movement).
- * Directly sets camera direction vectors instead of using lookAt (which is
- * unreliable for one-shot orientation and causes spinning when called per-frame).
- */
-export function faceTowards(
-    viewer: CesiumViewer,
-    lat: number,
-    lon: number,
-    alt = 0
-): void {
-    const target = Cartesian3.fromDegrees(lon, lat, alt);
-    const direction = Cartesian3.subtract(target, viewer.camera.positionWC, new Cartesian3());
-    Cartesian3.normalize(direction, direction);
-
-    // Compute a stable "up" from the ellipsoid surface normal at camera position
-    const up = viewer.scene.globe.ellipsoid.geodeticSurfaceNormal(
-        viewer.camera.positionWC, new Cartesian3()
-    );
-
-    // Recompute orthonormal basis: right = direction × up, then re-derive up
-    const right = Cartesian3.cross(direction, up, new Cartesian3());
-    Cartesian3.normalize(right, right);
-    const trueUp = Cartesian3.cross(right, direction, new Cartesian3());
-    Cartesian3.normalize(trueUp, trueUp);
-
-    viewer.camera.direction = direction;
-    viewer.camera.right = right;
-    viewer.camera.up = trueUp;
-}
-
-/**
- * Fly camera to view an entity from a reasonable distance.
- */
-export function goToEntity(
-    viewer: CesiumViewer,
-    lat: number,
-    lon: number,
-    alt = 0
-): void {
-    const target = Cartesian3.fromDegrees(lon, lat, alt);
-    const bs = new BoundingSphere(target, 0);
-    const hpr = new HeadingPitchRange(
-        CesiumMath.toRadians(0),
-        CesiumMath.toRadians(-45),
-        Math.max(50000, alt * 3 + 30000)
-    );
-
-    viewer.camera.flyToBoundingSphere(bs, {
-        offset: hpr,
-        duration: 1.5,
     });
 }

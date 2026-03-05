@@ -154,11 +154,14 @@ export function DataConfigPanel() {
                                     <button
                                         className="intel-panel__action-btn"
                                         title="Face towards"
-                                        onClick={() => dataBus.emit("cameraFaceTowards", {
-                                            lat: selectedEntity.latitude,
-                                            lon: selectedEntity.longitude,
-                                            alt: selectedEntity.altitude || 0,
-                                        })}
+                                        onClick={() => {
+                                            console.log("[Intel] Face button clicked", selectedEntity.latitude, selectedEntity.longitude);
+                                            dataBus.emit("cameraFaceTowards", {
+                                                lat: selectedEntity.latitude,
+                                                lon: selectedEntity.longitude,
+                                                alt: selectedEntity.altitude || 0,
+                                            });
+                                        }}
                                     >
                                         <Eye size={14} />
                                         <span>Face</span>
@@ -166,11 +169,14 @@ export function DataConfigPanel() {
                                     <button
                                         className="intel-panel__action-btn"
                                         title="Go to entity"
-                                        onClick={() => dataBus.emit("cameraGoTo", {
-                                            lat: selectedEntity.latitude,
-                                            lon: selectedEntity.longitude,
-                                            alt: selectedEntity.altitude || 0,
-                                        })}
+                                        onClick={() => {
+                                            console.log("[Intel] Go To button clicked", selectedEntity.latitude, selectedEntity.longitude);
+                                            dataBus.emit("cameraGoTo", {
+                                                lat: selectedEntity.latitude,
+                                                lon: selectedEntity.longitude,
+                                                alt: selectedEntity.altitude || 0,
+                                            });
+                                        }}
                                     >
                                         <MapPin size={14} />
                                         <span>Go To</span>
