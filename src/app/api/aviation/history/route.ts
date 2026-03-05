@@ -28,7 +28,7 @@ export async function GET(request: Request) {
             .select("timestamp")
             .lte("timestamp", targetDate.toISOString())
             .order("timestamp", { ascending: false })
-            .limit(1);
+            .limit(1) as { data: { timestamp: string }[] | null, error: any };
 
         if (timeError) {
             console.error("[API/aviation/history] Supabase error:", timeError);

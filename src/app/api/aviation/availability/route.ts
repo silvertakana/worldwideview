@@ -27,8 +27,8 @@ export async function GET() {
 
         if (minData && minData.length > 0 && maxData && maxData.length > 0) {
             ranges.push({
-                start: new Date(minData[0].timestamp).getTime(),
-                end: new Date(maxData[0].timestamp).getTime(),
+                start: new Date((minData[0] as any).timestamp).getTime(),
+                end: new Date((maxData[0] as any).timestamp).getTime(),
             });
         }
 

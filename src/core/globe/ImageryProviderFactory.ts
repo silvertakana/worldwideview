@@ -65,25 +65,35 @@ export async function createImageryProvider(layerId: string) {
 
     switch (layerId) {
         case "bing-aerial":
-            return await BingMapsImageryProvider.fromUrl("https://dev.virtualearth.net", {
-                key: bingKey || "",
-                mapStyle: BingMapsStyle.AERIAL,
-            });
+            if (bingKey) {
+                return await BingMapsImageryProvider.fromUrl("https://dev.virtualearth.net", {
+                    key: bingKey,
+                    mapStyle: BingMapsStyle.AERIAL,
+                });
+            }
+            return await IonImageryProvider.fromAssetId(2);
 
         case "bing-labels":
-            return await BingMapsImageryProvider.fromUrl("https://dev.virtualearth.net", {
-                key: bingKey || "",
-                mapStyle: BingMapsStyle.AERIAL_WITH_LABELS,
-            });
+            if (bingKey) {
+                return await BingMapsImageryProvider.fromUrl("https://dev.virtualearth.net", {
+                    key: bingKey,
+                    mapStyle: BingMapsStyle.AERIAL_WITH_LABELS,
+                });
+            }
+            return await IonImageryProvider.fromAssetId(3);
 
         case "bing-road":
-            return await BingMapsImageryProvider.fromUrl("https://dev.virtualearth.net", {
-                key: bingKey || "",
-                mapStyle: BingMapsStyle.ROAD,
-            });
+            if (bingKey) {
+                return await BingMapsImageryProvider.fromUrl("https://dev.virtualearth.net", {
+                    key: bingKey,
+                    mapStyle: BingMapsStyle.ROAD,
+                });
+            }
+            return await IonImageryProvider.fromAssetId(4);
 
         case "osm":
-            return await UrlTemplateImageryProvider.fromUrl("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            return new UrlTemplateImageryProvider({
+                url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 subdomains: ["a", "b", "c"]
             });
 
@@ -96,7 +106,8 @@ export async function createImageryProvider(layerId: string) {
             return await IonImageryProvider.fromAssetId(3845);
 
         default:
-            return await UrlTemplateImageryProvider.fromUrl("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            return new UrlTemplateImageryProvider({
+                url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 subdomains: ["a", "b", "c"]
             });
     }

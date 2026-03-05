@@ -12,6 +12,7 @@ import {
     Ellipsoid,
     Math as CesiumMath,
     HeadingPitchRange,
+    Transforms,
 } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
 import { useStore } from "@/core/state/store";
@@ -21,7 +22,7 @@ import { applyFilters } from "@/core/filters/filterEngine";
 import { flyToPreset, flyToPosition, subscribeToCameraPresets } from "./CameraController";
 import { setupInteractionHandlers } from "./InteractionHandler";
 import { BordersManager } from "./BordersManager";
-import { initPrimitiveCollections, renderEntities } from "./EntityRenderer";
+import { initPrimitiveCollections, renderEntities, AnimatableItem } from "./EntityRenderer";
 import { createUpdateLoop } from "./AnimationLoop";
 import { handleEntitySelection, cleanupTrail } from "./SelectionHandler";
 import { useImageryManager } from "./useImageryManager";
@@ -38,12 +39,13 @@ export default function GlobeView() {
     const trailEntityRef = useRef<CesiumEntity | null>(null);
     const selectionEntityRef = useRef<CesiumEntity | null>(null);
     const bordersManagerRef = useRef(new BordersManager());
+    const animatablesMapRef = useRef(new Map<string, AnimatableItem>());
     const [viewerReady, setViewerReady] = useState(false);
 
     const entitiesByPlugin = useStore((s) => s.entitiesByPlugin);
     const layers = useStore((s) => s.layers);
     const selectedEntity = useStore((s) => s.selectedEntity);
-    const showLabels = useStore((s) => s.mapConfig.showLabels);
+    const showLabels = layers["borders"]?.enabled ?? false;
     const showFps = useStore((s) => s.mapConfig.showFps);
     const resolutionScale = useStore((s) => s.mapConfig.resolutionScale);
     const msaaSamples = useStore((s) => s.mapConfig.msaaSamples);
@@ -52,6 +54,7 @@ export default function GlobeView() {
     const filters = useStore((s) => s.filters);
     const lockedEntityId = useStore((s) => s.lockedEntityId);
     const setCameraPosition = useStore((s) => s.setCameraPosition);
+    const setFps = useStore((s) => s.setFps);
 
     // Camera position from store
     const cameraLat = useStore((s) => s.cameraLat);
@@ -124,30 +127,47 @@ export default function GlobeView() {
 
         const updateStore = () => {
             const camera = viewer.camera;
-            const cartographic = Cartographic.fromCartesian(camera.position);
+            if (!camera || !camera.position) return;
 
-            const lat = CesiumMath.toDegrees(cartographic.latitude);
-            const lon = CesiumMath.toDegrees(cartographic.longitude);
-            const alt = cartographic.height;
-            const heading = CesiumMath.toDegrees(camera.heading);
-            const pitch = CesiumMath.toDegrees(camera.pitch);
-            const roll = CesiumMath.toDegrees(camera.roll);
+            const cartographic = Cartographic.fromCartesian(camera.position);
+            if (!cartographic) return;
+
+            const lat = CesiumMath.toDegrees(cartographic.latitude ?? 0);
+            const lon = CesiumMath.toDegrees(cartographic.longitude ?? 0);
+            const alt = cartographic.height ?? 0;
+            const heading = CesiumMath.toDegrees(camera.heading ?? 0);
+            const pitch = CesiumMath.toDegrees(camera.pitch ?? 0);
+            const roll = CesiumMath.toDegrees(camera.roll ?? 0);
 
             // Use functional update to avoid unnecessary re-renders if values are close enough
             // But for HUD we want real-time, so we just call it.
             setCameraPosition(lat, lon, alt, heading, pitch, roll);
         };
 
-        viewer.camera.changed.addEventListener(updateStore);
-        viewer.camera.moveEnd.addEventListener(updateStore);
+        let frameCount = 0;
+        let lastTime = performance.now();
+
+        const updateFps = () => {
+            frameCount++;
+            const currentTime = performance.now();
+            if (currentTime - lastTime >= 1000) {
+                const fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
+                setFps(fps);
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+        };
+
+        viewer.scene.postRender.addEventListener(updateStore);
+        viewer.scene.postRender.addEventListener(updateFps);
 
         return () => {
             if (!viewer.isDestroyed()) {
-                viewer.camera.changed.removeEventListener(updateStore);
-                viewer.camera.moveEnd.removeEventListener(updateStore);
+                viewer.scene.postRender.removeEventListener(updateStore);
+                viewer.scene.postRender.removeEventListener(updateFps);
             }
         };
-    }, [viewerReady, setCameraPosition]);
+    }, [viewerReady, setCameraPosition, setFps]);
 
     // Camera Sync: Store -> Camera (one-way flyTo for external store changes)
     // We only trigger this if it's NOT a typical user movement (e.g. from preset)
@@ -205,7 +225,7 @@ export default function GlobeView() {
         const viewer = viewerRef.current;
         if (!viewer || !viewerReady) return;
 
-        const animatables = renderEntities(viewer, visibleEntities);
+        const animatables = renderEntities(viewer, visibleEntities, animatablesMapRef.current);
         const updatePositions = createUpdateLoop(viewer, animatables, hoveredEntityIdRef);
 
         // Sync scene settings
@@ -253,7 +273,7 @@ export default function GlobeView() {
             viewer.camera.lookAtTransform(Matrix4.IDENTITY);
         });
 
-        const unsubGoTo = dataBus.on("cameraGoTo", ({ lat, lon, alt }) => {
+        const unsubGoTo = dataBus.on("cameraGoTo", ({ lat, lon, alt, distance, maxPitch, heading }) => {
             // Add a slight delay to avoid any immediate state-change cancellations from React
             setTimeout(() => {
                 const targetPosition = Cartesian3.fromDegrees(lon, lat, alt || 0);
@@ -263,14 +283,14 @@ export default function GlobeView() {
                 const direction = Cartesian3.subtract(targetPosition, cameraPosition, new Cartesian3());
                 Cartesian3.normalize(direction, direction);
 
-                // Enforce maximum pitch of -30 degrees (so it doesn't look too horizontal)
+                // Enforce maximum pitch (default -30 degrees)
                 const targetLocalUp = Ellipsoid.WGS84.geodeticSurfaceNormal(targetPosition, new Cartesian3());
                 const pitchDot = Cartesian3.dot(direction, targetLocalUp);
                 let pitch = Math.asin(pitchDot);
-                const maxPitch = CesiumMath.toRadians(-30);
+                const maxPitchRad = CesiumMath.toRadians(maxPitch !== undefined ? maxPitch : -30);
 
-                if (pitch > maxPitch) {
-                    pitch = maxPitch;
+                if (pitch > maxPitchRad) {
+                    pitch = maxPitchRad;
                     // Extract the horizontal component of the direction to reconstruct it
                     const vertComponent = Cartesian3.multiplyByScalar(targetLocalUp, pitchDot, new Cartesian3());
                     const horiz = Cartesian3.subtract(direction, vertComponent, new Cartesian3());
@@ -286,27 +306,57 @@ export default function GlobeView() {
                     }
                 }
 
-                const viewDistance = Math.max(10000, (alt || 0) * 2 + 20000);
+                const viewDistance = distance !== undefined ? distance : Math.max(10000, (alt || 0) * 2 + 20000);
 
-                // Offset backwards by its looking direction
-                const offset = Cartesian3.multiplyByScalar(direction, -viewDistance, new Cartesian3());
-                const destination = Cartesian3.add(targetPosition, offset, new Cartesian3());
+                let destination: Cartesian3;
+                let orientation: any;
 
-                // Keep roll at 0 by using the Earth's local normal to force a horizontal right vector
-                const localUp = Ellipsoid.WGS84.geodeticSurfaceNormal(destination, new Cartesian3());
-                const right = Cartesian3.cross(direction, localUp, new Cartesian3());
-                Cartesian3.normalize(right, right);
+                if (heading !== undefined) {
+                    const headingRad = CesiumMath.toRadians(heading);
 
-                // The new 'up' vector will be perpendicular to both, ensuring 0 roll
-                const up = Cartesian3.cross(right, direction, new Cartesian3());
-                Cartesian3.normalize(up, up);
+                    // Offset in ENU frame at the target
+                    const x_dir = Math.cos(pitch) * Math.sin(headingRad);
+                    const y_dir = Math.cos(pitch) * Math.cos(headingRad);
+                    const z_dir = Math.sin(pitch);
+
+                    const offsetENU = new Cartesian3(
+                        -x_dir * viewDistance,
+                        -y_dir * viewDistance,
+                        -z_dir * viewDistance
+                    );
+
+                    const enuTransform = Transforms.eastNorthUpToFixedFrame(targetPosition);
+                    const offsetWC = Matrix4.multiplyByPointAsVector(enuTransform, offsetENU, new Cartesian3());
+                    destination = Cartesian3.add(targetPosition, offsetWC, new Cartesian3());
+
+                    orientation = {
+                        heading: headingRad,
+                        pitch: pitch,
+                        roll: 0
+                    };
+                } else {
+                    // Offset backwards by its looking direction
+                    const offset = Cartesian3.multiplyByScalar(direction, -viewDistance, new Cartesian3());
+                    destination = Cartesian3.add(targetPosition, offset, new Cartesian3());
+
+                    // Keep roll at 0 by using the Earth's local normal to force a horizontal right vector
+                    const localUp = Ellipsoid.WGS84.geodeticSurfaceNormal(destination, new Cartesian3());
+                    const right = Cartesian3.cross(direction, localUp, new Cartesian3());
+                    Cartesian3.normalize(right, right);
+
+                    // The new 'up' vector will be perpendicular to both, ensuring 0 roll
+                    const up = Cartesian3.cross(right, direction, new Cartesian3());
+                    Cartesian3.normalize(up, up);
+
+                    orientation = {
+                        direction: direction,
+                        up: up,
+                    };
+                }
 
                 viewer.camera.flyTo({
                     destination: destination,
-                    orientation: {
-                        direction: direction,
-                        up: up,
-                    },
+                    orientation: orientation,
                     duration: 1.5,
                 });
             }, 50);

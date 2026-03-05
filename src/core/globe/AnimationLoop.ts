@@ -86,8 +86,8 @@ export function createUpdateLoop(
 
             // If it's completely out of the camera's view and not selected, skip all heavy JS processing
             if (!inFrustum && !isSelected && !isHovered) {
-                primitive.show = false;
-                if (labelPrimitive) labelPrimitive.show = false;
+                if (primitive.show !== false) primitive.show = false;
+                if (labelPrimitive && labelPrimitive.show !== false) labelPrimitive.show = false;
                 continue;
             }
 
@@ -98,12 +98,12 @@ export function createUpdateLoop(
             const isVisible = distanceToPoint <= (Dh + Dph);
 
             if (!isVisible && !isSelected && !isHovered) {
-                primitive.show = false;
-                if (labelPrimitive) labelPrimitive.show = false;
+                if (primitive.show !== false) primitive.show = false;
+                if (labelPrimitive && labelPrimitive.show !== false) labelPrimitive.show = false;
                 continue;
             }
 
-            primitive.show = true;
+            if (primitive.show !== true) primitive.show = true;
 
             // 3. Position extrapolation (Zero-Allocation)
             if (entity.timestamp && entity.speed !== undefined && entity.heading !== undefined) {
@@ -118,7 +118,7 @@ export function createUpdateLoop(
             // 5. Label visibility
             if (labelPrimitive) {
                 const showLabel = isVisible && (distanceToPoint < 500000 || isSelected || isHovered);
-                labelPrimitive.show = showLabel;
+                if (labelPrimitive.show !== showLabel) labelPrimitive.show = showLabel;
 
                 const targetFillColor = isSelected ? HIGHLIGHT_COLOR_SELECTED : Color.WHITE;
                 if (!Color.equals(labelPrimitive.fillColor, targetFillColor)) {

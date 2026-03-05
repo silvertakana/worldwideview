@@ -12,6 +12,7 @@ export default function CameraStatsPanel() {
     const cameraHeading = useStore((s) => s.cameraHeading);
     const cameraPitch = useStore((s) => s.cameraPitch);
     const cameraRoll = useStore((s) => s.cameraRoll);
+    const fps = useStore((s) => s.fps);
 
     const formatCoord = (val: number) => val.toFixed(6);
     const formatAlt = (val: number) => {
@@ -52,6 +53,11 @@ export default function CameraStatsPanel() {
                     <div className="camera-stats__group">
                         <span className="camera-stats__label">ROL</span>
                         <span className="camera-stats__value">{formatDeg(cameraRoll)}</span>
+                    </div>
+                    <div className="camera-stats__divider" />
+                    <div className="camera-stats__group">
+                        <span className="camera-stats__label">FPS</span>
+                        <span className="camera-stats__value">{fps}</span>
                     </div>
                 </>
             ) : (

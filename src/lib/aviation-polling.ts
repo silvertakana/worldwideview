@@ -79,8 +79,8 @@ async function pollAviation() {
 
     try {
         const now = Date.now();
-        const username = process.env.OPENSKY_USERNAME;
-        const password = process.env.OPENSKY_PASSWORD;
+        const username = process.env.OPENSKY_CLIENTID;
+        const password = process.env.OPENSKY_CLIENTSECRET;
         const headers: Record<string, string> = {};
 
         // Try OAuth2 token first (for new accounts created after March 2025)
@@ -173,8 +173,8 @@ async function getOpenSkyAccessToken() {
         return globalState.accessToken;
     }
 
-    const clientId = process.env.OPENSKY_USERNAME;
-    const clientSecret = process.env.OPENSKY_PASSWORD;
+    const clientId = process.env.OPENSKY_CLIENTID;
+    const clientSecret = process.env.OPENSKY_CLIENTSECRET;
 
     if (!clientId || !clientSecret) return null;
 

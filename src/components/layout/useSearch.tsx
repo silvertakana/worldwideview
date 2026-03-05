@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { MapPin } from "lucide-react";
 import { useStore } from "@/core/state/store";
+import { dataBus } from "@/core/data/DataBus";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import type { GeoEntity } from "@/core/plugins/PluginTypes";
 import { PluginIcon } from "@/components/common/PluginIcon";
@@ -31,9 +32,10 @@ export interface SearchSection {
 function calculateScore(query: string, text: string | undefined): number {
     if (!text || !query) return 0;
     const lower = text.toLowerCase();
-    if (lower === query) return 100;
-    if (lower.startsWith(query)) return 50;
-    if (lower.includes(query)) return 10;
+    const q = query.toLowerCase();
+    if (lower === q) return 100;
+    if (lower.startsWith(q)) return 50;
+    if (lower.includes(q)) return 10;
     return 0;
 }
 
@@ -62,9 +64,14 @@ function searchEntities(
             }
             if (maxScore > 0) {
                 results.push({
-                    id: entity.id, label: entity.label || entity.id,
-                    score: maxScore, lat: entity.latitude, lon: entity.longitude,
-                    type: "entity", pluginId, entity,
+                    id: entity.id,
+                    label: entity.label || entity.id,
+                    score: maxScore,
+                    lat: entity.latitude,
+                    lon: entity.longitude,
+                    type: "entity",
+                    pluginId,
+                    entity,
                 });
             }
         }
@@ -73,13 +80,13 @@ function searchEntities(
             results.sort((a, b) => b.score - a.score);
             sections.push({
                 title: managed.plugin.name,
-                icon: <PluginIcon icon={ managed.plugin.icon } size = { 16} />,
+                icon: <PluginIcon icon={managed.plugin.icon} size={16} />,
                 results: results.slice(0, 5),
                 maxScore: results[0].score,
             });
+        }
     }
-}
-return sections;
+    return sections;
 }
 
 // ─── Location Search (Google Places API) ─────────────────────
@@ -92,21 +99,26 @@ async function searchLocations(query: string): Promise<SearchSection | null> {
 
         const results: SearchResult[] = data.predictions.map(
             (p: { placeId: string; mainText: string; secondaryText: string }, i: number) => ({
-                id: p.placeId, label: p.mainText, subLabel: p.secondaryText,
-                score: 100 - i, lat: 0, lon: 0, type: "country" as const,
+                id: p.placeId,
+                label: p.mainText,
+                subLabel: p.secondaryText,
+                score: 100 - i,
+                lat: 0,
+                lon: 0,
+                type: "country" as const,
             })
         );
 
         return {
             title: "Locations",
-            icon: <MapPin size={ 16 } />,
-        results: results.slice(0, 5),
+            icon: <MapPin size={16} />,
+            results: results.slice(0, 5),
             maxScore: results[0].score,
         };
-} catch (err) {
-    console.error("Error fetching places:", err);
-    return null;
-}
+    } catch (err) {
+        console.error("Error fetching places:", err);
+        return null;
+    }
 }
 
 // ─── Hook ────────────────────────────────────────────────────
@@ -123,12 +135,15 @@ export function useSearch() {
 
     // Debounced search
     useEffect(() => {
-        if (!query.trim()) { setSections([]); setSelectedIndex(0); return; }
-        const lowerQuery = query.toLowerCase();
+        if (!query.trim()) {
+            setSections([]);
+            setSelectedIndex(0);
+            return;
+        }
         let isStale = false;
 
         const run = async () => {
-            const newSections = searchEntities(lowerQuery, layers);
+            const newSections = searchEntities(query, layers);
             const locationSection = await searchLocations(query);
             if (isStale) return;
             if (locationSection) newSections.push(locationSection);
@@ -146,7 +161,11 @@ export function useSearch() {
         setIsOpen(false);
         setQuery("");
         if (result.type === "entity" && result.entity) {
-            setCameraPosition(result.lat, result.lon, 50000);
+            dataBus.emit("cameraGoTo", {
+                lat: result.lat,
+                lon: result.lon,
+                alt: result.entity.altitude || 0
+            });
             setSelectedEntity(result.entity);
         } else if (result.type === "country") {
             setSelectedEntity(null);
@@ -156,7 +175,18 @@ export function useSearch() {
                     const data = await res.json();
                     if (data.lat && data.lon) {
                         const isCity = data.types?.includes("locality");
-                        setCameraPosition(data.lat, data.lon, isCity ? 50000 : 5000000);
+                        console.log("isCity", isCity);
+                        const distance = isCity ? 50000 : 5000000;
+                        const maxPitch = isCity ? -50 : -70;
+                        dataBus.emit("cameraGoTo", {
+                            lat: data.lat,
+                            lon: data.lon,
+                            alt: 0,
+                            distance: distance,
+                            maxPitch,
+                            heading: 0
+                        });
+                        setCameraPosition(data.lat, data.lon, distance);
                     }
                 }
             } catch (err) {

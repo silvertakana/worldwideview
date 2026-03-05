@@ -17,7 +17,6 @@ export interface DataConfig {
 }
 
 export interface MapConfig {
-    showLabels: boolean;
     showFps: boolean;
     resolutionScale: number;
     msaaSamples: number;
@@ -50,7 +49,6 @@ export const createConfigSlice: StateCreator<AppStore, [], [], ConfigSlice> = (s
         },
     },
     mapConfig: {
-        showLabels: false,
         showFps: false,
         resolutionScale: 1.0,
         msaaSamples: 1,

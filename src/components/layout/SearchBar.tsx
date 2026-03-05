@@ -2,52 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Search, MapPin } from "lucide-react";
-import { useStore } from "@/core/state/store";
-import { COUNTRIES } from "@/core/data/countries";
-import { pluginManager } from "@/core/plugins/PluginManager";
-import type { GeoEntity } from "@/core/plugins/PluginTypes";
-
-interface SearchResult {
-    id: string;
-    label: string;
-    subLabel?: string;
-    score: number;
-    lat: number;
-    lon: number;
-    type: "country" | "entity";
-    pluginId?: string;
-    entity?: GeoEntity;
-}
-
-interface SearchSection {
-    title: string;
-    icon: React.ReactNode;
-    results: SearchResult[];
-    maxScore: number;
-}
-
-function calculateScore(query: string, text: string | undefined): number {
-    if (!text || !query) return 0;
-    const lowerQuery = query.toLowerCase();
-    const lowerText = text.toLowerCase();
-    if (lowerText === lowerQuery) return 100;
-    if (lowerText.startsWith(lowerQuery)) return 50;
-    if (lowerText.includes(lowerQuery)) return 10;
-    return 0;
-}
+import { useSearch } from "./useSearch";
+import type { SearchResult, SearchSection } from "./useSearch";
 
 export function SearchBar() {
-    const [query, setQuery] = useState("");
-    const [isOpen, setIsOpen] = useState(false);
-    const [sections, setSections] = useState<SearchSection[]>([]);
-    const [selectedIndex, setSelectedIndex] = useState(0);
+    const {
+        query, setQuery, isOpen, setIsOpen,
+        sections, selectedIndex, setSelectedIndex,
+        flatResults, handleSelect
+    } = useSearch();
+
     const containerRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
-
-    const setCameraPosition = useStore((s) => s.setCameraPosition);
-    const setSelectedEntity = useStore((s) => s.setSelectedEntity);
-    const toggleLayer = useStore((s) => s.toggleLayer);
-    const layers = useStore((s) => s.layers);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -57,143 +23,7 @@ export function SearchBar() {
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    // Flattened results for keyboard navigation
-    const flatResults = sections.flatMap((s) => s.results);
-
-    useEffect(() => {
-        if (!query.trim()) {
-            setSections([]);
-            setSelectedIndex(0);
-            return;
-        }
-
-        const lowerQuery = query.toLowerCase();
-        let isStale = false;
-
-        const fetchResults = async () => {
-            const newSections: SearchSection[] = [];
-
-            // 1. Search Entities per Plugin (Local)
-            const entitiesByPlugin = useStore.getState().entitiesByPlugin;
-            for (const [pluginId, entities] of Object.entries(entitiesByPlugin)) {
-                const pluginResults: SearchResult[] = [];
-                const managedNode = pluginManager.getPlugin(pluginId);
-                if (!managedNode) continue;
-
-                const isLayerEnabled = layers[pluginId]?.enabled;
-                if (!isLayerEnabled) continue; // Only search active layers
-
-                for (const entity of entities) {
-                    let maxScore = calculateScore(lowerQuery, entity.label || entity.id);
-
-                    // Check properties (like mmsi, callsign, etc.)
-                    if (entity.properties) {
-                        for (const val of Object.values(entity.properties)) {
-                            if (typeof val === "string" || typeof val === "number") {
-                                const propScore = calculateScore(lowerQuery, String(val));
-                                if (propScore > maxScore) maxScore = propScore;
-                            }
-                        }
-                    }
-
-                    if (maxScore > 0) {
-                        pluginResults.push({
-                            id: entity.id,
-                            label: entity.label || entity.id,
-                            score: maxScore,
-                            lat: entity.latitude,
-                            lon: entity.longitude,
-                            type: "entity",
-                            pluginId: pluginId,
-                            entity: entity,
-                        });
-                    }
-                }
-
-                if (pluginResults.length > 0) {
-                    pluginResults.sort((a, b) => b.score - a.score);
-                    const PluginIcon = managedNode.plugin.icon;
-                    newSections.push({
-                        title: managedNode.plugin.name,
-                        icon: typeof PluginIcon === "string" ? <span>{PluginIcon}</span> : PluginIcon ? <PluginIcon size={16} /> : <MapPin size={16} />,
-                        results: pluginResults.slice(0, 5),
-                        maxScore: pluginResults[0].score,
-                    });
-                }
-            }
-
-            // 2. Search Locations (Google Places API)
-            try {
-                const res = await fetch(`/api/places/search?input=${encodeURIComponent(query)}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.predictions && data.predictions.length > 0 && !isStale) {
-                        const locationResults: SearchResult[] = data.predictions.map((p: any, index: number) => ({
-                            id: p.placeId,
-                            label: p.mainText,
-                            subLabel: p.secondaryText,
-                            score: 100 - index, // Rely on Google's sorting, just give them artificial scores
-                            lat: 0, // Will fetch on select
-                            lon: 0,
-                            type: "country", // Use same type for now for styling/logic
-                        }));
-
-                        newSections.push({
-                            title: "Locations",
-                            icon: <MapPin size={16} />,
-                            results: locationResults.slice(0, 5),
-                            maxScore: locationResults[0].score,
-                        });
-                    }
-                }
-            } catch (err) {
-                console.error("Error fetching places:", err);
-            }
-
-            if (isStale) return;
-
-            // Sort sections by top score
-            newSections.sort((a, b) => b.maxScore - a.maxScore);
-            setSections(newSections);
-            setSelectedIndex(0); // Reset selection to first item
-        };
-
-        const debounceTimer = setTimeout(fetchResults, 300);
-
-        return () => {
-            isStale = true;
-            clearTimeout(debounceTimer);
-        };
-    }, [query, layers]); // Re-run if query or active layers change
-
-    const handleSelect = async (result: SearchResult) => {
-        setIsOpen(false);
-        setQuery(""); // Clear for now
-
-        if (result.type === "entity" && result.entity) {
-            setCameraPosition(result.lat, result.lon, 50000);
-            setSelectedEntity(result.entity);
-        } else if (result.type === "country") {
-            setSelectedEntity(null);
-            // Fetch Details for coordinates
-            try {
-                const res = await fetch(`/api/places/details?place_id=${result.id}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.lat && data.lon) {
-                        // Zoom closer for cities, further for countries/regions
-                        const isCity = data.types?.includes("locality");
-                        const altitude = isCity ? 50000 : 5000000;
-                        setCameraPosition(data.lat, data.lon, altitude);
-                    }
-                }
-            } catch (err) {
-                console.error("Error fetching place details:", err);
-            }
-        }
-    };
+    }, [setIsOpen]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (!isOpen || flatResults.length === 0) return;

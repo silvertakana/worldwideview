@@ -318,14 +318,8 @@ export function DataConfigPanel() {
                     {/* Map Overlays */}
                     <div style={{ marginBottom: "var(--space-lg)" }}>
                         <div style={sectionHeaderStyle}>Map Overlays</div>
-                        <div style={inputGroupStyle}>
-                            <label style={labelStyle}>Show Labels & Borders</label>
-                            <input
-                                type="checkbox"
-                                checked={mapConfig?.showLabels || false}
-                                onChange={(e) => updateMapConfig({ showLabels: e.target.checked })}
-                                style={checkboxStyle}
-                            />
+                        <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                            Map overlays such as Borders & Labels can now be found in the Layers Panel.
                         </div>
                     </div>
                 </>
