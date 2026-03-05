@@ -324,6 +324,44 @@ html, body {
   font-weight: 600;
 }
 
+/* ─── Intel Action Buttons ───────────────────────────────── */
+.intel-panel__actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.intel-panel__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+  flex: 1;
+  justify-content: center;
+}
+
+.intel-panel__action-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-glass-hover);
+  border-color: var(--accent-cyan);
+}
+
+.intel-panel__action-btn--active {
+  color: var(--accent-cyan);
+  background: rgba(34, 211, 238, 0.15);
+  border-color: var(--accent-cyan);
+}
+
 /* ─── Layer Item ──────────────────────────────────────────── */
 .layer-item {
   display: flex;

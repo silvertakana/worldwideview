@@ -4,7 +4,8 @@ import { useStore } from "@/core/state/store";
 import { FilterSection } from "./FilterPanel";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { PluginIcon } from "@/components/common/PluginIcon";
-import { Info } from "lucide-react";
+import { Info, Eye, MapPin, Lock, Unlock } from "lucide-react";
+import { dataBus } from "@/core/data/DataBus";
 
 export function DataConfigPanel() {
     const configPanelOpen = useStore((s) => s.configPanelOpen);
@@ -16,6 +17,8 @@ export function DataConfigPanel() {
     const updateMapConfig = useStore((s) => s.updateMapConfig);
 
     const selectedEntity = useStore((s) => s.selectedEntity);
+    const lockedEntityId = useStore((s) => s.lockedEntityId);
+    const setLockedEntityId = useStore((s) => s.setLockedEntityId);
 
     const enabledPlugins = Object.entries(dataConfig.pollingIntervals).filter(
         ([pluginId]) => layers[pluginId]?.enabled
@@ -145,6 +148,45 @@ export function DataConfigPanel() {
                                             </span>
                                         </div>
                                     ))}
+                                </div>
+                                {/* Action Buttons */}
+                                <div className="intel-panel__actions">
+                                    <button
+                                        className="intel-panel__action-btn"
+                                        title="Face towards"
+                                        onClick={() => dataBus.emit("cameraFaceTowards", {
+                                            lat: selectedEntity.latitude,
+                                            lon: selectedEntity.longitude,
+                                            alt: selectedEntity.altitude || 0,
+                                        })}
+                                    >
+                                        <Eye size={14} />
+                                        <span>Face</span>
+                                    </button>
+                                    <button
+                                        className="intel-panel__action-btn"
+                                        title="Go to entity"
+                                        onClick={() => dataBus.emit("cameraGoTo", {
+                                            lat: selectedEntity.latitude,
+                                            lon: selectedEntity.longitude,
+                                            alt: selectedEntity.altitude || 0,
+                                        })}
+                                    >
+                                        <MapPin size={14} />
+                                        <span>Go To</span>
+                                    </button>
+                                    <button
+                                        className={`intel-panel__action-btn ${lockedEntityId === selectedEntity.id ? "intel-panel__action-btn--active" : ""}`}
+                                        title={lockedEntityId === selectedEntity.id ? "Unlock camera" : "Lock camera to entity"}
+                                        onClick={() => setLockedEntityId(
+                                            lockedEntityId === selectedEntity.id ? null : selectedEntity.id
+                                        )}
+                                    >
+                                        {lockedEntityId === selectedEntity.id
+                                            ? <><Unlock size={14} /><span>Unlock</span></>
+                                            : <><Lock size={14} /><span>Lock</span></>
+                                        }
+                                    </button>
                                 </div>
                             </div>
                         );

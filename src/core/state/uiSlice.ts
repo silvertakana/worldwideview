@@ -11,12 +11,14 @@ export interface UISlice {
     selectedEntity: GeoEntity | null;
     hoveredEntity: GeoEntity | null;
     hoveredScreenPosition: { x: number; y: number } | null;
+    lockedEntityId: string | null;
     toggleLeftSidebar: () => void;
     toggleRightSidebar: () => void;
     toggleConfigPanel: () => void;
     toggleFilterPanel: () => void;
     setSelectedEntity: (entity: GeoEntity | null) => void;
     setHoveredEntity: (entity: GeoEntity | null, screenPos?: { x: number; y: number } | null) => void;
+    setLockedEntityId: (id: string | null) => void;
 }
 
 export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => ({
@@ -27,6 +29,7 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => (
     selectedEntity: null,
     hoveredEntity: null,
     hoveredScreenPosition: null,
+    lockedEntityId: null,
     toggleLeftSidebar: () =>
         set((state) => ({ leftSidebarOpen: !state.leftSidebarOpen })),
     toggleRightSidebar: () =>
@@ -39,4 +42,7 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => (
         set({ selectedEntity: entity, rightSidebarOpen: entity !== null }),
     setHoveredEntity: (entity, screenPos) =>
         set({ hoveredEntity: entity, hoveredScreenPosition: screenPos ?? null }),
+    setLockedEntityId: (id) =>
+        set({ lockedEntityId: id }),
 });
+

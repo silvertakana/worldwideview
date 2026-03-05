@@ -164,4 +164,6 @@ export type DataBusEvents = {
     layerToggled: { pluginId: string; enabled: boolean };
     timeRangeChanged: { timeRange: TimeRange };
     cameraPreset: { presetId: string };
+    cameraFaceTowards: { lat: number; lon: number; alt: number };
+    cameraGoTo: { lat: number; lon: number; alt: number };
 };

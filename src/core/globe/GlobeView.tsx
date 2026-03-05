@@ -13,13 +13,14 @@ import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import type { GeoEntity, CesiumEntityOptions } from "@/core/plugins/PluginTypes";
 import { applyFilters } from "@/core/filters/filterEngine";
-import { flyToPreset, flyToPosition, subscribeToCameraPresets } from "./CameraController";
+import { flyToPreset, flyToPosition, subscribeToCameraPresets, faceTowards, goToEntity } from "./CameraController";
 import { setupInteractionHandlers } from "./InteractionHandler";
 import { BordersManager } from "./BordersManager";
 import { initPrimitiveCollections, renderEntities } from "./EntityRenderer";
 import { createUpdateLoop } from "./AnimationLoop";
 import { handleEntitySelection, cleanupTrail } from "./SelectionHandler";
 import { useImageryManager } from "./useImageryManager";
+import { dataBus } from "@/core/data/DataBus";
 
 // Set Cesium Ion token
 if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_CESIUM_TOKEN) {
@@ -43,6 +44,7 @@ export default function GlobeView() {
     const enableFxaa = useStore((s) => s.mapConfig.enableFxaa);
     const maxScreenSpaceError = useStore((s) => s.mapConfig.maxScreenSpaceError);
     const filters = useStore((s) => s.filters);
+    const lockedEntityId = useStore((s) => s.lockedEntityId);
 
     // Camera position from store
     const cameraLat = useStore((s) => s.cameraLat);
@@ -158,6 +160,53 @@ export default function GlobeView() {
         cleanupTrail(viewer, trailEntityRef);
         if (selectedEntity) handleEntitySelection(viewer, selectedEntity, trailEntityRef);
     }, [selectedEntity, viewerReady]);
+
+    // Camera action events (Face Towards, Go To)
+    useEffect(() => {
+        if (!viewerRef.current) return;
+        const viewer = viewerRef.current;
+
+        const unsubFace = dataBus.on("cameraFaceTowards", ({ lat, lon, alt }) => {
+            faceTowards(viewer, lat, lon, alt);
+        });
+
+        const unsubGoTo = dataBus.on("cameraGoTo", ({ lat, lon, alt }) => {
+            goToEntity(viewer, lat, lon, alt);
+        });
+
+        return () => {
+            unsubFace();
+            unsubGoTo();
+        };
+    }, [viewerReady]);
+
+    // Camera lock: continuously follow the locked entity
+    useEffect(() => {
+        const viewer = viewerRef.current;
+        if (!viewer || !viewerReady || !lockedEntityId) return;
+
+        // Find the locked entity in all plugin entities
+        const findLockedEntity = () => {
+            for (const entities of Object.values(entitiesByPlugin)) {
+                const found = entities.find((e) => e.id === lockedEntityId);
+                if (found) return found;
+            }
+            return null;
+        };
+
+        const onPostRender = () => {
+            const entity = findLockedEntity();
+            if (!entity) return;
+            faceTowards(viewer, entity.latitude, entity.longitude, entity.altitude || 0);
+        };
+
+        viewer.scene.postRender.addEventListener(onPostRender);
+        return () => {
+            if (!viewer.isDestroyed()) {
+                viewer.scene.postRender.removeEventListener(onPostRender);
+            }
+        };
+    }, [lockedEntityId, viewerReady, entitiesByPlugin]);
 
     return (
         <Viewer

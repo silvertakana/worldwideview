@@ -1,6 +1,7 @@
 import {
     Cartesian3,
     Math as CesiumMath,
+    Matrix4,
 } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
 import { dataBus } from "@/core/data/DataBus";
@@ -64,5 +65,42 @@ export function flyToPosition(
 export function subscribeToCameraPresets(viewer: CesiumViewer): () => void {
     return dataBus.on("cameraPreset", ({ presetId }) => {
         flyToPreset(viewer, presetId);
+    });
+}
+
+/**
+ * Rotate the camera to face a lat/lon from the current position (no movement).
+ */
+export function faceTowards(
+    viewer: CesiumViewer,
+    lat: number,
+    lon: number,
+    alt = 0
+): void {
+    const target = Cartesian3.fromDegrees(lon, lat, alt);
+    const offset = Cartesian3.subtract(target, viewer.camera.positionWC, new Cartesian3());
+    viewer.camera.lookAt(viewer.camera.positionWC, offset);
+    // Release lookAt so user can freely move again
+    viewer.camera.lookAtTransform(Matrix4.IDENTITY);
+}
+
+/**
+ * Fly camera to view an entity from a reasonable distance.
+ */
+export function goToEntity(
+    viewer: CesiumViewer,
+    lat: number,
+    lon: number,
+    alt = 0
+): void {
+    const viewDistance = Math.max(50000, alt * 3 + 30000);
+    viewer.camera.flyTo({
+        destination: Cartesian3.fromDegrees(lon, lat, alt + viewDistance),
+        orientation: {
+            heading: CesiumMath.toRadians(0),
+            pitch: CesiumMath.toRadians(-45),
+            roll: 0,
+        },
+        duration: 1.5,
     });
 }

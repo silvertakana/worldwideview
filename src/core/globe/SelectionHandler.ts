@@ -27,26 +27,7 @@ export function handleEntitySelection(
     // Get selection behavior from plugin
     const managed = pluginManager.getPlugin(selectedEntity.pluginId);
     const behavior = managed?.plugin.getSelectionBehavior?.(selectedEntity) ?? null;
-
-    // Fly camera to entity
     const entityAlt = selectedEntity.altitude || 0;
-    const offsetMultiplier = behavior?.flyToOffsetMultiplier ?? 3;
-    const baseDistance = behavior?.flyToBaseDistance ?? 30000;
-    const viewDistance = Math.max(50000, entityAlt * offsetMultiplier + baseDistance);
-
-    viewer.camera.flyTo({
-        destination: Cartesian3.fromDegrees(
-            selectedEntity.longitude,
-            selectedEntity.latitude,
-            entityAlt + viewDistance
-        ),
-        orientation: {
-            heading: CesiumMath.toRadians(0),
-            pitch: CesiumMath.toRadians(-45),
-            roll: 0,
-        },
-        duration: 1.5,
-    });
 
     // Render trail if plugin opts in
     if (behavior?.showTrail && selectedEntity.heading !== undefined) {
