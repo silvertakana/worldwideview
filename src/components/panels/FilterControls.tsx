@@ -60,33 +60,45 @@ export function RangeFilter({ definition, value, onChange }: FilterControlProps)
     const minVal = value?.type === "range" ? value.min : range.min;
     const maxVal = value?.type === "range" ? value.max : range.max;
 
+    // Calculate percentage for CSS positioning
+    const rangeSpan = range.max - range.min;
+    const leftPercent = ((minVal - range.min) / rangeSpan) * 100;
+    const rightPercent = 100 - ((maxVal - range.min) / rangeSpan) * 100;
+
     return (
         <div className="filter-control">
             <label className="filter-control__label">
                 {definition.label}: {minVal} – {maxVal}
             </label>
             <div className="filter-range">
+                <div className="filter-range__track-bg" />
+                <div
+                    className="filter-range__track-highlight"
+                    style={{ left: `${leftPercent}%`, right: `${rightPercent}%` }}
+                />
                 <input
                     type="range"
-                    className="filter-range__slider"
+                    className="filter-range__slider filter-range__slider--min"
                     min={range.min}
                     max={range.max}
                     step={range.step}
                     value={minVal}
-                    onChange={(e) =>
-                        onChange({ type: "range", min: Number(e.target.value), max: maxVal })
-                    }
+                    onChange={(e) => {
+                        const val = Math.min(Number(e.target.value), maxVal);
+                        onChange({ type: "range", min: val, max: maxVal });
+                    }}
                 />
                 <input
                     type="range"
-                    className="filter-range__slider"
+                    className="filter-range__slider filter-range__slider--max"
                     min={range.min}
                     max={range.max}
                     step={range.step}
                     value={maxVal}
-                    onChange={(e) =>
-                        onChange({ type: "range", min: minVal, max: Number(e.target.value) })
-                    }
+                    onChange={(e) => {
+                        const val = Math.max(Number(e.target.value), minVal);
+                        onChange({ type: "range", min: minVal, max: val });
+                    }}
                 />
             </div>
         </div>

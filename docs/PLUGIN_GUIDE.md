@@ -25,7 +25,7 @@ Build custom data layer plugins for the WorldWideView 3D globe platform. This gu
 └─────────────────────────────────────────────────┘
 ```
 
-### 🔄 Plugin Lifecycle
+### Plugin Lifecycle
 
 1. **Instantiation**: Your class is instantiated and passed to `pluginRegistry.register()`.
 2. **Registration**: The `PluginManager` discovers the plugin in the registry during the boot sequence.
@@ -410,10 +410,10 @@ getServerConfig(): ServerPluginConfig {
 
 | Feature | `billboard` | `point` |
 |---|---|---|
-| Custom image | ✅ via `iconUrl` | ❌ |
-| Rotation | ✅ via `rotation` | ❌ |
+| Custom image | Yes via `iconUrl` | No |
+| Rotation | Yes via `rotation` | No |
 | Performance | Good (GPU batched) | Best (single draw call) |
-| Outline | ❌ | ✅ via `outlineColor/Width` |
+| Outline | No | Yes via `outlineColor/Width` |
 
 **Use billboards** for entities with custom icons and rotation (aircraft, vehicles).
 **Use points** for simpler markers (fires, earthquakes, vessels).

@@ -1113,40 +1113,87 @@ html, body {
 
 /* Range Slider */
 .filter-range {
+  position: relative;
+  height: 20px;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.filter-range__track-bg {
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  z-index: 1;
+}
+
+.filter-range__track-highlight {
+  position: absolute;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  z-index: 2;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
 }
 
 .filter-range__slider {
+  position: absolute;
   width: 100%;
-  height: 4px;
+  height: 0; /* Hide the actual track of the input */
   appearance: none;
   -webkit-appearance: none;
-  background: var(--bg-tertiary);
-  border-radius: 2px;
+  background: transparent;
   outline: none;
   cursor: pointer;
+  z-index: 3;
+  pointer-events: none; /* Allow clicking through to the other slider if needed */
 }
 
+/* Re-enable pointer events for the thumb specifically */
 .filter-range__slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--accent-cyan);
   cursor: pointer;
-  box-shadow: 0 0 4px rgba(34, 211, 238, 0.4);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+  border: 2px solid var(--bg-primary);
+  pointer-events: auto;
+  transition: transform var(--duration-fast) var(--ease-bounce);
+}
+
+.filter-range__slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: var(--glow-cyan);
 }
 
 .filter-range__slider::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--accent-cyan);
   cursor: pointer;
-  border: none;
-  box-shadow: 0 0 4px rgba(34, 211, 238, 0.4);
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  transition: transform var(--duration-fast) var(--ease-bounce);
+}
+
+.filter-range__slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: var(--glow-cyan);
+}
+
+/* Ensure min slider is always accessible or swapped correctly in JS */
+.filter-range__slider--min {
+  z-index: 4;
+}
+
+.filter-range__slider--max {
+  z-index: 3;
 }
 
 /* Boolean Toggle */

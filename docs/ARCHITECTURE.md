@@ -1,8 +1,8 @@
 # System Architecture
 
-WorldWideView is a high-performance, event-driven geospatial platform. This document provides an in-depth look at our engineering decisions, data pipelines, and performance strategies.
+WorldWideView is a high-performance, event-driven geospatial intelligence engine. It is designed to ingest live, fast-moving signals—such as aviation ADS-B, maritime AIS, or satellite feeds—and transform them into cinematic, real-time visual layers on a 3D globe.
 
-## 🏗️ Module Breakdown
+## Module Breakdown
 
 1. **`src/core/plugins`**: The registration and lifecycle management layer. Defines how plugins are booted and destroyed.
 2. **`src/core/data`**: The "Heartbeat" of the system.
@@ -14,7 +14,7 @@ WorldWideView is a high-performance, event-driven geospatial platform. This docu
    - **EntityRenderer**: High-performance "Primitive" renderer.
 4. **`src/plugins`**: Domain-specific logic (Aviation, Maritime, etc.).
 
-## 🏎️ Performance: Primitives vs. Entities
+## Performance: Primitives vs. Entities
 
 One of our core design decisions is using **Cesium Primitives** instead of the standard high-level **Entity API** for high-count datasets.
 
@@ -27,7 +27,7 @@ One of our core design decisions is using **Cesium Primitives** instead of the s
 
 **Why?** The Entity API in Cesium is great for rich features but triggers significant CPU overhead when managing thousands of moving objects. By using `PointPrimitiveCollection` and `BillboardCollection`, WorldWideView batches these draw calls, ensuring 60FPS even with dense global data.
 
-## 🔄 Data Pipeline (Example: Aviation)
+## Data Pipeline (Example: Aviation)
 
 The following diagram trace the journey of a single data point from a remote sensor to the user's screen:
 
@@ -54,7 +54,7 @@ sequenceDiagram
     G-->>G: 60FPS visualization
 ```
 
-## 📐 Design Principles
+## Design Principles
 
 - **Single Responsibility (SRP)**: Plugins only handle data mapping; they don't know about the UI or the Cache.
 - **Dependency Inversion**: The `PluginManager` communicates with plugins through the `WorldPlugin` interface, allowing new plugins to be added without modifying core code.

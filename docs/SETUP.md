@@ -2,13 +2,13 @@
 
 Follow these steps to set up your development environment and get WorldWideView running locally.
 
-## 📋 Requirements
+## Requirements
 
 - **Node.js**: v18.17 or higher (tested on v20+)
 - **NPM**: v9 or higher
 - **Browser**: Chrome, Firefox, or Edge (CesiumJS requires WebGL support)
 
-## 🛠️ Environment Setup
+## Environment Setup
 
 WorldWideView requires several API keys to function correctly. Create a `.env.local` file in the root directory:
 
@@ -25,7 +25,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
-## 🚀 Running Locally
+## Running Locally
 
 1. **Install Dependencies**:
    ```bash
@@ -41,7 +41,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 3. **Open Browser**:
    Navigate to [http://localhost:3000](http://localhost:3000).
 
-## 📂 Folder Structure Explanation
+## Folder Structure Explanation
 
 Understanding the project layout:
 
@@ -62,7 +62,7 @@ worldwideview/
     └── plugins/         # Feature-specific plugins (Aviation, Maritime, etc.)
 ```
 
-## 🧪 Verification
+## Verification
 
 To verify your setup:
 1. Ensure the globe loads without errors in the console.
