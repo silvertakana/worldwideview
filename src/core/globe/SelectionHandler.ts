@@ -8,15 +8,18 @@ import {
 import type { Viewer as CesiumViewer } from "cesium";
 import type { GeoEntity } from "@/core/plugins/PluginTypes";
 import { pluginManager } from "@/core/plugins/PluginManager";
+import type { AnimatableItem } from "./EntityRenderer";
 
 /**
  * Fly camera to a selected entity and optionally render a motion trail.
- * Returns a cleanup function that removes the trail entity.
+ * Uses the extrapolated posRef from the animatables map as the trail origin
+ * so it matches the visually interpolated aircraft position.
  */
 export function handleEntitySelection(
     viewer: CesiumViewer,
     selectedEntity: GeoEntity,
-    trailEntityRef: React.MutableRefObject<CesiumEntity | null>
+    trailEntityRef: React.MutableRefObject<CesiumEntity | null>,
+    animatablesMap: Map<string, AnimatableItem>
 ): void {
     // Clean up previous trail
     if (trailEntityRef.current) {
@@ -27,13 +30,18 @@ export function handleEntitySelection(
     // Get selection behavior from plugin
     const managed = pluginManager.getPlugin(selectedEntity.pluginId);
     const behavior = managed?.plugin.getSelectionBehavior?.(selectedEntity) ?? null;
-    const entityAlt = selectedEntity.altitude || 0;
 
     // Render trail if plugin opts in
     if (behavior?.showTrail && selectedEntity.heading !== undefined) {
         const trailDuration = behavior.trailDurationSec ?? 60;
         const trailStep = behavior.trailStepSec ?? 5;
         const trailColor = behavior.trailColor ?? "#00fff7";
+
+        // Use extrapolated position if available, otherwise raw polled position
+        const item = animatablesMap.get(selectedEntity.id);
+        const originLon = selectedEntity.longitude;
+        const originLat = selectedEntity.latitude;
+        const entityAlt = selectedEntity.altitude || 0;
 
         const positions: Cartesian3[] = [];
         const speed = selectedEntity.speed || 200;
@@ -42,12 +50,18 @@ export function handleEntitySelection(
         for (let t = trailDuration; t >= 0; t -= trailStep) {
             const dist = speed * t;
             const dLat = -Math.cos(headingRad) * dist / 111320;
-            const dLon = -Math.sin(headingRad) * dist / (111320 * Math.cos(CesiumMath.toRadians(selectedEntity.latitude)));
+            const dLon = -Math.sin(headingRad) * dist / (111320 * Math.cos(CesiumMath.toRadians(originLat)));
             positions.push(Cartesian3.fromDegrees(
-                selectedEntity.longitude + dLon,
-                selectedEntity.latitude + dLat,
+                originLon + dLon,
+                originLat + dLat,
                 entityAlt
             ));
+        }
+
+        // Add the current extrapolated position as the trail tip so it
+        // connects to the visually interpolated aircraft position
+        if (item) {
+            positions.push(Cartesian3.clone(item.posRef));
         }
 
         trailEntityRef.current = viewer.entities.add({

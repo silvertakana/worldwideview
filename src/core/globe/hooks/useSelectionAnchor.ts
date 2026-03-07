@@ -1,12 +1,14 @@
 import { useEffect } from "react";
 import type { Viewer as CesiumViewer, Entity as CesiumEntity } from "cesium";
-import { Cartesian3 } from "cesium";
+import { Cartesian3, CallbackProperty } from "cesium";
+import type { AnimatableItem } from "../EntityRenderer";
 
 export function useSelectionAnchor(
     viewer: CesiumViewer | null,
     isReady: boolean,
     selectedEntity: any,
-    selectionEntityRef: React.MutableRefObject<CesiumEntity | null>
+    selectionEntityRef: React.MutableRefObject<CesiumEntity | null>,
+    animatablesMapRef: React.MutableRefObject<Map<string, AnimatableItem>>
 ) {
     // Initialization of Selection Entity
     useEffect(() => {
@@ -43,15 +45,24 @@ export function useSelectionAnchor(
         };
     }, [viewer, isReady, selectionEntityRef]);
 
-    // Update Selection Entity Position
+    // Update Selection Entity Position — use CallbackProperty to track extrapolated position
     useEffect(() => {
         const selectionEntity = selectionEntityRef.current;
         if (!selectionEntity || !selectedEntity) return;
 
-        selectionEntity.position = Cartesian3.fromDegrees(
+        const entityId = selectedEntity.id;
+
+        // Use a CallbackProperty so viewer.trackedEntity follows the
+        // extrapolated position in real-time, not just the polled position.
+        const fallbackPos = Cartesian3.fromDegrees(
             selectedEntity.longitude,
             selectedEntity.latitude,
             selectedEntity.altitude || 0
-        ) as any;
-    }, [selectedEntity, selectionEntityRef]);
+        );
+
+        selectionEntity.position = new CallbackProperty(() => {
+            const item = animatablesMapRef.current?.get(entityId);
+            return item ? item.posRef : fallbackPos;
+        }, false) as any;
+    }, [selectedEntity, selectionEntityRef, animatablesMapRef]);
 }

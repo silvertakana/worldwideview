@@ -26,6 +26,7 @@ import { useCameraActions } from "./hooks/useCameraActions";
 import { useSelectionAnchor } from "./hooks/useSelectionAnchor";
 import { useCameraSync } from "./hooks/useCameraSync";
 import { useEntityRendering } from "./hooks/useEntityRendering";
+import { useModelRendering } from "./hooks/useModelRendering";
 import { useFrustumRendering } from "./hooks/useFrustumRendering";
 
 // Set Cesium Ion token
@@ -77,10 +78,13 @@ export default function GlobeView() {
     useBorders(viewerRef.current, showLabels);
 
     // UI/Interaction Hooks
-    useSelectionAnchor(viewerRef.current, viewerReady, selectedEntity, selectionEntityRef);
+    useSelectionAnchor(viewerRef.current, viewerReady, selectedEntity, selectionEntityRef, animatablesMapRef);
     useCameraSync(viewerRef.current, viewerReady, setCameraPosition, setFps);
     useCameraActions(viewerRef.current, viewerReady);
+    // All entities go through billboard/point pipeline (including model-type as fallback)
     useEntityRendering(viewerRef.current, viewerReady, visibleEntities, animatablesMapRef, hoveredEntityIdRef, sceneSettings);
+    // LOD: promote nearby model-type entities to 3D models, hiding their billboard
+    useModelRendering(viewerRef.current, viewerReady, animatablesMapRef);
 
     // Frustum outlines for camera entities
     const cameraLayerEnabled = layers["camera"]?.enabled ?? false;
@@ -130,7 +134,7 @@ export default function GlobeView() {
         const viewer = viewerRef.current;
         if (!viewer || !viewerReady) return;
         cleanupTrail(viewer, trailEntityRef);
-        if (selectedEntity) handleEntitySelection(viewer, selectedEntity, trailEntityRef);
+        if (selectedEntity) handleEntitySelection(viewer, selectedEntity, trailEntityRef, animatablesMapRef.current);
     }, [selectedEntity, viewerReady]);
 
     // Camera lock
