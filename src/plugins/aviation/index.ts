@@ -181,10 +181,15 @@ export class AviationPlugin implements WorldPlugin {
         const alt = entity.properties.altitude_m as number | null;
         const isAirborne = !entity.properties.on_ground;
         return {
-            type: "billboard",
+            type: "model",
+            // Billboard fallback for distant aircraft (LOD)
             iconUrl: "/plane-icon.svg",
-            color: altitudeToColor(alt),
             size: isAirborne ? 8 : 5,
+            // 3D model config for nearby aircraft
+            modelUrl: "/airplane/scene.gltf",
+            modelScale: 75,
+            modelMinPixelSize: 16,
+            color: altitudeToColor(alt),
             rotation: entity.heading,
             labelText: entity.label || undefined,
             labelFont: "11px JetBrains Mono, monospace",

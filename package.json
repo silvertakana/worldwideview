@@ -3,18 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "clean": "node -e \"const fs=require('fs');fs.rmSync('.next',{recursive:true,force:true})\"",
     "dev": "next dev --webpack",
     "predev": "node scripts/copy-cesium.mjs",
     "copy-cesium": "node scripts/copy-cesium.mjs",
     "build": "next build --webpack",
-    "start": "next start"
+    "start": "next start",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
     "cesium": "^1.139.0",
     "cheerio": "^1.2.0",
     "insecam-api": "^0.0.3",
-    "jsdom": "^28.1.0",
     "lucide-react": "^0.576.0",
     "next": "16.1.6",
     "react": "19.2.3",
@@ -26,11 +27,16 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
+    "@vitejs/plugin-react": "^5.1.4",
     "copy-webpack-plugin": "^14.0.0",
-    "typescript": "^5"
+    "jsdom": "^28.1.0",
+    "typescript": "^5",
+    "vitest": "^4.0.18"
   }
 }

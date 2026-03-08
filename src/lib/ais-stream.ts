@@ -79,7 +79,7 @@ export function startAisStream(): void {
         console.log('[AIS] Connected');
 
         s.ws?.send(JSON.stringify({
-            ApiKey: apiKey,
+            APIKey: apiKey,
             BoundingBoxes: [[[-90, -180], [90, 180]]],
             FilterMessageTypes: ['PositionReport'],
         }));

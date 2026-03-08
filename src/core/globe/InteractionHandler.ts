@@ -12,6 +12,7 @@ import { useStore } from "@/core/state/store";
  * Pick a WorldWideView entity at a screen position using the Cesium scene.pick API.
  */
 function findEntityAtPosition(viewer: CesiumViewer, position: { x: number; y: number }): GeoEntity | null {
+    if (!viewer || viewer.isDestroyed()) return null;
     const picked = viewer.scene.pick(position as Cartesian2);
     if (defined(picked) && picked.id && picked.id._wwvEntity) {
         return picked.id._wwvEntity as GeoEntity;
@@ -40,6 +41,7 @@ export function setupInteractionHandlers(
     // Click → select entity
     handler.setInputAction(
         (event: { position: { x: number; y: number } }) => {
+            if (!viewer || viewer.isDestroyed()) return;
             const entity = findEntityAtPosition(viewer, event.position);
             useStore.getState().setSelectedEntity(entity);
             if (entity) {
@@ -52,41 +54,37 @@ export function setupInteractionHandlers(
 
     // Hover → show tooltip card
     let hoverTimeout: NodeJS.Timeout | null = null;
-    const HOVER_THROTTLE_MS = 100; // 10 Hz
+    const HOVER_THROTTLE_MS = 150; // Increased from 100ms to 150ms to allow more frames to render between picks
 
     handler.setInputAction(
         (event: { endPosition: { x: number; y: number } }) => {
-            // Instantly update screen position to keep tooltip following mouse smoothly if already hovered
-            if (hoveredEntityIdRef.current) {
-                useStore.setState({
-                    hoveredScreenPosition: { x: event.endPosition.x, y: event.endPosition.y },
-                });
-            }
-
-            // Wait for both throttle and camera/scene to be stable
-            if (hoverTimeout !== null) return;
-
-            // Skip picking if camera is currently moving or scene is morphing
-            if (
-                viewer.scene.mode === SceneMode.MORPHING ||
-                (viewer.camera.pitch !== useStore.getState().cameraPitch && false /* basic heuristic or could use viewer.scene.preRender flag but we have store */)
-                // Actually the cleanest way to check if camera is moving is to use the viewer's internal properties, or checking if it's currently being dragged.
-            ) {
-                // Return early
-            }
-
             const pos = { x: event.endPosition.x, y: event.endPosition.y };
+
+            // Only update screen position continuously if we ALREADY have a hovered entity
+            // This prevents React state thrashing when just moving the mouse over empty space
+            if (hoveredEntityIdRef.current) {
+                useStore.getState().setHoveredEntity(useStore.getState().hoveredEntity, pos);
+            }
+
+            // Debounce the expensive scene.pick operation
+            if (hoverTimeout !== null) {
+                clearTimeout(hoverTimeout);
+            }
 
             hoverTimeout = setTimeout(() => {
                 hoverTimeout = null;
-                // Add an explicit check inside the timeout to ensure the scene is still in a stable picking state
+
+                // Skip if viewer was destroyed (e.g. during HMR or navigation)
+                if (!viewer || viewer.isDestroyed()) return;
+
+                // Skip picking if scene is morphing (e.g. 2D to 3D transition)
                 if (viewer.scene.mode === SceneMode.MORPHING) return;
 
-                // You can also check if a drag is happening if you have a drag state, but we'll stick to basic Cesium checks
                 const entity = findEntityAtPosition(viewer, pos);
                 const prevId = hoveredEntityIdRef.current;
                 const newId = entity ? entity.id : null;
 
+                // Only update React state if the hovered entity CHANGED
                 if (prevId !== newId) {
                     hoveredEntityIdRef.current = newId;
                     canvas.style.cursor = entity ? "pointer" : "default";

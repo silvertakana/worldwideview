@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { Viewer as CesiumViewer } from "cesium";
 import type { GeoEntity, CesiumEntityOptions } from "@/core/plugins/PluginTypes";
-import { renderEntities, AnimatableItem } from "../EntityRenderer";
+import { renderEntitiesChunked, renderEntities, AnimatableItem } from "../EntityRenderer";
 import { createUpdateLoop } from "../AnimationLoop";
 
 export function useEntityRendering(
@@ -19,10 +19,7 @@ export function useEntityRendering(
     }
 ) {
     useEffect(() => {
-        if (!viewer || !isReady) return;
-
-        const animatables = renderEntities(viewer, visibleEntities, animatablesMapRef.current);
-        const updatePositions = createUpdateLoop(viewer, animatables, hoveredEntityIdRef);
+        if (!viewer || !isReady || viewer.isDestroyed()) return;
 
         // Sync scene settings
         viewer.scene.debugShowFramesPerSecond = sceneSettings.showFps;
@@ -37,9 +34,19 @@ export function useEntityRendering(
             }
         }
 
-        viewer.scene.preUpdate.addEventListener(updatePositions);
+        let updatePositions: (() => void) | undefined;
+
+        // Use chunked rendering for large updates to prevent main thread lockups
+        renderEntitiesChunked(viewer, visibleEntities, animatablesMapRef.current).then(animatables => {
+            if (!viewer || viewer.isDestroyed()) return;
+            updatePositions = createUpdateLoop(viewer, animatables, hoveredEntityIdRef);
+            viewer.scene.preUpdate.addEventListener(updatePositions);
+        });
+
         return () => {
-            if (!viewer.isDestroyed()) viewer.scene.preUpdate.removeEventListener(updatePositions);
+            if (updatePositions && !viewer.isDestroyed()) {
+                viewer.scene.preUpdate.removeEventListener(updatePositions);
+            }
         };
     }, [
         viewer,

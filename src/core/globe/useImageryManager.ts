@@ -35,7 +35,7 @@ export function useImageryManager(viewer: CesiumViewer | null) {
         if (!viewer || viewer.isDestroyed()) return;
 
         async function updateImagery() {
-            if (!viewer) return;
+            if (!viewer || viewer.isDestroyed()) return;
 
             // Handle Google 3D Tiles specifically
             const isGoogle3D = baseLayerId === "google-3d";

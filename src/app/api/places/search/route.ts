@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+// Server-side cache: keyed by normalised input, 1-hour TTL
+const cache = new Map<string, { data: unknown; expiresAt: number }>();
+const TTL_MS = 60 * 60 * 1000; // 1 hour
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const input = searchParams.get("input");
@@ -8,10 +12,20 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Input is required" }, { status: 400 });
     }
 
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    // Use user-provided key if present in header, otherwise fall back to .env
+    const userKey = request.headers.get("X-User-Google-Key");
+    const apiKey = userKey || process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
-        console.error("GOOGLE_MAPS_API_KEY is not defined");
+        console.error("GOOGLE_MAPS_API_KEY is not defined and no user key provided");
         return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+
+    // Separate cache entries for user-provided keys vs default
+    const cachePrefix = userKey ? `user:${userKey.slice(0, 8)}:` : "";
+    const cacheKey = `${cachePrefix}${input.toLowerCase().trim()}`;
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+        return NextResponse.json(cached.data);
     }
 
     try {
@@ -36,7 +50,9 @@ export async function GET(request: Request) {
             types: p.types,
         }));
 
-        return NextResponse.json({ predictions });
+        const result = { predictions };
+        cache.set(cacheKey, { data: result, expiresAt: Date.now() + TTL_MS });
+        return NextResponse.json(result);
     } catch (error) {
         console.error("Error in Places Autocomplete route:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });

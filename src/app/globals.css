@@ -289,12 +289,30 @@ html, body {
   padding-bottom: var(--space-sm);
   border-bottom: 1px solid var(--border-subtle);
   overflow-x: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.panel-tabs:hover {
+  scrollbar-color: var(--border-medium) transparent;
 }
 
 .panel-tabs::-webkit-scrollbar {
-  display: none;
+  height: 4px;
+}
+
+.panel-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-tabs::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+
+.panel-tabs:hover::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
 }
 
 .panel-tab {

@@ -27,6 +27,7 @@ export async function pollAviation() {
             headers,
             // Don't cache via Next.js fetch cache, we manage our own manual interval
             cache: "no-store",
+            signal: AbortSignal.timeout(8000), // 8 second timeout to prevent hanging
         });
 
         if (!res.ok) {
@@ -76,7 +77,12 @@ export async function pollAviation() {
     } catch (err) {
         // Exponential backoff on error as well
         globalState.currentBackoff = Math.min((globalState.currentBackoff || POLL_INTERVAL) * 2, 5 * 60 * 1000);
-        console.error(`[Aviation Polling] Error during poll (Backing off to ${globalState.currentBackoff / 1000}s):`, err);
+
+        const error = err as any;
+        const isTimeout = error?.name === 'AbortError' || error?.name === 'TimeoutError' || error?.cause?.code === 'UND_ERR_CONNECT_TIMEOUT';
+        const errorMessage = isTimeout ? 'Connection timed out' : (error?.message || String(error));
+        console.error(`[Aviation Polling] Error during poll (Backing off to ${globalState.currentBackoff / 1000}s): ${errorMessage}`);
+
         // On unexpected error, try fallback if we have no cache
         if (!globalState.aviationData) {
             const fallbackData = await getLatestFromSupabase();
@@ -93,6 +99,8 @@ export async function pollAviation() {
         if (globalState.aviationPollingInterval) {
             clearTimeout(globalState.aviationPollingInterval);
         }
-        globalState.aviationPollingInterval = setTimeout(pollAviation, globalState.currentBackoff || POLL_INTERVAL);
+        // Apply a small random jitter (0-5s) to prevent synchronized requests from multiple clients
+        const jitter = Math.floor(Math.random() * 5000);
+        globalState.aviationPollingInterval = setTimeout(pollAviation, (globalState.currentBackoff || POLL_INTERVAL) + jitter);
     }
 }

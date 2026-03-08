@@ -61,7 +61,7 @@ function parseCSV(csv: string): FIRMSRecord[] {
     return records;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
     const now = Date.now();
 
     // Return cached data if fresh
@@ -70,7 +70,8 @@ export async function GET() {
     }
 
     try {
-        const apiKey = process.env.NASA_FIRMS_API_KEY;
+        const userKey = request.headers.get("X-User-Firms-Key");
+        const apiKey = userKey || process.env.NASA_FIRMS_API_KEY;
         let url: string;
 
         if (apiKey) {

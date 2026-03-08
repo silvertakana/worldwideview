@@ -21,6 +21,7 @@ const CAMERA_PRESETS: Record<string, { lat: number; lon: number; alt: number; he
  * Fly the camera to a named preset region.
  */
 export function flyToPreset(viewer: CesiumViewer, presetId: string): void {
+    if (!viewer || viewer.isDestroyed()) return;
     const preset = CAMERA_PRESETS[presetId];
     if (!preset) return;
     viewer.camera.flyTo({
@@ -46,6 +47,7 @@ export function flyToPosition(
     pitch = -90,
     duration = 2.0
 ): void {
+    if (!viewer || viewer.isDestroyed()) return;
     viewer.camera.flyTo({
         destination: Cartesian3.fromDegrees(lon, lat, alt),
         orientation: {
@@ -63,6 +65,7 @@ export function flyToPosition(
  */
 export function subscribeToCameraPresets(viewer: CesiumViewer): () => void {
     return dataBus.on("cameraPreset", ({ presetId }) => {
+        if (!viewer || viewer.isDestroyed()) return;
         flyToPreset(viewer, presetId);
     });
 }

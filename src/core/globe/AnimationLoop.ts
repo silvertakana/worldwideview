@@ -10,20 +10,8 @@ import {
 import type { Viewer as CesiumViewer } from "cesium";
 import type { GeoEntity, CesiumEntityOptions } from "@/core/plugins/PluginTypes";
 import { useStore } from "@/core/state/store";
-import { getEntityColor } from "./EntityRenderer";
-
-interface AnimatableItem {
-    primitive: any;
-    labelPrimitive?: any;
-    entity: GeoEntity;
-    posRef: Cartesian3;
-    options: CesiumEntityOptions;
-    basePosition?: Cartesian3;
-    velocityVector?: Cartesian3;
-    baseColor?: Color;
-    baseOutlineColor?: Color;
-    lastHighlightState?: 'normal' | 'hovered' | 'selected';
-}
+import { getEntityColor, createLabel, removeLabel, type AnimatableItem } from "./EntityRenderer";
+import { updateModelTransform } from "./ModelManager";
 
 const HIGHLIGHT_COLOR_SELECTED = Color.fromCssColorString("#00fff7");
 const HIGHLIGHT_COLOR_HOVERED = Color.YELLOW;
@@ -57,6 +45,9 @@ export function createUpdateLoop(
     return () => {
         if (!viewer || viewer.isDestroyed()) return;
 
+        // Lazy fetch of labels collection just once per frame
+        const labelsCollection = (viewer as any)._wwvLabels;
+
         const state = useStore.getState();
         const nowMs = state.isPlaybackMode ? state.currentTime.getTime() : Date.now();
         const cam = viewer.camera;
@@ -73,21 +64,23 @@ export function createUpdateLoop(
 
         for (let i = 0; i < animatables.length; i++) {
             const item = animatables[i];
-            const { primitive, labelPrimitive, entity, posRef } = item;
+            const { primitive, entity, posRef } = item;
+            const isModel = item.options.type === "model";
             const isSelected = state.selectedEntity?.id === entity.id;
             const isHovered = hoveredEntityIdRef.current === entity.id;
 
+            // Skip if model hasn't loaded yet
+            if (!primitive) continue;
+
             // 1. Frustum Culling
             scratchSphere.center = posRef;
-            // Let's use 1000 for visibility padding, roughly fits billboards
             scratchSphere.radius = 1000;
             const intersect = cullingVolume.computeVisibility(scratchSphere);
             const inFrustum = intersect !== Intersect.OUTSIDE;
 
-            // If it's completely out of the camera's view and not selected, skip all heavy JS processing
             if (!inFrustum && !isSelected && !isHovered) {
                 if (primitive.show !== false) primitive.show = false;
-                if (labelPrimitive && labelPrimitive.show !== false) labelPrimitive.show = false;
+                if (item.labelPrimitive && item.labelPrimitive.show !== false) item.labelPrimitive.show = false;
                 continue;
             }
 
@@ -99,30 +92,62 @@ export function createUpdateLoop(
 
             if (!isVisible && !isSelected && !isHovered) {
                 if (primitive.show !== false) primitive.show = false;
-                if (labelPrimitive && labelPrimitive.show !== false) labelPrimitive.show = false;
+                if (item.labelPrimitive && item.labelPrimitive.show !== false) item.labelPrimitive.show = false;
+                // If the entity is far away and not selected, we can destroy its label to save memory
+                if (item.labelPrimitive && labelsCollection) removeLabel(item, labelsCollection);
                 continue;
             }
 
+            // Don't show billboard if LOD hook has promoted this item to a 3D model
+            if (item._modelPromoted) continue;
+
             if (primitive.show !== true) primitive.show = true;
 
-            // 3. Position extrapolation (Zero-Allocation)
+            // 3. Position extrapolation
             if (entity.timestamp && entity.speed !== undefined && entity.heading !== undefined) {
                 if (isFullUpdate || isSelected || isHovered) {
                     extrapolatePosition(item, nowMs);
+                    // Update model transform after extrapolation
+                    if (isModel) {
+                        updateModelTransform(item, item.posRef, entity.heading);
+                    }
                 }
             }
 
-            // 4. Highlight styling
-            applyHighlight(item, isSelected, isHovered);
+            // 4. Highlight styling (skip for models — they use silhouette instead)
+            if (!isModel) {
+                applyHighlight(item, isSelected, isHovered);
+            } else {
+                // Simple model highlight: silhouette
+                if (isSelected && primitive.silhouetteSize !== 2) {
+                    primitive.silhouetteSize = 2;
+                } else if (isHovered && primitive.silhouetteSize !== 1) {
+                    primitive.silhouetteSize = 1;
+                } else if (!isSelected && !isHovered && primitive.silhouetteSize !== 0) {
+                    primitive.silhouetteSize = 0;
+                }
+            }
 
-            // 5. Label visibility
-            if (labelPrimitive) {
-                const showLabel = isVisible && (distanceToPoint < 500000 || isSelected || isHovered);
-                if (labelPrimitive.show !== showLabel) labelPrimitive.show = showLabel;
+            // 5. Label visibility and lazy creation
+            const showLabel = isVisible && (distanceToPoint < 500000 || isSelected || isHovered);
 
-                const targetFillColor = isSelected ? HIGHLIGHT_COLOR_SELECTED : Color.WHITE;
-                if (!Color.equals(labelPrimitive.fillColor, targetFillColor)) {
-                    labelPrimitive.fillColor = targetFillColor;
+            if (showLabel) {
+                if (!item.labelPrimitive && labelsCollection) {
+                    // Create if missing and should be shown
+                    createLabel(item, labelsCollection);
+                }
+                if (item.labelPrimitive) {
+                    if (item.labelPrimitive.show !== true) item.labelPrimitive.show = true;
+                    const targetFillColor = isSelected ? HIGHLIGHT_COLOR_SELECTED : Color.WHITE;
+                    if (!Color.equals(item.labelPrimitive.fillColor, targetFillColor)) {
+                        item.labelPrimitive.fillColor = targetFillColor;
+                    }
+                }
+            } else {
+                if (item.labelPrimitive) {
+                    if (item.labelPrimitive.show !== false) item.labelPrimitive.show = false;
+                    // Proactively clean up hidden labels to save memory, they will be recreated if camera zooms back in
+                    if (labelsCollection) removeLabel(item, labelsCollection);
                 }
             }
         }

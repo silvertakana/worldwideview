@@ -8,6 +8,7 @@ export function useCameraActions(viewer: CesiumViewer | null, isReady: boolean) 
         if (!viewer || !isReady) return;
 
         const unsubFace = dataBus.on("cameraFaceTowards", ({ lat, lon, alt }) => {
+            if (!viewer || viewer.isDestroyed()) return;
             console.log("[GlobeView] Native faceTowards", lat, lon, alt);
             const target = Cartesian3.fromDegrees(lon, lat, alt);
             const offset = Cartesian3.subtract(
@@ -25,6 +26,7 @@ export function useCameraActions(viewer: CesiumViewer | null, isReady: boolean) 
         const unsubGoTo = dataBus.on("cameraGoTo", ({ lat, lon, alt, distance, maxPitch, heading }) => {
             // Add a slight delay to avoid any immediate state-change cancellations from React
             setTimeout(() => {
+                if (!viewer || viewer.isDestroyed()) return;
                 const targetPosition = Cartesian3.fromDegrees(lon, lat, alt || 0);
                 const cameraPosition = viewer.camera.positionWC;
 

@@ -45,7 +45,7 @@ export interface LayerConfig {
 
 // ─── Cesium Entity Options ───────────────────────────────────
 export interface CesiumEntityOptions {
-    type: "billboard" | "point" | "polyline" | "polygon" | "label";
+    type: "billboard" | "point" | "polyline" | "polygon" | "label" | "model";
     color?: string;
     size?: number;
     iconUrl?: string;
@@ -55,6 +55,12 @@ export interface CesiumEntityOptions {
     labelText?: string;
     labelFont?: string;
     distanceDisplayCondition?: { near: number; far: number };
+    /** URL to a glTF/glb model (used when type is "model") */
+    modelUrl?: string;
+    /** Scale factor for the 3D model (default: 1.0) */
+    modelScale?: number;
+    /** Minimum pixel size for the model (prevents vanishing at distance) */
+    modelMinPixelSize?: number;
 }
 
 // ─── Selection Behavior ──────────────────────────────────────

@@ -75,7 +75,8 @@ export function useBorders(viewer: CesiumViewer | null, enabled: boolean) {
 }
 
 /**
- * Iterates loaded entities and adds labels + border polylines.
+ * Iterates loaded entities and adds labels + border polylines
+ * with aggressive distance-based culling to reduce rendering overhead.
  */
 function addLabelsAndPolylines(ds: GeoJsonDataSource): void {
     const entities = ds.entities.values;
@@ -100,27 +101,31 @@ function addLabelsAndPolylines(ds: GeoJsonDataSource): void {
             cartographic.height
         ) as any;
 
+        // Labels only visible when zoomed in (< 5,000km from camera)
+        // This prevents rendering 200+ country labels at global zoom
         entity.label = new LabelGraphics({
             text: entity.name,
-            font: "bold 18px Inter, sans-serif",
+            font: "bold 16px Inter, sans-serif", // Slightly reduced from bold 18px for performance
             fillColor: Color.WHITE,
             outlineColor: Color.BLACK.withAlpha(0.8),
-            outlineWidth: 3,
+            outlineWidth: 2, // Reduced from 3 — less overdraw
             style: LabelStyle.FILL_AND_OUTLINE,
             verticalOrigin: VerticalOrigin.CENTER,
             horizontalOrigin: HorizontalOrigin.CENTER,
-            distanceDisplayCondition: new DistanceDisplayCondition(10.0, 10000000.0),
-            scaleByDistance: new NearFarScalar(1.0e6, 1.5, 1.0e7, 0.5),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            distanceDisplayCondition: new DistanceDisplayCondition(10.0, 5_000_000.0), // Only show within 5000km
+            scaleByDistance: new NearFarScalar(5.0e5, 1.2, 5.0e6, 0.4),
+            disableDepthTestDistance: 100_000, // 100km — prevents z-fighting near camera, but still occludes behind terrain
         });
 
         // Border polyline (clamped to ground/3D tiles)
+        // Only render when zoomed in (< 8,000km) to avoid rendering all world borders at global view
         entity.polyline = new PolylineGraphics({
             positions: [...positions, positions[0]],
-            width: 2,
-            material: Color.WHITE.withAlpha(0.5),
+            width: 1.5, // Reduced from 2 — less fill cost
+            material: Color.WHITE.withAlpha(0.4),
             clampToGround: true,
             classificationType: ClassificationType.BOTH,
+            distanceDisplayCondition: new DistanceDisplayCondition(10.0, 8_000_000.0),
         });
 
         // Hide original polygon fill

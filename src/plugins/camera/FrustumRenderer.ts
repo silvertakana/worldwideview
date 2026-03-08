@@ -37,6 +37,7 @@ export class FrustumRenderer {
      * Only draws for entities whose `properties` include heading.
      */
     update(viewer: CesiumViewer, entities: GeoEntity[]): void {
+        if (!viewer || viewer.isDestroyed()) return;
         const activeIds = new Set<string>();
 
         for (const geo of entities) {
@@ -60,6 +61,10 @@ export class FrustumRenderer {
 
     /** Remove all frustum entities from the viewer. */
     clear(viewer: CesiumViewer): void {
+        if (!viewer || viewer.isDestroyed()) {
+            this.entityMap.clear();
+            return;
+        }
         for (const [, lines] of this.entityMap) {
             for (const line of lines) {
                 viewer.entities.remove(line);

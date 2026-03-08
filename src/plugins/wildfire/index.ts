@@ -8,6 +8,7 @@ import type {
     CesiumEntityOptions,
     FilterDefinition,
 } from "@/core/plugins/PluginTypes";
+import { buildUserKeyHeaders } from "@/lib/userApiKeys";
 
 function frpToColor(frp: number): string {
     if (frp < 10) return "#fbbf24";   // yellow — low
@@ -43,7 +44,9 @@ export class WildfirePlugin implements WorldPlugin {
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
-            const res = await fetch("/api/wildfire");
+            const res = await globalThis.fetch("/api/wildfire", {
+                headers: buildUserKeyHeaders(),
+            });
             if (!res.ok) throw new Error(`Wildfire API returned ${res.status}`);
             const data = await res.json();
 

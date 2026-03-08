@@ -6,6 +6,7 @@ import CopyPlugin from "copy-webpack-plugin";
 const cesiumSource = path.resolve(__dirname, "node_modules/cesium/Build/Cesium");
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   env: {
     CESIUM_BASE_URL: "/cesium",
   },

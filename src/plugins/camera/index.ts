@@ -56,7 +56,7 @@ export class CameraPlugin implements WorldPlugin {
 
         try {
             if (settings.sourceType === "insecam") {
-                this.startInsecamStream(settings);
+                await this.startInsecamStream(settings);
             } else if (settings.sourceType === "url") {
                 await this.loadUrlSource(settings);
             } else if (settings.sourceType === "file") {
@@ -85,12 +85,12 @@ export class CameraPlugin implements WorldPlugin {
         this.sourceBuckets["file"] = settings.customData.map((c: any, i: number) => mapRawCamera(c, i, "file"));
     }
 
-    private startInsecamStream(settings: any): void {
+    private async startInsecamStream(settings: any): Promise<void> {
         this.insecamAbort?.abort();
         this.insecamAbort = new AbortController();
         this.sourceBuckets["insecam"] = [];
 
-        streamInsecamCameras(
+        await streamInsecamCameras(
             settings.insecamCategory || "rating",
             settings.insecamLimit || 90,
             (batch) => {

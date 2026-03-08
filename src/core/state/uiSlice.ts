@@ -23,7 +23,7 @@ export interface UISlice {
     hoveredScreenPosition: { x: number; y: number } | null;
     lockedEntityId: string | null;
     floatingStreams: FloatingStream[];
-    activeConfigTab: "intel" | "filters" | "cache" | "overlay";
+    activeConfigTab: "intel" | "filters" | "cache" | "overlay" | "apikeys";
     highlightLayerId: string | null;
     toggleLeftSidebar: () => void;
     toggleRightSidebar: () => void;
@@ -35,7 +35,7 @@ export interface UISlice {
     addFloatingStream: (stream: Omit<FloatingStream, "position" | "size">) => void;
     removeFloatingStream: (id: string) => void;
     updateFloatingStream: (id: string, updates: Partial<FloatingStream>) => void;
-    setActiveConfigTab: (tab: "intel" | "filters" | "cache" | "overlay") => void;
+    setActiveConfigTab: (tab: "intel" | "filters" | "cache" | "overlay" | "apikeys") => void;
     setHighlightLayerId: (id: string | null) => void;
     setConfigPanelOpen: (open: boolean) => void;
 }

@@ -1,11 +1,11 @@
-import { useEffect } from "react";
 import { useStore } from "@/core/state/store";
 import { FilterSection } from "@/components/panels/FilterPanel";
-import { Info } from "lucide-react";
+import { Info, Key } from "lucide-react";
 
 import { IntelTab } from "./IntelTab";
 import { CacheTab } from "./CacheTab";
 import { OverlayTab } from "./OverlayTab";
+import { ApiKeysTab } from "./ApiKeysTab";
 import { sectionHeaderStyle } from "./sharedStyles";
 
 export function DataConfigPanel() {
@@ -14,12 +14,6 @@ export function DataConfigPanel() {
     const activeTab = useStore((s) => s.activeConfigTab);
     const setActiveTab = useStore((s) => s.setActiveConfigTab);
 
-    // Auto-switch to Intel tab when an entity is selected
-    useEffect(() => {
-        if (selectedEntity && activeTab !== "intel") {
-            setActiveTab("intel");
-        }
-    }, [selectedEntity, activeTab, setActiveTab]);
 
     return (
         <aside
@@ -30,7 +24,13 @@ export function DataConfigPanel() {
                 Data Configuration
             </div>
 
-            <div className="panel-tabs">
+            <div
+                className="panel-tabs"
+                onWheel={(e) => {
+                    e.currentTarget.scrollLeft += e.deltaY;
+                    e.preventDefault();
+                }}
+            >
                 <button
                     className={`panel-tab ${activeTab === "intel" ? "panel-tab--active" : ""}`}
                     onClick={() => setActiveTab("intel")}
@@ -56,6 +56,13 @@ export function DataConfigPanel() {
                 >
                     Config & Overlay
                 </button>
+                <button
+                    className={`panel-tab ${activeTab === "apikeys" ? "panel-tab--active" : ""}`}
+                    onClick={() => setActiveTab("apikeys")}
+                >
+                    <Key size={12} style={{ marginRight: 4 }} />
+                    API Keys
+                </button>
             </div>
 
             {activeTab === "intel" && (
@@ -74,6 +81,7 @@ export function DataConfigPanel() {
 
             {activeTab === "cache" && <CacheTab />}
             {activeTab === "overlay" && <OverlayTab />}
+            {activeTab === "apikeys" && <ApiKeysTab />}
         </aside>
     );
 }

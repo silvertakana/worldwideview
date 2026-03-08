@@ -7,6 +7,7 @@ import { dataBus } from "@/core/data/DataBus";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import type { GeoEntity } from "@/core/plugins/PluginTypes";
 import { PluginIcon } from "@/components/common/PluginIcon";
+import { buildUserKeyHeaders } from "@/lib/userApiKeys";
 
 // ─── Types ───────────────────────────────────────────────────
 export interface SearchResult {
@@ -92,7 +93,9 @@ function searchEntities(
 // ─── Location Search (Google Places API) ─────────────────────
 async function searchLocations(query: string): Promise<SearchSection | null> {
     try {
-        const res = await fetch(`/api/places/search?input=${encodeURIComponent(query)}`);
+        const res = await fetch(`/api/places/search?input=${encodeURIComponent(query)}`, {
+            headers: buildUserKeyHeaders(),
+        });
         if (!res.ok) return null;
         const data = await res.json();
         if (!data.predictions?.length) return null;
@@ -170,7 +173,9 @@ export function useSearch() {
         } else if (result.type === "country") {
             setSelectedEntity(null);
             try {
-                const res = await fetch(`/api/places/details?place_id=${result.id}`);
+                const res = await fetch(`/api/places/details?place_id=${result.id}`, {
+                    headers: buildUserKeyHeaders(),
+                });
                 if (res.ok) {
                     const data = await res.json();
                     if (data.lat && data.lon) {
