@@ -1,4 +1,4 @@
-export const POLL_INTERVAL = 10000; // 10 seconds
+export const POLL_INTERVAL = 15000; // 15 seconds
 
 // Global state to survive HMR in Next.js development
 export const globalState = globalThis as unknown as {
@@ -11,6 +11,8 @@ export const globalState = globalThis as unknown as {
     isFetching: boolean;
     lastSupabaseInsert: number;
     currentBackoff: number;
+    creditsRemaining: number | null;
+    retryAfterSec: number | null;
 };
 
 if (globalState.aviationPollingStarted === undefined) {
@@ -23,4 +25,6 @@ if (globalState.aviationPollingStarted === undefined) {
     globalState.isFetching = false;
     globalState.lastSupabaseInsert = 0;
     globalState.currentBackoff = 8000;
+    globalState.creditsRemaining = null;
+    globalState.retryAfterSec = null;
 }

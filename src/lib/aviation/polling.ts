@@ -2,6 +2,7 @@ import { globalState, POLL_INTERVAL } from "./state";
 import { getOpenSkyAccessToken } from "./auth";
 import { getLatestFromSupabase, recordToSupabase } from "./supabase";
 import { updateFileCache } from "./cache";
+import { parseRateLimitHeaders, computeBackoff } from "./rate-limit";
 
 export async function pollAviation() {
     if (globalState.isFetching) return;
@@ -30,12 +31,18 @@ export async function pollAviation() {
             signal: AbortSignal.timeout(8000), // 8 second timeout to prevent hanging
         });
 
-        if (!res.ok) {
-            // Apply exponential backoff: double the interval up to 5 minutes
-            globalState.currentBackoff = Math.min((globalState.currentBackoff || POLL_INTERVAL) * 2, 5 * 60 * 1000);
+        // Always parse rate-limit headers (available on both success and error responses)
+        parseRateLimitHeaders(res.headers);
 
-            const retryAfter = res.headers.get("Retry-After");
-            const retryInfo = retryAfter ? ` [Retry after: ${retryAfter}s]` : "";
+        if (!res.ok) {
+            // Use server retry-after if available, otherwise exponential backoff
+            globalState.currentBackoff = computeBackoff();
+            if (globalState.currentBackoff === POLL_INTERVAL) {
+                // computeBackoff didn't escalate — apply exponential manually
+                globalState.currentBackoff = Math.min((globalState.currentBackoff || POLL_INTERVAL) * 2, 5 * 60 * 1000);
+            }
+
+            const retryInfo = globalState.retryAfterSec ? ` [Server retry-after: ${globalState.retryAfterSec}s]` : "";
 
             console.warn(`[Aviation Polling] OpenSky returned ${res.status}: ${res.statusText}${retryInfo} (Backing off to ${globalState.currentBackoff / 1000}s)`);
 
@@ -95,12 +102,13 @@ export async function pollAviation() {
     } finally {
         globalState.isFetching = false;
 
-        // Schedule next poll using currentBackoff
+        // Schedule next poll using adaptive backoff (credit-aware)
         if (globalState.aviationPollingInterval) {
             clearTimeout(globalState.aviationPollingInterval);
         }
+        const adaptiveInterval = computeBackoff();
         // Apply a small random jitter (0-5s) to prevent synchronized requests from multiple clients
         const jitter = Math.floor(Math.random() * 5000);
-        globalState.aviationPollingInterval = setTimeout(pollAviation, (globalState.currentBackoff || POLL_INTERVAL) + jitter);
+        globalState.aviationPollingInterval = setTimeout(pollAviation, adaptiveInterval + jitter);
     }
 }
