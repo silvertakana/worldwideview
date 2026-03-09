@@ -29,11 +29,9 @@ export async function pollAviation() {
         parseRateLimitHeaders(res.headers);
 
         if (!res.ok) {
-            // On 429, rotate to the next credential immediately
-            if (res.status === 429) {
-                console.log(`[Aviation Polling] 429 rate limited — rotating credential (${getUsableCount()} remaining)`);
-                rotateCredential();
-            }
+            // On any failure, rotate to the next credential immediately
+            console.log(`[Aviation Polling] OpenSky ${res.status} — rotating credential (${getUsableCount()} remaining)`);
+            rotateCredential();
 
             globalState.currentBackoff = computeBackoff();
             if (globalState.currentBackoff === POLL_INTERVAL) {
