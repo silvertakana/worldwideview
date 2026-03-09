@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import "@/styles/hud-animations.css";
 
@@ -28,7 +29,10 @@ export default function RootLayout({
         {/* Load CesiumJS base styles (optional, but helps with UI widgets if used later) */}
         <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
