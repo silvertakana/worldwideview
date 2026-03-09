@@ -22,7 +22,7 @@ export function handleEntitySelection(
     animatablesMap: Map<string, AnimatableItem>
 ): void {
     // Clean up previous trail
-    if (trailEntityRef.current) {
+    if (trailEntityRef.current && !viewer.isDestroyed()) {
         viewer.entities.remove(trailEntityRef.current);
         trailEntityRef.current = null;
     }
@@ -64,6 +64,7 @@ export function handleEntitySelection(
             positions.push(Cartesian3.clone(item.posRef));
         }
 
+        if (viewer.isDestroyed()) return;
         trailEntityRef.current = viewer.entities.add({
             polyline: {
                 positions,
@@ -84,7 +85,7 @@ export function cleanupTrail(
     viewer: CesiumViewer,
     trailEntityRef: React.MutableRefObject<CesiumEntity | null>
 ): void {
-    if (trailEntityRef.current) {
+    if (trailEntityRef.current && !viewer.isDestroyed()) {
         viewer.entities.remove(trailEntityRef.current);
         trailEntityRef.current = null;
     }

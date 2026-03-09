@@ -7,6 +7,7 @@ import {
     Ion,
     createGooglePhotorealistic3DTileset,
     Cartesian3,
+    Math as CesiumMath,
     Entity as CesiumEntity,
 } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
@@ -20,6 +21,7 @@ import { useBorders } from "./useBorders";
 import { initPrimitiveCollections, AnimatableItem } from "./EntityRenderer";
 import { handleEntitySelection, cleanupTrail } from "./SelectionHandler";
 import { useImageryManager } from "./useImageryManager";
+import { dataBus } from "@/core/data/DataBus";
 
 // New Hooks
 import { useCameraActions } from "./hooks/useCameraActions";
@@ -93,13 +95,13 @@ export default function GlobeView() {
 
     // Camera preset events
     useEffect(() => {
-        if (!viewerRef.current) return;
+        if (!viewerRef.current || viewerRef.current.isDestroyed()) return;
         return subscribeToCameraPresets(viewerRef.current);
     }, [viewerReady]);
 
     // Click/hover handlers
     useEffect(() => {
-        if (!viewerRef.current) return;
+        if (!viewerRef.current || viewerRef.current.isDestroyed()) return;
         return setupInteractionHandlers(viewerRef.current, hoveredEntityIdRef);
     }, [viewerReady]);
 
@@ -113,6 +115,9 @@ export default function GlobeView() {
         viewer.scene.msaaSamples = sceneSettings.msaaSamples;
         viewer.scene.postProcessStages.fxaa.enabled = sceneSettings.enableFxaa;
 
+        // Start camera far out (deep space) for fly-in effect
+        viewer.camera.setView({ destination: Cartesian3.fromDegrees(0, 20, 60000000) });
+
         // Initialize Google Photorealistic 3D Tiles once
         try {
             const tileset = await createGooglePhotorealistic3DTileset({
@@ -120,19 +125,27 @@ export default function GlobeView() {
             });
             tileset.maximumScreenSpaceError = sceneSettings.maxScreenSpaceError;
             viewer.scene.primitives.add(tileset);
+
+            // Signal when initial tiles are loaded (globe looks solid)
+            const removeListener = tileset.initialTilesLoaded.addEventListener(() => {
+                console.log("[GlobeView] Initial tiles loaded — globe ready.");
+                dataBus.emit("globeReady", {} as Record<string, never>);
+                removeListener();
+            });
         } catch (err) {
             console.warn("[GlobeView] Failed to initialize Google 3D Tiles:", err);
+            // Still emit globeReady so UI doesn't stay locked
+            dataBus.emit("globeReady", {} as Record<string, never>);
         }
 
         initPrimitiveCollections(viewer);
-        viewer.camera.setView({ destination: Cartesian3.fromDegrees(0, 20, 20000000) });
         setViewerReady(true);
     }, [sceneSettings]);
 
     // Entity selection → fly-to + trail
     useEffect(() => {
         const viewer = viewerRef.current;
-        if (!viewer || !viewerReady) return;
+        if (!viewer || !viewerReady || viewer.isDestroyed()) return;
         cleanupTrail(viewer, trailEntityRef);
         if (selectedEntity) handleEntitySelection(viewer, selectedEntity, trailEntityRef, animatablesMapRef.current);
     }, [selectedEntity, viewerReady]);
@@ -140,7 +153,7 @@ export default function GlobeView() {
     // Camera lock
     useEffect(() => {
         const viewer = viewerRef.current;
-        if (!viewer || !viewerReady) return;
+        if (!viewer || !viewerReady || viewer.isDestroyed()) return;
 
         if (lockedEntityId && selectionEntityRef.current) {
             viewer.trackedEntity = selectionEntityRef.current;
