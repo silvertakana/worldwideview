@@ -65,7 +65,7 @@ export function SearchBar() {
                     }}
                     onFocus={() => setIsOpen(true)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Search countries, flights, vessels..."
+                    placeholder="Search places, addresses, flights..."
                     style={{
                         background: "transparent",
                         border: "none",

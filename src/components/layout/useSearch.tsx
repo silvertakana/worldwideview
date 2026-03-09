@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, Building, LandmarkIcon, Globe } from "lucide-react";
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import type { GeoEntity } from "@/core/plugins/PluginTypes";
 import { PluginIcon } from "@/components/common/PluginIcon";
 import { buildUserKeyHeaders } from "@/lib/userApiKeys";
+import { categorizePlace, getZoomForTypes, type PlaceCategory } from "./placeCategories";
 
 // ─── Types ───────────────────────────────────────────────────
 export interface SearchResult {
@@ -17,9 +18,10 @@ export interface SearchResult {
     score: number;
     lat: number;
     lon: number;
-    type: "country" | "entity";
+    type: "country" | "entity" | "place";
     pluginId?: string;
     entity?: GeoEntity;
+    placeCategory?: PlaceCategory;
 }
 
 export interface SearchSection {
@@ -90,6 +92,14 @@ function searchEntities(
     return sections;
 }
 
+// ─── Category Icon Map ────────────────────────────────────────
+const CATEGORY_ICONS: Record<PlaceCategory, React.ReactNode> = {
+    address: <MapPin size={16} />,
+    establishment: <Building size={16} />,
+    landmark: <LandmarkIcon size={16} />,
+    region: <Globe size={16} />,
+};
+
 // ─── Location Search (Google Places API) ─────────────────────
 async function searchLocations(query: string): Promise<SearchSection | null> {
     try {
@@ -101,19 +111,23 @@ async function searchLocations(query: string): Promise<SearchSection | null> {
         if (!data.predictions?.length) return null;
 
         const results: SearchResult[] = data.predictions.map(
-            (p: { placeId: string; mainText: string; secondaryText: string }, i: number) => ({
-                id: p.placeId,
-                label: p.mainText,
-                subLabel: p.secondaryText,
-                score: 100 - i,
-                lat: 0,
-                lon: 0,
-                type: "country" as const,
-            })
+            (p: { placeId: string; mainText: string; secondaryText: string; types?: string[] }, i: number) => {
+                const category = categorizePlace(p.types || []);
+                return {
+                    id: p.placeId,
+                    label: p.mainText,
+                    subLabel: p.secondaryText,
+                    score: 100 - i,
+                    lat: 0,
+                    lon: 0,
+                    type: category === "region" ? "country" as const : "place" as const,
+                    placeCategory: category,
+                };
+            }
         );
 
         return {
-            title: "Locations",
+            title: "Places",
             icon: <MapPin size={16} />,
             results: results.slice(0, 5),
             maxScore: results[0].score,
@@ -170,7 +184,7 @@ export function useSearch() {
                 alt: result.entity.altitude || 0
             });
             setSelectedEntity(result.entity);
-        } else if (result.type === "country") {
+        } else if (result.type === "country" || result.type === "place") {
             setSelectedEntity(null);
             try {
                 const res = await fetch(`/api/places/details?place_id=${result.id}`, {
@@ -179,15 +193,12 @@ export function useSearch() {
                 if (res.ok) {
                     const data = await res.json();
                     if (data.lat && data.lon) {
-                        const isCity = data.types?.includes("locality");
-                        console.log("isCity", isCity);
-                        const distance = isCity ? 50000 : 5000000;
-                        const maxPitch = isCity ? -50 : -70;
+                        const { distance, maxPitch } = getZoomForTypes(data.types);
                         dataBus.emit("cameraGoTo", {
                             lat: data.lat,
                             lon: data.lon,
                             alt: 0,
-                            distance: distance,
+                            distance,
                             maxPitch,
                             heading: 0
                         });

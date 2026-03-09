@@ -29,10 +29,10 @@ export async function GET(request: Request) {
     }
 
     try {
-        // Types parameter to restrict to cities and regions
+        // No type restriction — returns addresses, establishments, landmarks, regions, etc.
         const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
             input
-        )}&types=(regions)&key=${apiKey}`;
+        )}&key=${apiKey}`;
 
         const response = await fetch(url);
         const data = await response.json();
