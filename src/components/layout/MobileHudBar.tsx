@@ -20,7 +20,7 @@ const TIME_WINDOWS = ["1h", "6h", "24h", "48h", "7d"] as const;
 
 /**
  * Horizontally scrollable bar for region presets + time windows.
- * Shown only on mobile, below the condensed header.
+ * Shown only on mobile, attached directly below the condensed header.
  */
 export function MobileHudBar() {
     const timeWindow = useStore((s) => s.timeWindow);

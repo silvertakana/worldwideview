@@ -24,6 +24,7 @@ import { useBootSequence } from "@/core/hooks/useBootSequence";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 import { DataBusSubscriber } from "./DataBusSubscriber";
 import { MobileHudBar } from "./MobileHudBar";
+import { MobileCameraStats } from "./MobileCameraStats";
 import dynamic from "next/dynamic";
 
 const GlobeView = dynamic(() => import("@/core/globe/GlobeView"), {
@@ -97,6 +98,7 @@ export function AppShell() {
 
             <Header />
             {isMobile && <MobileHudBar />}
+            {isMobile && <MobileCameraStats />}
             <PanelToggleArrows />
             <LayerPanel />
             <DataConfigPanel />

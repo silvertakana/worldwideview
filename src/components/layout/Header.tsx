@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { pluginManager } from "@/core/plugins/PluginManager";
-import { Globe, Search, X } from "lucide-react";
+import { Globe } from "lucide-react";
 import { SearchBar } from "./SearchBar";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 
@@ -25,7 +25,6 @@ export function Header() {
     const isMobile = useIsMobile();
     const timeWindow = useStore((s) => s.timeWindow);
     const setTimeWindow = useStore((s) => s.setTimeWindow);
-    const [searchExpanded, setSearchExpanded] = useState(false);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -44,35 +43,19 @@ export function Header() {
         return () => el.removeEventListener("wheel", handleWheel);
     }, []);
 
-    // Mobile: condensed header with expandable search
+    // Mobile: compact header with persistent centered search
     if (isMobile) {
         return (
             <header className="header header--mobile glass-panel">
                 <div className="header__brand">
-                    <div className="header__logo">WorldWideView</div>
+                    <div className="header__logo header__logo--compact">WWV</div>
+                </div>
+
+                <div className="header__search-center">
+                    <SearchBar />
                 </div>
 
                 <div className="header__actions">
-                    {searchExpanded ? (
-                        <div className="header__search-expanded">
-                            <SearchBar />
-                            <button
-                                className="btn btn--icon"
-                                onClick={() => setSearchExpanded(false)}
-                                title="Close search"
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-                    ) : (
-                        <button
-                            className="btn btn--icon header__search-btn"
-                            onClick={() => setSearchExpanded(true)}
-                            title="Search"
-                        >
-                            <Search size={18} />
-                        </button>
-                    )}
                     <div className="status-badge">
                         <span className="status-badge__dot" />
                         LIVE

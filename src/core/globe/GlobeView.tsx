@@ -76,8 +76,8 @@ export default function GlobeView() {
     }, [layers, entitiesByPlugin, filters]);
 
     // Imagery & Scene Management Hooks
-    useImageryManager(viewerRef.current);
-    useBorders(viewerRef.current, showLabels);
+    const { isGoogle3D } = useImageryManager(viewerRef.current);
+    useBorders(viewerRef.current, showLabels, isGoogle3D);
 
     // UI/Interaction Hooks
     useSelectionAnchor(viewerRef.current, viewerReady, selectedEntity, selectionEntityRef, animatablesMapRef);

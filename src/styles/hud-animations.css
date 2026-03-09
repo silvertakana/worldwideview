@@ -72,6 +72,19 @@
     animation: hudSweepRight 700ms var(--ease-smooth) both;
 }
 
+/* On mobile, skip sidebar boot animations — they start off-screen */
+@media (max-width: 768px) {
+    .app-shell.boot-sidebar .sidebar--left,
+    .app-shell.boot-sidebar .sidebar--right {
+        animation: none !important;
+        opacity: 0;
+    }
+
+    .app-shell:not(.boot-done) .sidebar {
+        opacity: 0 !important;
+    }
+}
+
 /* Sidebar title text flicker */
 .app-shell.boot-sidebar .sidebar__title {
     animation: hudTextFlicker 0.8s var(--ease-smooth) 0.2s both;

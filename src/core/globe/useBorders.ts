@@ -1,134 +1,113 @@
 import { useEffect, useRef } from "react";
 import {
-    GeoJsonDataSource,
-    Color,
-    JulianDate,
-    BoundingSphere,
-    Cartographic,
-    Cartesian3,
-    LabelGraphics,
-    PolylineGraphics,
-    LabelStyle,
-    VerticalOrigin,
-    HorizontalOrigin,
-    DistanceDisplayCondition,
-    NearFarScalar,
-    ClassificationType,
+    BingMapsImageryProvider,
+    BingMapsStyle,
+    ImageryLayer,
 } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
 
 /**
- * Hook to manage GeoJSON country borders and labels on the Cesium viewer.
+ * Hook that manages a Bing Maps labels-only imagery overlay.
+ *
+ * Uses AERIAL_WITH_LABELS_ON_DEMAND — a raster tile layer that includes
+ * country names, political borders, cities, and roads. GPU-composited,
+ * LOD-managed, and cached by Cesium — near-zero CPU overhead compared
+ * to the old GeoJsonDataSource + Entity approach.
  */
-export function useBorders(viewer: CesiumViewer | null, enabled: boolean) {
-    const dataSourceRef = useRef<GeoJsonDataSource | null>(null);
+export function useBorders(
+    viewer: CesiumViewer | null,
+    enabled: boolean,
+    isGoogle3D: boolean = false,
+) {
+    const layerRef = useRef<ImageryLayer | null>(null);
+    const providerReadyRef = useRef<boolean>(false);
 
     useEffect(() => {
         if (!viewer || viewer.isDestroyed()) return;
 
-        async function initBorders() {
-            if (!viewer) return;
+        // Labels overlay is not applicable when using Google 3D Tiles
+        // (globe imagery layers are hidden in that mode).
+        if (isGoogle3D) {
+            hideLayer(viewer, layerRef);
+            return;
+        }
 
-            if (!dataSourceRef.current) {
+        async function setupOverlay() {
+            if (!viewer || viewer.isDestroyed()) return;
+
+            // Lazily create the imagery layer on first enable
+            if (!layerRef.current && enabled) {
                 try {
-                    const ds = await GeoJsonDataSource.load("/borders.geojson", {
-                        clampToGround: true,
-                        stroke: Color.CYAN.withAlpha(0.6),
-                        strokeWidth: 1.5,
-                        fill: Color.TRANSPARENT,
-                    });
-
-                    addLabelsAndPolylines(ds);
-                    dataSourceRef.current = ds;
+                    const provider = await createLabelProvider();
+                    const layer = new ImageryLayer(provider, { alpha: 0.85 });
+                    layerRef.current = layer;
+                    providerReadyRef.current = true;
                 } catch (err) {
-                    console.warn("[useBorders] Failed to load borders GeoJSON", err);
+                    console.warn("[useBorders] Failed to create label overlay", err);
                     return;
                 }
             }
 
-            const ds = dataSourceRef.current;
+            const layer = layerRef.current;
+            if (!layer) return;
+
             if (enabled) {
-                if (!viewer.dataSources.contains(ds)) {
-                    viewer.dataSources.add(ds);
+                if (!viewer.imageryLayers.contains(layer)) {
+                    // Add on top of all other imagery layers
+                    viewer.imageryLayers.add(layer);
                 }
+                layer.show = true;
             } else {
-                if (viewer.dataSources.contains(ds)) {
-                    viewer.dataSources.remove(ds, false);
-                }
+                layer.show = false;
             }
         }
 
-        initBorders();
-    }, [viewer, enabled]);
+        setupOverlay();
+    }, [viewer, enabled, isGoogle3D]);
 
-    // Cleanup on unmount or viewer change
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (viewer && !viewer.isDestroyed() && dataSourceRef.current) {
-                if (viewer.dataSources.contains(dataSourceRef.current)) {
-                    viewer.dataSources.remove(dataSourceRef.current, true);
+            if (viewer && !viewer.isDestroyed() && layerRef.current) {
+                if (viewer.imageryLayers.contains(layerRef.current)) {
+                    viewer.imageryLayers.remove(layerRef.current, true);
                 }
-                dataSourceRef.current = null;
+                layerRef.current = null;
+                providerReadyRef.current = false;
             }
         };
     }, [viewer]);
 }
 
-/**
- * Iterates loaded entities and adds labels + border polylines
- * with aggressive distance-based culling to reduce rendering overhead.
- */
-function addLabelsAndPolylines(ds: GeoJsonDataSource): void {
-    const entities = ds.entities.values;
-    for (let i = 0; i < entities.length; i++) {
-        const entity = entities[i];
-        if (!entity.name || !entity.polygon) continue;
-
-        const hierarchy = entity.polygon.hierarchy?.getValue(JulianDate.now());
-        if (!hierarchy) continue;
-
-        const positions = hierarchy.positions;
-        if (!positions || positions.length === 0) continue;
-
-        // Label at polygon center
-        const center = BoundingSphere.fromPoints(positions).center;
-        const cartographic = Cartographic.fromCartesian(center);
-        cartographic.height = 1000;
-
-        entity.position = Cartesian3.fromRadians(
-            cartographic.longitude,
-            cartographic.latitude,
-            cartographic.height
-        ) as any;
-
-        // Labels only visible when zoomed in (< 5,000km from camera)
-        // This prevents rendering 200+ country labels at global zoom
-        entity.label = new LabelGraphics({
-            text: entity.name,
-            font: "bold 16px Inter, sans-serif", // Slightly reduced from bold 18px for performance
-            fillColor: Color.WHITE,
-            outlineColor: Color.BLACK.withAlpha(0.8),
-            outlineWidth: 2, // Reduced from 3 — less overdraw
-            style: LabelStyle.FILL_AND_OUTLINE,
-            verticalOrigin: VerticalOrigin.CENTER,
-            horizontalOrigin: HorizontalOrigin.CENTER,
-            distanceDisplayCondition: new DistanceDisplayCondition(10.0, 5_000_000.0), // Only show within 5000km
-            scaleByDistance: new NearFarScalar(5.0e5, 1.2, 5.0e6, 0.4),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
-        });
-
-        // Border polyline (clamped to ground/3D tiles)
-        // Only render when zoomed in (< 8,000km) to avoid rendering all world borders at global view
-        entity.polyline = new PolylineGraphics({
-            positions: [...positions, positions[0]],
-            width: 1.5, // Reduced from 2 — less fill cost
-            material: Color.WHITE.withAlpha(0.4),
-            clampToGround: true,
-            classificationType: ClassificationType.BOTH,
-            distanceDisplayCondition: new DistanceDisplayCondition(10.0, 8_000_000.0),
-        });
-
-        // Hide original polygon fill
-        entity.polygon.show = false as any;
+/** Hide and remove the label layer if it exists */
+function hideLayer(
+    viewer: CesiumViewer,
+    layerRef: React.RefObject<ImageryLayer | null>,
+) {
+    if (layerRef.current) {
+        layerRef.current.show = false;
     }
+}
+
+/** Create a Bing Maps labels-only imagery provider */
+async function createLabelProvider(): Promise<BingMapsImageryProvider> {
+    const bingKey = process.env.NEXT_PUBLIC_BING_MAPS_KEY;
+
+    if (bingKey) {
+        return BingMapsImageryProvider.fromUrl(
+            "https://dev.virtualearth.net",
+            {
+                key: bingKey,
+                mapStyle: BingMapsStyle.AERIAL_WITH_LABELS_ON_DEMAND,
+            },
+        );
+    }
+
+    // Fallback: Bing Maps via Cesium Ion (asset 3 = Bing Aerial w/ Labels)
+    return BingMapsImageryProvider.fromUrl(
+        "https://dev.virtualearth.net",
+        {
+            mapStyle: BingMapsStyle.AERIAL_WITH_LABELS_ON_DEMAND,
+        },
+    );
 }
