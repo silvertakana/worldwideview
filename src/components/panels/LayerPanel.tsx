@@ -8,6 +8,8 @@ import { pluginManager } from "@/core/plugins/PluginManager";
 import { ImageryPicker } from "./ImageryPicker";
 import { PluginIcon } from "@/components/common/PluginIcon";
 import { FavoritesTab } from "./FavoritesTab";
+import { ImportPanel } from "@/plugins/geojson/ImportPanel";
+import "@/plugins/geojson/geojson-importer.css";
 
 
 export function LayerPanel() {
@@ -68,7 +70,7 @@ export function LayerPanel() {
         }
     };
 
-    const [activeTab, setActiveTab] = useState<"layers" | "imagery" | "favorites">("layers");
+    const [activeTab, setActiveTab] = useState<"layers" | "imagery" | "favorites" | "import">("layers");
 
     return (
         <aside
@@ -94,6 +96,12 @@ export function LayerPanel() {
                     onClick={() => setActiveTab("favorites")}
                 >
                     Favorites
+                </button>
+                <button
+                    className={`panel-tab ${activeTab === "import" ? "panel-tab--active" : ""}`}
+                    onClick={() => setActiveTab("import")}
+                >
+                    Import
                 </button>
             </div>
 
@@ -164,6 +172,10 @@ export function LayerPanel() {
 
             {activeTab === "favorites" && (
                 <FavoritesTab />
+            )}
+
+            {activeTab === "import" && (
+                <ImportPanel />
             )}
         </aside>
     );

@@ -1,0 +1,394 @@
+/* ─── GeoJSON Importer Styles ────────────────────────────────── */
+
+.geojson-import-panel {
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+/* ─── Buttons ─────────────────────────────────────────────── */
+
+.geojson-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.geojson-btn--primary {
+    background: linear-gradient(135deg, #00e5ff 0%, #00b0ff 100%);
+    color: #0a0e17;
+}
+
+.geojson-btn--primary:hover:not(:disabled) {
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.geojson-btn--primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.geojson-btn--secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.geojson-btn--secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.geojson-btn--secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.geojson-btn--full {
+    width: 100%;
+}
+
+/* ─── Modal ───────────────────────────────────────────────── */
+
+.geojson-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    animation: geojson-fadeIn 0.15s ease;
+}
+
+.geojson-modal {
+    width: 480px;
+    max-width: 92vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    animation: geojson-slideUp 0.2s ease;
+}
+
+.geojson-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.geojson-modal__header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.geojson-modal__close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+}
+
+.geojson-modal__close:hover {
+    color: var(--text-primary);
+}
+
+/* ─── Tabs ────────────────────────────────────────────────── */
+
+.geojson-modal__tabs {
+    display: flex;
+    gap: 4px;
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.geojson-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.geojson-tab:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+
+.geojson-tab--active {
+    background: rgba(0, 229, 255, 0.12);
+    color: #00e5ff;
+}
+
+/* ─── Body ────────────────────────────────────────────────── */
+
+.geojson-modal__body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ─── Drop Zone ───────────────────────────────────────────── */
+
+.geojson-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 32px 20px;
+    border: 2px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.geojson-dropzone:hover,
+.geojson-dropzone--active {
+    border-color: #00e5ff;
+    background: rgba(0, 229, 255, 0.04);
+    color: #00e5ff;
+}
+
+.geojson-dropzone p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.geojson-dropzone__sub {
+    font-size: 11px !important;
+    opacity: 0.6;
+}
+
+/* ─── Textarea ────────────────────────────────────────────── */
+
+.geojson-textarea {
+    width: 100%;
+    min-height: 140px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--text-primary);
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 12px;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.geojson-textarea:focus {
+    outline: none;
+    border-color: #00e5ff;
+}
+
+/* ─── Inputs ──────────────────────────────────────────────── */
+
+.geojson-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--text-primary);
+    font-size: 13px;
+    transition: border-color 0.2s;
+}
+
+.geojson-input:focus {
+    outline: none;
+    border-color: #00e5ff;
+}
+
+.geojson-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* ─── Color Row ───────────────────────────────────────────── */
+
+.geojson-color-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.geojson-color-row input[type="color"] {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+}
+
+/* ─── Preview ─────────────────────────────────────────────── */
+
+.geojson-preview {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(0, 229, 255, 0.06);
+    border: 1px solid rgba(0, 229, 255, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.geojson-preview__stat {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.geojson-preview__warn {
+    font-size: 11px;
+    color: #fbbf24;
+}
+
+/* ─── Metadata ────────────────────────────────────────────── */
+
+.geojson-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ─── Error ───────────────────────────────────────────────── */
+
+.geojson-error {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    font-size: 12px;
+}
+
+/* ─── Footer ──────────────────────────────────────────────── */
+
+.geojson-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ─── Layer List ──────────────────────────────────────────── */
+
+.geojson-empty {
+    text-align: center;
+    padding: 24px 16px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.geojson-layer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.geojson-layer-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    transition: background 0.15s;
+}
+
+.geojson-layer-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.geojson-layer-item__color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.geojson-layer-item__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.geojson-layer-item__name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.geojson-layer-item__count {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.geojson-layer-item__btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+}
+
+.geojson-layer-item__btn:hover {
+    color: var(--text-primary);
+}
+
+.geojson-layer-item__btn--danger:hover {
+    color: #ef4444;
+}
+
+/* ─── Animations ──────────────────────────────────────────── */
+
+@keyframes geojson-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes geojson-slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

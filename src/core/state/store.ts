@@ -7,10 +7,12 @@ import { createFilterSlice, type FilterSlice } from "./filterSlice";
 import { createDataSlice, type DataSlice } from "./dataSlice";
 import { createConfigSlice, type ConfigSlice } from "./configSlice";
 import { createFavoritesSlice, type FavoritesSlice } from "./favoritesSlice";
+import { createGeoJsonSlice, type GeoJsonSlice } from "./geojsonSlice";
 
 // Re-export slice types for convenience
 export type { MapConfig, DataConfig } from "./configSlice";
 export type { LayerState } from "./layersSlice";
+export type { ImportedLayer } from "./geojsonSlice";
 
 
 
@@ -22,7 +24,8 @@ export type AppStore = GlobeSlice &
     FilterSlice &
     DataSlice &
     ConfigSlice &
-    FavoritesSlice;
+    FavoritesSlice &
+    GeoJsonSlice;
 
 export const useStore = create<AppStore>((...args) => ({
     ...createGlobeSlice(...args),
@@ -33,4 +36,6 @@ export const useStore = create<AppStore>((...args) => ({
     ...createDataSlice(...args),
     ...createConfigSlice(...args),
     ...createFavoritesSlice(...args),
+    ...createGeoJsonSlice(...args),
 }));
+
