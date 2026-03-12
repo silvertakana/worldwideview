@@ -26,7 +26,7 @@ export class CameraPlugin implements WorldPlugin {
 
     requiresConfiguration(settingsRaw: any): boolean {
         const s = { sourceType: "default", ...(settingsRaw || {}) };
-        if (s.sourceType === "default") return false;
+        if (s.sourceType === "default" || s.sourceType === "traffic") return false;
         if (s.sourceType === "url" && !s.customUrl) return true;
         if (s.sourceType === "file" && !s.customData) return true;
         return false;
@@ -45,7 +45,8 @@ export class CameraPlugin implements WorldPlugin {
             return [];
         }
 
-        const isAutoDefault = settings.sourceType === "default" && !this.lastActionId && !this.sourceBuckets["default"];
+        const isAutoDefault = (settings.sourceType === "default" || settings.sourceType === "traffic")
+            && !this.lastActionId && !this.sourceBuckets["default"];
         if (!isAutoDefault && (settings.action !== "load" || settings.actionId === this.lastActionId)) {
             return this.getAllEntities();
         }
@@ -54,6 +55,8 @@ export class CameraPlugin implements WorldPlugin {
         try {
             if (settings.sourceType === "default") {
                 await this.loadDefaultSource();
+            } else if (settings.sourceType === "traffic") {
+                await this.loadTrafficCameras();
             } else if (settings.sourceType === "url") {
                 await this.loadUrlSource(settings);
             } else if (settings.sourceType === "file") {
@@ -73,6 +76,23 @@ export class CameraPlugin implements WorldPlugin {
             this.sourceBuckets["default"] = geojson.features.map(
                 (f: any, i: number) => mapGeoJsonFeature(f, i, "default"),
             );
+        }
+        this.pushUpdate();
+    }
+
+    /** Load traffic cameras from the server-side cached API. */
+    private async loadTrafficCameras(): Promise<void> {
+        try {
+            const res = await fetch("/api/camera/traffic");
+            if (!res.ok) throw new Error(`API returned ${res.status}`);
+            const data = await res.json();
+            if (data.cameras && Array.isArray(data.cameras)) {
+                this.sourceBuckets["default"] = data.cameras.map(
+                    (f: any, i: number) => mapGeoJsonFeature(f, i, "traffic"),
+                );
+            }
+        } catch (err) {
+            console.warn("[CameraPlugin] Traffic cameras API failed:", err);
         }
         this.pushUpdate();
     }

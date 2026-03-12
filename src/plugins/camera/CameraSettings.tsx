@@ -2,7 +2,7 @@
 
 import React, { ChangeEvent } from "react";
 import { useStore } from "@/core/state/store";
-import { Upload, Link as LinkIcon, Database, RotateCcw } from "lucide-react";
+import { Upload, Link as LinkIcon, Database, RotateCcw, TrafficCone } from "lucide-react";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { inputGroupStyle, labelStyle, inputStyle, loadButtonStyle, sourceTabStyle } from "./cameraSettingsStyles";
 
@@ -13,7 +13,7 @@ export const CameraSettings: React.FC<{ pluginId: string }> = ({ pluginId }) => 
     const setHighlightLayerId = useStore((s) => s.setHighlightLayerId);
     const [isLoading, setIsLoading] = React.useState(false);
 
-    const handleSourceTypeChange = (type: "default" | "url" | "file") => {
+    const handleSourceTypeChange = (type: "default" | "traffic" | "url" | "file") => {
         updatePluginSettings(pluginId, { sourceType: type });
         setHighlightLayerId(null);
     };
@@ -64,7 +64,7 @@ export const CameraSettings: React.FC<{ pluginId: string }> = ({ pluginId }) => 
             </div>
 
             <div style={{ display: "flex", gap: "var(--space-xs)" }}>
-                {([["default", Database, "Default"], ["url", LinkIcon, "URL"], ["file", Upload, "File"]] as const).map(
+                {([["default", Database, "Default"], ["traffic", TrafficCone, "Traffic Cams"], ["url", LinkIcon, "URL"], ["file", Upload, "File"]] as const).map(
                     ([type, Icon, label]) => (
                         <button key={type} onClick={() => handleSourceTypeChange(type as any)} style={sourceTabStyle(settings.sourceType === type)}>
                             <Icon size={14} />
@@ -77,6 +77,15 @@ export const CameraSettings: React.FC<{ pluginId: string }> = ({ pluginId }) => 
             {settings.sourceType === "default" && (
                 <div style={inputGroupStyle}>
                     <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Built-in camera dataset</div>
+                    <button onClick={handleLoadData} disabled={isLoading} style={loadButtonStyle(isLoading)}>
+                        {isLoading ? "Loading..." : settings.loaded ? "Reload" : "Load"}
+                    </button>
+                </div>
+            )}
+
+            {settings.sourceType === "traffic" && (
+                <div style={inputGroupStyle}>
+                    <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>DOT traffic cameras (GDOT + more)</div>
                     <button onClick={handleLoadData} disabled={isLoading} style={loadButtonStyle(isLoading)}>
                         {isLoading ? "Loading..." : settings.loaded ? "Reload" : "Load"}
                     </button>

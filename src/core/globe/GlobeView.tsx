@@ -122,7 +122,8 @@ export default function GlobeView() {
         // Initialize Google Photorealistic 3D Tiles once
         try {
             const tileset = await createGooglePhotorealistic3DTileset({
-                key: process.env.GOOGLE_MAPS_API_KEY || undefined,
+                key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || undefined,
+                onlyUsingWithGoogleGeocoder: true,
             });
             tileset.maximumScreenSpaceError = sceneSettings.maxScreenSpaceError;
             viewer.scene.primitives.add(tileset);
