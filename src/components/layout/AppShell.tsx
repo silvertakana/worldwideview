@@ -15,6 +15,7 @@ import { MaritimePlugin } from "@/plugins/maritime";
 import { WildfirePlugin } from "@/plugins/wildfire";
 import { BordersPlugin } from "@/plugins/borders";
 import { CameraPlugin } from "@/plugins/camera";
+import { MilitaryPlugin } from "@/plugins/military";
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { PanelToggleArrows } from "@/components/layout/PanelToggleArrows";
@@ -45,6 +46,7 @@ export function AppShell() {
             pluginRegistry.register(new WildfirePlugin());
             pluginRegistry.register(new BordersPlugin());
             pluginRegistry.register(new CameraPlugin());
+            pluginRegistry.register(new MilitaryPlugin());
 
             await pluginManager.init();
 
