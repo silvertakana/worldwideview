@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 // Set a test secret before importing the module
 beforeEach(() => {
-    process.env.NEXTAUTH_SECRET = "test-secret-at-least-32-chars-long!!";
+    process.env.AUTH_SECRET = "test-secret-at-least-32-chars-long!!";
 });
 
 import { issueMarketplaceToken, verifyMarketplaceToken } from "./marketplaceToken";
