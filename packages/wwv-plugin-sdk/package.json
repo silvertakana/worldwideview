@@ -1,0 +1,20 @@
+{
+  "name": "@worldwideview/wwv-plugin-sdk",
+  "version": "1.0.0",
+  "description": "Types and interfaces for building WorldWideView plugins",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["worldwideview-plugin", "wwv-plugin-sdk"],
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/react": "^19"
+  }
+}

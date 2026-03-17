@@ -29,7 +29,10 @@ export async function validateMarketplaceAuth(
 
         // 3. Fall back to legacy static bridge token
         const bridgeToken = process.env.WWV_BRIDGE_TOKEN;
-        if (bridgeToken && bearer === bridgeToken) return null;
+        if (bridgeToken && bearer === bridgeToken) {
+            console.warn("[Auth] Legacy WWV_BRIDGE_TOKEN used — migrate to session or marketplace JWT");
+            return null;
+        }
     }
 
     return NextResponse.json(

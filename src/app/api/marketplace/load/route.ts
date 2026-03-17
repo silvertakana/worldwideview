@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { handlePreflight, withCors } from "@/lib/marketplace/cors";
 import { validateManifest } from "@/core/plugins/validateManifest";
+import { validateMarketplaceAuth } from "@/lib/marketplace/auth";
 import type { PluginManifest } from "@/core/plugins/PluginManifest";
 
 export async function OPTIONS(request: Request) {
@@ -12,9 +13,11 @@ export async function OPTIONS(request: Request) {
  * Returns manifests of all installed marketplace plugins that are valid
  * and need dynamic loading (i.e. not built-in plugins already in AppShell).
  * Called by the client at startup to load installed plugins.
- * No auth required — this is internal.
  */
 export async function GET(request: Request) {
+    const authError = await validateMarketplaceAuth(request);
+    if (authError) return withCors(authError, request);
+
     try {
         const records = await prisma.installedPlugin.findMany();
 

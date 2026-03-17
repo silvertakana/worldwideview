@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
-import { validateBridgeToken } from "../../../../lib/marketplace/auth";
-import { upsertPlugin } from "../../../../lib/marketplace/repository";
-import { handlePreflight, withCors } from "../../../../lib/marketplace/cors";
+import { validateMarketplaceAuth } from "@/lib/marketplace/auth";
+import { upsertPlugin } from "@/lib/marketplace/repository";
+import { handlePreflight, withCors } from "@/lib/marketplace/cors";
+import { validateManifest } from "@/core/plugins/validateManifest";
 
 export async function OPTIONS(request: Request) {
     return handlePreflight(request);
 }
 
 export async function POST(request: Request) {
-    const authError = validateBridgeToken(request);
+    const authError = await validateMarketplaceAuth(request);
     if (authError) return withCors(authError, request);
 
     try {
@@ -25,7 +26,20 @@ export async function POST(request: Request) {
             );
         }
 
-        // Upsert: install or update if already exists (e.g. manifest changed)
+        // Validate manifest if provided
+        if (manifest) {
+            const validation = validateManifest(manifest);
+            if (!validation.valid) {
+                return withCors(
+                    NextResponse.json(
+                        { error: "Invalid manifest", details: validation.errors },
+                        { status: 400 },
+                    ),
+                    request,
+                );
+            }
+        }
+
         const config = manifest ? JSON.stringify(manifest) : "{}";
         const record = await upsertPlugin(pluginId, version || "1.0.0", config);
 

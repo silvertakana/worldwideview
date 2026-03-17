@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
 /** Minimum length sanity check before attempting verification. */
 const MIN_KEY_LENGTH = 20;
@@ -26,6 +27,11 @@ async function verifyNasaFirms(key: string): Promise<{ valid: boolean; error?: s
 }
 
 export async function POST(request: Request) {
+    const session = await auth();
+    if (!session?.user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     let body: { service?: string; key?: string };
     try {
         body = await request.json();
