@@ -1,0 +1,30 @@
+{
+  "name": "@worldwideview/wwv-plugin-embassies",
+  "version": "1.0.0",
+  "description": "WorldWideView plugin — Global embassies, consulates, and diplomatic missions from OpenStreetMap",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "worldwideview",
+    "worldwideview-plugin",
+    "wwv-plugin-embassies",
+    "embassies"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/silvertakana/worldwideview.git",
+    "directory": "packages/wwv-plugin-embassies"
+  },
+  "homepage": "https://github.com/silvertakana/worldwideview#readme",
+  "bugs": {
+    "url": "https://github.com/silvertakana/worldwideview/issues"
+  },
+  "license": "ISC",
+  "author": "WorldWideView",
+  "peerDependencies": {
+    "@worldwideview/wwv-plugin-sdk": "*"
+  }
+}
