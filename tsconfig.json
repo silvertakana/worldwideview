@@ -26,6 +26,7 @@
       "@worldwideview/wwv-plugin-wildfire": ["./packages/wwv-plugin-wildfire/src"],
       "@worldwideview/wwv-plugin-borders": ["./packages/wwv-plugin-borders/src"],
       "@worldwideview/wwv-plugin-camera": ["./packages/wwv-plugin-camera/src"],
+      "@worldwideview/wwv-plugin-camera/*": ["./packages/wwv-plugin-camera/src/*"],
       "@worldwideview/wwv-plugin-military": ["./packages/wwv-plugin-military/src"]
     }
   },

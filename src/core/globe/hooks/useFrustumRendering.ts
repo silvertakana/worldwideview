@@ -9,7 +9,7 @@
 import { useEffect, useRef } from "react";
 import type { Viewer as CesiumViewer } from "cesium";
 import type { GeoEntity } from "@/core/plugins/PluginTypes";
-import { FrustumRenderer } from "@/plugins/camera/FrustumRenderer";
+import { FrustumRenderer } from "@worldwideview/wwv-plugin-camera/FrustumRenderer";
 
 export function useFrustumRendering(
     viewer: CesiumViewer | null,
