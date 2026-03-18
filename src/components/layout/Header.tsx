@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { Globe } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { isDemo, DEMO_ADMIN_ROLE } from "@/core/edition";
 
 import { SearchBar } from "./SearchBar";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
@@ -29,6 +30,15 @@ export function Header() {
     const setTimeWindow = useStore((s) => s.setTimeWindow);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [isDemoAdmin, setIsDemoAdmin] = useState(false);
+
+    useEffect(() => {
+        if (!isDemo) return;
+        fetch("/api/auth/session")
+            .then((r) => r.json())
+            .then((s) => setIsDemoAdmin(s?.user?.role === DEMO_ADMIN_ROLE))
+            .catch(() => {});
+    }, []);
 
     useEffect(() => {
         const el = scrollContainerRef.current;
@@ -52,6 +62,7 @@ export function Header() {
                 <div className="header__brand">
                     <div className="header__logo header__logo--compact">WWV</div>
                     <span className="alpha-badge">ALPHA</span>
+                    {isDemoAdmin && <span className="alpha-badge" style={{ background: "var(--accent-orange, #f59e0b)" }}>ADMIN</span>}
                 </div>
 
                 <div className="header__search-center">
@@ -77,6 +88,7 @@ export function Header() {
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <div className="header__logo">WorldWideView</div>
                         <span className="alpha-badge">ALPHA</span>
+                        {isDemoAdmin && <span className="alpha-badge" style={{ background: "var(--accent-orange, #f59e0b)" }}>ADMIN</span>}
                     </div>
                     <div className="header__subtitle">Geospatial Intelligence</div>
                 </div>
