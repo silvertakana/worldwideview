@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { loginAction } from "./actions";
 import styles from "../setup/setup.module.css";
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -19,7 +21,9 @@ export default function LoginPage() {
         const result = await loginAction(formData);
 
         if (result.success) {
-            router.push("/");
+            // Follow callbackUrl if it's a safe same-origin path
+            const target = callbackUrl?.startsWith("/") ? callbackUrl : "/";
+            router.push(target);
             router.refresh();
         } else {
             setError(result.error ?? "Login failed.");

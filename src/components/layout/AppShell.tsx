@@ -45,12 +45,34 @@ export function AppShell() {
         const startPlatform = async () => {
             console.log("[AppShell] Initializing Platform...");
 
-            pluginRegistry.register(new AviationPlugin());
-            pluginRegistry.register(new MaritimePlugin());
-            pluginRegistry.register(new WildfirePlugin());
-            pluginRegistry.register(new BordersPlugin());
-            pluginRegistry.register(new CameraPlugin());
-            pluginRegistry.register(new MilitaryPlugin());
+            // Fetch disabled built-in plugins before registration
+            let disabledIds = new Set<string>();
+            try {
+                const res = await fetch("/api/marketplace/disabled-builtins");
+                if (res.ok) {
+                    const data = await res.json();
+                    disabledIds = new Set<string>(data.disabledIds ?? []);
+                }
+            } catch {
+                // Non-critical — load all built-ins if endpoint fails
+            }
+
+            const builtIns = [
+                new AviationPlugin(),
+                new MaritimePlugin(),
+                new WildfirePlugin(),
+                new BordersPlugin(),
+                new CameraPlugin(),
+                new MilitaryPlugin(),
+            ];
+
+            for (const plugin of builtIns) {
+                if (disabledIds.has(plugin.id)) {
+                    console.log(`[AppShell] Skipping disabled built-in: ${plugin.id}`);
+                    continue;
+                }
+                pluginRegistry.register(plugin);
+            }
 
             await pluginManager.init();
 

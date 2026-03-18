@@ -109,63 +109,65 @@ export function LayerPanel() {
             </div>
 
             {activeTab === "layers" && (
-                <>
-                    {Object.entries(grouped).map(([category, plugins]) => (
-                        <div key={category} style={{ marginBottom: "var(--space-lg)" }}>
-                            <div
-                                style={{
-                                    fontSize: 10,
-                                    fontWeight: 600,
-                                    letterSpacing: "0.08em",
-                                    textTransform: "uppercase",
-                                    color: "var(--text-muted)",
-                                    marginBottom: "var(--space-sm)",
-                                    paddingLeft: "var(--space-md)",
-                                }}
-                            >
-                                {categoryLabels[category] || category}
-                            </div>
-                            {plugins.map((managed) => {
-                                const isEnabled = layers[managed.plugin.id]?.enabled || false;
-                                const isLoading = layers[managed.plugin.id]?.loading || false;
-                                const count = (entitiesByPlugin[managed.plugin.id] || []).length;
+                <div className="layers-tab-content">
+                    <div className="layers-tab-content__list">
+                        {Object.entries(grouped).map(([category, plugins]) => (
+                            <div key={category} style={{ marginBottom: "var(--space-lg)" }}>
+                                <div
+                                    style={{
+                                        fontSize: 10,
+                                        fontWeight: 600,
+                                        letterSpacing: "0.08em",
+                                        textTransform: "uppercase",
+                                        color: "var(--text-muted)",
+                                        marginBottom: "var(--space-sm)",
+                                        paddingLeft: "var(--space-md)",
+                                    }}
+                                >
+                                    {categoryLabels[category] || category}
+                                </div>
+                                {plugins.map((managed) => {
+                                    const isEnabled = layers[managed.plugin.id]?.enabled || false;
+                                    const isLoading = layers[managed.plugin.id]?.loading || false;
+                                    const count = (entitiesByPlugin[managed.plugin.id] || []).length;
 
-                                return (
-                                    <div
-                                        key={managed.plugin.id}
-                                        className="layer-item"
-                                        onClick={() => handleToggle(managed.plugin.id)}
-                                    >
-                                        <span className="layer-item__icon">
-                                            {typeof managed.plugin.icon === "string" ? (
-                                                managed.plugin.icon
-                                            ) : (
-                                                <managed.plugin.icon size={18} />
-                                            )}
-                                        </span>
-                                        <div className="layer-item__info">
-                                            <div className="layer-item__name">{managed.plugin.name}</div>
-                                            <div className="layer-item__desc">
-                                                {managed.plugin.description}
-                                            </div>
-                                        </div>
-                                        {isEnabled && isLoading && (
-                                            <span className="layer-item__spinner" aria-label="Loading" />
-                                        )}
-                                        {isEnabled && !isLoading && count > 0 && (
-                                            <span className="layer-item__count">
-                                                {count.toLocaleString()}
-                                            </span>
-                                        )}
+                                    return (
                                         <div
-                                            className={`layer-item__toggle ${isEnabled ? "layer-item__toggle--on" : ""
-                                                }`}
-                                        />
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ))}
+                                            key={managed.plugin.id}
+                                            className="layer-item"
+                                            onClick={() => handleToggle(managed.plugin.id)}
+                                        >
+                                            <span className="layer-item__icon">
+                                                {typeof managed.plugin.icon === "string" ? (
+                                                    managed.plugin.icon
+                                                ) : (
+                                                    <managed.plugin.icon size={18} />
+                                                )}
+                                            </span>
+                                            <div className="layer-item__info">
+                                                <div className="layer-item__name">{managed.plugin.name}</div>
+                                                <div className="layer-item__desc">
+                                                    {managed.plugin.description}
+                                                </div>
+                                            </div>
+                                            {isEnabled && isLoading && (
+                                                <span className="layer-item__spinner" aria-label="Loading" />
+                                            )}
+                                            {isEnabled && !isLoading && count > 0 && (
+                                                <span className="layer-item__count">
+                                                    {count.toLocaleString()}
+                                                </span>
+                                            )}
+                                            <div
+                                                className={`layer-item__toggle ${isEnabled ? "layer-item__toggle--on" : ""
+                                                    }`}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ))}
+                    </div>
                     <a
                         href="https://discord.gg/k3F2N4eKnr"
                         target="_blank"
@@ -176,7 +178,7 @@ export function LayerPanel() {
                         <DiscordIcon size={18} />
                         <span>Join our Discord</span>
                     </a>
-                </>
+                </div>
             )}
 
             {activeTab === "imagery" && (

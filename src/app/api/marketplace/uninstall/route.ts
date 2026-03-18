@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { validateMarketplaceAuth } from "@/lib/marketplace/auth";
-import { uninstallPlugin } from "@/lib/marketplace/repository";
+import { uninstallPlugin, disableBuiltinPlugin } from "@/lib/marketplace/repository";
 import { handlePreflight, withCors } from "@/lib/marketplace/cors";
+import { BUILT_IN_PLUGIN_IDS } from "@/lib/marketplace/builtinPlugins";
 
 export async function OPTIONS(request: Request) {
     return handlePreflight(request);
 }
+
+const builtInSet = new Set<string>(BUILT_IN_PLUGIN_IDS);
 
 export async function POST(request: Request) {
     const authError = await validateMarketplaceAuth(request);
@@ -18,6 +21,15 @@ export async function POST(request: Request) {
         if (!pluginId || typeof pluginId !== "string") {
             return withCors(
                 NextResponse.json({ error: "Missing required field: pluginId" }, { status: 400 }),
+                request,
+            );
+        }
+
+        // Built-in plugins are disabled (not deleted)
+        if (builtInSet.has(pluginId)) {
+            await disableBuiltinPlugin(pluginId);
+            return withCors(
+                NextResponse.json({ status: "disabled", pluginId }),
                 request,
             );
         }
@@ -43,3 +55,4 @@ export async function POST(request: Request) {
         );
     }
 }
+

@@ -1,5 +1,8 @@
 import { prisma } from "../db";
 
+/** Sentinel version value marking a built-in plugin as disabled. */
+export const DISABLED_VERSION = "disabled";
+
 /**
  * Get all installed marketplace plugins.
  */
@@ -55,3 +58,23 @@ export async function uninstallPlugin(pluginId: string) {
     });
     return 1;
 }
+
+/**
+ * Mark a built-in plugin as disabled by upserting a record
+ * with version = "disabled". This prevents it from loading.
+ */
+export async function disableBuiltinPlugin(pluginId: string) {
+    return upsertPlugin(pluginId, DISABLED_VERSION, "{}");
+}
+
+/**
+ * Get the set of built-in plugin IDs that have been disabled.
+ */
+export async function getDisabledBuiltinIds(): Promise<Set<string>> {
+    const records = await prisma.installedPlugin.findMany({
+        where: { version: DISABLED_VERSION },
+        select: { pluginId: true },
+    });
+    return new Set(records.map((r) => r.pluginId));
+}
+

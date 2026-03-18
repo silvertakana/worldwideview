@@ -239,15 +239,27 @@ html, body {
   box-shadow: var(--glow-cyan);
 }
 
+/* ─── Layers Tab Content ──────────────────────────────────── */
+.layers-tab-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.layers-tab-content__list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
 /* ─── Discord Sidebar Link ────────────────────────────────── */
 .discord-sidebar-link {
-  position: sticky;
-  bottom: 0;
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-md) var(--space-lg);
-  margin-top: auto;
+  margin-top: var(--space-md);
   background: linear-gradient(135deg, rgba(88, 101, 242, 0.15), rgba(88, 101, 242, 0.05));
   border: 1px solid rgba(88, 101, 242, 0.25);
   border-radius: var(--radius-md);
@@ -257,7 +269,6 @@ html, body {
   font-weight: 500;
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-smooth);
-  z-index: 10;
   flex-shrink: 0;
 }
 
@@ -277,7 +288,9 @@ html, body {
   width: 280px;
   z-index: 50;
   padding: var(--space-lg);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   transition: transform var(--duration-slow) var(--ease-smooth),
               opacity var(--duration-slow) var(--ease-smooth);
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { validateMarketplaceAuth } from "@/lib/marketplace/auth";
-import { getInstalledPlugins } from "@/lib/marketplace/repository";
+import { getInstalledPlugins, DISABLED_VERSION } from "@/lib/marketplace/repository";
 import { handlePreflight, withCors } from "@/lib/marketplace/cors";
 import { BUILT_IN_PLUGIN_IDS } from "@/lib/marketplace/builtinPlugins";
 
@@ -14,11 +14,14 @@ export async function GET(request: Request) {
 
     try {
         const dbPlugins = await getInstalledPlugins();
-        const dbIds = new Set(dbPlugins.map((p) => p.pluginId));
+        const dbMap = new Map(dbPlugins.map((p) => [p.pluginId, p]));
 
-        // Merge built-in plugins that aren't already in the DB
+        // Collect active DB plugins (exclude disabled markers)
+        const activeDbPlugins = dbPlugins.filter((p) => p.version !== DISABLED_VERSION);
+
+        // Add built-in plugins that aren't in the DB at all (default = installed)
         const builtInRecords = BUILT_IN_PLUGIN_IDS
-            .filter((id) => !dbIds.has(id))
+            .filter((id) => !dbMap.has(id))
             .map((id) => ({
                 pluginId: id,
                 version: "built-in",
@@ -26,7 +29,7 @@ export async function GET(request: Request) {
                 installedAt: "",
             }));
 
-        const plugins = [...dbPlugins, ...builtInRecords];
+        const plugins = [...activeDbPlugins, ...builtInRecords];
         return withCors(NextResponse.json({ plugins }), request);
     } catch (err) {
         console.error("[marketplace/status] Error:", err);
@@ -36,3 +39,4 @@ export async function GET(request: Request) {
         );
     }
 }
+
