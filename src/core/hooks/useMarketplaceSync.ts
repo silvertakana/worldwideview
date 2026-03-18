@@ -8,6 +8,7 @@ import {
   getApprovedUnverifiedIds,
   approveUnverifiedPlugin,
 } from "@/lib/marketplace/trustedPlugins";
+import { isDemo } from "@/core/edition";
 
 /**
  * Syncs marketplace-installed plugins on window focus.
@@ -94,7 +95,8 @@ export function useMarketplaceSync() {
                 if (loadedIds.current.has(manifest.id)) continue;
 
                 // Unverified + not yet approved → collect for batch review
-                if (manifest.trust === "unverified" && !approved.has(manifest.id)) {
+                // On demo, skip the gate — admin already approved by installing
+                if (!isDemo && manifest.trust === "unverified" && !approved.has(manifest.id)) {
                     newPending.push(manifest);
                     continue;
                 }
