@@ -7,7 +7,7 @@
  * uncommenting the AviationHistory model in schema.prisma.
  */
 
-export async function getLatestFromDb() {
+export async function getLatestFromDb(): Promise<{ states: any[]; time: number } | null> {
     return null;
 }
 
