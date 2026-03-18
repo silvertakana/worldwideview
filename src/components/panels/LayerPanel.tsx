@@ -6,7 +6,7 @@ import { useStore } from "@/core/state/store";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { ImageryPicker } from "./ImageryPicker";
-import { PluginIcon } from "@/components/common/PluginIcon";
+import { LayerItem } from "./LayerItem";
 import { FavoritesTab } from "./FavoritesTab";
 import { ImportPanel } from "@/plugins/geojson/ImportPanel";
 import "@/plugins/geojson/geojson-importer.css";
@@ -132,37 +132,14 @@ export function LayerPanel() {
                                     const count = (entitiesByPlugin[managed.plugin.id] || []).length;
 
                                     return (
-                                        <div
+                                        <LayerItem
                                             key={managed.plugin.id}
-                                            className="layer-item"
-                                            onClick={() => handleToggle(managed.plugin.id)}
-                                        >
-                                            <span className="layer-item__icon">
-                                                {typeof managed.plugin.icon === "string" ? (
-                                                    managed.plugin.icon
-                                                ) : (
-                                                    <managed.plugin.icon size={18} />
-                                                )}
-                                            </span>
-                                            <div className="layer-item__info">
-                                                <div className="layer-item__name">{managed.plugin.name}</div>
-                                                <div className="layer-item__desc">
-                                                    {managed.plugin.description}
-                                                </div>
-                                            </div>
-                                            {isEnabled && isLoading && (
-                                                <span className="layer-item__spinner" aria-label="Loading" />
-                                            )}
-                                            {isEnabled && !isLoading && count > 0 && (
-                                                <span className="layer-item__count">
-                                                    {count.toLocaleString()}
-                                                </span>
-                                            )}
-                                            <div
-                                                className={`layer-item__toggle ${isEnabled ? "layer-item__toggle--on" : ""
-                                                    }`}
-                                            />
-                                        </div>
+                                            plugin={managed.plugin}
+                                            isEnabled={isEnabled}
+                                            isLoading={isLoading}
+                                            entityCount={count}
+                                            onToggle={() => handleToggle(managed.plugin.id)}
+                                        />
                                     );
                                 })}
                             </div>
