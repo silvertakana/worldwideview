@@ -1,15 +1,22 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { isDemo } from "@/core/edition";
 
 /**
  * Route protection proxy.
  * - /setup, /login, /api/* → public
  * - Everything else → requires valid JWT session
  * - If no users exist → redirect to /setup
+ * - Demo edition → everything is public (no login required)
  */
 export default async function proxy(req: NextRequest) {
     const path = req.nextUrl.pathname;
+
+    // Demo edition: fully public, no auth required
+    if (isDemo) {
+        return NextResponse.next();
+    }
 
     // Static assets, API routes, data files — always pass through
     if (
@@ -56,3 +63,4 @@ export default async function proxy(req: NextRequest) {
 export const config = {
     matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
+

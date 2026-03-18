@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import { isDemo } from "@/core/edition";
 
 /**
  * Lightweight auth config for proxy.ts (middleware).
@@ -10,6 +11,9 @@ export const authConfig: NextAuthConfig = {
     },
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
+            // Demo edition: no auth required anywhere
+            if (isDemo) return true;
+
             const isLoggedIn = !!auth?.user;
             const isSetup = nextUrl.pathname.startsWith("/setup");
             const isLogin = nextUrl.pathname.startsWith("/login");
@@ -27,3 +31,4 @@ export const authConfig: NextAuthConfig = {
     },
     providers: [], // Added in auth.ts
 };
+
