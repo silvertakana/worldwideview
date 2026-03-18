@@ -5,12 +5,20 @@ import { handlePreflight, withCors } from "@/lib/marketplace/cors";
 import { validateManifest } from "@/core/plugins/validateManifest";
 import { marketplaceApiLimiter } from "@/lib/rateLimiters";
 import { getClientIp } from "@/lib/rateLimit";
+import { isPluginInstallEnabled } from "@/core/edition";
 
 export async function OPTIONS(request: Request) {
     return handlePreflight(request);
 }
 
 export async function POST(request: Request) {
+    if (!isPluginInstallEnabled) {
+        return withCors(
+            NextResponse.json({ error: "Plugin installation is disabled on this instance" }, { status: 403 }),
+            request,
+        );
+    }
+
     const rateLimited = marketplaceApiLimiter.check(getClientIp(request));
     if (rateLimited) return withCors(rateLimited, request);
 

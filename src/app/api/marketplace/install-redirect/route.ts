@@ -7,6 +7,7 @@ import type { PluginManifest } from "@/core/plugins/PluginManifest";
 import { validateManifest } from "@/core/plugins/validateManifest";
 import { installLimiter } from "@/lib/rateLimiters";
 import { getClientIp } from "@/lib/rateLimit";
+import { isPluginInstallEnabled } from "@/core/edition";
 
 const ALLOWED_REDIRECT_HOSTS = new Set([
     "localhost",
@@ -33,6 +34,13 @@ export async function GET(request: NextRequest) {
     const redirectTo = searchParams.get("redirectTo") ?? "";
 
     try {
+        if (!isPluginInstallEnabled) {
+            return NextResponse.json(
+                { error: "Plugin installation is disabled on this instance" },
+                { status: 403 },
+            );
+        }
+
         const rateLimited = installLimiter.check(getClientIp(request));
         if (rateLimited) return rateLimited;
 
