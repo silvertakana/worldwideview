@@ -22,6 +22,13 @@ ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
+# Copy Prisma schema, migrations, and generated client for runtime
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/src/generated ./src/generated
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
+
 # Copy standalone server output
 COPY --from=builder /app/.next/standalone ./
 
@@ -29,6 +36,11 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["./docker-entrypoint.sh"]
+
