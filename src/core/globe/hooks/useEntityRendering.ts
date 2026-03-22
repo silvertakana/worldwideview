@@ -52,6 +52,9 @@ export function useEntityRendering(
         // Rebuild cached array after render
         cachedAnimatablesRef.current.current = Array.from(animatablesMapRef.current.values());
 
+        // Signal Cesium that the scene needs a re-render (requestRenderMode is on)
+        viewer.scene.requestRender();
+
         return () => {
             if (!viewer.isDestroyed()) {
                 viewer.scene.preUpdate.removeEventListener(updatePositions);

@@ -9,6 +9,8 @@ const DROP_DURATION_MS = 600;
 const DROP_START_PX = -80;
 /** Billboard image: gold map-pin SVG encoded as data URI */
 const PIN_IMAGE = buildPinDataUri();
+/** Scratch offset reused every animation frame to avoid GC churn */
+const scratchOffset = new Cartesian2();
 
 let _pinEntity: ReturnType<CesiumViewer["entities"]["add"]> | null = null;
 let _animFrameId: number | null = null;
@@ -53,16 +55,19 @@ export function showSearchPin(viewer: CesiumViewer, lat: number, lon: number) {
         if (elapsed < DROP_DURATION_MS) {
             const t = elapsed / DROP_DURATION_MS;
             const y = easeOutBounce(t) * DROP_START_PX * -1 + DROP_START_PX;
-            entity.billboard.pixelOffset = new Cartesian2(0, y) as any;
+            scratchOffset.x = 0; scratchOffset.y = y;
+            entity.billboard.pixelOffset = scratchOffset as any;
         }
         // Phase 2: Hold visible (DROP_DURATION_MS → TOTAL_DURATION_MS - 600)
         else if (elapsed < TOTAL_DURATION_MS - 600) {
-            entity.billboard.pixelOffset = new Cartesian2(0, 0) as any;
+            scratchOffset.x = 0; scratchOffset.y = 0;
+            entity.billboard.pixelOffset = scratchOffset as any;
         }
         // Phase 3: Fade out (last 600ms)
         else if (elapsed < TOTAL_DURATION_MS) {
             const fadeT = (elapsed - (TOTAL_DURATION_MS - 600)) / 600;
-            entity.billboard.pixelOffset = new Cartesian2(0, 0) as any;
+            scratchOffset.x = 0; scratchOffset.y = 0;
+            entity.billboard.pixelOffset = scratchOffset as any;
             entity.billboard.color = Color.fromAlpha(Color.WHITE, 1 - fadeT) as any;
         }
         // Done

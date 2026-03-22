@@ -2,6 +2,7 @@
 // @refresh reset
 
 import React, { useEffect, useRef, useCallback, useMemo, useState } from "react";
+import type { Viewer as CesiumViewer } from "cesium";
 import { Viewer } from "resium";
 import {
     Ion,
@@ -10,7 +11,6 @@ import {
     Math as CesiumMath,
     Entity as CesiumEntity,
 } from "cesium";
-import type { Viewer as CesiumViewer } from "cesium";
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import type { GeoEntity, CesiumEntityOptions } from "@/core/plugins/PluginTypes";
@@ -49,13 +49,14 @@ export default function GlobeView() {
     const layers = useStore((s) => s.layers);
     const selectedEntity = useStore((s) => s.selectedEntity);
     const showLabels = layers["borders"]?.enabled ?? false;
-    const sceneSettings = {
-        showFps: useStore((s) => s.mapConfig.showFps),
-        resolutionScale: useStore((s) => s.mapConfig.resolutionScale),
-        msaaSamples: useStore((s) => s.mapConfig.msaaSamples),
-        enableFxaa: useStore((s) => s.mapConfig.enableFxaa),
-        maxScreenSpaceError: useStore((s) => s.mapConfig.maxScreenSpaceError),
-    };
+    const showFps = useStore((s) => s.mapConfig.showFps);
+    const resolutionScale = useStore((s) => s.mapConfig.resolutionScale);
+    const msaaSamples = useStore((s) => s.mapConfig.msaaSamples);
+    const enableFxaa = useStore((s) => s.mapConfig.enableFxaa);
+    const maxScreenSpaceError = useStore((s) => s.mapConfig.maxScreenSpaceError);
+    const sceneSettings = useMemo(() => ({
+        showFps, resolutionScale, msaaSamples, enableFxaa, maxScreenSpaceError,
+    }), [showFps, resolutionScale, msaaSamples, enableFxaa, maxScreenSpaceError]);
     const filters = useStore((s) => s.filters);
     const lockedEntityId = useStore((s) => s.lockedEntityId);
     const setCameraPosition = useStore((s) => s.setCameraPosition);
@@ -109,8 +110,8 @@ export default function GlobeView() {
     // Viewer initialization
     const handleViewerReady = useCallback(async (viewer: CesiumViewer) => {
         viewerRef.current = viewer;
-        viewer.scene.requestRenderMode = false;
-        viewer.scene.maximumRenderTimeChange = Infinity;
+        viewer.scene.requestRenderMode = true;
+        viewer.scene.maximumRenderTimeChange = 0.5;
         viewer.scene.debugShowFramesPerSecond = sceneSettings.showFps;
         viewer.resolutionScale = sceneSettings.resolutionScale;
         viewer.scene.msaaSamples = sceneSettings.msaaSamples;

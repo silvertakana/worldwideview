@@ -4,6 +4,8 @@ import { Cartographic, Math as CesiumMath } from "cesium";
 import { trackEvent } from "@/lib/analytics";
 
 const CAMERA_DEBOUNCE_MS = 2000;
+/** Only fire camera.changed when the view has moved by at least 0.5% */
+const CAMERA_PERCENTAGE_CHANGED = 0.005;
 
 export function useCameraSync(
     viewer: CesiumViewer | null,
@@ -13,8 +15,12 @@ export function useCameraSync(
 ) {
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Camera position sync — uses camera.changed (fires only on meaningful movement)
     useEffect(() => {
         if (!viewer || viewer.isDestroyed() || !viewer.scene || !viewer.camera || !isReady) return;
+
+        // Set the threshold for camera.changed to fire
+        viewer.camera.percentageChanged = CAMERA_PERCENTAGE_CHANGED;
 
         const updateStore = () => {
             const camera = viewer.camera;
@@ -43,6 +49,20 @@ export function useCameraSync(
             }, CAMERA_DEBOUNCE_MS);
         };
 
+        viewer.camera.changed.addEventListener(updateStore);
+
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            if (!viewer.isDestroyed()) {
+                viewer.camera.changed.removeEventListener(updateStore);
+            }
+        };
+    }, [viewer, isReady, setCameraPosition]);
+
+    // FPS counter — needs to run per rendered frame
+    useEffect(() => {
+        if (!viewer || viewer.isDestroyed() || !viewer.scene || !isReady) return;
+
         let frameCount = 0;
         let lastTime = performance.now();
 
@@ -57,15 +77,13 @@ export function useCameraSync(
             }
         };
 
-        viewer.scene.postRender.addEventListener(updateStore);
         viewer.scene.postRender.addEventListener(updateFps);
 
         return () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current);
             if (!viewer.isDestroyed()) {
-                viewer.scene.postRender.removeEventListener(updateStore);
                 viewer.scene.postRender.removeEventListener(updateFps);
             }
         };
-    }, [viewer, isReady, setCameraPosition, setFps]);
+    }, [viewer, isReady, setFps]);
 }
+

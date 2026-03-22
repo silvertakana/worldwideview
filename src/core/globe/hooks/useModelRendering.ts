@@ -25,6 +25,10 @@ const MAX_MODELS = 30;
 /** Distance threshold in meters — closer than this gets a 3D model */
 const MODEL_DISTANCE_M = 80_000; // 80km
 
+/** Scratch objects reused per LOD update to avoid heap allocations */
+const lodScratchHPR = new HeadingPitchRoll();
+const lodScratchMatrix = new Matrix4();
+
 interface ActiveModel {
     model: any;
     entityId: string;
@@ -32,10 +36,14 @@ interface ActiveModel {
 }
 
 function buildModelMatrix(position: Cartesian3, heading: number, scale: number, headingOffset: number = 0): Matrix4 {
-    const hpr = new HeadingPitchRoll(CesiumMath.toRadians(heading + headingOffset), 0, 0);
-    const matrix = Transforms.headingPitchRollToFixedFrame(position, hpr);
-    Matrix4.multiplyByUniformScale(matrix, scale, matrix);
-    return matrix;
+    lodScratchHPR.heading = CesiumMath.toRadians(heading + headingOffset);
+    lodScratchHPR.pitch = 0;
+    lodScratchHPR.roll = 0;
+    Transforms.headingPitchRollToFixedFrame(position, lodScratchHPR,
+        undefined, undefined, lodScratchMatrix);
+    Matrix4.multiplyByUniformScale(lodScratchMatrix, scale, lodScratchMatrix);
+    // Return a clone since the caller stores this in the model
+    return Matrix4.clone(lodScratchMatrix);
 }
 
 export function useModelRendering(

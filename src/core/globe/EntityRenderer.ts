@@ -1,7 +1,7 @@
 import {
     Cartesian3, Color, Ellipsoid,
     PointPrimitiveCollection, BillboardCollection, LabelCollection,
-    VerticalOrigin, DistanceDisplayCondition,
+    VerticalOrigin, DistanceDisplayCondition, NearFarScalar,
 } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
 import type { GeoEntity, CesiumEntityOptions } from "@/core/plugins/PluginTypes";
@@ -60,6 +60,7 @@ export function createLabel(item: AnimatableItem, labels: LabelCollection): void
         verticalOrigin: VerticalOrigin.BOTTOM, pixelOffset: { x: 0, y: -12 } as any,
         show: true, id: clickId,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        translucencyByDistance: new NearFarScalar(1e3, 1.0, 5e5, 0.0),
         distanceDisplayCondition: item.options.distanceDisplayCondition
             ? new DistanceDisplayCondition(item.options.distanceDisplayCondition.near, item.options.distanceDisplayCondition.far)
             : undefined,

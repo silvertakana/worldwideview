@@ -18,6 +18,10 @@ import type { GeoEntity, CesiumEntityOptions } from "@/core/plugins/PluginTypes"
 /** Track pending model loads to prevent duplicate async loads for the same entity */
 const pendingLoads = new Set<string>();
 
+/** Scratch objects reused every frame to avoid heap allocations */
+const scratchHPR = new HeadingPitchRoll();
+const scratchMatrix = new Matrix4();
+
 /**
  * Create a 3D model primitive for an entity and attach it to the scene.
  * This is async because Model.fromGltfAsync needs to download/parse the glTF.
@@ -65,6 +69,7 @@ export async function createModelPrimitive(
 
 /**
  * Update the position and heading of an existing model primitive.
+ * Uses scratch allocations to avoid per-frame heap pressure.
  */
 export function updateModelTransform(
     item: AnimatableItem,
@@ -75,14 +80,16 @@ export function updateModelTransform(
     if (!model || !model.modelMatrix) return;
 
     const offset = item.options.modelHeadingOffset || 0;
-    const headingRad = CesiumMath.toRadians((heading || 0) + offset);
-    const hpr = new HeadingPitchRoll(headingRad, 0, 0);
-    const newMatrix = Transforms.headingPitchRollToFixedFrame(position, hpr);
+    scratchHPR.heading = CesiumMath.toRadians((heading || 0) + offset);
+    scratchHPR.pitch = 0;
+    scratchHPR.roll = 0;
+    Transforms.headingPitchRollToFixedFrame(position, scratchHPR,
+        undefined, undefined, scratchMatrix);
 
     const scale = item.options.modelScale || 1.0;
-    Matrix4.multiplyByUniformScale(newMatrix, scale, newMatrix);
+    Matrix4.multiplyByUniformScale(scratchMatrix, scale, scratchMatrix);
 
-    Matrix4.clone(newMatrix, model.modelMatrix);
+    Matrix4.clone(scratchMatrix, model.modelMatrix);
 }
 
 /**
