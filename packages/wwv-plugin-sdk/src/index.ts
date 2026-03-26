@@ -146,6 +146,7 @@ export interface WorldPlugin {
     getSelectionBehavior?(entity: GeoEntity): SelectionBehavior | null;
     getServerConfig?(): ServerPluginConfig;
     getFilterDefinitions?(): FilterDefinition[];
+    getLegend?(): { label: string; color: string; filterId?: string; filterValue?: string }[];
     getSidebarComponent?(): ComponentType;
     getDetailComponent?(): ComponentType<{ entity: GeoEntity }>;
     getSettingsComponent?(): ComponentType<{ pluginId: string }>;

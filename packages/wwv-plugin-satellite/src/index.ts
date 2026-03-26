@@ -149,6 +149,19 @@ export class SatellitePlugin implements WorldPlugin {
         ];
     }
 
+    getLegend(): { label: string; color: string; filterId?: string; filterValue?: string }[] {
+        return [
+            { label: "Space Stations", color: groupColor("stations"), filterId: "group", filterValue: "stations" },
+            { label: "Brightest Satellites", color: groupColor("visual"), filterId: "group", filterValue: "visual" },
+            { label: "Weather", color: groupColor("weather"), filterId: "group", filterValue: "weather" },
+            { label: "GPS", color: groupColor("gps-ops"), filterId: "group", filterValue: "gps-ops" },
+            { label: "Earth Observation", color: groupColor("resource"), filterId: "group", filterValue: "resource" },
+            { label: "Starlink", color: groupColor("starlink"), filterId: "group", filterValue: "starlink" },
+            { label: "Military", color: groupColor("military"), filterId: "group", filterValue: "military" },
+            { label: "Other", color: groupColor("other"), filterId: "group", filterValue: "other" },
+        ];
+    }
+
     getServerConfig(): ServerPluginConfig {
         return {
             apiBasePath: "/api/satellite",

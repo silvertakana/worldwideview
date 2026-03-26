@@ -56,7 +56,9 @@ interface LayerItemProps {
     isEnabled: boolean;
     isLoading: boolean;
     entityCount: number;
+    isSelected?: boolean;
     onToggle: () => void;
+    onSelect?: () => void;
 }
 
 export function LayerItem({
@@ -64,13 +66,17 @@ export function LayerItem({
     isEnabled,
     isLoading,
     entityCount,
+    isSelected,
     onToggle,
+    onSelect,
 }: LayerItemProps) {
     const trust = getTrust(plugin.id);
 
-
     return (
-        <div className="layer-item" onClick={onToggle}>
+        <div 
+            className={`layer-item ${isSelected ? "layer-item--selected" : ""}`} 
+            onClick={onSelect}
+        >
             <span className="layer-item__icon">
                 <PluginIcon icon={plugin.icon} size={18} />
             </span>
@@ -96,6 +102,10 @@ export function LayerItem({
 
             <div
                 className={`layer-item__toggle ${isEnabled ? "layer-item__toggle--on" : ""}`}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onToggle();
+                }}
             />
         </div>
     );

@@ -20,6 +20,11 @@ export function LayerPanel() {
     const openMobilePanel = useStore((s) => s.openMobilePanel);
     const layers = useStore((s) => s.layers);
     const entitiesByPlugin = useStore((s) => s.entitiesByPlugin);
+    const highlightLayerId = useStore((s) => s.highlightLayerId);
+    const setHighlightLayerId = useStore((s) => s.setHighlightLayerId);
+    const setConfigPanelOpen = useStore((s) => s.setConfigPanelOpen);
+    const setActiveConfigTab = useStore((s) => s.setActiveConfigTab);
+    const setSelectedEntity = useStore((s) => s.setSelectedEntity);
 
     const allPlugins = pluginManager.getAllPlugins();
 
@@ -60,14 +65,17 @@ export function LayerPanel() {
         } else {
             pluginManager.enablePlugin(pluginId);
             useStore.getState().setLayerEnabled(pluginId, true);
+            useStore.getState().setHighlightLayerId(pluginId);
+            useStore.getState().setSelectedEntity(null);
+            useStore.getState().setConfigPanelOpen(true);
 
             // Check if plugin requires configuration
             const managed = pluginManager.getPlugin(pluginId);
             const settings = useStore.getState().dataConfig.pluginSettings[pluginId];
             if (managed?.plugin.requiresConfiguration?.(settings)) {
-                useStore.getState().setConfigPanelOpen(true);
                 useStore.getState().setActiveConfigTab("overlay");
-                useStore.getState().setHighlightLayerId(pluginId);
+            } else {
+                useStore.getState().setActiveConfigTab("intel");
             }
         }
         trackEvent("layer-toggle", { layer: pluginId, enabled: !isEnabled });
@@ -138,7 +146,17 @@ export function LayerPanel() {
                                             isEnabled={isEnabled}
                                             isLoading={isLoading}
                                             entityCount={count}
+                                            isSelected={highlightLayerId === managed.plugin.id}
                                             onToggle={() => handleToggle(managed.plugin.id)}
+                                            onSelect={() => {
+                                                const newId = highlightLayerId === managed.plugin.id ? null : managed.plugin.id;
+                                                setHighlightLayerId(newId);
+                                                if (newId) {
+                                                    setSelectedEntity(null);
+                                                    setConfigPanelOpen(true);
+                                                    setActiveConfigTab("intel");
+                                                }
+                                            }}
                                         />
                                     );
                                 })}

@@ -123,6 +123,13 @@ export class AviationPlugin implements WorldPlugin {
         return { apiBasePath: "/api/aviation", pollingIntervalMs: 5000, requiresAuth: true, historyEnabled: true, availabilityEnabled: true };
     }
 
+    getLegend(): { label: string; color: string; filterId?: string; filterValue?: string }[] {
+        return [
+            { label: "Airborne", color: "#f59e0b", filterId: "state", filterValue: "airborne" },
+            { label: "Grounded", color: "#94a3b8", filterId: "state", filterValue: "grounded" },
+        ];
+    }
+
     getFilterDefinitions(): FilterDefinition[] {
         return [
             { id: "origin_country", label: "Country", type: "select", propertyKey: "origin_country", options: [{ value: "United States", label: "United States" }, { value: "China", label: "China" }, { value: "United Kingdom", label: "United Kingdom" }, { value: "Germany", label: "Germany" }, { value: "France", label: "France" }, { value: "Japan", label: "Japan" }, { value: "Australia", label: "Australia" }, { value: "Canada", label: "Canada" }, { value: "India", label: "India" }, { value: "Brazil", label: "Brazil" }, { value: "Russia", label: "Russia" }, { value: "Turkey", label: "Turkey" }, { value: "South Korea", label: "South Korea" }, { value: "Indonesia", label: "Indonesia" }, { value: "Mexico", label: "Mexico" }] },

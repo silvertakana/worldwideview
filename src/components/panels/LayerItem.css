@@ -10,8 +10,12 @@
   margin-bottom: var(--space-xs);
 }
 
-.layer-item:hover {
+.layer-item:hover, .layer-item--selected {
   background: var(--bg-glass-hover);
+}
+
+.layer-item--selected {
+  box-shadow: inset 2px 0 0 0 var(--accent-cyan);
 }
 
 .layer-item__icon {
