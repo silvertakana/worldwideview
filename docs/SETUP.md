@@ -10,26 +10,16 @@ Follow these steps to set up your development environment and get WorldWideView 
 
 ## Environment Setup
 
-WorldWideView requires several API keys to function correctly. You can copy the provided `.env.example` file to `.env.local` and fill in the values:
+Run the setup script to auto-generate `.env.local` with a secure `AUTH_SECRET`:
 
 ```bash
-cp .env.example .env.local
+npm run setup
 ```
 
-Or manually create a `.env.local` file in the root directory:
+This copies `.env.example` → `.env.local` and fills in `AUTH_SECRET` automatically. You can then optionally add API keys for enhanced features (Cesium Ion, Bing Maps, OpenSky, etc.).
 
-```env
-# Cesium Ion Access Token (Required for terrain and default imagery)
-NEXT_PUBLIC_CESIUM_ION_TOKEN=your_token_here
-
-# Bing Maps API Key (Optional, for high-res imagery)
-NEXT_PUBLIC_BING_MAPS_KEY=your_key_here
-
-# Supabase Configuration (Required for persistence and historical data)
-NEXT_PUBLIC_SUPABASE_URL=your_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
+> [!NOTE]
+> `AUTH_SECRET` must remain stable across restarts. The setup script generates it once and writes it to `.env.local`. Never commit `.env.local` to git.
 
 ## Running Locally
 
@@ -38,13 +28,17 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
    npm install
    ```
 
-2. **Start Dev Server**:
+2. **Generate environment file** (first time only):
+   ```bash
+   npm run setup
+   ```
+
+3. **Start Dev Server**:
    ```bash
    npm run dev
    ```
-   *Note: Our `dev` script automatically runs `predev` to copy Cesium assets to the public directory.*
 
-3. **Open Browser**:
+4. **Open Browser**:
    Navigate to [http://localhost:3000](http://localhost:3000).
 
 ## Folder Structure Explanation

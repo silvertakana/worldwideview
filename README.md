@@ -17,6 +17,7 @@ As a real-time situational awareness platform, it turns raw geospatial signalsâ€
 git clone https://github.com/silvertakana/worldwideview.git
 cd worldwideview
 npm install
+npm run setup   # generates .env.local with AUTH_SECRET
 npm run dev
 ```
 

@@ -32,9 +32,9 @@ This project is licensed under the [Elastic License 2.0](./LICENSE). By submitti
    ```bash
    npm install
    ```
-4. **Copy the environment file** and fill in your API keys:
+4. **Generate environment file** (auto-creates `.env.local` with `AUTH_SECRET`):
    ```bash
-   cp .env.example .env.local
+   npm run setup
    ```
 5. **Start the dev server**:
    ```bash
