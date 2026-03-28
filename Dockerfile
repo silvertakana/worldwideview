@@ -2,7 +2,9 @@
 FROM node:22-alpine AS deps
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
+# Copy workspace package sources BEFORE npm ci
 COPY package.json package-lock.json ./
+COPY packages/ ./packages/
 RUN npm ci
 
 # Stage 2: Install PRODUCTION-ONLY dependencies (for runtime)
@@ -17,9 +19,9 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npx prisma generate
-
 # Create an empty SQLite database with all tables applied
+RUN DATABASE_URL=file:./data/wwv.db npx prisma generate
+
 RUN mkdir -p ./data && DATABASE_URL=file:./data/wwv.db npx prisma migrate deploy
 
 RUN npm run build
