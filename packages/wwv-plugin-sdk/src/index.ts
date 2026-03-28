@@ -6,8 +6,19 @@ import type { ComponentType } from "react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-export function createSvgIconUrl(Icon: ComponentType<any>, props: any = {}): string {
-    const svgString = renderToStaticMarkup(createElement(Icon, props));
+/** Standard SVG icon size (px) used by createSvgIconUrl when no size is given. */
+export const DEFAULT_ICON_SIZE = 32;
+
+/**
+ * Convert a React icon component into a `data:image/svg+xml` URL for Cesium billboards.
+ * Defaults to `DEFAULT_ICON_SIZE` when `props.size` is not specified.
+ */
+export function createSvgIconUrl(
+    Icon: ComponentType<any>,
+    props: Record<string, unknown> = {},
+): string {
+    const merged = { size: DEFAULT_ICON_SIZE, ...props };
+    const svgString = renderToStaticMarkup(createElement(Icon, merged));
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
 }
 
@@ -70,6 +81,8 @@ export interface CesiumEntityOptions {
     labelFont?: string;
     distanceDisplayCondition?: { near: number; far: number };
     disableDepthTestDistance?: number;
+    /** Billboard scale override (default: 0.6). Plugin devs can set this to control icon size. */
+    iconScale?: number;
     modelUrl?: string;
     modelScale?: number;
     modelMinPixelSize?: number;

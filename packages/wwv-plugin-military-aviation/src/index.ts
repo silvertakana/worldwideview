@@ -75,7 +75,7 @@ export class MilitaryPlugin implements WorldPlugin {
             modelUrl: "/airplane/scene.gltf", modelScale: 75, modelMinPixelSize: 16, modelHeadingOffset: 180,
             color: militaryAltitudeToColor(altFeet), rotation: entity.heading,
             labelText: entity.label || undefined, labelFont: "11px JetBrains Mono, monospace",
-            disableDepthTestDistance: undefined,
+            disableDepthTestDistance: 0,
         };
     }
 

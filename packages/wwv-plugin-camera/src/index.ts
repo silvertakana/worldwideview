@@ -144,7 +144,7 @@ export class CameraPlugin implements WorldPlugin {
 
     renderEntity(entity: GeoEntity): CesiumEntityOptions {
         if (!this.iconUrl) {
-            this.iconUrl = createSvgIconUrl(Camera, { color: "#60a5fa", size: 24 });
+            this.iconUrl = createSvgIconUrl(Camera, { color: "#60a5fa" });
         }
         return {
             type: "billboard", iconUrl: this.iconUrl, color: "#60a5fa",

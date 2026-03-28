@@ -29,7 +29,7 @@ export class LighthousesPlugin implements WorldPlugin {
 
     renderEntity(_e: GeoEntity): CesiumEntityOptions {
         if (!this.iconUrl) {
-            this.iconUrl = createSvgIconUrl(Lightbulb, { color: "#facc15", size: 24 });
+            this.iconUrl = createSvgIconUrl(Lightbulb, { color: "#facc15" });
         }
         return { type: "billboard", iconUrl: this.iconUrl, color: "#facc15" };
     }

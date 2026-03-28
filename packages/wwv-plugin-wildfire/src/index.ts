@@ -90,7 +90,7 @@ export class WildfirePlugin implements WorldPlugin {
         else if (tier === 3) distanceDisplayCondition = { near: 0, far: 1000000 };
 
         if (!this.iconUrls[color]) {
-            this.iconUrls[color] = createSvgIconUrl(Flame, { color, size: 24 });
+            this.iconUrls[color] = createSvgIconUrl(Flame, { color });
         }
 
         return {

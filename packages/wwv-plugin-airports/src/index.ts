@@ -29,7 +29,7 @@ export class AirportsPlugin implements WorldPlugin {
 
     renderEntity(_e: GeoEntity): CesiumEntityOptions {
         if (!this.iconUrl) {
-            this.iconUrl = createSvgIconUrl(PlaneTakeoff, { color: "#3b82f6", size: 24 });
+            this.iconUrl = createSvgIconUrl(PlaneTakeoff, { color: "#3b82f6" });
         }
         return { type: "billboard", iconUrl: this.iconUrl, color: "#3b82f6" };
     }

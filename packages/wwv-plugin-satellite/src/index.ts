@@ -114,7 +114,7 @@ export class SatellitePlugin implements WorldPlugin {
         const color = groupColor(group);
 
         if (!this.iconUrls[color]) {
-            this.iconUrls[color] = createSvgIconUrl(Satellite, { color, size: 24 });
+            this.iconUrls[color] = createSvgIconUrl(Satellite, { color });
         }
 
         return {

@@ -96,7 +96,7 @@ export class MaritimePlugin implements WorldPlugin {
         const vesselType = (entity.properties.vesselType as string) || "other";
         const color = getVesselColor(vesselType);
         if (!this.iconUrls[color]) {
-            this.iconUrls[color] = createSvgIconUrl(Ship, { color, size: 24 });
+            this.iconUrls[color] = createSvgIconUrl(Ship, { color });
         }
         return {
             type: "billboard", iconUrl: this.iconUrls[color], color,

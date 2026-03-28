@@ -118,6 +118,7 @@ export default function GlobeView() {
         viewer.resolutionScale = sceneSettings.resolutionScale;
         viewer.scene.msaaSamples = sceneSettings.msaaSamples;
         viewer.scene.postProcessStages.fxaa.enabled = sceneSettings.enableFxaa;
+        viewer.scene.globe.depthTestAgainstTerrain = true;
 
         // Pre-load LOD trick: Start camera close to Earth to force downloading high-detail tiles.
         // We will teleport to deep space right before the overlay fades.

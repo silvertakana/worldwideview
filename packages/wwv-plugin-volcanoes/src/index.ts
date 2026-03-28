@@ -29,7 +29,7 @@ export class VolcanoesPlugin implements WorldPlugin {
 
     renderEntity(_e: GeoEntity): CesiumEntityOptions {
         if (!this.iconUrl) {
-            this.iconUrl = createSvgIconUrl(Mountain, { color: "#ef4444", size: 24 });
+            this.iconUrl = createSvgIconUrl(Mountain, { color: "#ef4444" });
         }
         return { type: "billboard", iconUrl: this.iconUrl, color: "#ef4444" };
     }

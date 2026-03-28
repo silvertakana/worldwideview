@@ -29,7 +29,7 @@ export class EmbassiesConsulatesPlugin implements WorldPlugin {
 
     renderEntity(_e: GeoEntity): CesiumEntityOptions {
         if (!this.iconUrl) {
-            this.iconUrl = createSvgIconUrl(Landmark, { color: "#a855f7", size: 24 });
+            this.iconUrl = createSvgIconUrl(Landmark, { color: "#a855f7" });
         }
         return { type: "billboard", iconUrl: this.iconUrl, color: "#a855f7" };
     }

@@ -29,7 +29,7 @@ export class SeaportsPlugin implements WorldPlugin {
 
     renderEntity(_e: GeoEntity): CesiumEntityOptions {
         if (!this.iconUrl) {
-            this.iconUrl = createSvgIconUrl(Anchor, { color: "#0ea5e9", size: 24 });
+            this.iconUrl = createSvgIconUrl(Anchor, { color: "#0ea5e9" });
         }
         return { type: "billboard", iconUrl: this.iconUrl, color: "#0ea5e9" };
     }

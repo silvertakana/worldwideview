@@ -29,7 +29,7 @@ export class SpaceportsPlugin implements WorldPlugin {
 
     renderEntity(_e: GeoEntity): CesiumEntityOptions {
         if (!this.iconUrl) {
-            this.iconUrl = createSvgIconUrl(Rocket, { color: "#7c3aed", size: 24 });
+            this.iconUrl = createSvgIconUrl(Rocket, { color: "#7c3aed" });
         }
         return { type: "billboard", iconUrl: this.iconUrl, color: "#7c3aed" };
     }

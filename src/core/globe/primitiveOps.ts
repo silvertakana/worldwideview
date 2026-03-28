@@ -18,6 +18,9 @@ import type { GeoEntity, CesiumEntityOptions } from "@/core/plugins/PluginTypes"
 import type { AnimatableItem } from "./EntityRenderer";
 import { scratchPosition, getCachedColor } from "./renderCaches";
 
+/** Default billboard scale applied when plugin does not specify iconScale. */
+const DEFAULT_BILLBOARD_SCALE = 0.6;
+
 /** Returns a touch-friendly default point size: larger on mobile. */
 function defaultPointSize(): number {
     if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) return 12;
@@ -41,6 +44,8 @@ export function updateExistingItem(
         if (item.primitive.image !== options.iconUrl) item.primitive.image = options.iconUrl;
         const rot = options.rotation ? -CesiumMath.toRadians(options.rotation) : 0;
         if (item.primitive.rotation !== rot) item.primitive.rotation = rot;
+        const targetScale = options.iconScale ?? DEFAULT_BILLBOARD_SCALE;
+        if (item.primitive.scale !== targetScale) item.primitive.scale = targetScale;
     } else {
         const newSize = options.size || defaultPointSize();
         if (item.primitive.pixelSize !== newSize) item.primitive.pixelSize = newSize;
@@ -63,7 +68,8 @@ export function createNewItem(
         : undefined;
     const addedPrimitive = options.iconUrl
         ? billboards.add({
-            position: newPosition, image: options.iconUrl, scale: 0.5,
+            position: newPosition, image: options.iconUrl,
+            scale: options.iconScale ?? DEFAULT_BILLBOARD_SCALE,
             verticalOrigin: VerticalOrigin.CENTER, horizontalOrigin: HorizontalOrigin.CENTER,
             rotation: options.rotation ? -CesiumMath.toRadians(options.rotation) : 0,
             color, scaleByDistance: new NearFarScalar(1e3, 1.0, 1e7, 0.3), id: clickId,

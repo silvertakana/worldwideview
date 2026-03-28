@@ -39,7 +39,7 @@ export class NuclearPlugin implements WorldPlugin {
 
     renderEntity(_entity: GeoEntity): CesiumEntityOptions {
         if (!this.iconUrl) {
-            this.iconUrl = createSvgIconUrl(Radiation, { color: "#22d3ee", size: 24 });
+            this.iconUrl = createSvgIconUrl(Radiation, { color: "#22d3ee" });
         }
         return { type: "billboard", iconUrl: this.iconUrl, color: "#22d3ee" };
     }
