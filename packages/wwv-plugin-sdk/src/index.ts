@@ -9,17 +9,56 @@ import { renderToStaticMarkup } from "react-dom/server";
 /** Standard SVG icon size (px) used by createSvgIconUrl when no size is given. */
 export const DEFAULT_ICON_SIZE = 32;
 
+/** Default dark background color for icon circles. */
+const DEFAULT_BG_COLOR = "rgba(15, 23, 42, 0.85)";
+
+export interface IconUrlOptions extends Record<string, unknown> {
+    /** Icon color (stroke). */
+    color?: string;
+    /** SVG icon size in px (default: DEFAULT_ICON_SIZE). */
+    size?: number;
+    /** Show circle background behind icon (default: true). */
+    background?: boolean;
+    /** Background fill color (default: semi-transparent dark slate). */
+    backgroundColor?: string;
+}
+
 /**
  * Convert a React icon component into a `data:image/svg+xml` URL for Cesium billboards.
- * Defaults to `DEFAULT_ICON_SIZE` when `props.size` is not specified.
+ * By default wraps the icon in a filled circle for visibility on any terrain.
+ * Pass `{ background: false }` to opt out.
  */
 export function createSvgIconUrl(
     Icon: ComponentType<any>,
-    props: Record<string, unknown> = {},
+    opts: IconUrlOptions = {},
 ): string {
-    const merged = { size: DEFAULT_ICON_SIZE, ...props };
-    const svgString = renderToStaticMarkup(createElement(Icon, merged));
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
+    const {
+        background = true,
+        backgroundColor = DEFAULT_BG_COLOR,
+        size = DEFAULT_ICON_SIZE,
+        ...iconProps
+    } = opts;
+
+    const innerSvg = renderToStaticMarkup(createElement(Icon, { size, ...iconProps }));
+
+    if (!background) {
+        return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(innerSvg)}`;
+    }
+
+    // Wrap the icon in a larger SVG with a filled circle behind it
+    const padding = 6;
+    const totalSize = size + padding * 2;
+    const center = totalSize / 2;
+    const radius = totalSize / 2 - 1;
+
+    const wrappedSvg = [
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${totalSize}" height="${totalSize}" viewBox="0 0 ${totalSize} ${totalSize}">`,
+        `<circle cx="${center}" cy="${center}" r="${radius}" fill="${backgroundColor}" />`,
+        `<g transform="translate(${padding}, ${padding})">${innerSvg}</g>`,
+        `</svg>`,
+    ].join("");
+
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(wrappedSvg)}`;
 }
 
 // ─── Re-export manifest types ─────────────────────────────────

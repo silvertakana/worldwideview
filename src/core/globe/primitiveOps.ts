@@ -73,13 +73,13 @@ export function createNewItem(
             verticalOrigin: VerticalOrigin.CENTER, horizontalOrigin: HorizontalOrigin.CENTER,
             rotation: options.rotation ? -CesiumMath.toRadians(options.rotation) : 0,
             color, scaleByDistance: new NearFarScalar(1e3, 1.0, 1e7, 0.3), id: clickId,
-            disableDepthTestDistance: options.disableDepthTestDistance ?? Number.POSITIVE_INFINITY, distanceDisplayCondition: ddc,
+            disableDepthTestDistance: options.disableDepthTestDistance ?? 0, distanceDisplayCondition: ddc,
         })
         : points.add({
             position: newPosition, pixelSize: options.size || defaultPointSize(), color, outlineColor,
             outlineWidth: options.outlineWidth || 1,
             scaleByDistance: new NearFarScalar(1e3, 1.0, 1e7, 0.4), id: clickId,
-            disableDepthTestDistance: options.disableDepthTestDistance ?? Number.POSITIVE_INFINITY, distanceDisplayCondition: ddc,
+            disableDepthTestDistance: options.disableDepthTestDistance ?? 0, distanceDisplayCondition: ddc,
         });
     existingMap.set(entity.id, {
         primitive: addedPrimitive, labelPrimitive: undefined, entity, posRef: newPosition,
