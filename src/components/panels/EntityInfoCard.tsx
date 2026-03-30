@@ -60,6 +60,12 @@ export function EntityInfoCard() {
     const headingDisplay =
         heading !== undefined ? `${heading.toFixed(0)}°` : null;
 
+    const typeDisplay = 
+        hoveredEntity.properties?.type !== undefined ? String(hoveredEntity.properties.type) : null;
+    
+    const casualtiesDisplay = 
+        hoveredEntity.properties?.casualties !== undefined ? String(hoveredEntity.properties.casualties) : null;
+
     return (
         <div
             className="entity-info-card"
@@ -91,6 +97,22 @@ export function EntityInfoCard() {
                         {hoveredEntity.longitude.toFixed(3)}°
                     </span>
                 </div>
+                {hoveredEntity.timestamp && (
+                    <div className="entity-info-card__prop">
+                        <span className="entity-info-card__prop-key">Timestamp</span>
+                        <span className="entity-info-card__prop-value">
+                            {new Date(hoveredEntity.timestamp).toLocaleTimeString()}
+                        </span>
+                    </div>
+                )}
+                {typeDisplay && (
+                    <div className="entity-info-card__prop">
+                        <span className="entity-info-card__prop-key">Type</span>
+                        <span className="entity-info-card__prop-value">
+                            {typeDisplay.length > 30 ? `${typeDisplay.substring(0, 30)}...` : typeDisplay}
+                        </span>
+                    </div>
+                )}
                 {altitudeDisplay && (
                     <div className="entity-info-card__prop">
                         <span className="entity-info-card__prop-key">
@@ -118,6 +140,16 @@ export function EntityInfoCard() {
                         </span>
                         <span className="entity-info-card__prop-value">
                             {headingDisplay}
+                        </span>
+                    </div>
+                )}
+                {casualtiesDisplay && (
+                    <div className="entity-info-card__prop">
+                        <span className="entity-info-card__prop-key">
+                            Casualties
+                        </span>
+                        <span className="entity-info-card__prop-value">
+                            {casualtiesDisplay}
                         </span>
                     </div>
                 )}
