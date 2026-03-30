@@ -5,7 +5,7 @@ Follow these steps to set up your development environment and get WorldWideView 
 ## Requirements
 
 - **Node.js**: v18.17 or higher (tested on v20+)
-- **NPM**: v9 or higher
+- **pnpm**: v8 or higher (`npm install -g pnpm`)
 - **Browser**: Chrome, Firefox, or Edge (CesiumJS requires WebGL support)
 
 ## Environment Setup
@@ -13,7 +13,7 @@ Follow these steps to set up your development environment and get WorldWideView 
 Run the setup script to auto-generate `.env.local` with a secure `AUTH_SECRET`:
 
 ```bash
-npm run setup
+pnpm run setup
 ```
 
 This copies `.env.example` → `.env.local` and fills in `AUTH_SECRET` automatically. You can then optionally add API keys for enhanced features (Cesium Ion, Bing Maps, OpenSky, etc.).
@@ -25,17 +25,17 @@ This copies `.env.example` → `.env.local` and fills in `AUTH_SECRET` automatic
 
 1. **Install Dependencies**:
    ```bash
-   npm install
+   pnpm install
    ```
 
 2. **Generate environment file** (first time only):
    ```bash
-   npm run setup
+   pnpm run setup
    ```
 
 3. **Start Dev Server**:
    ```bash
-   npm run dev
+   pnpm run dev
    ```
 
 4. **Open Browser**:
@@ -47,9 +47,9 @@ Understanding the project layout:
 
 ```text
 worldwideview/
-├── .agents/             # Agentic AI workflows and memory
-├── docs/                # Project documentation (Markdowns)
-├── public/              # Static assets (Imagery, GeoJSON, Cesium dependencies)
+├── docs/                # Project documentation
+├── packages/            # Plugin packages (pnpm workspaces)
+├── public/              # Static assets (GeoJSON data files, Cesium dependencies)
 ├── scripts/             # Build and utility scripts (e.g., copy-cesium.mjs)
 └── src/
     ├── app/             # Next.js App Router (Layouts, Pages, API Routes)
@@ -58,8 +58,8 @@ worldwideview/
     │   ├── data/        # Data management (DataBus, Polling, Cache)
     │   ├── globe/       # Cesium-specific hooks and view logic
     │   └── plugins/     # Plugin system base and registry
-    ├── lib/             # Utility libraries and server-side polling
-    └── plugins/         # Feature-specific plugins (Aviation, Maritime, etc.)
+    ├── lib/             # Utility libraries and server-side logic
+    └── plugins/         # Built-in plugins (Aviation, Maritime, etc.)
 ```
 
 ## Verification
@@ -71,5 +71,5 @@ To verify your setup:
 
 ---
 
-> [!IMPORTANT]
-> If you encounter issues with hot reloading (HMR), ensure you are running with the `--webpack` flag in the dev script (this is the default in our `package.json`).
+> [!TIP]
+> The database is created automatically on first run — no manual setup is required. If you need to reset it, delete `data/wwv.db` and restart the dev server.

@@ -20,7 +20,7 @@ One of our core design decisions is using **Cesium Primitives** instead of the s
 
 | Feature | Entity API | Primitive API (WWV) |
 |---|---|---|
-| **Abstration** | High (Easy to use) | Low (Direct GPU access) |
+| **Abstraction** | High (Easy to use) | Low (Direct GPU access) |
 | **Overhead** | Significant per-entity JS objects | Minimal (Batched rendering) |
 | **Max Capacity** | ~1,000 entities | **100,000+ points/billboards** |
 | **WWV Use Case** | Info window content | Live data point visualization |

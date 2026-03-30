@@ -21,7 +21,8 @@ There are **three plugin formats**:
 ## Prerequisites
 
 - Node.js ≥ 18
-- npm account (for publishing)
+- pnpm (`npm install -g pnpm`)
+- A npm account (for publishing to the npm registry)
 - The WorldWideView monorepo cloned locally
 
 ---
@@ -189,72 +190,39 @@ export class MyDataPlugin implements WorldPlugin {
 
 ```bash
 cd packages/wwv-plugin-my-data
-npm publish --access public
+pnpm publish --access public
 ```
 
 > [!NOTE]
-> The marketplace pulls metadata (version, description, keywords) directly from the npm registry at runtime. You do not need to duplicate this metadata in the marketplace.
+> The marketplace pulls metadata (version, description, keywords, readme) directly from the npm registry. You do not need to duplicate this information anywhere else.
 
 ---
 
-## Step 4 — Register in the Marketplace
+## Step 4 — Submit to the Marketplace
 
-### 4a. Add to `knownPlugins.ts`
+Once your package is published to npm, submit it for listing in the WorldWideView Marketplace:
 
-Open `worldwideview-marketplace/src/data/knownPlugins.ts` and add your plugin:
+1. Go to [marketplace.worldwideview.dev/submit](https://marketplace.worldwideview.dev/submit) (or open the Admin UI on a local marketplace instance)
+2. Enter your **npm package name** (e.g. `@worldwideview/wwv-plugin-my-data`)
+3. The marketplace automatically fetches your metadata from npm and reads the `"worldwideview"` block from your `package.json`
+4. Your plugin enters a **pending** state for review
+5. Once approved, it appears in the browse catalog
 
-```typescript
-{
-  id: "my-data",
-  npmPackage: "@worldwideview/wwv-plugin-my-data",
-  icon: "MapPin",              // Lucide icon name
-  category: "Custom",          // Must match a value in CATEGORIES
-  format: "static",            // "static" | "bundle"
-  trust: "verified",           // "built-in" | "verified" | "unverified"
-  capabilities: ["data:own"],
-  longDescription:
-    "Description shown on the plugin detail page in the marketplace.",
-  changelog:
-    "v1.0.0 — Initial release.",
-},
-```
+> [!IMPORTANT]
+> The `"worldwideview"` block in your `package.json` is required for submission. Make sure `id`, `icon`, `category`, and `format` are correctly set before publishing.
 
-### 4b. Add a manifest (static plugins only)
+### For static format plugins
 
-For **static** format plugins, open `worldwideview-marketplace/src/data/pluginManifests.ts` and add:
+If your plugin uses `"format": "static"`, your **GeoJSON file** must be hosted and accessible at a public URL, or included in the `public/data/` folder of the host WorldWideView application. The `dataFile` path in your manifest should point to that URL.
 
-```typescript
-"my-data": {
-  id: "my-data",
-  name: "My Data Layer",
-  version: "1.0.0",
-  description: "My custom data layer",
-  type: "data-layer",
-  format: "static",
-  trust: "verified",
-  capabilities: ["data:own"],
-  category: "Custom",
-  icon: "MapPin",
-  dataFile: "/data/my_data.geojson",   // Path to GeoJSON in public/
-  rendering: {
-    entityType: "point",
-    color: "#3b82f6",
-    labelField: "name",
-    clusterEnabled: true,
-    clusterDistance: 50,
-    maxEntities: 5000,
-  },
-},
-```
-
-Bundle plugins do **not** need a manifest entry here — their code is loaded via dynamic import.
+If you are contributing a plugin for inclusion in the official WorldWideView release, place the GeoJSON at `public/data/<name>.geojson` and open a pull request.
 
 ---
 
 ## Step 5 — Test Locally
 
-1. Start the WorldWideView app: `npm run dev` (in the `worldwideview` directory)
-2. Start the marketplace: `npm run dev` (in the `worldwideview-marketplace` directory)
+1. Start the WorldWideView app: `pnpm run dev` (in the `worldwideview` directory)
+2. Start the marketplace: `pnpm run dev` (in the `worldwideview-marketplace` directory)
 3. Open the marketplace at `http://localhost:3001/browse`
 4. Find your plugin and click **Install**
 5. Verify the data appears on the globe at `http://localhost:3000`
@@ -363,29 +331,32 @@ A static GeoJSON plugin where the npm package is just metadata:
 Developer writes plugin
         │
         ▼
-Publish to npm ──────────────────────────────────►  npm registry
-        │                                            │
-        ▼                                            │
-Add to knownPlugins.ts ──►  Marketplace ◄────────────┘
-(+ pluginManifests.ts        shows plugin       (fetches version,
- for static plugins)         in browse grid      description, etc.)
-                                  │
-                                  ▼
-                           User clicks "Install"
-                                  │
-                                  ▼
-                       Marketplace sends manifest
-                       to WorldWideView instance
-                                  │
-                                  ▼
-                       InstalledPluginsLoader saves
-                       manifest to database (Prisma)
-                                  │
-                                  ▼
-                       loadPluginFromManifest() routes
-                       by format: static → StaticDataPlugin
-                                  bundle → dynamic import
-                                  │
-                                  ▼
-                       Plugin renders on the 3D globe
+Publish to npm ► npm registry (stores version, description, keywords, readme)
+        │
+        ▼
+Submit npm package name to Marketplace
+        │   
+        ▼
+Marketplace fetches metadata from npm ← npm registry
+and reads the "worldwideview" block from package.json
+        │
+        ▼
+Review → Plugin appears in browse catalog
+        │
+        ▼
+User clicks "Install"
+        │
+        ▼
+Marketplace sends manifest to WorldWideView instance
+        │
+        ▼
+Plugin saved to database (Prisma) → loaded on next startup
+        │
+        ▼
+loadPluginFromManifest() routes by format:
+  static  → StaticDataPlugin (GeoJSON loader)
+  bundle  → dynamic import()
+        │
+        ▼
+Plugin renders on the 3D globe
 ```
