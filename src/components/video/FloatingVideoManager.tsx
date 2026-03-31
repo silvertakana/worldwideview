@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from "react";
 import { useStore } from "@/core/state/store";
 import { FloatingWindow } from "@/components/common/FloatingWindow";
 import { CameraStream } from "./CameraStream";
+import { PannableImage } from "@/components/common/PannableImage";
 import { trackEvent } from "@/lib/analytics";
 
 export const FloatingVideoManager: React.FC = () => {
@@ -36,7 +37,7 @@ export const FloatingVideoManager: React.FC = () => {
                 >
                     <div style={{ width: "100%", height: "100%", backgroundColor: stream.type === "image" ? "rgba(0,0,0,0.8)" : "black" }}>
                         {stream.type === "image" ? (
-                            <img src={stream.streamUrl} alt={stream.label} style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+                            <PannableImage src={stream.streamUrl} alt={stream.label} />
                         ) : (
                             <CameraStream
                                 streamUrl={stream.streamUrl}
