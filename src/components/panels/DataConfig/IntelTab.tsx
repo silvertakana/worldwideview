@@ -203,12 +203,13 @@ export function IntelTab() {
                             if (isImage) {
                                 return (
                                     <div key={key} style={{ marginTop: "var(--space-md)", paddingTop: "var(--space-sm)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                                            <span className="intel-panel__prop-key" style={{ margin: 0 }}>
-                                                {key.replace(/_/g, " ")}
-                                            </span>
-                                            <button 
-                                                style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center" }}
+                                        <span className="intel-panel__prop-key" style={{ marginBottom: 8, display: "block" }}>
+                                            {key.replace(/_/g, " ")}
+                                        </span>
+                                        <div style={{ position: "relative", borderRadius: "var(--radius-md)", overflow: "hidden", background: "rgba(0,0,0,0.2)", display: "flex", justifyContent: "center" }}>
+                                            <img src={value as string} alt={key} style={{ width: "100%", maxHeight: "200px", objectFit: "cover", display: "block" }} />
+                                            <button
+                                                className="intel-panel__img-popout"
                                                 onClick={() => addFloatingStream({
                                                     id: `image_${selectedEntity.id}_${key}`,
                                                     streamUrl: value as string,
@@ -217,14 +218,9 @@ export function IntelTab() {
                                                     type: "image"
                                                 })}
                                                 title="Popout Image"
-                                                onMouseEnter={(e) => e.currentTarget.style.color = "var(--text-primary)"}
-                                                onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
                                             >
                                                 <Maximize2 size={14} />
                                             </button>
-                                        </div>
-                                        <div style={{ borderRadius: "var(--radius-md)", overflow: "hidden", background: "rgba(0,0,0,0.2)", display: "flex", justifyContent: "center" }}>
-                                            <img src={value as string} alt={key} style={{ width: "100%", maxHeight: "200px", objectFit: "cover", display: "block" }} />
                                         </div>
                                     </div>
                                 );

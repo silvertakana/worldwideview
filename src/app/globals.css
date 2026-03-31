@@ -705,6 +705,41 @@ html, body {
   color: var(--text-primary);
 }
 
+/* ─── Image Popout Overlay Button ─────────────────────────── */
+.intel-panel__img-popout {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-smooth),
+              background var(--duration-fast) var(--ease-smooth),
+              color var(--duration-fast) var(--ease-smooth);
+  z-index: 2;
+}
+
+/* Show on image hover */
+*:hover > .intel-panel__img-popout,
+.intel-panel__img-popout:hover {
+  opacity: 1;
+}
+
+.intel-panel__img-popout:hover {
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--text-primary);
+  border-color: var(--accent-cyan);
+}
+
 /* ─── Loading / Status ────────────────────────────────────── */
 .status-badge {
   display: inline-flex;
