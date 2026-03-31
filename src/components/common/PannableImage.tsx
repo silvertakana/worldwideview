@@ -18,6 +18,10 @@ export const PannableImage: React.FC<PannableImageProps> = ({ src, alt }) => {
     const [isPanning, setIsPanning] = useState(false);
     const dragStart = useRef({ x: 0, y: 0 });
     const panStart = useRef({ x: 0, y: 0 });
+    const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+    const initialPinchDistance = useRef<number | null>(null);
+    const initialPinchZoom = useRef<number>(1);
+    
     const containerRef = useRef<HTMLDivElement>(null);
 
     const clampPan = useCallback((x: number, y: number, z: number) => {
@@ -40,26 +44,106 @@ export const PannableImage: React.FC<PannableImageProps> = ({ src, alt }) => {
         });
     }, [clampPan]);
 
+    const getPointersCenter = (pointers: Map<number, { x: number; y: number }>) => {
+        let x = 0;
+        let y = 0;
+        pointers.forEach((p) => {
+            x += p.x;
+            y += p.y;
+        });
+        return { x: x / pointers.size, y: y / pointers.size };
+    };
+
+    const getPointersDistance = (pointers: Map<number, { x: number; y: number }>) => {
+        if (pointers.size < 2) return 0;
+        const pts = Array.from(pointers.values());
+        const dx = pts[0].x - pts[1].x;
+        const dy = pts[0].y - pts[1].y;
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
-        if (zoom <= 1) return;
         e.preventDefault();
-        setIsPanning(true);
-        dragStart.current = { x: e.clientX, y: e.clientY };
-        panStart.current = { ...pan };
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        
+        activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (activePointers.current.size === 1) {
+            // Start single-touch pan
+            if (zoom > 1) {
+               setIsPanning(true);
+               dragStart.current = { x: e.clientX, y: e.clientY };
+               panStart.current = { ...pan };
+            }
+        } else if (activePointers.current.size === 2) {
+            // Start pinch zoom
+            setIsPanning(false); // disable single pan flag
+            initialPinchDistance.current = getPointersDistance(activePointers.current);
+            initialPinchZoom.current = zoom;
+            
+            const center = getPointersCenter(activePointers.current);
+            dragStart.current = center;
+            panStart.current = { ...pan };
+        }
     }, [zoom, pan]);
 
     const handlePointerMove = useCallback((e: React.PointerEvent) => {
-        if (!isPanning || !containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        const dx = ((e.clientX - dragStart.current.x) / rect.width) * 100;
-        const dy = ((e.clientY - dragStart.current.y) / rect.height) * 100;
-        const newPan = clampPan(panStart.current.x + dx, panStart.current.y + dy, zoom);
-        setPan(newPan);
+        if (!activePointers.current.has(e.pointerId)) return;
+        
+        activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (activePointers.current.size === 1 && isPanning && containerRef.current) {
+            // Single point pan
+            const rect = containerRef.current.getBoundingClientRect();
+            const dx = (((e.clientX - dragStart.current.x) / rect.width) * 100) / zoom;
+            const dy = (((e.clientY - dragStart.current.y) / rect.height) * 100) / zoom;
+            const newPan = clampPan(panStart.current.x + dx, panStart.current.y + dy, zoom);
+            setPan(newPan);
+        } else if (activePointers.current.size === 2 && initialPinchDistance.current !== null && containerRef.current) {
+            // Pinch zoom + pan
+            const currentDistance = getPointersDistance(activePointers.current);
+            const scale = currentDistance / initialPinchDistance.current;
+            const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, initialPinchZoom.current * scale));
+            
+            const center = getPointersCenter(activePointers.current);
+            const rect = containerRef.current.getBoundingClientRect();
+            const dx = (((center.x - dragStart.current.x) / rect.width) * 100) / newZoom;
+            const dy = (((center.y - dragStart.current.y) / rect.height) * 100) / newZoom;
+            
+            setZoom(newZoom);
+            if (newZoom <= 1) {
+                setPan({ x: 0, y: 0 });
+            } else {
+                setPan(clampPan(panStart.current.x + dx, panStart.current.y + dy, newZoom));
+            }
+        }
     }, [isPanning, zoom, clampPan]);
 
-    const handlePointerUp = useCallback(() => {
-        setIsPanning(false);
+    const handlePointerUp = useCallback((e: React.PointerEvent) => {
+        activePointers.current.delete(e.pointerId);
+        
+        if (activePointers.current.size < 2) {
+            initialPinchDistance.current = null;
+        }
+        
+        if (activePointers.current.size === 1) {
+             const remainingPointer = Array.from(activePointers.current.values())[0];
+             dragStart.current = { x: remainingPointer.x, y: remainingPointer.y };
+             setPan((currentPan) => {
+                 panStart.current = { ...currentPan };
+                 return currentPan;
+             });
+             setZoom((currentZoom) => {
+                 if (currentZoom > 1) {
+                     setIsPanning(true);
+                 }
+                 return currentZoom;
+             });
+        }
+        
+        if (activePointers.current.size === 0) {
+            setIsPanning(false);
+        }
     }, []);
 
     const handleReset = useCallback(() => {
