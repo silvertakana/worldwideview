@@ -61,7 +61,7 @@ const nextConfig: NextConfig = {
         source: "/api/external/:source*",
         // Proxy to the shared data engine locally or over docker network 
         // We use process.env to override the url if running Next.js outside docker
-        destination: `${process.env.WWV_DATA_ENGINE_URL || "http://wwv-data-engine:5050"}/data/:source*`,
+        destination: `${process.env.WWV_DATA_ENGINE_URL || "http://wwv-data-engine:5001"}/data/:source*`,
       },
     ];
   },

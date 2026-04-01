@@ -30,11 +30,11 @@ services:
       - "REDIS_URL=${REDIS_URL:-redis://redis:6379}"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.data-engine.rule=Host(`api.worldwideview.dev`) && PathPrefix(`/data`)"
+      - "traefik.http.routers.data-engine.rule=Host(`dataengine.worldwideview.dev`)"
       - "traefik.http.routers.data-engine.entrypoints=websecure"
       - "traefik.http.routers.data-engine.tls=true"
       - "traefik.http.routers.data-engine.tls.certresolver=letsencrypt"
-      - "traefik.http.services.data-engine.loadbalancer.server.port=5050"
+      - "traefik.http.services.data-engine.loadbalancer.server.port=5001"
 
   redis:
     image: redis:7-alpine

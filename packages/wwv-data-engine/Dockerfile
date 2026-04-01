@@ -47,8 +47,8 @@ WORKDIR /app/packages/wwv-data-engine
 RUN mkdir -p /app/packages/wwv-data-engine/data
 
 ENV NODE_ENV=production
-ENV PORT=5050
+ENV PORT=5001
 
-EXPOSE 5050
+EXPOSE 5001
 
 CMD ["node", "dist/server.js"]

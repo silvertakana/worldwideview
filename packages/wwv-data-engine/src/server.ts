@@ -8,7 +8,7 @@ export const fastify = Fastify({
   logger: false // Keep it clean for the console
 });
 
-const PORT = parseInt(process.env.PORT || '5050', 10);
+const PORT = parseInt(process.env.PORT || '5001', 10);
 
 fastify.get('/health', async (request, reply) => {
   return {
