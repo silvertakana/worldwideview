@@ -35,10 +35,10 @@ export class IranWarStrikesPlugin implements WorldPlugin {
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
-            // DIRECT CROSS-ORIGIN FETCH TO THE STANDALONE MICROSERVICE BACKEND!
-            // Bypasses local WWV next.js proxy entirely. (Configured to localhost port 3001 for dev/deployment)
-            const apiUrl = process.env.NEXT_PUBLIC_IRANWARLIVE_API || "http://localhost:3001";
-            const res = await globalThis.fetch(`${apiUrl}/api/history`);
+            // We route through Next.js rewrites to hit the standalone microservice backend seamlessly
+            // Configured to default to our internal API proxy path (`/api/external/iranwarlive`)
+            const apiUrl = process.env.NEXT_PUBLIC_IRANWARLIVE_API || "/api/external/iranwarlive";
+            const res = await globalThis.fetch(`${apiUrl}/history`);
             
             if (!res.ok) throw new Error(`IranWarLive Backend returned ${res.status}`);
             

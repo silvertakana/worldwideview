@@ -53,6 +53,16 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: "/api/external/iranwarlive/:path*",
+        // Proxy to the standalone fastify microservice locally or over docker network 
+        // We use process.env to override the url if running Next.js outside docker while the DB is elsewhere 
+        destination: `${process.env.IRANWARLIVE_BACKEND_URL || "http://iranwarlive-backend:3001"}/api/:path*`,
+      },
+    ];
+  },
   outputFileTracingExcludes: {
     "*": ["./public/cesium/**"],
   },

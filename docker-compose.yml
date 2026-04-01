@@ -9,14 +9,12 @@ services:
       - path: .env
         required: false
     environment:
-      - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET is required — generate with: openssl rand -hex 32}
-      - WWV_DEMO_ADMIN_SECRET=${WWV_DEMO_ADMIN_SECRET:-}
-      - WWV_BRIDGE_TOKEN=${WWV_BRIDGE_TOKEN:-}
+      - "AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET is required — generate with: openssl rand -hex 32}"
+      - "WWV_DEMO_ADMIN_SECRET=${WWV_DEMO_ADMIN_SECRET:-}"
+      - "WWV_BRIDGE_TOKEN=${WWV_BRIDGE_TOKEN:-}"
 
   iranwarlive-backend:
     build: ./packages/wwv-plugin-iranwarlive/backend
-    ports:
-      - "3001:3001"
     volumes:
       - iranwarlive-data:/app/data
     restart: always
