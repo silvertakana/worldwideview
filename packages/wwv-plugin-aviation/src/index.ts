@@ -11,16 +11,7 @@ import type {
     FilterDefinition,
 } from "@worldwideview/wwv-plugin-sdk";
 
-interface OpenSkyState {
-    icao24: string; callsign: string | null; origin_country: string;
-    time_position: number | null; last_contact: number;
-    longitude: number | null; latitude: number | null;
-    baro_altitude: number | null; on_ground: boolean;
-    velocity: number | null; true_track: number | null;
-    vertical_rate: number | null; sensors: number[] | null;
-    geo_altitude: number | null; squawk: string | null;
-    spi: boolean; position_source: number;
-}
+
 
 function altitudeToColor(altitude: number | null): string {
     if (altitude === null || altitude <= 0) return "#4ade80";
@@ -52,82 +43,51 @@ export class AviationPlugin implements WorldPlugin {
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
-            // Use PluginContext instead of direct useStore access
+            let res: Response;
+            
             if (this.context!.isPlaybackMode()) {
-                const time = this.context!.getCurrentTime().getTime();
-                const res = await fetch(`/api/aviation/history?time=${time}`);
-                if (!res.ok) throw new Error(`History API returned ${res.status}`);
-                const historyData = await res.json();
-                if (!historyData.records || !Array.isArray(historyData.records)) return [];
-                return historyData.records.map((s: Record<string, unknown>): GeoEntity => ({
-                    id: `aviation-history-${s.icao24}`,
-                    pluginId: "aviation",
-                    latitude: s.latitude as number,
-                    longitude: s.longitude as number,
-                    altitude: ((s.altitude as number) || 0) * 10,
-                    heading: (s.heading as number) || undefined,
-                    speed: (s.speed as number) || undefined,
-                    timestamp: new Date(s.timestamp as string),
-                    label: (s.callsign as string) || (s.icao24 as string),
-                    properties: {
-                        icao24: s.icao24,
-                        callsign: s.callsign,
-                        altitude_m: s.altitude,
-                        altitude_band: getAltitudeBand((s.altitude as number) || 0),
-                        velocity_ms: s.speed,
-                        heading: s.heading,
-                        on_ground: (s.altitude as number) === null || (s.altitude as number) <= 0
-                    },
-                }));
+                const timeStr = this.context!.getCurrentTime().getTime();
+                res = await fetch(`/api/external/aviation?time=${timeStr}`);
+            } else {
+                res = await fetch("/api/external/aviation?lookback=15m");
             }
-
-            const res = await fetch("/api/aviation");
-            if (!res.ok) throw new Error(`Aviation API returned ${res.status}`);
+            
+            if (!res.ok) throw new Error(`Data Engine API returned ${res.status}`);
             const data = await res.json();
-            if (data.error && !data.states) return [];
-            if (!data.states || !Array.isArray(data.states)) return [];
+            
+            if (!data.items || !Array.isArray(data.items)) return [];
 
-            return data.states
-                .filter((s: unknown[]) => s[6] !== null && s[5] !== null)
-                .map((s: unknown[]): GeoEntity => {
-                    const st: OpenSkyState = {
-                        icao24: s[0] as string, callsign: (s[1] as string)?.trim() || null,
-                        origin_country: s[2] as string, time_position: s[3] as number | null,
-                        last_contact: s[4] as number, longitude: s[5] as number | null,
-                        latitude: s[6] as number | null, baro_altitude: s[7] as number | null,
-                        on_ground: s[8] as boolean, velocity: s[9] as number | null,
-                        true_track: s[10] as number | null, vertical_rate: s[11] as number | null,
-                        sensors: s[12] as number[] | null, geo_altitude: s[13] as number | null,
-                        squawk: s[14] as string | null, spi: s[15] as boolean, position_source: s[16] as number,
-                    };
-                    return {
-                        id: `aviation-${st.icao24}`, pluginId: "aviation",
-                        latitude: st.latitude!, longitude: st.longitude!,
-                        altitude: (st.baro_altitude || 0) * 10,
-                        heading: st.true_track || undefined, speed: st.velocity || undefined,
-                        timestamp: new Date((st.time_position || st.last_contact) * 1000),
-                        label: st.callsign || st.icao24,
-                        properties: {
-                            icao24: st.icao24,
-                            callsign: st.callsign,
-                            origin_country: st.origin_country,
-                            altitude_m: st.baro_altitude,
-                            altitude_band: getAltitudeBand(st.baro_altitude || 0),
-                            velocity_ms: st.velocity,
-                            heading: st.true_track,
-                            vertical_rate: st.vertical_rate,
-                            on_ground: st.on_ground,
-                            squawk: st.squawk
-                        },
-                    };
-                });
+            return data.items.map((st: any): GeoEntity => {
+                return {
+                    id: `aviation-${st.icao24}`, pluginId: "aviation",
+                    latitude: st.lat, longitude: st.lon,
+                    altitude: (st.alt || 0) * 10,
+                    heading: st.hdg || undefined, speed: st.spd || undefined,
+                    timestamp: new Date(st.ts ? st.ts * 1000 : Date.now()),
+                    label: st.callsign || st.icao24,
+                    properties: {
+                        icao24: st.icao24,
+                        callsign: st.callsign,
+                        origin_country: st.origin_country,
+                        altitude_m: st.alt,
+                        altitude_band: getAltitudeBand(st.alt || 0),
+                        velocity_ms: st.spd,
+                        heading: st.hdg,
+                        vertical_rate: st.vertical_rate,
+                        on_ground: st.on_ground,
+                        squawk: st.squawk
+                    },
+                };
+            });
         } catch (err) {
             console.error("[AviationPlugin] Fetch error:", err);
             return [];
         }
     }
 
-    getPollingInterval(): number { return 15000; }
+    getPollingInterval(): number {
+        return 0; // Disabled in favor of WebSocket firehose
+    }
     getLayerConfig(): LayerConfig { return { color: "#3b82f6", clusterEnabled: true, clusterDistance: 40, maxEntities: 5000 }; }
 
     renderEntity(entity: GeoEntity): CesiumEntityOptions {

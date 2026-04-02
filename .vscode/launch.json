@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: debug server-side",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm run dev",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Next.js: debug client-side",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}",
+      "sourceMapPathOverrides": {
+        "webpack://_N_E/*": "${webRoot}/*"
+      }
+    },
+    {
+      "name": "WWV Data Engine: debug",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm --filter wwv-data-engine run dev",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Full Stack: debug",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm run dev:all",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

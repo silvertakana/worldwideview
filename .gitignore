@@ -32,6 +32,10 @@ node_modules/
 
 # local database
 /data/
+packages/*/data/
+*.db
+*.sqlite
+*.sqlite3
 *.db-shm
 *.db-wal
 

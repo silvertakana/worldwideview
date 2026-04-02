@@ -76,10 +76,15 @@ class PollingManager {
             }
         };
 
-        // Run immediately, then set interval
+        // Run immediately, then set interval if > 0
         run();
         const effectiveInterval = this.getEffectiveInterval(task);
-        task.timerId = setInterval(run, effectiveInterval);
+        if (effectiveInterval > 0) {
+            task.timerId = setInterval(run, effectiveInterval);
+        } else {
+            // For WebSocket-driven push plugins, mark as started
+            task.timerId = "ws-push-only" as any;
+        }
     }
 
     stop(pluginId: string): void {

@@ -62,7 +62,8 @@ export class IranWarStrikesPlugin implements WorldPlugin {
                         summary: item.event_summary,
                         casualties: item._osint_meta?.casualties || 0,
                         source_url: item.source_url,
-                        preview_image: item.preview_image
+                        preview_image: item.preview_image,
+                        preview_video: item.preview_video
                     },
                 };
             });

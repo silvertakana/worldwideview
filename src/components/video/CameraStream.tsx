@@ -23,14 +23,38 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hlsFailed, setHlsFailed] = useState(false);
+    const [activeStreamUrl, setActiveStreamUrl] = useState(streamUrl);
 
-    useEffect(() => { setIsPlaying(false); setError(null); setIsLoading(false); setHlsFailed(false); }, [streamUrl]);
+    useEffect(() => { 
+        setIsPlaying(false); setError(null); setIsLoading(false); setHlsFailed(false); 
+        setActiveStreamUrl(streamUrl);
+
+        if (streamUrl.includes("balticlivecam.com")) {
+            setIsLoading(true);
+            fetch(`/api/camera/extract?url=${encodeURIComponent(streamUrl)}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.streamUrl) {
+                        setActiveStreamUrl(d.streamUrl);
+                        setIsLoading(false);
+                        setIsPlaying(true);
+                    } else {
+                        setError(d.error || "Failed to extract stream");
+                        setIsLoading(false);
+                    }
+                })
+                .catch(e => {
+                    setError(e.message);
+                    setIsLoading(false);
+                });
+        }
+    }, [streamUrl]);
 
     const handlePopOut = (e: React.MouseEvent) => {
         e.stopPropagation();
         addFloatingStream({
             id: id || `stream-${Math.random().toString(36).substr(2, 9)}`,
-            streamUrl, isIframe, label: label || "Camera Stream",
+            streamUrl: activeStreamUrl, isIframe, label: label || "Camera Stream",
         });
         handleStop();
     };
@@ -45,10 +69,10 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
 
     const renderStreamContent = () => {
         // HLS streams need a dedicated video player — fall back to JPEG preview if HLS fails
-        if (isHlsUrl(streamUrl) && !hlsFailed) {
+        if (isHlsUrl(activeStreamUrl) && !hlsFailed) {
             return (
                 <HlsPlayer
-                    src={streamUrl}
+                    src={activeStreamUrl}
                     onReady={() => setIsLoading(false)}
                     onError={(msg) => {
                         if (previewUrl) {
@@ -63,10 +87,10 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
         }
 
         // Embeddable platforms (YouTube, Twitch, etc.)
-        if (isIframe || isKnownVideoPlatform(streamUrl)) {
+        if (isIframe || isKnownVideoPlatform(activeStreamUrl)) {
             return (
                 <iframe
-                    src={getYouTubeEmbedUrl(streamUrl)}
+                    src={getYouTubeEmbedUrl(activeStreamUrl)}
                     style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
                     onLoad={() => setIsLoading(false)}
                     onError={() => {
@@ -82,7 +106,7 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
 
         // Fallback: static image / MJPEG snapshot (proxy HTTP→HTTPS if needed)
         // When HLS failed and a preview JPEG exists, show that instead
-        const fallbackUrl = hlsFailed && previewUrl ? previewUrl : streamUrl;
+        const fallbackUrl = hlsFailed && previewUrl ? previewUrl : activeStreamUrl;
         const resolvedUrl = getProxiedStreamUrl(fallbackUrl);
         return (
             <img
@@ -141,7 +165,7 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
 
                     <div style={{ position: "absolute", top: "8px", right: "8px", display: "flex", gap: "6px", zIndex: 40 }}>
                         {overlayBtn(handlePopOut, "Pop out video", <Maximize2 size={12} />)}
-                        <a href={streamUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "rgba(255,255,255,0.6)", textDecoration: "none" }} title="Open in new tab">
+                        <a href={activeStreamUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "rgba(255,255,255,0.6)", textDecoration: "none" }} title="Open in new tab">
                             <ExternalLink size={12} />
                         </a>
                         {overlayBtn(handleStop, "Stop Stream", <Square size={10} style={{ fill: "currentColor" }} />)}

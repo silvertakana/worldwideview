@@ -42,14 +42,14 @@ async function start() {
     initDB();
 
     // 2. Register Routes
-    await import('./routes');
+    await import('./routes/index.js');
 
     // 3. Start the Fastify API Server
     await fastify.listen({ port: PORT, host: '0.0.0.0' });
     console.log(`[Server] WWV Data Engine listening on port ${PORT}`);
 
     // 3. Import seeder registry (this registers them)
-    await import('./seeders');
+    await import('./seeders/index.js');
 
     // 4. Start the Cron Scheduler
     startScheduler();

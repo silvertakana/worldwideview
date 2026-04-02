@@ -35,7 +35,7 @@ This copies `.env.example` → `.env.local` and fills in `AUTH_SECRET` automatic
 
 3. **Start Dev Server**:
    ```bash
-   pnpm run dev
+   pnpm run dev:all
    ```
 
 4. **Open Browser**:

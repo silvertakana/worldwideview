@@ -9,6 +9,8 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/websocket": "^11.2.0",
     "better-sqlite3": "^11.5.0",
     "csv-parse": "^5.6.0",
     "dotenv": "^16.4.5",

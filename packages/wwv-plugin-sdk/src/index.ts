@@ -97,6 +97,13 @@ export interface GeoEntity {
     properties: Record<string, unknown>;
 }
 
+export interface WsStreamPayload {
+    type: "data" | "error";
+    pluginId?: string;
+    payload?: GeoEntity[];
+    error?: string;
+}
+
 // ─── Layer Config ────────────────────────────────────────────
 export interface LayerConfig {
     color: string;
@@ -128,6 +135,12 @@ export interface CesiumEntityOptions {
     modelScale?: number;
     modelMinPixelSize?: number;
     modelHeadingOffset?: number;
+    trailOptions?: {
+        width?: number;
+        color?: string;
+        dashPattern?: "solid" | "dashed";
+        opacityFade?: boolean;
+    };
 }
 
 // ─── Selection Behavior ──────────────────────────────────────

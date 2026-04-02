@@ -143,6 +143,10 @@ function processEntity(
     if (isDynamic && entity.timestamp && entity.heading !== undefined) {
         extrapolatePosition(item, nowMs);
         if (item.options.type === "model") updateModelTransform(item, item.posRef, entity.heading);
+        if (item.polylinePrimitive && item.trailPositions && item.trailPositions.length > 0) {
+            item.trailPositions[item.trailPositions.length - 1] = item.posRef;
+            item.polylinePrimitive.positions = item.trailPositions;
+        }
     }
 
     if (item._modelPromoted) return;

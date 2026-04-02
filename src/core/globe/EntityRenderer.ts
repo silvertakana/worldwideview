@@ -1,6 +1,6 @@
 import {
     Cartesian3, Cartographic, Color, Ellipsoid,
-    PointPrimitiveCollection, BillboardCollection, LabelCollection,
+    PointPrimitiveCollection, BillboardCollection, LabelCollection, PolylineCollection,
     VerticalOrigin, DistanceDisplayCondition, NearFarScalar, HeightReference,
 } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
@@ -31,6 +31,8 @@ export interface AnimatableItem {
     _modelPromoted?: boolean;
     /** Set by AnimationLoop - true if hidden by mathematical horizon culling */
     _occluded?: boolean;
+    polylinePrimitive?: any;      // Reference to the trail polyline in the collection
+    trailPositions?: Cartesian3[]; // Cached position array to avoid GC pressure
 }
 
 /** Global render kickstarter for deeply nested async operations. */
@@ -47,6 +49,7 @@ export function initPrimitiveCollections(viewer: CesiumViewer): void {
     billboards.blendOption = 2; // TRANSLUCENT
     (viewer as any)._wwvBillboards = viewer.scene.primitives.add(billboards);
     (viewer as any)._wwvLabels = viewer.scene.primitives.add(new LabelCollection({ scene: viewer.scene }));
+    (viewer as any)._wwvPolylines = viewer.scene.primitives.add(new PolylineCollection());
 
     globalRequestRender = () => {
         if (viewer && !viewer.isDestroyed()) {
@@ -61,6 +64,7 @@ export function getCollections(viewer: CesiumViewer) {
         points: (viewer as any)._wwvPoints as PointPrimitiveCollection,
         billboards: (viewer as any)._wwvBillboards as BillboardCollection,
         labels: (viewer as any)._wwvLabels as LabelCollection,
+        polylines: (viewer as any)._wwvPolylines as PolylineCollection,
     };
 }
 

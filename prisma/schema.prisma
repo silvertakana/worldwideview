@@ -11,14 +11,30 @@ generator client {
 }
 
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
+  id             String     @id @default(uuid())
+  email          String     @unique
   name           String
   hashedPassword String
-  role           String   @default("user")
-  createdAt      DateTime @default(now())
+  role           String     @default("user")
+  createdAt      DateTime   @default(now())
+  favorites      Favorite[]
 
   @@map("users")
+}
+
+model Favorite {
+  id         String   @id @default(uuid())
+  entityId   String
+  pluginId   String
+  label      String
+  pluginName String
+  lastSeen   DateTime @default(now())
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityId])
+  @@map("favorites")
 }
 
 // DISABLED — aviation history feature is currently turned off.

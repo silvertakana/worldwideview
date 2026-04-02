@@ -221,8 +221,8 @@ If you are contributing a plugin for inclusion in the official WorldWideView rel
 
 ## Step 5 — Test Locally
 
-1. Start the WorldWideView app: `pnpm run dev` (in the `worldwideview` directory)
-2. Start the marketplace: `pnpm run dev` (in the `worldwideview-marketplace` directory)
+1. Start all WorldWideView services: `pnpm run dev:all` (in the monorepo root)
+2. (Wait for both the main app and marketplace to start)
 3. Open the marketplace at `http://localhost:3001/browse`
 4. Find your plugin and click **Install**
 5. Verify the data appears on the globe at `http://localhost:3000`

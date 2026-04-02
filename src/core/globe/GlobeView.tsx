@@ -25,6 +25,7 @@ import { handleEntitySelection, cleanupTrail } from "./SelectionHandler";
 import { useImageryManager } from "./useImageryManager";
 import { dataBus } from "@/core/data/DataBus";
 import { getCachedRenderOptions } from "./renderOptionsCache";
+import { isDemo } from "@/core/edition";
 
 /** Stable references — must live outside the component to avoid Resium re-creating the Viewer. */
 const CONTEXT_OPTIONS = { requestWebgl2: true, webgl: { antialias: true } } as const;
@@ -37,6 +38,7 @@ import { useCameraSync } from "./hooks/useCameraSync";
 import { useEntityRendering } from "./hooks/useEntityRendering";
 import { useModelRendering } from "./hooks/useModelRendering";
 import { useFrustumRendering } from "./hooks/useFrustumRendering";
+import { useTrailRendering } from "./hooks/useTrailRendering";
 
 // Set Cesium Ion token
 if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN) {
@@ -71,6 +73,7 @@ export default function GlobeView() {
     const setCameraPosition = useStore((s) => s.setCameraPosition);
     const setFps = useStore((s) => s.setFps);
     const updateMapConfig = useStore((s) => s.updateMapConfig);
+    const initFavorites = useStore((s) => s.initFavorites);
 
     // Load graphics settings from cookie on mount
     useEffect(() => {
@@ -84,6 +87,41 @@ export default function GlobeView() {
             console.warn("[GlobeView] Failed to load graphics settings from cookie", e);
         }
     }, [updateMapConfig]);
+
+    // Initialize favorites from cookie or API
+    useEffect(() => {
+        if (isDemo) {
+            try {
+                const match = document.cookie.match(/(^| )wwv_favorites=([^;]+)/);
+                if (match) {
+                    const saved = JSON.parse(decodeURIComponent(match[2]));
+                    initFavorites(saved);
+                }
+            } catch (e) {
+                console.warn("[GlobeView] Failed to load favorites from cookie", e);
+            }
+        } else {
+            fetch("/api/user/favorites")
+                .then(res => {
+                    if (res.status === 401) return []; // Unauthenticated, safe to ignore
+                    if (res.ok) return res.json();
+                    throw new Error("Failed to load favorites");
+                })
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        const mappedFavorites = data.map((item: any) => ({
+                            id: item.entityId, // Restore entity property matching
+                            pluginId: item.pluginId,
+                            label: item.label,
+                            pluginName: item.pluginName,
+                            lastSeen: new Date(item.lastSeen).getTime()
+                        }));
+                        initFavorites(mappedFavorites);
+                    }
+                })
+                .catch(err => console.error("[GlobeView] Favorites fetch error:", err));
+        }
+    }, [initFavorites]);
 
     // Compute visible & filtered entities (DOD: renderEntity results are memoized)
     const visibleEntities = useMemo(() => {
@@ -112,6 +150,8 @@ export default function GlobeView() {
     useEntityRendering(viewerRef.current, viewerReady, visibleEntities, animatablesMapRef, hoveredEntityIdRef, sceneSettings);
     // LOD: promote nearby model-type entities to 3D models, hiding their billboard
     useModelRendering(viewerRef.current, viewerReady, animatablesMapRef);
+    // Render historical trails for moving entities
+    useTrailRendering(viewerRef.current, viewerReady, animatablesMapRef);
 
     // Frustum outlines for camera entities
     const cameraLayerEnabled = layers["camera"]?.enabled ?? false;

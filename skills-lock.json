@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "skills": {
+    "cesium-context7": {
+      "source": "cesiumgs/cesium-ai-integrations",
+      "sourceType": "github",
+      "computedHash": "e4869dcd18a9b764c276f6378d3a075199d3a34b5b18b7449eb20660335b2ba4"
+    },
+    "context7-cli": {
+      "source": "upstash/context7",
+      "sourceType": "github",
+      "computedHash": "fc0c682dac344a4c78787072ae9b5b8708d4d5a14b2101c9b45de557bf9b7755"
+    },
+    "context7-mcp": {
+      "source": "upstash/context7",
+      "sourceType": "github",
+      "computedHash": "bce41b8f466edc10be7d47ebdb4ea8b9bb281adee288b12f40a4c36890c48825"
+    },
+    "find-docs": {
+      "source": "upstash/context7",
+      "sourceType": "github",
+      "computedHash": "d0321f889edc54a338b22615d6b00ace35f73f5879558e7183d0a70ceb819aa7"
+    },
+    "prisma-cli": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "computedHash": "f91df0be8d0ac0f12c5402b5c53da12a31b284e5501dba027086bb12db879903"
+    },
+    "redis-best-practices": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "computedHash": "7d5b0f93221b2b0f1f1c35352d06990a9d18226aa95f546b161b10a4fdaabf6b"
+    },
+    "redis-development": {
+      "source": "redis/agent-skills",
+      "sourceType": "github",
+      "computedHash": "993ad240385d830a9717796a4b76e835ed737bfc9d3e10a4528e00bacd58cbf8"
+    }
+  }
+}

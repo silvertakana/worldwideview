@@ -9,6 +9,7 @@ import {
     type CesiumEntityOptions,
     type FilterDefinition,
 } from "@worldwideview/wwv-plugin-sdk";
+import { MaritimeSettings } from "./MaritimeSettings";
 
 const VESSEL_COLORS: Record<string, string> = {
     cargo: "#f59e0b",
@@ -48,17 +49,25 @@ function generateDemoVessels(): GeoEntity[] {
         { name: "NORTHERN SPIRIT", mmsi: "257038700", type: "fishing", lat: 62.4, lon: 6.1, speed: 5.0, heading: 170 },
     ];
 
-    return vessels.map((v) => ({
-        id: `maritime-${v.mmsi}`,
-        pluginId: "maritime",
-        latitude: v.lat + (Math.random() - 0.5) * 0.1,
-        longitude: v.lon + (Math.random() - 0.5) * 0.1,
-        heading: v.heading,
-        speed: v.speed,
-        timestamp: new Date(),
-        label: v.name,
-        properties: { mmsi: v.mmsi, vesselName: v.name, vesselType: v.type, speed_knots: v.speed, heading: v.heading },
-    }));
+    return vessels.map((v) => {
+        const history = [];
+        let curLon = v.lon; let curLat = v.lat;
+        // Synthetic mock history behind the vessel
+        for (let i = 40; i > 0; i--) {
+            history.push({ lat: curLat + (i * 0.01), lon: curLon - (i * 0.01), ts: Date.now() - (i * 60000) });
+        }
+        return {
+            id: `maritime-${v.mmsi}`,
+            pluginId: "maritime",
+            latitude: v.lat + (Math.random() - 0.5) * 0.02,
+            longitude: v.lon + (Math.random() - 0.5) * 0.02,
+            heading: v.heading,
+            speed: v.speed,
+            timestamp: new Date(),
+            label: v.name,
+            properties: { mmsi: v.mmsi, vesselName: v.name, vesselType: v.type, speed_knots: v.speed, heading: v.heading, history },
+        };
+    });
 }
 
 export class MaritimePlugin implements WorldPlugin {
@@ -76,20 +85,56 @@ export class MaritimePlugin implements WorldPlugin {
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
-            const res = await fetch("/api/external/maritime?lookback=6h");
+            let lookback = "1h";
+            if (this.context) {
+                const rawSettings = this.context.getPluginSettings<Record<string, unknown>>(this.id);
+                if (rawSettings && rawSettings.trailDuration) {
+                    lookback = rawSettings.trailDuration as string;
+                }
+            }
+            if (lookback === "0h") lookback = "";
+            const query = lookback ? `?lookback=${lookback}` : "";
+            
+            const res = await fetch(`/api/external/maritime${query}`);
             if (!res.ok) throw new Error(`Maritime API returned ${res.status}`);
             const data = await res.json();
-            const vessels = data.vessels || generateDemoVessels();
-            return vessels.map((v: GeoEntity) => ({ ...v, timestamp: new Date(v.timestamp) }));
+            const vessels = data.items || generateDemoVessels();
+            return vessels.map((v: any) => {
+                // Handle both GeoEntity structure and data-engine structure
+                return {
+                    id: `maritime-${v.mmsi || v.id}`,
+                    pluginId: "maritime",
+                    latitude: v.lat ?? v.latitude,
+                    longitude: v.lon ?? v.longitude,
+                    heading: v.hdg ?? v.heading,
+                    speed: v.spd ?? v.speed,
+                    timestamp: v.last_updated ? new Date(v.last_updated * 1000) : new Date(v.timestamp || Date.now()),
+                    label: v.name ?? v.label,
+                    properties: { 
+                        mmsi: v.mmsi, 
+                        vesselName: v.name, 
+                        vesselType: v.type || (v.properties && v.properties.vesselType) || "other", 
+                        speed_knots: v.spd ?? v.speed, 
+                        heading: v.hdg ?? v.heading,
+                        history: v.history || (v.properties && v.properties.history) || []
+                    },
+                };
+            });
         } catch {
             return generateDemoVessels();
         }
     }
 
-    getPollingInterval(): number { return 60000; }
+    getPollingInterval(): number {
+        return 0; // Disabled in favor of WebSocket firehose
+    }
 
     getLayerConfig(): LayerConfig {
         return { color: "#f59e0b", clusterEnabled: true, clusterDistance: 50 };
+    }
+    
+    getSettingsComponent() {
+        return MaritimeSettings;
     }
 
     renderEntity(entity: GeoEntity): CesiumEntityOptions {
@@ -102,6 +147,12 @@ export class MaritimePlugin implements WorldPlugin {
             type: "billboard", iconUrl: this.iconUrls[color], color,
             rotation: entity.heading, outlineColor: "#000000", outlineWidth: 1,
             labelText: entity.label || undefined, labelFont: "11px JetBrains Mono, monospace",
+            trailOptions: entity.properties.history && (entity.properties.history as any[]).length > 0 ? {
+                width: 2,
+                color: color,
+                dashPattern: "solid",
+                opacityFade: true,
+            } : undefined
         };
     }
 
