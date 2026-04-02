@@ -15,19 +15,12 @@ COPY --from=extractor /app ./
 # Install dependencies with cache mount for pnpm store
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 
-# Stage 2: Install PRODUCTION-ONLY dependencies (for runtime)
-FROM node:22-alpine AS proddeps
-RUN corepack enable pnpm
-RUN apk add --no-cache python3 make g++
-WORKDIR /app
-COPY --from=extractor /app ./
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --prod --frozen-lockfile
 
 # Stage 3: Build the application
 FROM deps AS builder
 # Copy full source code
 COPY . .
-RUN npx prisma generate
+RUN DATABASE_URL="file:./data/wwv.db" npx prisma generate
 
 # Create an empty SQLite database with all tables applied
 RUN mkdir -p ./data && DATABASE_URL=file:./data/wwv.db npx prisma migrate deploy
@@ -56,16 +49,8 @@ COPY --from=builder /app/src/generated ./src/generated
 # Copy standalone server output
 COPY --from=builder /app/.next/standalone ./
 
-# Copy production-only node_modules
-COPY --from=proddeps /app/node_modules ./node_modules
-
-# Copy workspace packages (production node_modules for hoisted dependencies)
-# Wait, pnpm workspaces might hoist prod packages to the root, but we also need local packages mapped
-# Our standalone output copies everything correctly into app/.next/standalone!
-# The only issue is native modules in node_modules? NO .next/standalone includes node_modules!
-# Wait, Next.js output: "standalone" automatically copies required node_modules inside .next/standalone!
-# The original Dockerfile had COPY --from=proddeps /app/node_modules ./node_modules but standalone already has it.
-# We will keep the original logic since it worked before.
+# We no longer copy proddeps/node_modules. Next.js standalone output
+# already traces and copies all the exact node_modules needed for production.
 
 # Copy static assets that standalone mode does NOT include
 COPY --from=builder /app/.next/static ./.next/static
