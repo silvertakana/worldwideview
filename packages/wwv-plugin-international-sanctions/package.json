@@ -1,0 +1,8 @@
+{
+  "name": "@worldwideview/wwv-plugin-international-sanctions",
+  "version": "1.0.0",
+  "main": "src/index.tsx",
+  "dependencies": {
+    "lucide-react": "^0.364.0"
+  }
+}

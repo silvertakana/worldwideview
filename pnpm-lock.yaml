@@ -50,6 +50,9 @@ importers:
       '@worldwideview/wwv-plugin-gps-jamming':
         specifier: workspace:*
         version: link:packages/wwv-plugin-gps-jamming
+      '@worldwideview/wwv-plugin-international-sanctions':
+        specifier: workspace:*
+        version: link:packages/wwv-plugin-international-sanctions
       '@worldwideview/wwv-plugin-iranwarlive':
         specifier: workspace:*
         version: link:packages/wwv-plugin-iranwarlive
@@ -378,6 +381,12 @@ importers:
       resium:
         specifier: 1.19.4
         version: 1.19.4(cesium@1.139.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+
+  packages/wwv-plugin-international-sanctions:
+    dependencies:
+      lucide-react:
+        specifier: ^0.364.0
+        version: 0.364.0(react@19.2.3)
 
   packages/wwv-plugin-iranwarlive:
     dependencies:

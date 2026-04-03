@@ -31,6 +31,7 @@
     "@worldwideview/wwv-plugin-daynight": "workspace:*",
     "@worldwideview/wwv-plugin-earthquakes": "workspace:*",
     "@worldwideview/wwv-plugin-gps-jamming": "workspace:*",
+    "@worldwideview/wwv-plugin-international-sanctions": "workspace:*",
     "@worldwideview/wwv-plugin-iranwarlive": "workspace:*",
     "@worldwideview/wwv-plugin-maritime": "*",
     "@worldwideview/wwv-plugin-military-aviation": "*",
