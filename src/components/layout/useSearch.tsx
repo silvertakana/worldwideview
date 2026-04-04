@@ -68,9 +68,33 @@ function searchEntities(
                 }
             }
             if (maxScore > 0) {
+                let subLabel: string | undefined;
+                if (entity.properties) {
+                    if (typeof entity.properties.description === "string") subLabel = entity.properties.description;
+                    else if (typeof entity.properties.summary === "string") subLabel = entity.properties.summary;
+                }
+                if (subLabel) {
+                    const qLower = query.toLowerCase();
+                    const sLower = subLabel.toLowerCase();
+                    const matchIndex = sLower.indexOf(qLower);
+
+                    if (matchIndex !== -1 && query.trim() !== "") {
+                        // Extract snippet around the match match
+                        const start = Math.max(0, matchIndex - 30);
+                        const end = Math.min(subLabel.length, matchIndex + query.length + 30);
+                        let snippet = subLabel.substring(start, end);
+                        if (start > 0) snippet = "..." + snippet;
+                        if (end < subLabel.length) snippet = snippet + "...";
+                        subLabel = snippet;
+                    } else if (subLabel.length > 60) {
+                        subLabel = subLabel.substring(0, 60) + "...";
+                    }
+                }
+
                 results.push({
                     id: entity.id,
                     label: entity.label || entity.id,
+                    subLabel,
                     score: maxScore,
                     lat: entity.latitude,
                     lon: entity.longitude,

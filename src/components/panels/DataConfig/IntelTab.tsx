@@ -4,6 +4,8 @@ import { PluginIcon } from "@/components/common/PluginIcon";
 import { Eye, MapPin, Lock, Unlock, Star, ExternalLink, Maximize2 } from "lucide-react";
 import { dataBus } from "@/core/data/DataBus";
 import { sectionHeaderStyle } from "./sharedStyles";
+import { TimestampProperty } from "../properties/TimestampProperty";
+import { DynamicPropertiesRender } from "../properties/DynamicPropertiesRender";
 
 export function IntelTab() {
     const selectedEntity = useStore((s) => s.selectedEntity);
@@ -182,96 +184,14 @@ export function IntelTab() {
                         </span>
                     </div>
                 )}
-                <div className="intel-panel__prop">
-                    <span className="intel-panel__prop-key">Timestamp</span>
-                    <span className="intel-panel__prop-value">
-                        {new Date(selectedEntity.timestamp).toLocaleTimeString()}
-                    </span>
-                </div>
+                <TimestampProperty timestamp={selectedEntity.timestamp} />
 
                 {DetailComp ? (
                     <div className="intel-panel__custom-detail" style={{ marginTop: "var(--space-md)", maxWidth: "100%", overflow: "hidden" }}>
                         <DetailComp entity={selectedEntity} />
                     </div>
                 ) : (
-                    <>
-                        {displayProps.map(([key, value]) => {
-                            const isImage = typeof value === "string" && key.toLowerCase().includes("image") && /^https?:\/\//i.test(value);
-                            const isUrl = !isImage && typeof value === "string" && /^https?:\/\//i.test(value);
-                            const isLongText = typeof value === "string" && value.length > 50;
-
-                            if (isImage) {
-                                return (
-                                    <div key={key} style={{ marginTop: "var(--space-md)", paddingTop: "var(--space-sm)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                                        <span className="intel-panel__prop-key" style={{ marginBottom: 8, display: "block" }}>
-                                            {key.replace(/_/g, " ")}
-                                        </span>
-                                        <div style={{ position: "relative", borderRadius: "var(--radius-md)", overflow: "hidden", background: "rgba(0,0,0,0.2)", display: "flex", justifyContent: "center" }}>
-                                            <img src={value as string} alt={key} style={{ width: "100%", maxHeight: "200px", objectFit: "cover", display: "block" }} />
-                                            <button
-                                                className="intel-panel__img-popout"
-                                                onClick={() => addFloatingStream({
-                                                    id: `image_${selectedEntity.id}_${key}`,
-                                                    streamUrl: value as string,
-                                                    isIframe: false,
-                                                    label: `${selectedEntity.label || selectedEntity.id} - ${key.replace(/_/g, " ")}`,
-                                                    type: "image"
-                                                })}
-                                                title="Popout Image"
-                                            >
-                                                <Maximize2 size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            if (isLongText || isUrl) {
-                                return (
-                                    <div key={key} style={{ display: "flex", flexDirection: "column", marginTop: "var(--space-md)", paddingTop: "var(--space-sm)", borderTop: "1px solid rgba(255,255,255,0.05)", minWidth: 0 }}>
-                                        <span className="intel-panel__prop-key" style={{ marginBottom: 6 }}>
-                                            {key.replace(/_/g, " ")}
-                                        </span>
-                                        {isUrl ? (
-                                            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", width: "100%" }}>
-                                                <div 
-                                                    style={{ 
-                                                        flex: 1, 
-                                                        overflowX: "auto", 
-                                                        whiteSpace: "nowrap",
-                                                        fontSize: 13,
-                                                        fontFamily: "var(--font-mono)",
-                                                        color: "var(--text-primary)",
-                                                        paddingBottom: 2
-                                                    }}
-                                                >
-                                                    {String(value)}
-                                                </div>
-                                                <a href={value as string} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-cyan)", display: "flex", flexShrink: 0 }} title="Open Link">
-                                                    <ExternalLink size={14} />
-                                                </a>
-                                            </div>
-                                        ) : (
-                                            <div className="intel-panel__prop-value" style={{ textAlign: "left", lineHeight: 1.5, wordBreak: "break-word", whiteSpace: "pre-wrap", maxHeight: "150px", overflowY: "auto", paddingRight: "var(--space-xs)", width: "100%" }}>
-                                                {String(value)}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            }
-
-                            return (
-                                <div key={key} className="intel-panel__prop">
-                                    <span className="intel-panel__prop-key">
-                                        {key.replace(/_/g, " ")}
-                                    </span>
-                                    <span className="intel-panel__prop-value">
-                                        {typeof value === "boolean" ? (value ? "Yes" : "No") : String(value)}
-                                    </span>
-                                </div>
-                            );
-                        })}
-                    </>
+                    <DynamicPropertiesRender entity={selectedEntity} />
                 )}
             </div>
             <div className="intel-panel__actions">

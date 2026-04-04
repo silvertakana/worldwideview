@@ -43,7 +43,8 @@ function matchesFilter(propValue: unknown, filter: FilterValue): boolean {
         }
         case "select": {
             if (filter.values.length === 0) return true; // no selection = no filter
-            return filter.values.includes(String(propValue ?? ""));
+            const pVal = String(propValue ?? "").toLowerCase();
+            return filter.values.some((v) => v.toLowerCase() === pVal);
         }
         case "range": {
             const num = Number(propValue ?? 0);

@@ -48,6 +48,10 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 COPY --from=builder /app/packages/wwv-data-engine/dist ./packages/wwv-data-engine/dist
 COPY --from=builder /app/packages/wwv-data-engine/seedData ./packages/wwv-data-engine/seedData
 
+# Copy prisma schema and generate client for production
+COPY --from=builder /app/packages/wwv-data-engine/prisma ./packages/wwv-data-engine/prisma
+RUN cd packages/wwv-data-engine && npx prisma generate
+
 WORKDIR /app/packages/wwv-data-engine
 
 # Create directory for SQLite DB

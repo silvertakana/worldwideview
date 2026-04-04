@@ -3,6 +3,7 @@
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { PluginIcon } from "@/components/common/PluginIcon";
+import { TimestampProperty } from "./properties/TimestampProperty";
 
 const CARD_WIDTH = 260;
 const CARD_HEIGHT_EST = 180;
@@ -98,12 +99,7 @@ export function EntityInfoCard() {
                     </span>
                 </div>
                 {hoveredEntity.timestamp && (
-                    <div className="entity-info-card__prop">
-                        <span className="entity-info-card__prop-key">Timestamp</span>
-                        <span className="entity-info-card__prop-value">
-                            {new Date(hoveredEntity.timestamp).toLocaleString()}
-                        </span>
-                    </div>
+                    <TimestampProperty timestamp={hoveredEntity.timestamp} classNamePrefix="entity-info-card" />
                 )}
                 {typeDisplay && (
                     <div className="entity-info-card__prop">

@@ -12,11 +12,11 @@ import {
 } from "@worldwideview/wwv-plugin-sdk";
 
 function typeToIcon(type: string) {
-    switch(type) {
-        case "Missile Strike": return Rocket;
-        case "Air Strike": return Plane;
-        case "Ground Combat": return Target;
-        case "Artillery": return Bomb;
+    switch(type.toLowerCase()) {
+        case "missile strike": return Rocket;
+        case "air strike": return Plane;
+        case "ground combat": return Target;
+        case "artillery": return Bomb;
         default: return ShieldAlert;
     }
 }
@@ -47,15 +47,18 @@ export class IranWarLivePlugin implements WorldPlugin {
             return data.items.map((item: any): GeoEntity => {
                 const lat = item._osint_meta?.coordinates?.lat || 0;
                 const lon = item._osint_meta?.coordinates?.lng || 0;
+                const eventTime = new Date(item.timestamp);
+                const hoursAgo = Math.max(0, Math.round((Date.now() - eventTime.getTime()) / (1000 * 60 * 60)));
                 
                 return {
                     id: item.event_id,
                     pluginId: "iranwarlive",
                     latitude: lat,
                     longitude: lon,
-                    timestamp: new Date(item.timestamp),
-                    label: item.event_id,
+                    timestamp: eventTime,
+                    label: item.type + (item.location ? ` in ${item.location}` : ''),
                     properties: {
+                        hours_ago: hoursAgo,
                         type: item.type,
                         confidence: item.confidence,
                         location: item.location,
@@ -113,6 +116,10 @@ export class IranWarLivePlugin implements WorldPlugin {
             {
                 id: "confidence", label: "Intelligence Confidence", type: "select", propertyKey: "confidence",
                 options: [{ value: "News Wire", label: "News Wire" }, { value: "State Actor", label: "State Defense Press" }],
+            },
+            {
+                id: "hours_ago", label: "Max Hours Ago", type: "range", propertyKey: "hours_ago",
+                range: { min: 0, max: 168, step: 1 }
             }
         ];
     }

@@ -3,6 +3,8 @@ import { pluginManager } from "@/core/plugins/PluginManager";
 import { PluginIcon } from "@/components/common/PluginIcon";
 import { Eye, MapPin, Lock, Unlock } from "lucide-react";
 import { dataBus } from "@/core/data/DataBus";
+import { TimestampProperty } from "../properties/TimestampProperty";
+import { DynamicPropertiesRender } from "../properties/DynamicPropertiesRender";
 
 const sectionHeaderStyle: React.CSSProperties = {
     fontSize: 10,
@@ -73,12 +75,7 @@ export function IntelTab() {
                                     </span>
                                 </div>
                             )}
-                            <div className="intel-panel__prop">
-                                <span className="intel-panel__prop-key">Timestamp</span>
-                                <span className="intel-panel__prop-value">
-                                    {selectedEntity.timestamp.toLocaleTimeString()}
-                                </span>
-                            </div>
+                            <TimestampProperty timestamp={selectedEntity.timestamp} />
 
                             {/* Custom Plugin Detail Component */}
                             {(() => {
@@ -91,41 +88,7 @@ export function IntelTab() {
                                     );
                                 }
                                 return (
-                                    <>
-                                        {displayProps.map(([key, value]) => {
-                                            if (key === "summary") {
-                                                return (
-                                                    <div key={key} className="intel-panel__prop" style={{ flexDirection: "column", alignItems: "flex-start", gap: "var(--space-xs)" }}>
-                                                        <span className="intel-panel__prop-key">
-                                                            {key.replace(/_/g, " ")}
-                                                        </span>
-                                                        <div className="intel-panel__prop-value" style={{
-                                                            maxHeight: "150px",
-                                                            width: "100%",
-                                                            overflowY: "auto",
-                                                            whiteSpace: "pre-wrap",
-                                                            paddingRight: "var(--space-xs)",
-                                                            lineHeight: "1.4"
-                                                        }}>
-                                                            {String(value)}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            }
-                                            return (
-                                                <div key={key} className="intel-panel__prop">
-                                                    <span className="intel-panel__prop-key">
-                                                        {key.replace(/_/g, " ")}
-                                                    </span>
-                                                    <span className="intel-panel__prop-value">
-                                                        {typeof value === "boolean"
-                                                            ? value ? "Yes" : "No"
-                                                            : String(value)}
-                                                    </span>
-                                                </div>
-                                            );
-                                        })}
-                                    </>
+                                    <DynamicPropertiesRender entity={selectedEntity} />
                                 );
                             })()}
                         </div>

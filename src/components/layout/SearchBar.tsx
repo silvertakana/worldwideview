@@ -122,20 +122,23 @@ export function SearchBar() {
                                             data-selected={isSelected}
                                             style={{
                                                 display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
+                                                flexDirection: "column",
+                                                justifyContent: "center",
+                                                alignItems: "flex-start",
                                                 padding: "6px 8px",
+                                                gap: "4px",
                                                 background: isSelected ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.02)",
                                                 border: "none",
                                                 borderRadius: "var(--radius-sm)",
                                                 color: "var(--text-main)",
                                                 cursor: "pointer",
-                                                textAlign: "left"
+                                                textAlign: "left",
+                                                width: "100%"
                                             }}
                                             onMouseEnter={() => setSelectedIndex(flatResults.findIndex(r => r.id === result.id))}
                                         >
-                                            <span style={{ fontWeight: 500, fontSize: "0.85rem" }}>{result.label}</span>
-                                            {result.subLabel && <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{result.subLabel}</span>}
+                                            <span style={{ fontWeight: 500, fontSize: "0.85rem", width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{result.label}</span>
+                                            {result.subLabel && <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{result.subLabel}</span>}
                                         </button>
                                     );
                                 })}
