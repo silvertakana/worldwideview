@@ -125,6 +125,8 @@ export class SatellitePlugin implements WorldPlugin {
             outlineWidth: 1,
             labelText: isStation ? entity.label : undefined,
             labelFont: "12px sans-serif",
+            disableManualHorizonCulling: true,
+            disableDepthTestDistance: 0,
         };
     }
 

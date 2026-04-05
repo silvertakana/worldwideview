@@ -21,13 +21,12 @@ import { IranWarLivePlugin } from "@worldwideview/wwv-plugin-iranwarlive";
 import { EarthquakesPlugin } from "@worldwideview/wwv-plugin-earthquakes";
 import { DayNightPlugin } from "@worldwideview/wwv-plugin-daynight";
 import { UnderseaCablesPlugin } from "@worldwideview/wwv-plugin-undersea-cables";
-// --- TEMPORARILY DISABLED (MOCK DATA) ---
-// import { GpsJammingPlugin } from "@worldwideview/wwv-plugin-gps-jamming";
-// import { ConflictEventsPlugin } from "@worldwideview/wwv-plugin-conflict-events";
-// import { CivilUnrestPlugin } from "@worldwideview/wwv-plugin-civil-unrest";
+import { GpsJammingPlugin } from "@worldwideview/wwv-plugin-gps-jamming";
+import { ConflictEventsPlugin } from "@worldwideview/wwv-plugin-conflict-events";
+import { CivilUnrestPlugin } from "@worldwideview/wwv-plugin-civil-unrest";
 import { SurveillanceSatellitesPlugin } from "@worldwideview/wwv-plugin-surveillance-satellites";
-// import { CyberAttacksPlugin } from "@worldwideview/wwv-plugin-cyber-attacks";
-// import { InternationalSanctionsPlugin } from "@worldwideview/wwv-plugin-international-sanctions";
+import { CyberAttacksPlugin } from "@worldwideview/wwv-plugin-cyber-attacks";
+import { InternationalSanctionsPlugin } from "@worldwideview/wwv-plugin-international-sanctions";
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { PanelToggleArrows } from "@/components/layout/PanelToggleArrows";
@@ -42,7 +41,10 @@ import { MobileCameraStats } from "./MobileCameraStats";
 import dynamic from "next/dynamic";
 import { trackEvent } from "@/lib/analytics";
 import ReloadToast from "@/components/ui/ReloadToast";
+import ErrorToast from "@/components/ui/ErrorToast";
 import UnverifiedPluginBatchDialog from "@/components/marketplace/UnverifiedPluginBatchDialog";
+
+import { injectHostGlobals } from "@/core/plugins/hostGlobals";
 
 const GlobeView = dynamic(() => import("@/core/globe/GlobeView"), {
     ssr: false,
@@ -58,6 +60,9 @@ export function AppShell() {
     useEffect(() => {
         const startPlatform = async () => {
             console.log("[AppShell] Initializing Platform...");
+
+            // Inject host libraries for dynamic plugin loading
+            injectHostGlobals();
 
             // Fetch disabled built-in plugins before registration
             let disabledIds = new Set<string>();
@@ -83,13 +88,12 @@ export function AppShell() {
                 new EarthquakesPlugin(),
                 new DayNightPlugin(),
                 new UnderseaCablesPlugin(),
-                // --- TEMPORARILY DISABLED (MOCK DATA) ---
-                // new GpsJammingPlugin(),
-                // new ConflictEventsPlugin(),
-                // new CivilUnrestPlugin(),
+                new GpsJammingPlugin(),
+                new ConflictEventsPlugin(),
+                new CivilUnrestPlugin(),
                 new SurveillanceSatellitesPlugin(),
-                // new CyberAttacksPlugin(),
-                // new InternationalSanctionsPlugin(),
+                new CyberAttacksPlugin(),
+                new InternationalSanctionsPlugin(),
             ];
 
             for (const plugin of builtIns) {
@@ -169,6 +173,7 @@ export function AppShell() {
             <Timeline />
             <FloatingVideoManager />
             {needsReload && <ReloadToast />}
+            <ErrorToast />
             {pendingUnverified.length > 0 && (
                 <UnverifiedPluginBatchDialog
                     manifests={pendingUnverified}

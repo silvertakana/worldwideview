@@ -9,6 +9,7 @@ import {
     type CesiumEntityOptions,
     type FilterDefinition,
     type ServerPluginConfig,
+    type SelectionBehavior,
 } from "@worldwideview/wwv-plugin-sdk";
 import { MaritimeSettings } from "./MaritimeSettings";
 
@@ -113,14 +114,20 @@ export class MaritimePlugin implements WorldPlugin {
         }
         return {
             type: "billboard", iconUrl: this.iconUrls[color], color,
-            rotation: entity.heading, outlineColor: "#000000", outlineWidth: 1,
+            rotation: entity.heading,
             labelText: entity.label || undefined, labelFont: "11px JetBrains Mono, monospace",
-            trailOptions: entity.properties.history && (entity.properties.history as any[]).length > 0 ? {
-                width: 2,
-                color: color,
-                dashPattern: "solid",
-                opacityFade: true,
-            } : undefined
+            distanceDisplayCondition: { near: 0, far: 1000000 },
+        };
+    }
+
+    getSelectionBehavior(entity: GeoEntity): SelectionBehavior | null {
+        return {
+            showTrail: true,
+            trailDurationSec: 3600,
+            trailStepSec: 60,
+            trailColor: getVesselColor((entity.properties.vesselType as string) || "other"),
+            flyToOffsetMultiplier: 3,
+            flyToBaseDistance: 15000,
         };
     }
 

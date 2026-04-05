@@ -1,80 +1,59 @@
 import { prisma } from "../db";
 
-/** Sentinel version value marking a built-in plugin as disabled. */
-export const DISABLED_VERSION = "disabled";
-
-/**
- * Get all installed marketplace plugins.
- */
+/** Get all installed marketplace plugins. */
 export async function getInstalledPlugins() {
     return prisma.installedPlugin.findMany({
         orderBy: { installedAt: "desc" },
     });
 }
 
-/**
- * Check if a plugin is already installed.
- */
+/** Check if a plugin is already installed. */
 export async function isInstalled(pluginId: string): Promise<boolean> {
-    const record = await prisma.installedPlugin.findFirst({
-        where: { pluginId },
-    });
+    const record = await prisma.installedPlugin.findUnique({ where: { pluginId } });
     return record !== null;
 }
 
-/**
- * Install or update a plugin record.
- * If the plugin is already installed, updates its version and config.
- */
+/** Install or update a plugin record. Uses upsert on the unique pluginId. */
 export async function upsertPlugin(pluginId: string, version: string, config?: string) {
-    const existing = await prisma.installedPlugin.findFirst({
+    return prisma.installedPlugin.upsert({
         where: { pluginId },
-    });
-
-    if (existing) {
-        return prisma.installedPlugin.update({
-            where: { id: existing.id },
-            data: { version, config: config ?? existing.config },
-        });
-    }
-
-    return prisma.installedPlugin.create({
-        data: { pluginId, version, config: config ?? "{}" },
+        update: { version, config: config ?? undefined, enabled: true },
+        create: { pluginId, version, config: config ?? "{}", enabled: true },
     });
 }
 
-/**
- * Remove an installed plugin record.
- * Returns the number of deleted records (0 or 1).
- */
+/** Remove an installed plugin record. Returns 0 or 1. */
 export async function uninstallPlugin(pluginId: string) {
-    const existing = await prisma.installedPlugin.findFirst({
+    try {
+        await prisma.installedPlugin.delete({ where: { pluginId } });
+        return 1;
+    } catch {
+        return 0;
+    }
+}
+
+/** Disable a plugin (built-in or marketplace) without removing its record. */
+export async function disablePlugin(pluginId: string) {
+    return prisma.installedPlugin.upsert({
         where: { pluginId },
+        update: { enabled: false },
+        create: { pluginId, version: "built-in", config: "{}", enabled: false },
     });
-    if (!existing) return 0;
-
-    await prisma.installedPlugin.delete({
-        where: { id: existing.id },
-    });
-    return 1;
 }
 
-/**
- * Mark a built-in plugin as disabled by upserting a record
- * with version = "disabled". This prevents it from loading.
- */
-export async function disableBuiltinPlugin(pluginId: string) {
-    return upsertPlugin(pluginId, DISABLED_VERSION, "{}");
+/** Re-enable a disabled plugin. */
+export async function enablePlugin(pluginId: string) {
+    return prisma.installedPlugin.update({
+        where: { pluginId },
+        data: { enabled: true },
+    });
 }
 
-/**
- * Get the set of built-in plugin IDs that have been disabled.
- */
-export async function getDisabledBuiltinIds(): Promise<Set<string>> {
+/** Get the set of plugin IDs that have been disabled. */
+export async function getDisabledPluginIds(): Promise<Set<string>> {
     const records = await prisma.installedPlugin.findMany({
-        where: { version: DISABLED_VERSION },
+        where: { enabled: false },
         select: { pluginId: true },
     });
     return new Set(records.map((r) => r.pluginId));
 }
-

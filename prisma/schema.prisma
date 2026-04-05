@@ -58,10 +58,12 @@ model Favorite {
 
 model InstalledPlugin {
   id          String   @id @default(uuid())
-  pluginId    String
+  pluginId    String   @unique
   version     String
   config      String   @default("{}")
+  enabled     Boolean  @default(true)
   installedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("installed_plugins")
 }

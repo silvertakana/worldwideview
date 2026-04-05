@@ -13,6 +13,7 @@ export function applyFilters(
     definitions: FilterDefinition[],
     activeFilters: Record<string, FilterValue>
 ): GeoEntity[] {
+    if (!Array.isArray(entities)) return [];
     const activeEntries = Object.entries(activeFilters);
     if (activeEntries.length === 0) return entities;
 

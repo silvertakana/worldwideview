@@ -1,0 +1,82 @@
+[
+  {
+    "file": "src\\generated\\prisma\\models\\Favorite.ts",
+    "lines": 1419
+  },
+  {
+    "file": "src\\generated\\prisma\\models\\User.ts",
+    "lines": 1366
+  },
+  {
+    "file": "src\\generated\\prisma\\models\\InstalledPlugin.ts",
+    "lines": 1148
+  },
+  {
+    "file": "src\\generated\\prisma\\models\\Setting.ts",
+    "lines": 1064
+  },
+  {
+    "file": "src\\generated\\prisma\\internal\\prismaNamespace.ts",
+    "lines": 982
+  },
+  {
+    "file": "src\\app\\test\\cameras\\page.tsx",
+    "lines": 461
+  },
+  {
+    "file": "src\\core\\globe\\GlobeView.tsx",
+    "lines": 315
+  },
+  {
+    "file": "src\\plugins\\geojson\\ImportModal.tsx",
+    "lines": 308
+  },
+  {
+    "file": "src\\core\\globe\\StackManager.ts",
+    "lines": 281
+  },
+  {
+    "file": "src\\components\\layout\\useSearch.tsx",
+    "lines": 272
+  },
+  {
+    "file": "src\\core\\data\\countries.ts",
+    "lines": 255
+  },
+  {
+    "file": "packages\\wwv-plugin-sdk\\src\\index.ts",
+    "lines": 251
+  },
+  {
+    "file": "src\\components\\common\\FloatingWindow.tsx",
+    "lines": 246
+  },
+  {
+    "file": "src\\components\\panels\\DataConfig\\IntelTab.tsx",
+    "lines": 244
+  },
+  {
+    "file": "packages\\wwv-data-engine\\src\\seeders\\aviation.ts",
+    "lines": 244
+  },
+  {
+    "file": "src\\components\\common\\PannableImage.tsx",
+    "lines": 238
+  },
+  {
+    "file": "src\\generated\\prisma\\internal\\class.ts",
+    "lines": 235
+  },
+  {
+    "file": "src\\components\\panels\\DataConfig\\ApiKeysTab.tsx",
+    "lines": 223
+  },
+  {
+    "file": "src\\core\\plugins\\PluginManager.ts",
+    "lines": 220
+  },
+  {
+    "file": "src\\core\\globe\\AnimationLoop.ts",
+    "lines": 215
+  }
+]

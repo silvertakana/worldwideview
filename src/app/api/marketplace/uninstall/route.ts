@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { validateMarketplaceAuth } from "@/lib/marketplace/auth";
-import { uninstallPlugin, disableBuiltinPlugin } from "@/lib/marketplace/repository";
+import { uninstallPlugin, disablePlugin } from "@/lib/marketplace/repository";
 import { handlePreflight, withCors } from "@/lib/marketplace/cors";
 import { BUILT_IN_PLUGIN_IDS } from "@/lib/marketplace/builtinPlugins";
 import { marketplaceApiLimiter } from "@/lib/rateLimiters";
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
         // Built-in plugins are disabled (not deleted)
         if (builtInSet.has(pluginId)) {
-            await disableBuiltinPlugin(pluginId);
+            await disablePlugin(pluginId);
             return withCors(
                 NextResponse.json({ status: "disabled", pluginId }),
                 request,

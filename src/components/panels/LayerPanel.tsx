@@ -9,6 +9,7 @@ import { ImageryPicker } from "./ImageryPicker";
 import { LayerItem } from "./LayerItem";
 import { FavoritesTab } from "./FavoritesTab";
 import { ImportPanel } from "@/plugins/geojson/ImportPanel";
+import { PluginsTab } from "./PluginsTab";
 import "@/plugins/geojson/geojson-importer.css";
 import { DiscordIcon } from "@/components/common/DiscordIcon";
 import { trackEvent } from "@/lib/analytics";
@@ -81,7 +82,7 @@ export function LayerPanel() {
         trackEvent("layer-toggle", { layer: pluginId, enabled: !isEnabled });
     };
 
-    const [activeTab, setActiveTab] = useState<"layers" | "imagery" | "favorites" | "import">("layers");
+    const [activeTab, setActiveTab] = useState<"layers" | "imagery" | "favorites" | "import" | "plugins">("layers");
 
     return (
         <aside
@@ -113,6 +114,12 @@ export function LayerPanel() {
                     onClick={() => { setActiveTab("import"); trackEvent("panel-tab-switch", { tab: "import" }); }}
                 >
                     Import
+                </button>
+                <button
+                    className={`panel-tab ${activeTab === "plugins" ? "panel-tab--active" : ""}`}
+                    onClick={() => { setActiveTab("plugins"); trackEvent("panel-tab-switch", { tab: "plugins" }); }}
+                >
+                    Plugins
                 </button>
             </div>
 
@@ -186,6 +193,10 @@ export function LayerPanel() {
 
             {activeTab === "import" && (
                 <ImportPanel />
+            )}
+
+            {activeTab === "plugins" && (
+                <PluginsTab />
             )}
 
         </aside>

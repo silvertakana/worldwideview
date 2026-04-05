@@ -1,0 +1,8 @@
+src/index.ts(12,8): error TS6059: File 'C:/dev/worldwideview/packages/wwv-plugin-sdk/src/index.ts' is not under 'rootDir' 'C:/dev/worldwideview/packages/wwv-plugin-aviation/src'. 'rootDir' is expected to contain all source files.
+  The file is in the program because:
+    Imported via "@worldwideview/wwv-plugin-sdk" from file 'C:/dev/worldwideview/packages/wwv-plugin-aviation/src/index.ts'
+    Imported via "./index" from file 'C:/dev/worldwideview/packages/wwv-plugin-sdk/src/manifest.ts'
+../wwv-plugin-sdk/src/index.ts(65,141): error TS6059: File 'C:/dev/worldwideview/packages/wwv-plugin-sdk/src/manifest.ts' is not under 'rootDir' 'C:/dev/worldwideview/packages/wwv-plugin-aviation/src'. 'rootDir' is expected to contain all source files.
+undefined
+C:\dev\worldwideview\packages\wwv-plugin-aviation:
+ΓÇëERR_PNPM_RECURSIVE_EXEC_FIRST_FAILΓÇë Command failed with exit code 1: tsc --noEmit

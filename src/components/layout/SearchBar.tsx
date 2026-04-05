@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Search, MapPin } from "lucide-react";
 import { useSearch } from "./useSearch";
 import type { SearchResult, SearchSection } from "./useSearch";
+import { useIsMobile } from "@/core/hooks/useIsMobile";
 
 function HighlightMatch({ text, query }: { text: string; query: string }) {
     if (!query) return <>{text}</>;
@@ -22,6 +23,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
 }
 
 export function SearchBar() {
+    const isMobile = useIsMobile();
     const {
         query, setQuery, isOpen, setIsOpen,
         sections, selectedIndex, setSelectedIndex,
@@ -111,8 +113,10 @@ export function SearchBar() {
                         position: "absolute",
                         top: "calc(100% + 8px)",
                         left: 0,
-                        right: 0,
-                        minWidth: "300px",
+                        right: isMobile ? 0 : "auto",
+                        transform: "none",
+                        width: isMobile ? "100%" : "max(100%, 300px)",
+                        minWidth: isMobile ? "100%" : "300px",
                         maxHeight: "400px",
                         overflowY: "auto",
                         zIndex: 100,
@@ -175,7 +179,10 @@ export function SearchBar() {
                     position: "absolute",
                     top: "calc(100% + 8px)",
                     left: 0,
-                    right: 0,
+                    right: isMobile ? 0 : "auto",
+                    transform: "none",
+                    width: isMobile ? "100%" : "max(100%, 300px)",
+                    minWidth: isMobile ? "100%" : "300px",
                     padding: "12px",
                     zIndex: 100,
                     textAlign: "center",

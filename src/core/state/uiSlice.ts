@@ -42,6 +42,9 @@ export interface UISlice {
     setHighlightLayerId: (id: string | null) => void;
     setConfigPanelOpen: (open: boolean) => void;
     setOpenMobilePanel: (panel: "left" | "right" | null) => void;
+    errorToastMessage: string | null;
+    showErrorToast: (message: string) => void;
+    clearErrorToast: () => void;
 }
 
 export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => ({
@@ -116,5 +119,8 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => (
             openMobilePanel: state.openMobilePanel === panel ? null : panel,
             mobileRightPanelGlow: panel === "right" ? false : state.mobileRightPanelGlow,
         })),
+    errorToastMessage: null,
+    showErrorToast: (message) => set({ errorToastMessage: message }),
+    clearErrorToast: () => set({ errorToastMessage: null }),
 });
 

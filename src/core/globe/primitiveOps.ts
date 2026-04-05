@@ -154,13 +154,19 @@ export function createNewItem(
 /** Cleanup primitives for entities no longer in visibleEntities. */
 export function cleanupRemovedEntities(
     existingMap: Map<string, AnimatableItem>, currentIds: Set<string>,
-    points: PointPrimitiveCollection, billboards: BillboardCollection, labels: LabelCollection
+    points: PointPrimitiveCollection, billboards: BillboardCollection, labels: LabelCollection,
+    polylines: any
 ) {
     for (const [id, item] of existingMap.entries()) {
         if (!currentIds.has(id)) {
             if (item.options.iconUrl) billboards.remove(item.primitive); else points.remove(item.primitive);
             item.primitive = null;
             if (item.labelPrimitive) { labels.remove(item.labelPrimitive); item.labelPrimitive = undefined; }
+            if (item.polylinePrimitive) {
+                polylines.remove(item.polylinePrimitive); 
+            }
+            item.polylinePrimitive = undefined;
+            item.trailPositions = undefined;
             existingMap.delete(id);
         }
     }

@@ -29,12 +29,7 @@
     justify-content: center;
 }
 
-/* On screens shorter than 850px, hide the second ad so everything fits without scrolling */
-@media (max-height: 850px) {
-    .demo-ad-strip__ad:nth-of-type(2) {
-        display: none !important;
-    }
-}
+
 
 .demo-ad-strip__banner {
     position: relative;

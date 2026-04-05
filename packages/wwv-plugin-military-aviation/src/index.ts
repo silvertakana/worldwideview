@@ -26,7 +26,7 @@ function feetToMeters(feet: number): number { return feet * 0.3048; }
 export class MilitaryPlugin implements WorldPlugin {
     id = "military-aviation";
     name = "Military Aviation";
-    description = "Real-time military aircraft tracking via adsb.fi";
+    description = "Real-time military aircraft tracking via adsb.lol";
     icon = Shield;
     category = "aviation" as const;
     version = "1.0.0";
@@ -35,42 +35,58 @@ export class MilitaryPlugin implements WorldPlugin {
     async initialize(ctx: PluginContext): Promise<void> { this.context = ctx; }
     destroy(): void { this.context = null; }
 
+    private mapPayloadToEntities(payloadData: any): GeoEntity[] {
+        let aircraftList: any[] = [];
+        if (Array.isArray(payloadData)) {
+            aircraftList = payloadData;
+        } else if (payloadData && typeof payloadData === 'object') {
+            aircraftList = Object.values(payloadData);
+        } else {
+            return [];
+        }
+
+        return aircraftList
+            .filter((ac: AdsbFiAircraft) => ac.lat != null && ac.lon != null)
+            .map((ac: AdsbFiAircraft): GeoEntity => {
+                const altFeet = typeof ac.alt_baro === "number" ? ac.alt_baro : null;
+                const altMeters = altFeet !== null ? feetToMeters(altFeet) : null;
+                const isOnGround = ac.alt_baro === "ground";
+                return {
+                    id: `military-aviation-${ac.hex}`, pluginId: "military-aviation",
+                    latitude: ac.lat!, longitude: ac.lon!,
+                    altitude: altMeters !== null ? altMeters * 10 : 0,
+                    heading: ac.track ?? undefined, speed: ac.gs ?? undefined,
+                    timestamp: new Date(),
+                    label: ac.flight?.trim() || ac.r || ac.hex,
+                    properties: { 
+                        hex: ac.hex, callsign: ac.flight?.trim() || null, 
+                        registration: ac.r || null, aircraft_type: ac.t || null, 
+                        altitude_ft: altFeet, altitude_m: altMeters, ground_speed_kts: ac.gs ?? null, 
+                        heading: ac.track ?? null, squawk: ac.squawk || null, 
+                        on_ground: isOnGround, category: ac.category || null, 
+                        emergency: ac.emergency || null,
+                        history: ac.history || []
+                    },
+                };
+            });
+    }
+
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
             const res = await globalThis.fetch("/api/external/military-aviation");
             if (!res.ok) throw new Error(`Military API returned ${res.status}`);
             const data = await res.json();
             const aircraftList = data.ac || data.items; // Fallback just in case payload standardizes
-            if (!aircraftList || !Array.isArray(aircraftList)) return [];
-
-            return aircraftList
-                .filter((ac: AdsbFiAircraft) => ac.lat != null && ac.lon != null)
-                .map((ac: AdsbFiAircraft): GeoEntity => {
-                    const altFeet = typeof ac.alt_baro === "number" ? ac.alt_baro : null;
-                    const altMeters = altFeet !== null ? feetToMeters(altFeet) : null;
-                    const isOnGround = ac.alt_baro === "ground";
-                    return {
-                        id: `military-aviation-${ac.hex}`, pluginId: "military-aviation",
-                        latitude: ac.lat!, longitude: ac.lon!,
-                        altitude: altMeters !== null ? altMeters * 10 : 0,
-                        heading: ac.track ?? undefined, speed: ac.gs ?? undefined,
-                        timestamp: new Date(),
-                        label: ac.flight?.trim() || ac.r || ac.hex,
-                        properties: { 
-                            hex: ac.hex, callsign: ac.flight?.trim() || null, 
-                            registration: ac.r || null, aircraft_type: ac.t || null, 
-                            altitude_ft: altFeet, altitude_m: altMeters, ground_speed_kts: ac.gs ?? null, 
-                            heading: ac.track ?? null, squawk: ac.squawk || null, 
-                            on_ground: isOnGround, category: ac.category || null, 
-                            emergency: ac.emergency || null,
-                            history: ac.history || []
-                        },
-                    };
-                });
-        } catch (err) {
+            return this.mapPayloadToEntities(aircraftList);
+        } catch (err: any) {
             console.error("[MilitaryPlugin] Fetch error:", err);
+            if (this.context?.onError) this.context.onError(err);
             return [];
         }
+    }
+
+    mapWebsocketPayload(payload: any): GeoEntity[] {
+        return this.mapPayloadToEntities(payload);
     }
 
     getPollingInterval(): number { return 0; }

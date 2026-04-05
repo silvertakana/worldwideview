@@ -68,3 +68,6 @@ next-env.d.ts
 
 # Plugin build artifacts
 packages/*/dist/
+
+# Reference Reference Codebases
+/worldmonitor/

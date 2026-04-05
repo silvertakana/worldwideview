@@ -2,7 +2,7 @@ import { db } from '../db';
 import { setLiveSnapshot } from '../redis';
 import { registerSeeder } from '../scheduler';
 
-const ADSB_FI_URL = "https://api.adsb.fi/v2/mil";
+const ADSB_LOL_URL = "https://api.adsb.lol/v2/mil";
 const POLLING_INTERVAL_MS = 60000;
 
 const insertHistory = db.prepare(`
@@ -12,7 +12,7 @@ const insertHistory = db.prepare(`
 
 async function pollMilitaryAviation() {
     try {
-        const response = await fetch(ADSB_FI_URL, {
+        const response = await fetch(ADSB_LOL_URL, {
             headers: {
                 "User-Agent": "WorldWideView-DataEngine"
             }
@@ -79,7 +79,7 @@ async function pollMilitaryAviation() {
 
         insertMany(data.ac);
 
-        // Execute Redis batch via compressed snapshot (60 mins to match slow moving or intermittent adsb.fi coverage)
+        // Execute Redis batch via compressed snapshot (60 mins to match slow moving or intermittent adsb.lol coverage)
         await setLiveSnapshot('military-aviation', fleetObj, 60 * 60);
 
     } catch (err: any) {

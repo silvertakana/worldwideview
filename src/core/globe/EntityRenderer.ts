@@ -141,14 +141,14 @@ export async function renderEntitiesChunked(
     visibleEntities: Array<{ entity: GeoEntity; options: CesiumEntityOptions }>,
     existingMap: Map<string, AnimatableItem>
 ): Promise<AnimatableItem[]> {
-    const { points, billboards, labels } = getCollections(viewer);
+    const { points, billboards, labels, polylines } = getCollections(viewer);
     if (!points || !billboards || !labels) return getStableAnimatables(existingMap);
     const currentIds = new Set<string>();
     await globalChunkedProcessor.processChunked(visibleEntities, 1000, (chunk) => {
         if (viewer.isDestroyed()) return;
         for (let i = 0; i < chunk.length; i++) renderSingleEntity(chunk[i], existingMap, points, billboards, labels, currentIds);
     });
-    cleanupRemovedEntities(existingMap, currentIds, points, billboards, labels);
+    cleanupRemovedEntities(existingMap, currentIds, points, billboards, labels, polylines);
     markAnimatablesDirty();
 
     let altitude = 1000000;
@@ -170,11 +170,11 @@ export function renderEntities(
     existingMap: Map<string, AnimatableItem>
 ): AnimatableItem[] {
     globalChunkedProcessor.cancel();
-    const { points, billboards, labels } = getCollections(viewer);
+    const { points, billboards, labels, polylines } = getCollections(viewer);
     if (!points || !billboards || !labels) return getStableAnimatables(existingMap);
     const currentIds = new Set<string>();
     for (const item of visibleEntities) renderSingleEntity(item, existingMap, points, billboards, labels, currentIds);
-    cleanupRemovedEntities(existingMap, currentIds, points, billboards, labels);
+    cleanupRemovedEntities(existingMap, currentIds, points, billboards, labels, polylines);
     markAnimatablesDirty();
 
     let altitude = 1000000;

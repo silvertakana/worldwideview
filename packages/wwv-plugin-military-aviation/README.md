@@ -1,6 +1,6 @@
 # @worldwideview/wwv-plugin-military
 
-[WorldWideView](https://github.com/silvertakana/worldwideview) plugin for **real-time military aircraft tracking** via [adsb.fi](https://adsb.fi/).
+[WorldWideView](https://github.com/silvertakana/worldwideview) plugin for **real-time military aircraft tracking** via [adsb.lol](https://api.adsb.lol).
 
 ## Features
 
@@ -34,7 +34,7 @@ Register the plugin with the WorldWideView plugin engine to start tracking milit
 
 ## Data Source
 
-Military aircraft data is fetched from [adsb.fi](https://adsb.fi/) via the `/api/military` endpoint. No authentication required.
+Military aircraft data is fetched from [adsb.lol](https://api.adsb.lol/) via the `/api/military` endpoint. No authentication required.
 
 ## Changelog
 

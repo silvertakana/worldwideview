@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { validateMarketplaceAuth } from "@/lib/marketplace/auth";
-import { getInstalledPlugins, DISABLED_VERSION } from "@/lib/marketplace/repository";
+import { getInstalledPlugins } from "@/lib/marketplace/repository";
 import { handlePreflight, withCors } from "@/lib/marketplace/cors";
 import { BUILT_IN_PLUGIN_IDS } from "@/lib/marketplace/builtinPlugins";
 import { marketplaceApiLimiter } from "@/lib/rateLimiters";
@@ -16,23 +16,20 @@ export async function GET(request: Request) {
     const rateLimited = marketplaceApiLimiter.check(getClientIp(request));
     if (rateLimited) return withCors(rateLimited, request);
 
-    // On demo, only the admin session may manage plugins (which involves viewing status via UI)
-    if (isDemo && !isDemoAdmin(await auth())) {
-        return withCors(
-            NextResponse.json({ error: "Admin access required" }, { status: 403 }),
-            request,
-        );
-    }
+    // In demo mode, the plugin list is public (read-only for non-admins)
+    // For local/cloud, we continue to enforce authentication
 
-    const authError = await validateMarketplaceAuth(request);
-    if (authError) return withCors(authError, request);
+    if (!isDemo) {
+        const authError = await validateMarketplaceAuth(request);
+        if (authError) return withCors(authError, request);
+    }
 
     try {
         const dbPlugins = await getInstalledPlugins();
         const dbMap = new Map(dbPlugins.map((p) => [p.pluginId, p]));
 
-        // Collect active DB plugins (exclude disabled markers)
-        const activeDbPlugins = dbPlugins.filter((p) => p.version !== DISABLED_VERSION);
+        // Collect active DB plugins (exclude disabled ones)
+        const activeDbPlugins = dbPlugins.filter((p) => p.enabled !== false);
 
         // Add built-in plugins that aren't in the DB at all (default = installed)
         const builtInRecords = BUILT_IN_PLUGIN_IDS

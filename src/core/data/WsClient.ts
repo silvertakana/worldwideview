@@ -1,5 +1,6 @@
 import { dataBus } from "./DataBus";
-import type { WsStreamPayload } from "@worldwideview/wwv-plugin-sdk";
+import type { WsStreamPayload, GeoEntity } from "@worldwideview/wwv-plugin-sdk";
+import { pluginManager } from "../plugins/PluginManager";
 
 class WebSocketClient {
   private ws: WebSocket | null = null;
@@ -26,10 +27,26 @@ class WebSocketClient {
       try {
         const data = JSON.parse(event.data) as WsStreamPayload;
         if (data.type === "data" && data.pluginId && data.payload) {
+          const plugin = pluginManager.getPlugin(data.pluginId)?.plugin;
+          let finalEntities = data.payload as GeoEntity[];
+          
+          if (plugin && typeof (plugin as any).mapWebsocketPayload === "function") {
+              finalEntities = (plugin as any).mapWebsocketPayload(data.payload);
+          } else if (!Array.isArray(data.payload)) {
+              console.warn(`[WsClient] Payload for ${data.pluginId} is an object but no mapWebsocketPayload exists. Ignoring.`);
+              return;
+          } else {
+              // Ensure timestamps are mapped back to Date objects
+              finalEntities = finalEntities.map(e => ({
+                  ...e,
+                  timestamp: new Date(e.timestamp || Date.now())
+              }));
+          }
+
           // Push directly into the DataBus!
           dataBus.emit("dataUpdated", {
             pluginId: data.pluginId,
-            entities: data.payload,
+            entities: finalEntities,
           });
         }
       } catch (err) {

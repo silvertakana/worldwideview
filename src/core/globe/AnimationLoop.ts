@@ -159,12 +159,14 @@ function processEntity(
 
     if (item._modelPromoted) return;
 
-    // Mathematical horizon culling (extremely fast, precise for sphere)
-    item._occluded = Cartesian3.dot(posRef, camPos) <= R2;
-    if (item._occluded) {
-        if (primitive.show !== false) primitive.show = false;
-        hideLabel(item, labelsCollection);
-        return;
+    if (!item.options.disableManualHorizonCulling) {
+        // Mathematical horizon culling (extremely fast, precise for sphere)
+        item._occluded = Cartesian3.dot(posRef, camPos) <= R2;
+        if (item._occluded) {
+            if (primitive.show !== false) primitive.show = false;
+            hideLabel(item, labelsCollection);
+            return;
+        }
     }
 
     // Force rendering pos to hub if clustered, so pixelOffset originates from the hub

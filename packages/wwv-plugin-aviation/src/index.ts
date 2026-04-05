@@ -41,6 +41,40 @@ export class AviationPlugin implements WorldPlugin {
     async initialize(ctx: PluginContext): Promise<void> { this.context = ctx; }
     destroy(): void { this.context = null; }
 
+    private mapPayloadToEntities(payloadData: any): GeoEntity[] {
+        let aircraftList: any[] = [];
+        if (Array.isArray(payloadData)) {
+            aircraftList = payloadData;
+        } else if (payloadData && typeof payloadData === 'object') {
+            aircraftList = Object.values(payloadData);
+        } else {
+            return [];
+        }
+
+        return aircraftList.map((st: any): GeoEntity => {
+            return {
+                id: `aviation-${st.icao24}`, pluginId: "aviation",
+                latitude: st.lat, longitude: st.lon,
+                altitude: (st.alt || 0) * 10,
+                heading: st.hdg || undefined, speed: st.spd || undefined,
+                timestamp: new Date(st.ts ? st.ts * 1000 : Date.now()),
+                label: st.callsign || st.icao24,
+                properties: {
+                    icao24: st.icao24,
+                    callsign: st.callsign,
+                    origin_country: st.origin_country,
+                    altitude_m: st.alt,
+                    altitude_band: getAltitudeBand(st.alt || 0),
+                    velocity_ms: st.spd,
+                    heading: st.hdg,
+                    vertical_rate: st.vertical_rate,
+                    on_ground: st.on_ground,
+                    squawk: st.squawk
+                },
+            };
+        });
+    }
+
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
             let res: Response;
@@ -55,34 +89,16 @@ export class AviationPlugin implements WorldPlugin {
             if (!res.ok) throw new Error(`Data Engine API returned ${res.status}`);
             const data = await res.json();
             
-            if (!data.items || !Array.isArray(data.items)) return [];
-
-            return data.items.map((st: any): GeoEntity => {
-                return {
-                    id: `aviation-${st.icao24}`, pluginId: "aviation",
-                    latitude: st.lat, longitude: st.lon,
-                    altitude: (st.alt || 0) * 10,
-                    heading: st.hdg || undefined, speed: st.spd || undefined,
-                    timestamp: new Date(st.ts ? st.ts * 1000 : Date.now()),
-                    label: st.callsign || st.icao24,
-                    properties: {
-                        icao24: st.icao24,
-                        callsign: st.callsign,
-                        origin_country: st.origin_country,
-                        altitude_m: st.alt,
-                        altitude_band: getAltitudeBand(st.alt || 0),
-                        velocity_ms: st.spd,
-                        heading: st.hdg,
-                        vertical_rate: st.vertical_rate,
-                        on_ground: st.on_ground,
-                        squawk: st.squawk
-                    },
-                };
-            });
-        } catch (err) {
+            return this.mapPayloadToEntities(data.items);
+        } catch (err: any) {
             console.error("[AviationPlugin] Fetch error:", err);
+            if (this.context?.onError) this.context.onError(err);
             return [];
         }
+    }
+
+    mapWebsocketPayload(payload: any): GeoEntity[] {
+        return this.mapPayloadToEntities(payload);
     }
 
     getPollingInterval(): number {

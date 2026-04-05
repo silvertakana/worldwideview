@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDisabledBuiltinIds } from "@/lib/marketplace/repository";
+import { getDisabledPluginIds } from "@/lib/marketplace/repository";
 import { handlePreflight, withCors } from "@/lib/marketplace/cors";
 import { marketplaceApiLimiter } from "@/lib/rateLimiters";
 import { getClientIp } from "@/lib/rateLimit";
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     if (rateLimited) return withCors(rateLimited, request);
 
     try {
-        const disabled = await getDisabledBuiltinIds();
+        const disabled = await getDisabledPluginIds();
         return withCors(
             NextResponse.json({ disabledIds: [...disabled] }),
             request,

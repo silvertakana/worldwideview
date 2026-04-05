@@ -44,17 +44,17 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               // CesiumJS requires unsafe-eval (worker compilation) and unsafe-inline (styles)
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://analytics.worldwideview.dev https://va.vercel-scripts.com https://pagead2.googlesyndication.com https://adservice.google.com https://www.googletagservices.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://analytics.worldwideview.dev https://va.vercel-scripts.com https://pagead2.googlesyndication.com https://adservice.google.com https://www.googletagservices.com https://ep2.adtrafficquality.google",
               "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
               "font-src 'self' fonts.gstatic.com",
               // Camera streams load images/MJPEG from arbitrary IPs worldwide — http: https: required
               "img-src 'self' data: blob: http: https:",
               // Camera HLS streams and external data fetches need arbitrary origins
-              "connect-src 'self' http: https:",
+              "connect-src 'self' http: https: ws: wss:",
               // HLS video streams from arbitrary camera sources
               "media-src 'self' blob: http: https:",
               // Embeddable video platforms for camera iframes
-              "frame-src 'self' *.youtube.com *.youtube-nocookie.com *.twitch.tv *.vimeo.com *.webcamera.pl *.ivideon.com *.rtsp.me *.bnu.tv https://googleads.g.doubleclick.net https://tpc.googlesyndication.com",
+              "frame-src 'self' *.youtube.com *.youtube-nocookie.com *.twitch.tv *.vimeo.com *.webcamera.pl *.ivideon.com *.rtsp.me *.bnu.tv https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep2.adtrafficquality.google https://*.google.com",
               "worker-src 'self' blob:",
               "frame-ancestors 'none'",
             ].join("; "),

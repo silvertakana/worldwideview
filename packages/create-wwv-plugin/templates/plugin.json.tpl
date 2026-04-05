@@ -1,0 +1,13 @@
+{
+  "id": "{{SLUG}}",
+  "name": "{{NAME}}",
+  "version": "1.0.0",
+  "description": "A custom WorldWideView plugin",
+  "type": "data-layer",
+  "format": "bundle",
+  "trust": "unverified",
+  "capabilities": ["data:own"],
+  "category": "custom",
+  "icon": "📍",
+  "entry": "dist/index.mjs"
+}

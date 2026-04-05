@@ -54,6 +54,10 @@ class PluginManager {
             onError: (error) => {
                 console.error(`[Plugin:${plugin.id}]`, error);
                 trackEvent("plugin-error", { plugin: plugin.id, error: error.message });
+                const store = useStore.getState();
+                if (store.showErrorToast) {
+                    store.showErrorToast(`[${plugin.name || plugin.id}] ${error.message}`);
+                }
             },
             getPluginSettings: (pluginId) =>
                 useStore.getState().dataConfig.pluginSettings[pluginId] as ReturnType<typeof useStore.getState>["dataConfig"]["pluginSettings"][string],

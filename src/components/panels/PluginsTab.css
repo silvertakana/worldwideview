@@ -1,0 +1,186 @@
+/* ─── Plugins Tab ────────────────────────────────────────── */
+.plugins-tab {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.plugins-tab__list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.plugins-tab__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    padding: var(--space-2xl) var(--space-lg);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.plugins-tab__empty-icon {
+    font-size: 32px;
+    opacity: 0.5;
+}
+
+/* ─── Plugin Item ────────────────────────────────────────── */
+.plugin-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    transition: background var(--duration-fast) var(--ease-smooth);
+    margin-bottom: var(--space-xs);
+}
+
+.plugin-item:hover {
+    background: var(--bg-glass-hover);
+}
+
+.plugin-item__icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    font-size: 16px;
+}
+
+.plugin-item__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.plugin-item__header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 1px;
+}
+
+.plugin-item__name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.plugin-item__version {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.04);
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+
+.plugin-item__meta {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* ─── Trust Badge ────────────────────────────────────────── */
+.trust-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 999px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.trust-badge--builtin {
+    color: var(--accent-cyan);
+    background: rgba(var(--accent-rgb), 0.1);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+}
+
+.trust-badge--verified {
+    color: var(--accent-green);
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+.trust-badge--unverified {
+    color: var(--accent-amber);
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* ─── Uninstall Button ───────────────────────────────────── */
+.plugin-item__uninstall {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.plugin-item:hover .plugin-item__uninstall {
+    opacity: 1;
+}
+
+.plugin-item__uninstall:hover {
+    color: var(--accent-red);
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ─── Browse Marketplace Link ────────────────────────────── */
+.plugins-tab__browse {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-lg);
+    margin-top: var(--space-md);
+    background: linear-gradient(
+        135deg,
+        rgba(var(--accent-rgb), 0.1),
+        rgba(var(--accent-rgb), 0.03)
+    );
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+    border-radius: var(--radius-md);
+    color: var(--accent-cyan);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-smooth);
+    flex-shrink: 0;
+}
+
+.plugins-tab__browse:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(var(--accent-rgb), 0.2),
+        rgba(var(--accent-rgb), 0.08)
+    );
+    border-color: rgba(var(--accent-rgb), 0.4);
+    box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.15);
+    transform: translateY(-1px);
+}

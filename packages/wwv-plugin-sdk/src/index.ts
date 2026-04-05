@@ -144,6 +144,8 @@ export interface CesiumEntityOptions {
         dashPattern?: "solid" | "dashed";
         opacityFade?: boolean;
     };
+    /** Skip mathematical horizon culling (useful for high-altitude objects like satellites) */
+    disableManualHorizonCulling?: boolean;
 }
 
 // ─── Selection Behavior ──────────────────────────────────────
@@ -231,6 +233,8 @@ export interface WorldPlugin {
     /** Custom React component injected into the Globe view for rendering primitives/data sources (e.g. GeoJSON). */
     getGlobeComponent?(): ComponentType<{ viewer: any; enabled: boolean }>;
     requiresConfiguration?(settings: unknown): boolean;
+    /** Map raw websocket payload into GeoEntity array */
+    mapWebsocketPayload?(payload: any): GeoEntity[];
 }
 
 // ─── Aliases for backwards compatibility ─────────────────────
