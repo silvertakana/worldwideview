@@ -46,6 +46,7 @@ import UnverifiedPluginBatchDialog from "@/components/marketplace/UnverifiedPlug
 import { FeedbackDialog } from "@/components/common/FeedbackDialog";
 
 import { injectHostGlobals } from "@/core/plugins/hostGlobals";
+import { initLogCatcher } from "@/lib/logCatcher";
 
 const GlobeView = dynamic(() => import("@/core/globe/GlobeView"), {
     ssr: false,
@@ -60,6 +61,7 @@ export function AppShell() {
 
     useEffect(() => {
         const startPlatform = async () => {
+            initLogCatcher();
             console.log("[AppShell] Initializing Platform...");
 
             // Inject host libraries for dynamic plugin loading

@@ -122,9 +122,9 @@
     flex-direction: column;
 }
 
+.input,
 .textarea {
     width: 100%;
-    min-height: 120px;
     background: #2a2a2a;
     border: 1px solid #3f3f46;
     border-radius: var(--radius-sm);
@@ -132,15 +132,21 @@
     color: #e2e8f0;
     font-family: var(--font-ui);
     font-size: 14px;
-    resize: vertical;
     transition: border-color var(--duration-fast) var(--ease-smooth);
 }
 
+.textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.input:focus,
 .textarea:focus {
     outline: none;
     border-color: #3b82f6;
 }
 
+.input::placeholder,
 .textarea::placeholder {
     color: #71717a;
 }
@@ -185,6 +191,12 @@
     color: #cbd5e1;
 }
 
+.actionRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+}
+
 .attachAction {
     display: flex;
     align-items: center;
@@ -199,6 +211,45 @@
 
 .attachAction:hover {
     color: #e2e8f0;
+}
+
+.previewList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+}
+
+.previewContainer {
+    position: relative;
+    width: 60px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.previewImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-medium);
+}
+
+.removeScreenshot {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    padding: 0;
 }
 
 .footer {

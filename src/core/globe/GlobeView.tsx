@@ -11,6 +11,7 @@ import { applyFilters } from "@/core/filters/filterEngine";
 import { subscribeToCameraPresets } from "./CameraController";
 import { setupInteractionHandlers } from "./InteractionHandler";
 import { useBorders } from "./useBorders";
+import { dataBus } from "@/core/data/DataBus";
 
 import { handleEntitySelection, cleanupTrail } from "./SelectionHandler";
 import { useImageryManager } from "./useImageryManager";
