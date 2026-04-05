@@ -132,7 +132,7 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
             {!isPlaying ? (
                 <div style={{ position: "absolute", inset: 0, cursor: "pointer", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={handlePlay}>
                     {previewUrl && (
-                        <img src={previewUrl} alt={label || "Camera preview"} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.6 }}
+                        <img src={getProxiedStreamUrl(previewUrl)} alt={label || "Camera preview"} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.6 }}
                             onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/640x480?text=No+Preview+Available"; }} />
                     )}
                     <div style={{ position: "relative", zIndex: 11 }}>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { isAuthEnabled } from "@/core/edition";
 import { cameraProxyLimiter } from "@/lib/rateLimiters";
 import { getClientIp } from "@/lib/rateLimit";
 
@@ -35,9 +36,11 @@ export async function GET(req: NextRequest) {
     const rateLimited = cameraProxyLimiter.check(getClientIp(req));
     if (rateLimited) return rateLimited;
 
-    const session = await auth();
-    if (!session?.user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (isAuthEnabled) {
+        const session = await auth();
+        if (!session?.user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
     }
 
     const targetUrl = new URL(req.url).searchParams.get("url");
