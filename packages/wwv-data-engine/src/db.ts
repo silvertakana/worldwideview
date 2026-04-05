@@ -70,6 +70,11 @@ export function initDB() {
     CREATE INDEX IF NOT EXISTS idx_maritime_history_mmsi_ts ON maritime_history(mmsi, ts);
   `);
 
+  // Index for time-range-only queries (playback mode)
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_maritime_history_ts ON maritime_history(ts);
+  `);
+
   // Aviation history table
   db.exec(`
     CREATE TABLE IF NOT EXISTS aviation_history (
@@ -90,6 +95,11 @@ export function initDB() {
     CREATE INDEX IF NOT EXISTS idx_aviation_history_icao24_ts ON aviation_history(icao24, ts);
   `);
 
+  // Index for time-range-only queries (playback mode)
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_aviation_history_ts ON aviation_history(ts);
+  `);
+
   // Military Aviation history table
   db.exec(`
     CREATE TABLE IF NOT EXISTS military_aviation_history (
@@ -108,6 +118,11 @@ export function initDB() {
   // Index for fast military aviation history lookups by hex + time range
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_military_aviation_history_hex_ts ON military_aviation_history(hex, ts);
+  `);
+
+  // Index for time-range-only queries (playback mode)
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_military_aviation_history_ts ON military_aviation_history(ts);
   `);
 
   // GPS Jamming daily interference map
@@ -161,4 +176,27 @@ export function initDB() {
   `);
 
   console.log('[DB] All tables initialized successfully.');
+}
+
+/**
+ * Prune history rows older than the retention period.
+ * Runs periodically to prevent unbounded table growth.
+ */
+const RETENTION_HOURS = 24;
+
+export function pruneHistoryTables() {
+  const cutoff = Math.floor(Date.now() / 1000) - RETENTION_HOURS * 3600;
+
+  const tables = [
+    'aviation_history',
+    'military_aviation_history',
+    'maritime_history',
+  ];
+
+  for (const table of tables) {
+    const result = db.prepare(`DELETE FROM ${table} WHERE ts < ?`).run(cutoff);
+    if (result.changes > 0) {
+      console.log(`[DB] Pruned ${result.changes} rows from ${table}`);
+    }
+  }
 }

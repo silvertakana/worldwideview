@@ -1,80 +1,69 @@
 import { fastify } from '../server';
 import { db } from '../db';
-import { redis, getLiveSnapshot } from '../redis';
-
-const getHistoryQuery = db.prepare(`
-  SELECT ts, lat, lon, hdg, spd 
-  FROM maritime_history 
-  WHERE mmsi = @mmsi AND ts >= @start_ts
-  ORDER BY ts ASC
-`);
+import { getLiveSnapshot } from '../redis';
 
 fastify.get('/data/maritime', async (request: any, reply) => {
-  const { lookback } = request.query;
-  
-  // Parse lookback (e.g., "6h" -> seconds)
-  let lookbackSeconds = 0;
-  if (lookback && typeof lookback === 'string') {
-    const match = lookback.match(/^(\d+)([hm])$/);
-    if (match) {
-      const val = parseInt(match[1], 10);
-      lookbackSeconds = match[2] === 'h' ? val * 3600 : val * 60;
-    }
-  }
+  try {
+    const { lookback, time } = request.query;
 
-  // 1. Get hot fleet from Redis (O(1) HGETALL)
-  const fleetObj = await getLiveSnapshot('maritime') || {};
-  const activeFleet = Object.values(fleetObj) as any[];
-  const nowTs = Math.floor(Date.now() / 1000);
+    // Historical playback mode snapshot
+    if (time && typeof time === 'string') {
+      const targetTs = Math.floor(parseInt(time, 10) / 1000);
+      const historyQuery = db.prepare(`
+        SELECT mmsi, ts, lat, lon, hdg, spd
+        FROM maritime_history
+        WHERE ts BETWEEN @start AND @end
+      `);
+      const historyRows = historyQuery.all({
+        start: targetTs - 60,
+        end: targetTs + 60,
+      }) as any[];
 
-  // Filter out ships that haven't moved in the lookback window (or 1 hour default)
-  const maxAge = lookbackSeconds > 0 ? lookbackSeconds : 3600;
-  let items = activeFleet.filter(ship => (nowTs - ship.last_updated) <= maxAge);
+      const closest = new Map();
+      for (const r of historyRows) {
+        const prev = closest.get(r.mmsi);
+        if (!prev || Math.abs(r.ts - targetTs) < Math.abs(prev.ts - targetTs)) {
+          closest.set(r.mmsi, r);
+        }
+      }
 
-  // 2. Attach history trails from SQLite if requested
-  if (lookbackSeconds > 0) {
-    const startTs = nowTs - lookbackSeconds;
-    
-    // For large fleets, N+1 queries can be slow. 
-    // In production, you would fetch all history in one big query: 
-    // SELECT * FROM maritime_history WHERE ts >= @start_ts
-    // and group by MMSI in memory. We do the N+1 here for simplicity as SQLite handles it fast.
-    
-    // Better approach: One big query
-    const allHistoryQuery = db.prepare(`
-      SELECT mmsi, ts, lat, lon, hdg, spd 
-      FROM maritime_history 
-      WHERE ts >= @start_ts
-      ORDER BY ts ASC
-    `);
-    
-    const allRows = allHistoryQuery.all({ start_ts: startTs }) as any[];
-    
-    // Group by MMSI
-    const historyMap = new Map<string, any[]>();
-    for (const row of allRows) {
-      if (!historyMap.has(row.mmsi)) historyMap.set(row.mmsi, []);
-      historyMap.get(row.mmsi)!.push({
-        ts: row.ts,
-        lat: row.lat,
-        lon: row.lon,
-        hdg: row.hdg,
-        spd: row.spd
-      });
+      return {
+        source: 'maritime',
+        fetchedAt: new Date().toISOString(),
+        lookbackSeconds: 0,
+        items: Array.from(closest.values()),
+        totalCount: closest.size,
+      };
     }
 
-    // Attach to active fleet
-    items = items.map(ship => ({
-      ...ship,
-      history: historyMap.get(ship.mmsi) || []
-    }));
-  }
+    // Parse lookback (e.g., "6h" -> seconds)
+    let lookbackSeconds = 0;
+    if (lookback && typeof lookback === 'string') {
+      const match = lookback.match(/^(\d+)([hm])$/);
+      if (match) {
+        const val = parseInt(match[1], 10);
+        lookbackSeconds = match[2] === 'h' ? val * 3600 : val * 60;
+      }
+    }
 
-  return {
-    source: "maritime",
-    fetchedAt: new Date().toISOString(),
-    lookbackSeconds: lookbackSeconds || null,
-    items,
-    totalCount: items.length
-  };
+    // Get live fleet from Redis and filter by freshness
+    const fleetObj = (await getLiveSnapshot('maritime')) || {};
+    const activeFleet = Object.values(fleetObj) as any[];
+    const nowTs = Math.floor(Date.now() / 1000);
+    const maxAge = lookbackSeconds > 0 ? lookbackSeconds : 3600;
+    const items = activeFleet.filter(
+      (ship) => nowTs - ship.last_updated <= maxAge
+    );
+
+    return {
+      source: 'maritime',
+      fetchedAt: new Date().toISOString(),
+      lookbackSeconds: lookbackSeconds || null,
+      items,
+      totalCount: items.length,
+    };
+  } catch (err: any) {
+    console.error('[Maritime Route] ERROR:', err?.message || err);
+    reply.status(500).send({ error: 'Internal error', message: err?.message });
+  }
 });

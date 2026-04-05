@@ -1,4 +1,5 @@
 import cron from 'node-cron';
+import { pruneHistoryTables } from './db';
 
 // Define the interface for a seeder definition
 export interface SeederDefinition {
@@ -60,4 +61,10 @@ export function startScheduler() {
       });
     }
   }
+
+  // Data retention: prune old history rows every hour
+  cron.schedule('0 * * * *', () => {
+    console.log('[Scheduler] Running data retention pruning...');
+    pruneHistoryTables();
+  });
 }
