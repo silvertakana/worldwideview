@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import { SatelliteDish } from "lucide-react";
-import { Color, Cartesian3 } from "cesium";
-import { Entity, PointGraphics } from "resium";
+import { Color, Cartesian3, PolygonHierarchy } from "cesium";
+import { Entity, PolygonGraphics } from "resium";
+import { latLngToCell, cellToBoundary, cellToLatLng } from "h3-js";
 import {
     type WorldPlugin,
     type GeoEntity,
@@ -29,13 +30,23 @@ export class GpsJammingPlugin implements WorldPlugin {
     
     private data: GeoEntity[] = [];
 
+    private renderCache: Array<{
+        id: string;
+        name: string;
+        description: string;
+        height: number;
+        color: Color;
+        outlineColor: Color;
+        hierarchy: PolygonHierarchy;
+    }> = [];
+
     async initialize(_ctx: PluginContext): Promise<void> { }
     destroy(): void { }
 
     getServerConfig(): ServerPluginConfig {
         return {
             apiBasePath: "/api/external/gps_jamming",
-            pollingIntervalMs: 3600 * 1000, // 1 hour
+            pollingIntervalMs: 3600 * 1000,
             requiresAuth: false,
             historyEnabled: false,
             availabilityEnabled: true
@@ -45,12 +56,73 @@ export class GpsJammingPlugin implements WorldPlugin {
     async fetch(timeRange: TimeRange): Promise<GeoEntity[]> {
         const res = await fetch(`/api/external/gps_jamming`);
         const json = await res.json();
+        const items = json.items || [];
         
-        if (json.data) {
-            this.data = json.data;
-            return this.data;
+        const cellMap = new Map<string, { count: number, highest: number, region: string }>();
+        const levelScore = { "low": 1, "medium": 2, "high": 3 };
+        
+        for (const item of items) {
+             const cell = latLngToCell(item.lat, item.lon, 3);
+             const score = levelScore[item.interferenceLevel as keyof typeof levelScore] || 1;
+             
+             if (!cellMap.has(cell)) {
+                 cellMap.set(cell, { count: 1, highest: score, region: item.region });
+             } else {
+                 const current = cellMap.get(cell)!;
+                 current.count++;
+                 if (score > current.highest) current.highest = score;
+             }
         }
-        return [];
+        
+        const scoreNames: Record<number, string> = { 1: "low", 2: "medium", 3: "high" };
+        
+        this.data = Array.from(cellMap.entries()).map(([cell, info]) => {
+            const boundary = cellToBoundary(cell);
+            const polygonHierarchy = boundary.flatMap(coord => [coord[1], coord[0]]); // [lon, lat]
+            const [lat, lon] = cellToLatLng(cell);
+            
+            return {
+                id: `h3_${cell}`,
+                pluginId: this.id,
+                latitude: lat,
+                longitude: lon,
+                timestamp: new Date(),
+                properties: {
+                    h3Boundary: polygonHierarchy,
+                    interferenceLevel: scoreNames[info.highest],
+                    region: info.region,
+                    density: info.count
+                }
+            };
+        });
+        
+        // Cache computationally expensive Cesium parameters to prevent Resium unmount/flicker
+        this.renderCache = this.data.map(entity => {
+            const level = (entity.properties?.interferenceLevel as string)?.toLowerCase() || "low";
+            const hexStr = LEVEL_COLORS[level] || LEVEL_COLORS["low"];
+            const color = Color.fromCssColorString(hexStr).withAlpha(0.65);
+            const outlineColor = Color.fromCssColorString(hexStr).withAlpha(1.0);
+            const height = level === 'high' ? 250000 : (level === 'medium' ? 150000 : 75000);
+            const boundaryArray = entity.properties?.h3Boundary as number[] || [];
+            
+            return {
+                id: entity.id,
+                name: `GPS Interference: ${level.toUpperCase()}`,
+                description: `
+                    <div class="p-3">
+                        <div class="mb-2"><span class="font-semibold text-gray-300">Level:</span> <span style="color: ${hexStr}">${level.toUpperCase()}</span></div>
+                        <div class="mb-2"><span class="font-semibold text-gray-300">Region:</span> ${entity.properties?.region || 'Unknown'}</div>
+                        <div class="mb-2"><span class="font-semibold text-gray-300">Reports:</span> ${entity.properties?.density}</div>
+                    </div>
+                `,
+                height,
+                color,
+                outlineColor,
+                hierarchy: new PolygonHierarchy(Cartesian3.fromDegreesArray(boundaryArray))
+            };
+        });
+        
+        return this.data;
     }
 
     getPollingInterval(): number { 
@@ -60,8 +132,9 @@ export class GpsJammingPlugin implements WorldPlugin {
     getLayerConfig(): LayerConfig {
         return {
             color: "#ef4444",
-            clusterEnabled: false, // We want to see individual hexes/points
+            clusterEnabled: false,
             clusterDistance: 50,
+            disableDefaultRendering: true,
         };
     }
 
@@ -89,55 +162,38 @@ export class GpsJammingPlugin implements WorldPlugin {
         ];
     }
 
-    // Standard renderer - used as fallback
     renderEntity(entity: GeoEntity): CesiumEntityOptions {
-        const level = (entity.properties?.interferenceLevel as string)?.toLowerCase() || "low";
-        const color = LEVEL_COLORS[level] || LEVEL_COLORS["low"];
-
-        return {
-            type: "point",
-            color: color,
-            size: 15,
-        };
+        return { type: "point", size: 0, color: "transparent" };
     }
 
-    // Advanced native Cesium renderer for better performance on large sets
-    getGlobeComponent() {
-        // eslint-disable-next-line react/display-name
-        return ({ enabled }: { enabled: boolean }) => {
-            if (!enabled || this.data.length === 0) return null;
+    private GlobeComp = ({ enabled }: { enabled: boolean }) => {
+        if (!enabled || this.renderCache.length === 0) return null;
 
-            return (
-                <>
-                    {this.data.map((entity) => {
-                        const level = (entity.properties?.interferenceLevel as string)?.toLowerCase() || "low";
-                        const hexStr = LEVEL_COLORS[level] || LEVEL_COLORS["low"];
-                        const color = Color.fromCssColorString(hexStr).withAlpha(0.6);
-                        
-                        return (
-                            <Entity
-                                key={entity.id}
-                                position={Cartesian3.fromDegrees(entity.longitude, entity.latitude, 5000)}
-                                name={`GPS Interference: ${level.toUpperCase()}`}
-                                description={`
-                                    <div class="p-3">
-                                        <div class="mb-2"><span class="font-semibold text-gray-300">Level:</span> <span style="color: ${hexStr}">${level.toUpperCase()}</span></div>
-                                        <div class="mb-2"><span class="font-semibold text-gray-300">Region:</span> ${entity.properties?.region || 'Unknown'}</div>
-                                    </div>
-                                `}
-                            >
-                                <PointGraphics
-                                    color={color}
-                                    pixelSize={!!(level === 'high') ? 25 : (level === 'medium' ? 18 : 12)}
-                                    // Use outline to simulate a slightly blurrier glow/hex
-                                    outlineColor={color.withAlpha(0.8)}
-                                    outlineWidth={2}
-                                />
-                            </Entity>
-                        );
-                    })}
-                </>
-            );
-        };
+        return (
+            <>
+                {this.renderCache.map((rc) => (
+                    <Entity
+                        key={rc.id}
+                        name={rc.name}
+                        description={rc.description}
+                    >
+                        <PolygonGraphics
+                            hierarchy={rc.hierarchy}
+                            extrudedHeight={rc.height}
+                            height={0}
+                            material={rc.color}
+                            outline={true}
+                            outlineColor={rc.outlineColor}
+                            closeTop={true}
+                            closeBottom={false}
+                        />
+                    </Entity>
+                ))}
+            </>
+        );
+    };
+
+    getGlobeComponent() {
+        return this.GlobeComp;
     }
 }
