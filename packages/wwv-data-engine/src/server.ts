@@ -61,8 +61,8 @@ async function start() {
     startScheduler();
 
   } catch (err) {
-    console.error('[Server] Fatal error starting server:', err);
-    process.exit(1);
+    console.error('[Server] Prisma could not connect. Historical data will be disabled.', err.message);
+    // Continue starting the server anyway, to allow real-time streaming to work
   }
 }
 

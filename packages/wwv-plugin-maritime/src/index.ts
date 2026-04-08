@@ -47,6 +47,60 @@ export class MaritimePlugin implements WorldPlugin {
     async initialize(ctx: PluginContext): Promise<void> { this.context = ctx; }
     destroy(): void { this.context = null; }
 
+    private mapPayloadToEntities(payloadData: any, existingEntities?: GeoEntity[]): GeoEntity[] {
+        const currentMap = new Map(existingEntities?.map(e => [e.id, e]) || []);
+        let vessels: any[] = [];
+        
+        if (Array.isArray(payloadData)) {
+            vessels = payloadData;
+        } else if (payloadData && typeof payloadData === 'object') {
+            vessels = Object.values(payloadData);
+        } else {
+            return [];
+        }
+
+        return vessels.map((v: any) => {
+            const entityId = `maritime-${v.mmsi || v.id}`;
+            const existing = currentMap.get(entityId);
+            
+            // Maintain and append to history natively here, reducing database load
+            // Fallback to v.history (for API pull) or existing history (for WS pull)
+            const history = v.history || (v.properties && v.properties.history) || existing?.properties.history || [];
+            
+            if (v.last_updated || v.ts) {
+                const currentTs = v.last_updated || v.ts;
+                const lastTs = history.length > 0 ? history[history.length - 1].ts : 0;
+                
+                // Only push if time strictly advanced
+                if (currentTs > lastTs && (v.lat ?? v.latitude) !== undefined && (v.lon ?? v.longitude) !== undefined) {
+                    history.push({ lat: v.lat ?? v.latitude, lon: v.lon ?? v.longitude, ts: currentTs });
+                }
+            }
+            
+            // Limit bounds to avoid OOM for 50,000 ships
+            if (history.length > 61) history.splice(0, history.length - 61); // ~1 hour of minute-level updates
+
+            return {
+                id: entityId,
+                pluginId: "maritime",
+                latitude: v.lat ?? v.latitude,
+                longitude: v.lon ?? v.longitude,
+                heading: v.hdg === 511 ? undefined : (v.hdg ?? v.heading),
+                speed: v.spd !== undefined ? v.spd * 0.514444 : (v.speed !== undefined ? v.speed * 0.514444 : undefined),
+                timestamp: v.last_updated ? new Date(v.last_updated * 1000) : new Date(v.timestamp || Date.now()),
+                label: v.name ?? v.label,
+                properties: { 
+                    mmsi: v.mmsi, 
+                    vesselName: v.name, 
+                    vesselType: v.type || (v.properties && v.properties.vesselType) || "other", 
+                    speed_knots: v.spd ?? v.speed, 
+                    heading: v.hdg ?? v.heading,
+                    history: history
+                },
+            };
+        });
+    }
+
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
             let lookback = "1h";
@@ -62,32 +116,15 @@ export class MaritimePlugin implements WorldPlugin {
             const res = await fetch(`/api/external/maritime${query}`);
             if (!res.ok) throw new Error(`Maritime API returned ${res.status}`);
             const data = await res.json();
-            const vessels = data.items || [];
-            return vessels.map((v: any) => {
-                // Handle both GeoEntity structure and data-engine structure
-                return {
-                    id: `maritime-${v.mmsi || v.id}`,
-                    pluginId: "maritime",
-                    latitude: v.lat ?? v.latitude,
-                    longitude: v.lon ?? v.longitude,
-                    heading: v.hdg === 511 ? undefined : (v.hdg ?? v.heading),
-                    speed: v.spd !== undefined ? v.spd * 0.514444 : (v.speed !== undefined ? v.speed * 0.514444 : undefined),
-                    timestamp: v.last_updated ? new Date(v.last_updated * 1000) : new Date(v.timestamp || Date.now()),
-                    label: v.name ?? v.label,
-                    properties: { 
-                        mmsi: v.mmsi, 
-                        vesselName: v.name, 
-                        vesselType: v.type || (v.properties && v.properties.vesselType) || "other", 
-                        speed_knots: v.spd ?? v.speed, 
-                        heading: v.hdg ?? v.heading,
-                        history: v.history || (v.properties && v.properties.history) || []
-                    },
-                };
-            });
+            return this.mapPayloadToEntities(data.items);
         } catch (err) {
             console.error("[MaritimePlugin] Fetch error:", err);
             return [];
         }
+    }
+
+    mapWebsocketPayload(payload: any, existingEntities?: GeoEntity[]): GeoEntity[] {
+        return this.mapPayloadToEntities(payload, existingEntities);
     }
 
     getPollingInterval(): number {

@@ -41,10 +41,10 @@ export function handleEntitySelection(
         const item = animatablesMap.get(selectedEntity.id);
         const originLon = selectedEntity.longitude;
         const originLat = selectedEntity.latitude;
-        const entityAlt = selectedEntity.altitude || 0;
+        const entityAlt = (selectedEntity.altitude || 0) + 10;
 
         const positions: Cartesian3[] = [];
-        const speed = selectedEntity.speed || 200;
+        const speed = selectedEntity.speed ?? 200;
         const headingRad = CesiumMath.toRadians(selectedEntity.heading);
 
         for (let t = trailDuration; t >= 0; t -= trailStep) {
@@ -71,6 +71,10 @@ export function handleEntitySelection(
                 width: 2,
                 material: new PolylineDashMaterialProperty({
                     color: Color.fromCssColorString(trailColor).withAlpha(0.6),
+                    dashLength: 16,
+                }),
+                depthFailMaterial: new PolylineDashMaterialProperty({
+                    color: Color.fromCssColorString(trailColor).withAlpha(0.2),
                     dashLength: 16,
                 }),
             } as any,

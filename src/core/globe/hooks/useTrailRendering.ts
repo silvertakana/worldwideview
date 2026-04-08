@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { Viewer as CesiumViewer } from "cesium";
-import { Cartesian3, Color, Ellipsoid, Material, DistanceDisplayCondition } from "cesium";
+import { Cartesian3, Color, Ellipsoid, Material, DistanceDisplayCondition, Cartographic } from "cesium";
 import type { AnimatableItem } from "../EntityRenderer";
 import { getCollections } from "../EntityRenderer";
 
@@ -41,9 +41,12 @@ export function useTrailRendering(
 
                     // WebGL Geometry Culling: Only push trailing polylines to Cesium memory if they are near the camera or actively highlighted
                     if (isClose || shouldHighlight) {
-                        if (!item.trailPositions) {
+                        const tipCartographic = Cartographic.fromCartesian(item.posRef);
+                        const altOffset = (item.entity.altitude || 0) + 10; // 10m offset perfectly synchronizes with SelectionHandler.ts dashed trail
+                        const latestHistoryTs = history.length > 0 ? history[history.length - 1].ts : 0;
+
+                        if (!item.trailPositions || item._lastHistoryTs !== latestHistoryTs) {
                             try {
-                                const altOffset = (item.entity.altitude || 0) + 100; // 100m offset to clear terrain depth test
                                 item.trailPositions = history.map(point => 
                                     Cartesian3.fromDegrees(
                                         point.lon || point.longitude || 0, 
@@ -52,11 +55,45 @@ export function useTrailRendering(
                                         Ellipsoid.WGS84
                                     )
                                 );
-                                item.trailPositions.push(Cartesian3.clone(item.posRef));
+                                
+                                if (tipCartographic) {
+                                    item.trailPositions.push(
+                                        Cartesian3.fromRadians(
+                                            tipCartographic.longitude,
+                                            tipCartographic.latitude,
+                                            altOffset,
+                                            Ellipsoid.WGS84
+                                        )
+                                    );
+                                } else {
+                                    item.trailPositions.push(Cartesian3.clone(item.posRef));
+                                }
+
+                                item._lastHistoryTs = latestHistoryTs;
                             } catch (e) {
                                 console.warn("[useTrailRendering] Invalid history formatting", e);
                                 continue;
                             }
+                        } else {
+                            // History hasn't changed, but posRef is smoothly interpolating forward.
+                            // Ensure the tip of the trail stays mathematically snapped to the moving mesh above.
+                            if (item.trailPositions.length > 0) {
+                                if (tipCartographic) {
+                                    item.trailPositions[item.trailPositions.length - 1] = Cartesian3.fromRadians(
+                                        tipCartographic.longitude,
+                                        tipCartographic.latitude,
+                                        altOffset,
+                                        Ellipsoid.WGS84
+                                    );
+                                } else {
+                                    item.trailPositions[item.trailPositions.length - 1] = Cartesian3.clone(item.posRef);
+                                }
+                            }
+                        }
+
+                        // Always assign back to primitive to hint Cesium to rebuild vertex buffer
+                        if (item.polylinePrimitive && item.trailPositions) {
+                            item.polylinePrimitive.positions = item.trailPositions;
                         }
 
                         if (!item.polylinePrimitive) {

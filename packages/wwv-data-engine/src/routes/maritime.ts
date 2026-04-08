@@ -55,6 +55,33 @@ fastify.get('/data/maritime', async (request: any, reply) => {
       (ship) => nowTs - ship.last_updated <= maxAge
     );
 
+    // If lookback was requested, grab history points from SQLite
+    if (lookbackSeconds > 0 && items.length > 0) {
+      const historyQuery = db.prepare(`
+        SELECT mmsi, ts, lat, lon
+        FROM maritime_history
+        WHERE ts >= @startTs
+      `);
+      const allHistory = historyQuery.all({ startTs: nowTs - lookbackSeconds }) as any[];
+
+      const historyMap = new Map<string, any[]>();
+      for (const row of allHistory) {
+        if (!historyMap.has(row.mmsi)) historyMap.set(row.mmsi, []);
+        historyMap.get(row.mmsi)!.push({ lat: row.lat, lon: row.lon, ts: row.ts });
+      }
+
+      for (const ship of items) {
+        const pts = historyMap.get(ship.mmsi);
+        if (pts && pts.length > 0) {
+          // Sort chronologically ascending
+          pts.sort((a, b) => a.ts - b.ts);
+          ship.history = pts;
+        } else {
+          ship.history = [];
+        }
+      }
+    }
+
     return {
       source: 'maritime',
       fetchedAt: new Date().toISOString(),
