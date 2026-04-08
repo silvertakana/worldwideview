@@ -1,6 +1,7 @@
 import { dataBus } from "./DataBus";
 import type { WsStreamPayload, GeoEntity } from "@worldwideview/wwv-plugin-sdk";
 import { pluginManager } from "../plugins/PluginManager";
+import { useStore } from "../state/store";
 
 class WebSocketClient {
   private ws: WebSocket | null = null;
@@ -29,9 +30,9 @@ class WebSocketClient {
         if (data.type === "data" && data.pluginId && data.payload) {
           const plugin = pluginManager.getPlugin(data.pluginId)?.plugin;
           let finalEntities = data.payload as GeoEntity[];
-          
+          const existingEntities = useStore.getState().entitiesByPlugin[data.pluginId] || [];
           if (plugin && typeof (plugin as any).mapWebsocketPayload === "function") {
-              finalEntities = (plugin as any).mapWebsocketPayload(data.payload);
+              finalEntities = (plugin as any).mapWebsocketPayload(data.payload, existingEntities);
           } else if (!Array.isArray(data.payload)) {
               console.warn(`[WsClient] Payload for ${data.pluginId} is an object but no mapWebsocketPayload exists. Ignoring.`);
               return;

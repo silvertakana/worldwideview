@@ -193,7 +193,7 @@ Built-in plugins are instantiated in `AppShell.tsx` and registered via `PluginRe
 > - **Never** use proprietary `.mdc` extensions.
 > - **Never** reference Cursor IDE rules; we use the open `.agents/` standard.
 > - **MUST**: You MUST update Semantic Versioning numbering inside the relevant `package.json` file prior to executing any code commits, adhering strictly to the `[/commit]` workflow rules (`feat:` -> Minor, `fix/refactor/perf:` -> Patch).
-> - **MUST Detail Commit Levels**: On description changes or release notes, you must detail the level of commit (Major/Minor/Fix) for *each* individual change. A single commit might contain multiple distinct changes; accumulate these changes and ensure each lists its semantic level, adjusting the overall version bump to match the highest change level.
+> - **MUST Detail Commit Levels & Bumps**: On description changes or release notes, you must detail the level of commit (Major/Minor/Fix) for *each* individual change. If there are multiple accumulated changes, you MUST EITHER commit them individually and bump the version each time, OR commit them all at once and bump the version multiple times.
 
 ---
 

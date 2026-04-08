@@ -33,6 +33,7 @@ export interface AnimatableItem {
     _occluded?: boolean;
     polylinePrimitive?: any;      // Reference to the trail polyline in the collection
     trailPositions?: Cartesian3[]; // Cached position array to avoid GC pressure
+    _lastHistoryTs?: number;     // Timestamp of the latest history point processed
 }
 
 /** Global render kickstarter for deeply nested async operations. */

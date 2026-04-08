@@ -72,6 +72,7 @@ export default function GlobeView() {
         const result: Array<{ entity: GeoEntity; options: CesiumEntityOptions }> = [];
         pluginManager.getAllPlugins().forEach((managed) => {
             if (!layers[managed.plugin.id]?.enabled) return;
+            if (managed.plugin.getLayerConfig().disableDefaultRendering) return;
             const entities = entitiesByPlugin[managed.plugin.id];
             if (!Array.isArray(entities)) return;
             const defs = managed.plugin.getFilterDefinitions?.() || [];
