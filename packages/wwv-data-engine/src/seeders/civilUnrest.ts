@@ -31,7 +31,7 @@ interface ACLEDResponse {
   data: ACLEDEvent[];
 }
 
-const ACLED_BASE = 'https://acleddata.com/api/acled/read';
+const ACLED_BASE = 'https://api.acleddata.com/acled/read';
 
 let cachedToken: string | null = null;
 
