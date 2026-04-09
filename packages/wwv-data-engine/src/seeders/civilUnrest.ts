@@ -31,41 +31,55 @@ interface ACLEDResponse {
   data: ACLEDEvent[];
 }
 
-const ACLED_BASE = 'https://api.acleddata.com/acled/read';
+const ACLED_BASE = 'https://acleddata.com/api/acled/read';
 
-/**
- * Fetches a single page from ACLED API.
- * Returns parsed ACLEDResponse or null on failure.
- */
-async function fetchACLEDPage(page: number): Promise<ACLEDResponse | null> {
-  const apiKey = process.env.ACLED_API_KEY;
+let cachedToken: string | null = null;
+
+async function getAccessToken(): Promise<string | null> {
+  if (cachedToken) return cachedToken;
+  
   const email = process.env.ACLED_EMAIL;
-
-  if (!apiKey || !email) {
-    console.warn('[CivilUnrest] ACLED_API_KEY or ACLED_EMAIL not set — skipping fetch.');
+  const password = process.env.ACLED_PASSWORD;
+  
+  if (!email || !password) {
+    console.warn('[CivilUnrest] ACLED_EMAIL or ACLED_PASSWORD not set — skipping fetch.');
     return null;
   }
-
-  // Fetch protests and riots from the last 30 days
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const dateAfter = thirtyDaysAgo.toISOString().split('T')[0];
-
-  const params = new URLSearchParams({
-    key: apiKey,
-    email: email,
-    event_type: 'Protests',
-    event_date: dateAfter,
-    event_date_where: '>=',
-    limit: '5000',
-    page: String(page),
-  });
-
-  // ACLED separates Protests and Riots as distinct event_types.
-  // We fetch Protests here; Riots are fetched in a second call.
-  const url = `${ACLED_BASE}?${params.toString()}`;
-  const res = await withRetry(() => fetchWithTimeout(url, {}, 30000));
-  return await res.json() as ACLEDResponse;
+  
+  const tokenUrl = 'https://acleddata.com/oauth/token';
+  const params = new URLSearchParams();
+  params.append('username', email);
+  params.append('password', password);
+  params.append('grant_type', 'password');
+  params.append('client_id', 'acled');
+  
+  try {
+    const res = await fetchWithTimeout(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params.toString()
+    });
+    
+    if (!res.ok) {
+      console.error(`[CivilUnrest] Auth error: ${res.status}`);
+      return null;
+    }
+    
+    const json = await res.json() as { access_token: string, expires_in: number };
+    cachedToken = json.access_token;
+    
+    // Clear token slightly before expiry
+    setTimeout(() => {
+      cachedToken = null;
+    }, (json.expires_in - 300) * 1000);
+    
+    return cachedToken;
+  } catch (err: any) {
+    console.error(`[CivilUnrest] Auth network error:`, err.message);
+    return null;
+  }
 }
 
 /**
@@ -79,17 +93,15 @@ async function fetchAllACLEDEvents(): Promise<ACLEDEvent[]> {
     let hasMore = true;
 
     while (hasMore) {
-      const apiKey = process.env.ACLED_API_KEY;
-      const email = process.env.ACLED_EMAIL;
-      if (!apiKey || !email) return [];
+      const token = await getAccessToken();
+      if (!token) return [];
 
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const dateAfter = thirtyDaysAgo.toISOString().split('T')[0];
 
       const params = new URLSearchParams({
-        key: apiKey,
-        email: email,
+        _format: 'json',
         event_type: eventType,
         event_date: dateAfter,
         event_date_where: '>=',
@@ -100,7 +112,11 @@ async function fetchAllACLEDEvents(): Promise<ACLEDEvent[]> {
       const url = `${ACLED_BASE}?${params.toString()}`;
 
       try {
-        const res = await withRetry(() => fetchWithTimeout(url, {}, 30000));
+        const res = await withRetry(() => fetchWithTimeout(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }, 30000));
         const json = await res.json() as ACLEDResponse;
 
         if (!json.success || !json.data || json.data.length === 0) {
