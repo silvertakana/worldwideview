@@ -58,7 +58,7 @@ export const createConfigSlice: StateCreator<AppStore, [], [], ConfigSlice> = (s
         showFps: false,
         resolutionScale: 1.0,
         antiAliasing: "fxaa", // Default to fast FXAA
-        maxScreenSpaceError: 16,
+        maxScreenSpaceError: 32, // Increase from 16 to 32 to significantly reduce 3D tile network requests and costs
         shadowsEnabled: false,
         enableLighting: false,
         baseLayerId: "google-3d",
