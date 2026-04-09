@@ -193,6 +193,6 @@ export async function fetchCivilUnrest() {
 
 registerSeeder({
   name: 'civilUnrest',
-  cron: '0 6 * * *', // Daily at 06:00 UTC (ACLED updates weekly on Mondays)
+  cron: '0 */12 * * *', // Every 12 hours
   fn: fetchCivilUnrest,
 });
