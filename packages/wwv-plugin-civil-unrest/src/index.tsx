@@ -13,10 +13,10 @@ import { Hand } from "lucide-react";
 export class CivilUnrestPlugin implements WorldPlugin {
     id = "civil-unrest";
     name = "Civil Unrest";
-    description = "Tracks global protests, riots, and civil disturbances.";
+    description = "Tracks global protests, riots, and civil disturbances via ACLED.";
     icon = Hand;
     category = "conflict" as const;
-    version = "1.0.0";
+    version = "1.1.0";
 
     async initialize(ctx: PluginContext): Promise<void> {
         console.log("[CivilUnrestPlugin] Initialized.");
@@ -32,7 +32,7 @@ export class CivilUnrestPlugin implements WorldPlugin {
 
     getLayerConfig(): LayerConfig {
         return {
-            color: "#eab308", // Yellow for unrest
+            color: "#eab308",
             clusterEnabled: true,
             clusterDistance: 50,
             minZoomLevel: 3
@@ -52,11 +52,31 @@ export class CivilUnrestPlugin implements WorldPlugin {
         const res = await fetch("/api/external/civil_unrest");
         const json = await res.json();
         
-        if (json.data) {
-            return json.data;
-        }
+        // Route returns { data: { source, fetchedAt, items, totalCount } }
+        // or { data: [...] } from legacy format — handle both
+        const payload = json.data;
+        if (!payload) return [];
+
+        const items = Array.isArray(payload) ? payload : (payload.items || []);
         
-        return [];
+        return items.map((item: any) => ({
+            id: `unrest-${item.id}`,
+            latitude: item.lat,
+            longitude: item.lon,
+            name: `${item.type}: ${item.location || 'Unknown'}`,
+            properties: {
+                type: item.type,
+                subType: item.subType,
+                actor1: item.actor1,
+                actor2: item.actor2,
+                fatalities: item.fatalities,
+                country: item.country,
+                location: item.location,
+                date: item.date,
+                source: item.source,
+                notes: item.notes,
+            }
+        }));
     }
 
     getFilterDefinitions(): FilterDefinition[] {
@@ -72,11 +92,17 @@ export class CivilUnrestPlugin implements WorldPlugin {
                 ]
             },
             {
-                id: "minParticipants",
-                label: "Minimum Participants",
-                type: "range",
-                propertyKey: "participants",
-                range: { min: 0, max: 5000, step: 100 }
+                id: "subType",
+                label: "Sub-Type",
+                type: "select",
+                propertyKey: "subType",
+                options: [
+                    { value: "Peaceful protest", label: "Peaceful Protest" },
+                    { value: "Protest with intervention", label: "Protest w/ Intervention" },
+                    { value: "Excessive force against protesters", label: "Excessive Force" },
+                    { value: "Violent demonstration", label: "Violent Demonstration" },
+                    { value: "Mob violence", label: "Mob Violence" },
+                ]
             }
         ];
     }
@@ -92,24 +118,28 @@ export class CivilUnrestPlugin implements WorldPlugin {
     renderEntity(entity: GeoEntity): CesiumEntityOptions {
         const type = (entity.properties?.type as string) || "";
         const subType = (entity.properties?.subType as string) || "";
-        const participants = (entity.properties?.participants as number) || 0;
+        const fatalities = (entity.properties?.fatalities as number) || 0;
         
-        let color = "#eab308"; // Peaceful
+        let color = "#eab308"; // Default: peaceful protest (yellow)
         if (type === "Riots") {
-            color = "#ef4444";
-        } else if (subType.includes("Violent") || subType.includes("force")) {
-            color = "#f97316";
+            color = "#ef4444"; // Red for riots
+        } else if (
+            subType.includes("Violent") || 
+            subType.includes("force") || 
+            subType.includes("intervention")
+        ) {
+            color = "#f97316"; // Orange for violent protests
         }
 
-        // Adjust size based on participants
-        let size = 10;
-        if (participants > 1000) size = 20;
-        else if (participants > 300) size = 15;
+        // Scale point size by fatality count
+        let size = 8;
+        if (fatalities > 10) size = 16;
+        else if (fatalities > 0) size = 12;
 
         return {
             type: "point",
-            color: color,
-            size: size
+            color,
+            size,
         };
     }
 }
