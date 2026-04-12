@@ -42,6 +42,9 @@ packages/*/data/
 *.db-shm
 *.db-wal
 
+# temporary files and credentials
+/tmp/
+
 # generated prisma client
 /src/generated/
 
