@@ -30,15 +30,15 @@ This project is licensed under the [Elastic License 2.0](./LICENSE). By submitti
    ```
 3. **Install dependencies**:
    ```bash
-   npm install
+   pnpm install
    ```
 4. **Generate environment file** (auto-creates `.env.local` with `AUTH_SECRET`):
    ```bash
-   npm run setup
+   pnpm run setup
    ```
 5. **Start the dev server**:
    ```bash
-   npm run dev
+   pnpm run dev:all
    ```
 
 Visit `http://localhost:3000` to confirm everything is running.
@@ -50,7 +50,7 @@ Visit `http://localhost:3000` to confirm everything is running.
 | Requirement | Version |
 |-------------|---------|
 | Node.js     | 18+     |
-| npm         | 9+      |
+| pnpm        | 8+      |
 
 See [`docs/SETUP.md`](docs/SETUP.md) for detailed environment setup, including Cesium Ion token configuration.
 
@@ -134,7 +134,7 @@ refactor: extract billboard factory from CesiumMap
 ## Pull Request Process
 
 1. Ensure your branch is up to date with `main`.
-2. Run tests and confirm they pass: `npm test`
+2. Run tests and confirm they pass: `pnpm test`
 3. Fill out the [PR template](.github/PULL_REQUEST_TEMPLATE.md) completely.
 4. Request a review — PRs need at least one approval before merging.
 5. Squash commits on merge if the history is noisy.
@@ -144,8 +144,7 @@ refactor: extract billboard factory from CesiumMap
 ## Running Tests
 
 ```bash
-npm test          # Run all tests via Vitest
-npm run test:ui   # Open Vitest UI (interactive)
+pnpm test         # Run all tests via Vitest
 ```
 
 Tests live alongside source files in `__tests__/` directories or as `.test.ts` files.

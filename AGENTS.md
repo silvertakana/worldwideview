@@ -64,7 +64,12 @@ worldwideview/
 │   ├── types/             # GeoJSON types, Umami types
 │   └── generated/         # Prisma generated client (gitignored)
 ├── packages/              # pnpm monorepo workspace packages
+│   ├── create-wwv-plugin/ # CLI scaffold generator for new plugins
+│   ├── wwv-data-engine/   # Standalone data microservice backend
 │   ├── wwv-plugin-sdk/    # Plugin SDK: type definitions, manifest schema
+│   ├── wwv-lib-aviation/  # Shared aviation utilities
+│   ├── wwv-lib-facilities/
+│   ├── wwv-lib-incidents/
 │   ├── wwv-plugin-aviation/
 │   ├── wwv-plugin-maritime/
 │   ├── wwv-plugin-wildfire/
@@ -73,10 +78,16 @@ worldwideview/
 │   ├── wwv-plugin-military-aviation/
 │   ├── wwv-plugin-satellite/
 │   ├── wwv-plugin-iranwarlive/   # Includes standalone backend/ microservice
-│   └── wwv-plugin-{airports,embassies,lighthouses,nuclear,seaports,spaceports,volcanoes}/
+│   ├── wwv-plugin-air-defense/
+│   ├── wwv-plugin-conflict-zones/
+│   ├── wwv-plugin-military-bases/
+│   ├── wwv-plugin-mineral-mines/
+│   └── wwv-plugin-{airports,civil-unrest,conflict-events,cyber-attacks,daynight,
+│         earthquakes,embassies,gps-jamming,international-sanctions,lighthouses,
+│         nuclear,seaports,spaceports,surveillance-satellites,undersea-cables,volcanoes}/
 ├── prisma/                # schema.prisma, migrations/
 ├── public/                # Static assets, Cesium workers, plugin GeoJSON data
-├── scripts/               # Build scripts (copy-cesium, scaffold-osm-plugin, setup)
+├── scripts/               # Build scripts (copy-cesium, setup, convertCameras)
 ├── data/                  # SQLite database (gitignored, Docker volume)
 ├── Dockerfile             # Multi-stage production build
 ├── docker-compose.yml     # Main app + microservice backends
@@ -235,7 +246,7 @@ pnpm test             # Run all Vitest tests (scoped to src/lib, src/core, src/p
 pnpm db:reset         # Reset and re-migrate the frontend SQLite database (destructive)
 pnpm start:backends   # Start all plugin microservice backends in parallel
 pnpm clean:backends   # Wipe all plugin SQLite databases
-pnpm run scaffold-osm-plugin <name>  # Generate a new plugin from scaffold
+pnpm exec create-wwv-plugin <name>   # Generate a new plugin from scaffold
 ```
 
 Frontend runs at `http://localhost:3000`.

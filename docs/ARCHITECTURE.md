@@ -4,7 +4,10 @@ WorldWideView is a high-performance, event-driven geospatial intelligence engine
 
 ## Module Breakdown
 
-1. **`src/core/plugins`**: The registration and lifecycle management layer. Defines how plugins are booted and destroyed.
+1. **`src/core/plugins`**: The registration and lifecycle management layer. Defines how plugins are booted and destroyed. Three plugin architectures are supported:
+   - **Static** — GeoJSON file in `public/data/`, loaded by `StaticDataPlugin`
+   - **Active Proxied** — Next.js API routes in `src/app/api/` acting as a CORS proxy
+   - **Microservice** — Standalone Fastify container with SQLite (e.g., `iranwarlive-backend`)
 2. **`src/core/data`**: The "Heartbeat" of the system.
    - **DataBus**: Decentralized event pipeline for all system actions.
    - **PollingManager**: Intelligent scheduler for external API calls with backoff logic.
@@ -12,6 +15,8 @@ WorldWideView is a high-performance, event-driven geospatial intelligence engine
 3. **`src/core/globe`**: The Rendering Engine.
    - **Cesium Integration**: Low-level control over the Cesium Viewer.
    - **EntityRenderer**: High-performance "Primitive" renderer.
+   - **AnimationLoop**: Horizon culling, hover/selection at 60FPS.
+   - **StackManager**: Groups co-located entities and handles spiderification.
 4. **`src/plugins`**: Domain-specific logic (Aviation, Maritime, etc.).
 
 ## Performance: Primitives vs. Entities
@@ -29,24 +34,29 @@ One of our core design decisions is using **Cesium Primitives** instead of the s
 
 ## Data Pipeline (Example: Aviation)
 
-The following diagram trace the journey of a single data point from a remote sensor to the user's screen:
+The following diagram traces the journey of a single data point from the data engine to the user's screen. WorldWideView uses a **WebSocket push model** — the data engine streams updates to the client over a persistent `/stream` connection, eliminating the need for repeated HTTP polling:
 
 ```mermaid
 sequenceDiagram
-    participant S as Remote API (e.g. OpenSky)
-    participant P as Plugin (AviationPlugin)
+    participant E as Data Engine (/stream)
+    participant W as WsClient (DataBusSubscriber)
     participant D as DataBus
+    participant S as Zustand Store
     participant R as EntityRenderer
     participant G as GPU (Cesium)
 
-    Note over S, P: Polling Interval (e.g. 30s)
-    S->>P: raw JSON data
-    rect rgb(200, 230, 255)
-    Note right of P: Mapping to GeoEntity
-    P->>P: parse, filter, sanitize
+    Note over E, W: Visibility Toggle (layer enabled)
+    W->>E: subscribe to layer via WebSocket
+    loop On data push
+        E->>W: snapshot payload (WsStreamPayload)
+        rect rgb(200, 230, 255)
+        Note right of W: Hydrate snapshot
+        W->>W: _hydrateSnapshot()
+        end
+        W->>D: emit("dataUpdated", { pluginId, entities })
+        D->>S: Store.entitiesByPlugin update
     end
-    P->>D: emit("dataUpdated", { entities })
-    D->>R: trigger render cycle
+    S->>R: memoized visible entities
     rect rgb(255, 230, 200)
     Note right of R: Batch Update Primitives
     R->>G: update collection buffer

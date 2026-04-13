@@ -26,7 +26,7 @@ The HUD at the top provides real-time information about your current view:
 ### Timeline
 The timeline at the bottom allows you to track data over time. 
 - **Current Time**: Displays the simulated time on the globe.
-- **Playback Controls**: If supported by the plugin, you can scrubbing through historical data.
+- **Playback Controls**: If supported by the plugin, you can scrub through historical data.
 
 ## Interacting with Entities
 

@@ -24,7 +24,7 @@ Ready to add a new intelligence layer (like Earthquakes, Weather, or Satellites)
 
 ```bash
 # 1. Generate the boilerplate plugin from a template
-pnpm run scaffold-osm-plugin my-new-data-source
+pnpm exec create-wwv-plugin my-new-data-source
 
 # 2. Add your data fetching logic in the generated files
 # 3. Reload the dev server and watch it map on the globe!
@@ -77,6 +77,8 @@ When deploying to production, ensure you mount the following volumes to prevent 
 
 - **[Setup & Installation Guide](docs/SETUP.md)**: Detailed environment and local development setup.
 - **[Architecture (Engineering Depth)](docs/ARCHITECTURE.md)**: Deep dive into the Cesium rendering pipeline, event data bus, and performance optimizations.
+- **[Plugin Guide](docs/PLUGIN_GUIDE.md)**: Full walkthrough for building custom data layer plugins.
+- **[API Reference](docs/API_REFERENCE.md)**: Technical reference for internal services (DataBus, PluginRegistry, CacheLayer).
 - **[Contributions Guide](CONTRIBUTING.md)**: How to help out, coding standards, and commit conventions.
 - **[User Guide](docs/USER_GUIDE.md)**: Application features and navigation tips.
 

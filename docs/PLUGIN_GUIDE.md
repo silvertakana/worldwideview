@@ -130,7 +130,7 @@ export class EarthquakePlugin implements WorldPlugin {
 
 ### Register Your Plugin
 
-In your app's initialization code (e.g. the root layout component):
+Built-in plugins are registered in `src/components/layout/AppShell.tsx`. Add your plugin instantiation there alongside the existing ones:
 
 ```typescript
 import { pluginRegistry } from "@/core/plugins/PluginRegistry";
