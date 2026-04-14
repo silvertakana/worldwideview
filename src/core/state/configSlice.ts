@@ -27,6 +27,7 @@ export interface MapConfig {
     shadowsEnabled: boolean;
     enableLighting: boolean;
     baseLayerId: string;
+    fallbackLayerId: string | null;
     sceneMode: 1 | 2 | 3; // 1: Columbus View, 2: 2D, 3: 3D
 }
 
@@ -61,7 +62,8 @@ export const createConfigSlice: StateCreator<AppStore, [], [], ConfigSlice> = (s
         maxScreenSpaceError: 32, // Increase from 16 to 32 to significantly reduce 3D tile network requests and costs
         shadowsEnabled: false,
         enableLighting: false,
-        baseLayerId: "bing-aerial",
+        baseLayerId: typeof window !== "undefined" ? (localStorage.getItem("wwv_map_layer") || "google-3d") : "google-3d",
+        fallbackLayerId: null,
         sceneMode: 3,
     },
     updateDataConfig: (config) =>
@@ -69,9 +71,12 @@ export const createConfigSlice: StateCreator<AppStore, [], [], ConfigSlice> = (s
             dataConfig: { ...state.dataConfig, ...config },
         })),
     updateMapConfig: (config) =>
-        set((state) => ({
-            mapConfig: { ...state.mapConfig, ...config },
-        })),
+        set((state) => {
+            if (config.baseLayerId && typeof window !== "undefined") {
+                localStorage.setItem("wwv_map_layer", config.baseLayerId);
+            }
+            return { mapConfig: { ...state.mapConfig, ...config } };
+        }),
     setPollingInterval: (pluginId, intervalMs) =>
         set((state) => ({
             dataConfig: {

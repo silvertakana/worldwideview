@@ -7,6 +7,7 @@ import {
     clearAllUserApiKeys,
 } from "@/lib/userApiKeys";
 import { sectionHeaderStyle, inputGroupStyle, labelStyle } from "./sharedStyles";
+import ReloadToast from "@/components/ui/ReloadToast";
 
 type VerifyStatus = "idle" | "verifying" | "valid" | "invalid";
 
@@ -61,6 +62,7 @@ export function ApiKeysTab() {
     const [visible, setVisible] = useState<Record<string, boolean>>({});
     const [status, setStatus] = useState<Record<string, VerifyStatus>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [needsReload, setNeedsReload] = useState(false);
     const debounceRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
     const verifyKey = useCallback(async (service: string, key: string) => {
@@ -77,10 +79,7 @@ export function ApiKeysTab() {
             if (!data.valid) {
                  setErrors((prev) => ({ ...prev, [service]: data.error || "Invalid key" }));
             } else if (service === "google_maps") {
-                 // Prompt user to reload the page to apply the new 3D tileset
-                 if (window.confirm("Google Maps API Key validated successfully! The page must be reloaded to apply the 3D tiles. Reload now?")) {
-                      window.location.reload();
-                 }
+                 setNeedsReload(true);
             }
         } catch {
             setStatus((prev) => ({ ...prev, [service]: "invalid" }));
@@ -224,6 +223,8 @@ export function ApiKeysTab() {
                     Clear All Keys
                 </button>
             )}
+            
+            {needsReload && <ReloadToast message="Google Maps API Key validated. Reload to apply." />}
         </>
     );
 }
