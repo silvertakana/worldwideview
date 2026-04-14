@@ -1,6 +1,6 @@
 {
   "name": "@worldwideview/wwv-plugin-earthquakes",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "main": "src/index.ts",
   "dependencies": {
     "@worldwideview/wwv-plugin-sdk": "workspace:*",

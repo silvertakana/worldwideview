@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "setup": "node scripts/setup.mjs",
+    "test-worktree": "node scripts/test-worktree.mjs",
     "clean": "node -e \"const fs=require('fs');fs.rmSync('.next',{recursive:true,force:true})\"",
     "dev": "next dev --webpack",
     "dev:all": "npx concurrently \"pnpm dev\" \"pnpm --filter wwv-data-engine dev\"",
