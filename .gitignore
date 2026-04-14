@@ -22,6 +22,7 @@ node_modules/
 
 # claude code IDE config
 /.claude/
+/.cline/
 
 # performance
 /performance/
@@ -29,9 +30,8 @@ node_modules/
 # artifacts
 /artifacts/
 
-# scripts
-/scripts/
-!/scripts/setup.mjs
+# scripts (tracked, but temporary scratchpads should go in /local-scripts/)
+
 
 # local database
 /data/
@@ -80,3 +80,6 @@ packages/*/dist/
 
 # Developmental scripts & temporary sandbox
 /local-scripts/
+
+# git worktrees
+/.worktrees/
