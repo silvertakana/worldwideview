@@ -84,7 +84,7 @@ export default function GlobeView() {
         return result;
     }, [layers, entitiesByPlugin, filters]);
 
-    const { isGoogle3D } = useImageryManager(viewerRef.current);
+    const { isGoogle3D } = useImageryManager(viewerRef.current, viewerReady);
     useBorders(viewerRef.current, showLabels, isGoogle3D);
 
     useSelectionAnchor(viewerRef.current, viewerReady, selectedEntity, lockedEntityId, selectionEntityRef, animatablesMapRef);

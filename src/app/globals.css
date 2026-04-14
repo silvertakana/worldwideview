@@ -1757,6 +1757,27 @@ html, body {
   color: var(--text-primary);
 }
 
+.imagery-item--failed .imagery-item__thumbnail {
+  border-color: rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.imagery-item--failed .imagery-item__name {
+  color: var(--accent-red);
+}
+
+.imagery-item--fallback .imagery-item__thumbnail {
+  border-color: rgba(34, 197, 94, 0.8);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.imagery-item--fallback .imagery-item__icon,
+.imagery-item--fallback .imagery-item__name {
+  color: #22c55e;
+}
+
 /* ─── Camera Stats Panel ─────────────────────────────────── */
 .camera-stats {
   position: fixed;
