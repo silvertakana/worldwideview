@@ -74,7 +74,14 @@ export function ApiKeysTab() {
             });
             const data = await res.json();
             setStatus((prev) => ({ ...prev, [service]: data.valid ? "valid" : "invalid" }));
-            if (!data.valid) setErrors((prev) => ({ ...prev, [service]: data.error || "Invalid key" }));
+            if (!data.valid) {
+                 setErrors((prev) => ({ ...prev, [service]: data.error || "Invalid key" }));
+            } else if (service === "google_maps") {
+                 // Prompt user to reload the page to apply the new 3D tileset
+                 if (window.confirm("Google Maps API Key validated successfully! The page must be reloaded to apply the 3D tiles. Reload now?")) {
+                      window.location.reload();
+                 }
+            }
         } catch {
             setStatus((prev) => ({ ...prev, [service]: "invalid" }));
             setErrors((prev) => ({ ...prev, [service]: "Verification failed" }));

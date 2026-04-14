@@ -3,6 +3,7 @@ import type { Viewer as CesiumViewer } from "cesium";
 import { Cartesian3, CameraEventType, KeyboardEventModifier, createGooglePhotorealistic3DTileset, createOsmBuildingsAsync, GoogleMaps } from "cesium";
 import { dataBus } from "@/core/data/DataBus";
 import { initPrimitiveCollections } from "../EntityRenderer";
+import { getUserApiKey } from "@/lib/userApiKeys";
 
 export function useViewerInitialization(sceneSettings: any) {
     const viewerRef = useRef<CesiumViewer | null>(null);
@@ -36,37 +37,41 @@ export function useViewerInitialization(sceneSettings: any) {
         }, 15_000);
 
         try {
-            // We are commenting this out because the Google Maps API key provided in .env.local
-            // returns a 404 "Requested entity was not found" from Google's servers.
-            // Using Cesium Ion's proxy key inherently works, so we rely on that instead.
-            // if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
-            //     GoogleMaps.defaultApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-            // }
+            const userGoogleKey = getUserApiKey("google_maps");
+            let googleLoaded = false;
             
-            const tileset = await createGooglePhotorealistic3DTileset({
-                onlyUsingWithGoogleGeocoder: true,
-                ...({ enableCollision: true } as Record<string, unknown>),
-            });
+            if (userGoogleKey && userGoogleKey.length >= 20) {
+                GoogleMaps.defaultApiKey = userGoogleKey;
+                const tileset = await createGooglePhotorealistic3DTileset({
+                    onlyUsingWithGoogleGeocoder: true,
+                    ...({ enableCollision: true } as Record<string, unknown>),
+                });
 
-            if (viewer.isDestroyed()) {
-                console.warn("[GlobeView] Viewer destroyed during tileset init — aborting.");
-                clearTimeout(globalTimeout);
-                return;
+                if (viewer.isDestroyed()) {
+                    console.warn("[GlobeView] Viewer destroyed during tileset init — aborting.");
+                    clearTimeout(globalTimeout);
+                    return;
+                }
+
+                tileset.maximumScreenSpaceError = sceneSettings.maxScreenSpaceError;
+                // Increase the local cache of downloaded tiles from the default 512MB to 2048MB.
+                // This massively mitigates duplicate tile API requests hitting Google when users
+                // pan around the map in local areas.
+                tileset.maximumMemoryUsage = 2048; 
+                viewer.scene.primitives.add(tileset);
+
+                const removeListener = tileset.initialTilesLoaded.addEventListener(() => {
+                    console.log("[GlobeView] Initial tiles loaded — globe ready.");
+                    clearTimeout(globalTimeout);
+                    fireGlobeReady();
+                    removeListener();
+                });
+                googleLoaded = true;
             }
 
-            tileset.maximumScreenSpaceError = sceneSettings.maxScreenSpaceError;
-            // Increase the local cache of downloaded tiles from the default 512MB to 2048MB.
-            // This massively mitigates duplicate tile API requests hitting Google when users
-            // pan around the map in local areas.
-            tileset.maximumMemoryUsage = 2048; 
-            viewer.scene.primitives.add(tileset);
-
-            const removeListener = tileset.initialTilesLoaded.addEventListener(() => {
-                console.log("[GlobeView] Initial tiles loaded — globe ready.");
-                clearTimeout(globalTimeout);
-                fireGlobeReady();
-                removeListener();
-            });
+            if (!googleLoaded) {
+                 throw new Error("Google 3D Tiles disabled by user preference or missing API key.");
+            }
         } catch (err) {
             console.warn("[GlobeView] Failed to initialize Google 3D Tiles, checking OSM fallback...", err);
             

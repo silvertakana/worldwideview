@@ -61,7 +61,7 @@ export const createConfigSlice: StateCreator<AppStore, [], [], ConfigSlice> = (s
         maxScreenSpaceError: 32, // Increase from 16 to 32 to significantly reduce 3D tile network requests and costs
         shadowsEnabled: false,
         enableLighting: false,
-        baseLayerId: "google-3d",
+        baseLayerId: "bing-aerial",
         sceneMode: 3,
     },
     updateDataConfig: (config) =>
