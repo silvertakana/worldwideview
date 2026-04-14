@@ -51,7 +51,8 @@ export async function seedCyberAttacks() {
         headers: { 'X-OTX-API-KEY': apiKey, 'User-Agent': 'WWV-Data-Engine' },
       });
     } catch(err) {
-      console.error('[CyberAttacks] Fetch error details:', err.message);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[CyberAttacks] Fetch error details:', msg);
       throw err;
     }
   });

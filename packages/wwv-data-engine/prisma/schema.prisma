@@ -7,6 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("SUPABASE_DATABASE_URL")
 }
 
 model IranwarEvent {
