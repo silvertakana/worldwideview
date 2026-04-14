@@ -8,16 +8,20 @@ import {
 import { useStore } from "@/core/state/store";
 import { createImageryProvider } from "./ImageryProviderFactory";
 
-export function useImageryManager(viewer: CesiumViewer | null) {
+export function useImageryManager(viewer: CesiumViewer | null, viewerReady: boolean) {
     const baseLayerId = useStore((s) => s.mapConfig.baseLayerId);
+    const fallbackLayerId = useStore((s) => s.mapConfig.fallbackLayerId);
     const sceneMode = useStore((s) => s.mapConfig.sceneMode);
+    
+    // Resolve runtime truth:
+    const activeLayerId = fallbackLayerId || baseLayerId;
 
     const currentImageryLayerRef = useRef<ImageryLayer | null>(null);
     const googleTilesetRef = useRef<Cesium3DTileset | null>(null);
 
     // 1. Manage Scene Mode (2D / 3D / Columbus)
     useEffect(() => {
-        if (!viewer || viewer.isDestroyed()) return;
+        if (!viewer || !viewerReady || viewer.isDestroyed()) return;
 
         let targetMode = SceneMode.SCENE3D;
         if (sceneMode === 1) targetMode = SceneMode.COLUMBUS_VIEW;
@@ -28,17 +32,17 @@ export function useImageryManager(viewer: CesiumViewer | null) {
             else if (targetMode === SceneMode.SCENE3D) viewer.scene.morphTo3D(1.0);
             else if (targetMode === SceneMode.COLUMBUS_VIEW) viewer.scene.morphToColumbusView(1.0);
         }
-    }, [viewer, sceneMode]);
+    }, [viewer, viewerReady, sceneMode]);
 
     // 2. Manage Imagery Layer and Google 3D Tiles
     useEffect(() => {
-        if (!viewer || viewer.isDestroyed()) return;
+        if (!viewer || !viewerReady || viewer.isDestroyed()) return;
 
         async function updateImagery() {
-            if (!viewer || viewer.isDestroyed()) return;
+            if (!viewer || !viewerReady || viewer.isDestroyed()) return;
 
             // Handle Google 3D Tiles specifically
-            const isGoogle3D = baseLayerId === "google-3d";
+            const isGoogle3D = activeLayerId === "google-3d";
 
             // Toggle Google 3D Tileset visibility if it exists
             // Or find it in primitives
@@ -73,7 +77,7 @@ export function useImageryManager(viewer: CesiumViewer | null) {
             } else {
                 // Instantiate and Add new imagery provider
                 try {
-                    const provider = await createImageryProvider(baseLayerId);
+                    const provider = await createImageryProvider(activeLayerId);
                     const newLayer = new ImageryLayer(provider);
 
                     if (currentImageryLayerRef.current) {
@@ -84,15 +88,15 @@ export function useImageryManager(viewer: CesiumViewer | null) {
                     viewer.imageryLayers.add(newLayer, 0);
                     currentImageryLayerRef.current = newLayer;
                 } catch (err) {
-                    console.error("[useImageryManager] Failed to load imagery:", baseLayerId, err);
+                    console.error("[useImageryManager] Failed to load imagery:", activeLayerId, err);
                 }
             }
         }
 
         updateImagery();
-    }, [viewer, baseLayerId]);
+    }, [viewer, viewerReady, baseLayerId, fallbackLayerId]);
 
     return {
-        isGoogle3D: baseLayerId === "google-3d"
+        isGoogle3D: activeLayerId === "google-3d"
     };
 }

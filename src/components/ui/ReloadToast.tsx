@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import styles from "./ReloadToast.module.css";
 
 interface ReloadToastProps {
@@ -10,13 +11,19 @@ interface ReloadToastProps {
 /**
  * Floating toast prompting user to reload after plugin changes.
  * Dismissible, with a Reload button that triggers a full page refresh.
+ * Rendered via portal to escape panel boundaries and z-index contexts.
  */
 export default function ReloadToast({ message }: ReloadToastProps) {
     const [dismissed, setDismissed] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
-    if (dismissed) return null;
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
-    return (
+    if (dismissed || !mounted) return null;
+
+    return createPortal(
         <div className={styles.overlay}>
             <div className={styles.toast}>
                 <span className={styles.icon}>🔄</span>
@@ -37,6 +44,7 @@ export default function ReloadToast({ message }: ReloadToastProps) {
                     ✕
                 </button>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

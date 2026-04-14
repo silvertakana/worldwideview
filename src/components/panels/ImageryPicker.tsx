@@ -9,6 +9,7 @@ import { GraphicsSettings } from "./GraphicsSettings";
 
 export function ImageryPicker() {
     const baseLayerId = useStore((s) => s.mapConfig.baseLayerId);
+    const fallbackLayerId = useStore((s) => s.mapConfig.fallbackLayerId);
     const sceneMode = useStore((s) => s.mapConfig.sceneMode);
     const updateMapConfig = useStore((s) => s.updateMapConfig);
 
@@ -46,18 +47,35 @@ export function ImageryPicker() {
             <div className="imagery-picker__section">
                 <div className="imagery-picker__title">Imagery Layer</div>
                 <div className="imagery-picker__grid">
-                    {IMAGERY_LAYERS.map((layer) => (
-                        <div
-                            key={layer.id}
-                            className={`imagery-item ${baseLayerId === layer.id ? "imagery-item--active" : ""}`}
-                            onClick={() => { updateMapConfig({ baseLayerId: layer.id }); trackEvent("imagery-layer-change", { layer: layer.id }); }}
-                        >
-                            <div className="imagery-item__thumbnail">
-                                <Layers size={20} className="imagery-item__icon" />
+                    {IMAGERY_LAYERS.map((layer) => {
+                        const isSelected = baseLayerId === layer.id;
+                        const isFallbackMode = fallbackLayerId !== null;
+                        const isThisFallback = fallbackLayerId === layer.id;
+                        const isFailedTarget = isFallbackMode && isSelected;
+                        const isActive = isFallbackMode ? isThisFallback : isSelected;
+
+                        let className = "imagery-item";
+                        if (isFailedTarget) className += " imagery-item--failed";
+                        else if (isThisFallback) className += " imagery-item--fallback";
+                        else if (isActive) className += " imagery-item--active";
+
+                        return (
+                            <div
+                                key={layer.id}
+                                className={className}
+                                onClick={() => { 
+                                    updateMapConfig({ baseLayerId: layer.id, fallbackLayerId: null }); 
+                                    trackEvent("imagery-layer-change", { layer: layer.id }); 
+                                }}
+                                title={isFailedTarget ? "Error: Missing API Key" : (isThisFallback ? "Active Fallback" : "")}
+                            >
+                                <div className="imagery-item__thumbnail">
+                                    <Layers size={20} className="imagery-item__icon" />
+                                </div>
+                                <div className="imagery-item__name">{layer.name}</div>
                             </div>
-                            <div className="imagery-item__name">{layer.name}</div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
