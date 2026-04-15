@@ -124,7 +124,11 @@ export function AppShell() {
 
             for (const plugin of pluginRegistry.getAll()) {
                 await pluginManager.registerPlugin(plugin);
-                initLayer(plugin.id, demoDefaultPlugins.has(plugin.id));
+                const shouldEnable = demoDefaultPlugins.has(plugin.id);
+                initLayer(plugin.id, shouldEnable);
+                if (shouldEnable) {
+                    await pluginManager.enablePlugin(plugin.id);
+                }
             }
 
             console.log("[AppShell] Platform Ready. Waiting for globe tiles...");
