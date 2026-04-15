@@ -45,6 +45,7 @@ import ReloadToast from "@/components/ui/ReloadToast";
 import ErrorToast from "@/components/ui/ErrorToast";
 import UnverifiedPluginBatchDialog from "@/components/marketplace/UnverifiedPluginBatchDialog";
 import { FeedbackDialog } from "@/components/common/FeedbackDialog";
+import { isDemo } from "@/core/edition";
 
 import { injectHostGlobals } from "@/core/plugins/hostGlobals";
 import { initLogCatcher } from "@/lib/logCatcher";
@@ -80,6 +81,16 @@ export function AppShell() {
                 // Non-critical — load all built-ins if endpoint fails
             }
 
+            // Setup demo defaults
+            const demoDefaultPlugins = new Set<string>();
+            if (isDemo) {
+                const envVar = process.env.NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS || "";
+                envVar.split(",").forEach(s => {
+                    const clean = s.trim();
+                    if (clean) demoDefaultPlugins.add(clean);
+                });
+            }
+
             const builtIns = [
                 new AviationPlugin(),
                 new MaritimePlugin(),
@@ -113,7 +124,7 @@ export function AppShell() {
 
             for (const plugin of pluginRegistry.getAll()) {
                 await pluginManager.registerPlugin(plugin);
-                initLayer(plugin.id);
+                initLayer(plugin.id, demoDefaultPlugins.has(plugin.id));
             }
 
             console.log("[AppShell] Platform Ready. Waiting for globe tiles...");
