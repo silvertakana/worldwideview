@@ -1,0 +1,18 @@
+{
+  "name": "@worldwideview/wwv-plugin-osm-search",
+  "version": "1.0.0",
+  "description": "OSM Search Plugin for WorldWideView",
+  "main": "src/index.ts",
+  "type": "module",
+  "dependencies": {
+    "@worldwideview/wwv-plugin-sdk": "workspace:*",
+    "cesium": "^1.116.0",
+    "react": "^19.0.0",
+    "resium": "^1.77.0",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.2",
+    "typescript": "^5.4.5"
+  }
+}
