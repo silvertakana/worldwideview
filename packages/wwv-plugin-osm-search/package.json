@@ -1,6 +1,6 @@
 {
   "name": "@worldwideview/wwv-plugin-osm-search",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "OSM Search Plugin for WorldWideView",
   "main": "src/index.ts",
   "type": "module",

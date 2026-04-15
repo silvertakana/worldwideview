@@ -54,7 +54,19 @@ Each stage is **self-contained and demo-able**. Any stage can be shipped indepen
 
 ---
 
-## Stage 5: Publisher Workflow
+## Stage 5: AI & Sharing Features (Immediate User Value)
+**Demo:** "Chat with the AI to explore the globe, record a narrated briefing, and share the view via a URL."
+
+- [ ] Unified Data Format schema (WWVDocument) with snapshot radius bounding
+- [ ] Base64url view link sharing (`#v=...`)
+- [ ] Shared `ActionExecutor` core for Animation & Copilot
+- [ ] Animation Engine (TrackScheduler, Player, overlays, TTS voice)
+- [ ] MCP Server (tools wrapping the action vocabulary)
+- [ ] Hybrid Spatial Awareness (Pre-computed summaries + MCP spatial query tools)
+
+---
+
+## Stage 6: Publisher Workflow
 **Demo:** "A plugin author submits their plugin. After review, it appears in the catalog."
 
 - [ ] Marketplace user accounts (Supabase Auth — email/password + GitHub OAuth)
@@ -66,7 +78,7 @@ Each stage is **self-contained and demo-able**. Any stage can be shipped indepen
 
 ---
 
-## Stage 6: Cloud Platform & Accounts
+## Stage 7: Cloud Platform & Accounts
 **Demo:** "User registers, gets [user].app.worldwideview.dev, installs plugins from marketplace."
 
 - [ ] `app.worldwideview.dev` — auth/register/dashboard
@@ -81,7 +93,7 @@ Each stage is **self-contained and demo-able**. Any stage can be shipped indepen
 
 ---
 
-## Stage 7: Built-In Data Services
+## Stage 8: Built-In Data Services
 **Demo:** "Aviation and maritime data with full history, served from api.worldwideview.dev."
 
 - [ ] `api.worldwideview.dev` — aviation/maritime polling + persistence
@@ -93,7 +105,7 @@ Each stage is **self-contained and demo-able**. Any stage can be shipped indepen
 
 ---
 
-## Stage 8: Trust Tiers, Extensions & Polish
+## Stage 9: Trust Tiers, Extensions & Polish
 **Demo:** "Install a verified extension plugin that adds cockpit view to aviation."
 
 - [x] Ed25519-signed plugin registry (`GET /api/registry` on marketplace)
@@ -111,7 +123,7 @@ Each stage is **self-contained and demo-able**. Any stage can be shipped indepen
 
 ---
 
-## Stage 9: Infrastructure & Monetization
+## Stage 10: Infrastructure & Monetization
 **Demo:** "Buy Pro, paste license key, unlock snapshot history and higher rate limits."
 
 - [ ] Coolify on ThinkPad T480s — deploy all services

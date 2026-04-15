@@ -82,6 +82,8 @@
     "node_modules",
     "scripts",
     "packages/wwv-data-engine",
-    "packages/*/backend"
+    "packages/*/backend",
+    "worldmonitor",
+    ".worktrees"
   ]
 }
