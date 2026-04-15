@@ -63,6 +63,15 @@ export function updateExistingItem(
     item.baseColor = color;
     item.baseOutlineColor = getCachedColor(options.outlineColor) || Color.BLACK;
 
+    const isGroundBased = (entity.altitude || 0) < 100;
+    const disableDepthTestDistance = isGroundBased 
+        ? Number.POSITIVE_INFINITY 
+        : options.disableDepthTestDistance;
+    
+    if (item.primitive.disableDepthTestDistance !== disableDepthTestDistance) {
+        item.primitive.disableDepthTestDistance = disableDepthTestDistance;
+    }
+
     const billboardColor = (options as any)._isAutoSVG ? Color.WHITE : color;
 
     if (!Color.equals(item.primitive.color, billboardColor)) item.primitive.color = billboardColor;
@@ -115,6 +124,14 @@ export function createNewItem(
     const baseSize = getBaseSize();
     const billboardColor = (options as any)._isAutoSVG ? Color.WHITE : color;
 
+    // Performance optimization: Ground-based entities (altitude < 100m) should disable 
+    // Cesium's heavy depth testing and instead use our efficient manual horizon culling.
+    // Air-based entities keep depth testing enabled for realistic occlusion against mountains.
+    const isGroundBased = (entity.altitude || 0) < 100;
+    const disableDepthTestDistance = isGroundBased 
+        ? Number.POSITIVE_INFINITY 
+        : options.disableDepthTestDistance;
+
         const addedPrimitive = options.iconUrl
         ? billboards.add({
             position: newPosition, image: resolvedIcon,
@@ -123,17 +140,18 @@ export function createNewItem(
             verticalOrigin: VerticalOrigin.CENTER, horizontalOrigin: HorizontalOrigin.CENTER,
             rotation: options.rotation ? -CesiumMath.toRadians(options.rotation) : 0,
             color: billboardColor, scaleByDistance: new NearFarScalar(1e6, 1.0, 2e7, 0.5), id: clickId,
-            eyeOffset: new Cartesian3(0, 0, options.depthBias ?? -10000), // Small depth bias for far-range terrain
+            // eyeOffset: new Cartesian3(0, 0, options.depthBias ?? -10000), // Small depth bias for far-range terrain
             // WARNING: Do NOT use heightReference: HeightReference.CLAMP_TO_GROUND here.
             // It causes severe lag/performance drops with thousands of dynamic entities.
-            disableDepthTestDistance: options.disableDepthTestDistance, distanceDisplayCondition: ddc,
+            disableDepthTestDistance, distanceDisplayCondition: ddc,
         })
         : points.add({
             position: newPosition, pixelSize: options.size || defaultPointSize(), color, outlineColor,
             outlineWidth: options.outlineWidth || 1, show: false,
             scaleByDistance: new NearFarScalar(1e6, 1.0, 2e7, 0.5), id: clickId,
-            disableDepthTestDistance: options.disableDepthTestDistance, distanceDisplayCondition: ddc,
+            disableDepthTestDistance, distanceDisplayCondition: ddc,
         });
+
     existingMap.set(entity.id, {
         primitive: addedPrimitive, labelPrimitive: undefined, entity, posRef: newPosition,
         options, baseColor: color, baseOutlineColor: outlineColor, lastHighlightState: 'normal'

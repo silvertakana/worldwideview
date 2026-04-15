@@ -19,6 +19,12 @@ const hubScaleByDistance = new NearFarScalar(2.0e6, 1.0, 1.5e7, 0.5);
 /** Duration of expand/collapse animation in ms. */
 const ANIM_DURATION_MS = 220;
 
+/** 
+ * Radius of the cluster hub background circle. 
+ * Adjust this to scale the black half-transparent badge.
+ */
+const HUB_BG_RADIUS = 14;
+
 /** Reusable scratch Cartesian2 to avoid allocation. */
 const scratchOffset = new Cartesian2();
 
@@ -37,7 +43,7 @@ function getClusterIcon(count: number, hexColor: string): string {
     const textStr = count > 99 ? '99+' : count.toString();
     const fillValue = "rgba(15, 23, 42, 0.95)";
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-        <circle cx="${center}" cy="${center}" r="16" fill="${fillValue}" stroke="${hexColor}" stroke-width="2.5"/>
+        <circle cx="${center}" cy="${center}" r="${HUB_BG_RADIUS}" fill="${fillValue}" stroke="${hexColor}" stroke-width="2.5"/>
         <text x="${center}" y="${center + 1}" font-family="Inter, sans-serif" font-size="14px" font-weight="bold" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">${textStr}</text>
     </svg>`;
     
@@ -157,8 +163,14 @@ function tickSingle(stack: EntityStack, now: number, billboards: BillboardCollec
 function manageDedicatedHub(stack: EntityStack, billboards: BillboardCollection) {
     let bb = hubBillboards.get(stack.id);
     const count = stack.children.length;
-    // Caching CSS color string per stack rather than generating it every frame
-    const cssColor = (stack.hubItem as any)._cachedCssColor ?? ((stack.hubItem as any)._cachedCssColor = stack.hubItem.baseColor?.toCssColorString() ?? "#ffffff");
+    
+    // Check if the hubItem's baseColor has changed since we last cached it
+    const currentBaseColor = stack.hubItem.baseColor?.toCssColorString() ?? "#ffffff";
+    if ((stack.hubItem as any)._cachedCssColor !== currentBaseColor) {
+        (stack.hubItem as any)._cachedCssColor = currentBaseColor;
+    }
+    
+    const cssColor = (stack.hubItem as any)._cachedCssColor;
     const expectedImage = getClusterIcon(count, cssColor);
 
     const anyExpanded = isAnyStackExpanded();

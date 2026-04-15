@@ -13,21 +13,43 @@ export function useViewerInitialization(sceneSettings: any) {
     const handleViewerReady = useCallback(async (viewer: CesiumViewer) => {
         viewerRef.current = viewer;
 
-        // CesiumJS may initialize a default imagery layer even with Resium's
-        // baseLayer={false}. Strip it so useImageryManager is the sole controller.
+        // 1. Core Viewer Settings (Sync)
         viewer.imageryLayers.removeAll();
-
         viewer.scene.requestRenderMode = true;
         viewer.scene.maximumRenderTimeChange = 0.5;
-        // viewer.scene.orderIndependentTranslucency is read-only in newer Cesium versions and no longer configurable
         viewer.scene.debugShowFramesPerSecond = sceneSettings.showFps;
         viewer.resolutionScale = sceneSettings.resolutionScale;
         viewer.scene.postProcessStages.fxaa.enabled = sceneSettings.antiAliasing === "fxaa";
         viewer.scene.msaaSamples = sceneSettings.antiAliasing === "none" || sceneSettings.antiAliasing === "fxaa" ? 1 : parseInt(sceneSettings.antiAliasing.replace("msaa", "").replace("x", ""), 10) || 1;
         viewer.scene.globe.depthTestAgainstTerrain = true;
 
+        // Configure Screen Space Camera
+        const sscc = viewer.scene.screenSpaceCameraController;
+        sscc.tiltEventTypes = [
+            CameraEventType.MIDDLE_DRAG,
+            CameraEventType.RIGHT_DRAG,
+            CameraEventType.PINCH,
+            { eventType: CameraEventType.LEFT_DRAG, modifier: KeyboardEventModifier.CTRL },
+            { eventType: CameraEventType.RIGHT_DRAG, modifier: KeyboardEventModifier.CTRL }
+        ];
+        sscc.zoomEventTypes = [CameraEventType.WHEEL, CameraEventType.PINCH];
+
+        if ("ontouchstart" in window || navigator.maxTouchPoints > 0) {
+            (sscc as any)._zoomFactor = 15;
+            (sscc as any)._translateFactor = 2;
+            (sscc as any)._tiltFactor = 50;
+        }
+
+        // Initialize collections so renderers can start immediately
+        initPrimitiveCollections(viewer);
+        
+        // Initial Camera Position (Sync)
         viewer.camera.setView({ destination: Cartesian3.fromDegrees(0, 20, 10000000) });
 
+        // Signal ready NOW so UI and Overlays (OSM Box) appear instantly
+        setViewerReady(true);
+
+        // 2. Heavy/Async Data Loading (Background)
         let globeFired = false;
         const fireGlobeReady = () => {
             if (globeFired) return;
@@ -37,6 +59,7 @@ export function useViewerInitialization(sceneSettings: any) {
             }
             dataBus.emit("globeReady", {} as Record<string, never>);
         };
+
         const globalTimeout = setTimeout(() => {
             console.warn("[GlobeView] Global tile-init timeout (15s) — forcing globe ready.");
             fireGlobeReady();
@@ -58,20 +81,16 @@ export function useViewerInitialization(sceneSettings: any) {
                     });
 
                     if (viewer.isDestroyed()) {
-                        console.warn("[GlobeView] Viewer destroyed during tileset init — aborting.");
                         clearTimeout(globalTimeout);
                         return;
                     }
 
                     tileset.maximumScreenSpaceError = sceneSettings.maxScreenSpaceError;
-                    // Increase the local cache of downloaded tiles from the default 512MB to 2048MB.
-                    // This massively mitigates duplicate tile API requests hitting Google when users
-                    // pan around the map in local areas.
                     (tileset as any).maximumMemoryUsage = 2048; 
                     viewer.scene.primitives.add(tileset);
 
                     const removeListener = tileset.initialTilesLoaded.addEventListener(() => {
-                        console.log("[GlobeView] Initial tiles loaded — syncing state and firing ready.");
+                        console.log("[GlobeView] Initial tiles loaded — syncing state.");
                         useStore.getState().updateMapConfig({ baseLayerId: "google-3d" });
                         clearTimeout(globalTimeout);
                         fireGlobeReady();
@@ -80,13 +99,10 @@ export function useViewerInitialization(sceneSettings: any) {
                     googleLoaded = true;
                 } catch (err: any) {
                     console.error("[GlobeView] Failed to initialize Google 3D Tiles:", err);
-                    useStore.getState().showErrorToast("Google 3D Tiles failed to load: " + (err.message || "Invalid Key or 403 Forbidden"));
-                    // We fall through to local map fallback below.
                 }
             }
 
             if (!googleLoaded) {
-                 console.log("[GlobeView] Google 3D Tiles inactive/unauthorized. Falling back to default flat imagery.");
                  if (useStore.getState().mapConfig.baseLayerId === "google-3d") {
                       useStore.getState().updateMapConfig({ fallbackLayerId: "bing-aerial" });
                  }
@@ -95,36 +111,8 @@ export function useViewerInitialization(sceneSettings: any) {
             }
         } catch (err) {
             console.error("[GlobeView] Unexpected error during early globe init:", err);
-            if (useStore.getState().mapConfig.baseLayerId === "google-3d") {
-                 useStore.getState().updateMapConfig({ fallbackLayerId: "bing-aerial" });
-            }
-            clearTimeout(globalTimeout);
             fireGlobeReady();
         }
-
-        if (viewer.isDestroyed()) return;
-        initPrimitiveCollections(viewer);
-
-        const sscc = viewer.scene.screenSpaceCameraController;
-        sscc.tiltEventTypes = [
-            CameraEventType.MIDDLE_DRAG,
-            CameraEventType.RIGHT_DRAG,
-            CameraEventType.PINCH,
-            { eventType: CameraEventType.LEFT_DRAG, modifier: KeyboardEventModifier.CTRL },
-            { eventType: CameraEventType.RIGHT_DRAG, modifier: KeyboardEventModifier.CTRL }
-        ];
-        sscc.zoomEventTypes = [
-            CameraEventType.WHEEL,
-            CameraEventType.PINCH
-        ];
-
-        if ("ontouchstart" in window || navigator.maxTouchPoints > 0) {
-            (sscc as any)._zoomFactor = 15;
-            (sscc as any)._translateFactor = 2;
-            (sscc as any)._tiltFactor = 50;
-        }
-
-        setViewerReady(true);
     }, [sceneSettings]);
 
     return { viewerRef, viewerReady, handleViewerReady };
