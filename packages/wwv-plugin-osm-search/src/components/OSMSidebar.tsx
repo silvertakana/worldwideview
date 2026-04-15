@@ -34,6 +34,39 @@ export function OSMSidebar({ plugin }: OSMSidebarProps) {
     const [distance, setDistance] = useState(500);
     const [isScanning, setIsScanning] = useState(false);
     
+    // Taginfo dynamic search states
+    const [dynamicTags, setDynamicTags] = useState<string[]>([]);
+    const [isSearchingApi, setIsSearchingApi] = useState(false);
+
+    // Fetch dynamic tags when search text changes
+    React.useEffect(() => {
+        if (searchText.length < 3) {
+            setDynamicTags([]);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setIsSearchingApi(true);
+            try {
+                const res = await fetch(`https://taginfo.openstreetmap.org/api/4/search/by_keyword?query=${encodeURIComponent(searchText)}`);
+                const data = await res.json();
+                if (data && data.data) {
+                    const tags = data.data
+                        .filter((item: any) => item.key && item.value)
+                        .map((item: any) => `${item.key}=${item.value}`)
+                        .slice(0, 15);
+                    setDynamicTags(tags);
+                }
+            } catch (err) {
+                console.error("Taginfo fetch failed", err);
+            } finally {
+                setIsSearchingApi(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchText]);
+    
     const toggleLock = () => {
         if (!bboxLocked) {
             setLockedBbox(currentBbox);
@@ -117,9 +150,12 @@ out center;`;
         }
     };
 
-    const renderedTags = searchText 
+    // Combine filtered common tags with newly fetched dynamic tags, removing duplicates
+    const filteredCommon = searchText 
         ? COMMON_TAGS.filter(t => t.toLowerCase().includes(searchText.toLowerCase())) 
         : COMMON_TAGS;
+        
+    const renderedTags = Array.from(new Set([...filteredCommon, ...dynamicTags]));
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -211,20 +247,35 @@ out center;`;
                             />
                          </div>
                      )}
-                     <input 
-                         style={{ 
-                             width: "100%", 
-                             padding: "8px", 
-                             backgroundColor: "rgba(0,0,0,0.3)", 
-                             color: "#fff", 
-                             border: "1px solid var(--border-subtle)",
-                             borderRadius: "4px",
-                             fontSize: "13px"
-                         }}
-                         placeholder="Filter tags (e.g. amenity=...)" 
-                         value={searchText} 
-                         onChange={e => setSearchText(e.target.value)} 
-                     />
+                     <div style={{ position: "relative" }}>
+                         <input 
+                             style={{ 
+                                 width: "100%", 
+                                 padding: "8px", 
+                                 paddingRight: "24px",
+                                 backgroundColor: "rgba(0,0,0,0.3)", 
+                                 color: "#fff", 
+                                 border: "1px solid var(--border-subtle)",
+                                 borderRadius: "4px",
+                                 fontSize: "13px"
+                             }}
+                             placeholder="Filter or search OSM for tags..." 
+                             value={searchText} 
+                             onChange={e => setSearchText(e.target.value)} 
+                         />
+                         {isSearchingApi && (
+                             <span style={{ 
+                                 position: "absolute", 
+                                 right: "8px", 
+                                 top: "50%", 
+                                 transform: "translateY(-50%)", 
+                                 fontSize: "10px", 
+                                 color: "var(--text-muted)" 
+                             }}>
+                                 ⏳
+                             </span>
+                         )}
+                     </div>
                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", maxHeight: "150px", overflowY: "auto", padding: "4px" }}>
                          {renderedTags.map(tag => {
                              const isActive = activeTags.includes(tag);
