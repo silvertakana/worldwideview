@@ -35,7 +35,7 @@ export async function GET(request: Request) {
         ]);
 
         const manifests = records
-            .map((r): PluginManifest | null => {
+            .map((r: any): PluginManifest | null => {
                 try {
                     const manifest = JSON.parse(r.config);
                     if (!manifest.id) manifest.id = r.pluginId;
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
                     return null;
                 }
             })
-            .filter((m): m is PluginManifest => {
+            .filter((m: any): m is PluginManifest => {
                 if (!m) return false;
                 // Skip built-in plugins — already registered by AppShell
                 if (m.trust === "built-in") return false;
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
                 const { valid } = validateManifest(m);
                 return valid;
             })
-            .map((m) => {
+            .map((m: any) => {
                 // Re-stamp trust against the live registry so revoked plugins
                 // are correctly gated by the unverified dialog on the client.
                 if (m.trust !== "built-in") {

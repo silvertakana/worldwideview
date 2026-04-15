@@ -1,5 +1,5 @@
 import { expect, test, describe } from "vitest";
-import { readFileSync, globSync } from "fs";
+import * as fs from "fs";
 import { join } from "path";
 
 describe("Monorepo Workspace Integrity", () => {
@@ -8,15 +8,19 @@ describe("Monorepo Workspace Integrity", () => {
         // __dirname is dist/core/__tests__ when transpiled or src/core/__tests__ when running tsx/vitest natively
         const rootDir = process.cwd(); // vitest runs from workspace root
         
+        const packageDirs = fs.readdirSync(join(rootDir, "packages"), { withFileTypes: true })
+             .filter(d => d.isDirectory())
+             .map(d => `packages/${d.name}/package.json`)
+             .filter(p => fs.existsSync(join(rootDir, p)));
         const packageJsonFiles = [
              "package.json",
-             ...globSync("packages/**/package.json", { cwd: rootDir, ignore: ["**/node_modules/**"] })
+             ...packageDirs
         ];
 
         let failedFiles: string[] = [];
 
         for (const file of packageJsonFiles) {
-            const content = readFileSync(join(rootDir, file), "utf-8");
+            const content = fs.readFileSync(join(rootDir, file), "utf-8");
             const pkg = JSON.parse(content);
             const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies };
             
