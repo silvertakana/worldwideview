@@ -4,9 +4,20 @@ import { Eye, EyeOff } from "lucide-react";
 import { useOsmStore } from "../store";
 
 const COMMON_TAGS = [
-    "amenity=hospital", "amenity=school", "amenity=police", "amenity=fire_station",
-    "shop=supermarket", "highway=bus_stop", "building=house", "tourism=hotel",
-    "man_made=tower", "industrial=factory"
+    // Military & Security
+    "military=base", "military=bunker", "amenity=police", "amenity=prison",
+    // Aviation & Maritime
+    "aeroway=aerodrome", "aeroway=helipad", "aeroway=hangar", "man_made=pier", "harbour=yes",
+    // Infrastructure & Utilities
+    "power=plant", "power=substation", "telecom=antenna", "man_made=communications_tower", "man_made=water_tower",
+    // Transport
+    "highway=bus_stop", "railway=station", "amenity=fuel", "amenity=parking",
+    // Medical & Emergency
+    "amenity=hospital", "amenity=fire_station", "amenity=clinic",
+    // General Commercial & Industrial
+    "shop=supermarket", "tourism=hotel", "industrial=factory", "landuse=industrial",
+    // Education & Amenities
+    "amenity=school", "amenity=university", "amenity=cafe", "building=house"
 ];
 
 interface OSMSidebarProps {
