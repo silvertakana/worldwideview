@@ -89,7 +89,7 @@ export default function GlobeView() {
                 
                 // Apply color overrides
                 let options = originalOptions;
-                if (colorOverrides && colorOverrides[originalOptions.color]) {
+                if (originalOptions.color && colorOverrides && colorOverrides[originalOptions.color]) {
                     options = { ...originalOptions, color: colorOverrides[originalOptions.color] };
                 } else if (customLayerColor) {
                     options = { ...originalOptions, color: customLayerColor };

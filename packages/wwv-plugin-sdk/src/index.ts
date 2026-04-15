@@ -231,7 +231,7 @@ export interface WorldPlugin {
     getServerConfig?(): ServerPluginConfig;
     getFilterDefinitions?(): FilterDefinition[];
     getLegend?(): { label: string; color: string; filterId?: string; filterValue?: string }[];
-    getSidebarComponent?(): ComponentType;
+    getSidebarComponent?(): ComponentType<{ plugin?: any } | any>;
     getDetailComponent?(): ComponentType<{ entity: GeoEntity }>;
     getSettingsComponent?(): ComponentType<{ pluginId: string }>;
     /** Custom React component injected into the Globe view for rendering primitives/data sources (e.g. GeoJSON). */

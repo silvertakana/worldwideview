@@ -377,7 +377,7 @@ export function IntelTab() {
                             lat: selectedEntity.latitude,
                             lon: selectedEntity.longitude,
                             alt: selectedEntity.altitude || 0,
-                            distance: behavior?.preferredZoomDistance
+                            distance: behavior?.flyToBaseDistance
                         });
                     }}
                 >

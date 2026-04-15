@@ -55,5 +55,5 @@ export async function getDisabledPluginIds(): Promise<Set<string>> {
         where: { enabled: false },
         select: { pluginId: true },
     });
-    return new Set(records.map((r) => r.pluginId));
+    return new Set(records.map((r: any) => r.pluginId));
 }

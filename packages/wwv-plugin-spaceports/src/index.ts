@@ -6,8 +6,8 @@ export class SpaceportsPlugin extends BaseFacilityPlugin {
     name = "Spaceports";
     description = "Space launch sites worldwide from OSM";
     icon = Rocket;
-    category = "science" as const;
-    version = "1.0.1";
+    category = "space" as const;
+    version = "1.0.2";
     
     protected defaultLayerColor = "#7c3aed";
     protected maxEntities = 1000;
