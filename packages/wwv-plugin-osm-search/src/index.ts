@@ -43,7 +43,7 @@ export class OSMSearchPlugin implements WorldPlugin {
         return {
             // Default "go-to" distance in meters. 
             // 500m provides a good "street-level" view for OSM features.
-            preferredZoomDistance: 500,
+            flyToBaseDistance: 500,
             showTrail: false
         };
     }

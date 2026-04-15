@@ -6,8 +6,8 @@ export class EmbassiesConsulatesPlugin extends BaseFacilityPlugin {
     name = "Embassies & Consulates";
     description = "Global embassies, consulates, and diplomatic missions from OpenStreetMap";
     icon = Landmark;
-    category = "government" as const;
-    version = "1.0.2";
+    category = "infrastructure" as const;
+    version = "1.0.3";
     
     protected defaultLayerColor = "#a855f7";
     protected maxEntities = 1000;

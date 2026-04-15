@@ -26,10 +26,10 @@ export async function GET(request: Request) {
 
     try {
         const dbPlugins = await getInstalledPlugins();
-        const dbMap = new Map(dbPlugins.map((p) => [p.pluginId, p]));
+        const dbMap = new Map(dbPlugins.map((p: any) => [p.pluginId, p]));
 
         // Collect active DB plugins (exclude disabled ones)
-        const activeDbPlugins = dbPlugins.filter((p) => p.enabled !== false);
+        const activeDbPlugins = dbPlugins.filter((p: any) => p.enabled !== false);
 
         // Add built-in plugins that aren't in the DB at all (default = installed)
         const builtInRecords = BUILT_IN_PLUGIN_IDS
