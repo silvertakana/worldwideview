@@ -224,7 +224,7 @@ function processEntity(
         return;
     }
 
-    if (!item.options.disableManualHorizonCulling) {
+    if (!item.options.disableManualHorizonCulling || primitive.disableDepthTestDistance === Number.POSITIVE_INFINITY) {
         // Mathematical horizon culling (extremely fast, precise for sphere)
         item._occluded = Cartesian3.dot(posRef, camPos) <= R2;
         if (item._occluded) {

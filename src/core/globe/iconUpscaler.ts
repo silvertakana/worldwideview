@@ -27,6 +27,13 @@ export function getBaseSize(): number {
 /** Padding ratio — the icon fills (1 - 2*INSET) of the canvas. */
 const ICON_INSET = 0.12;
 
+/** 
+ * Background circle size ratio (relative to canvas radius). 
+ * Adjust this to scale the black half-transparent backdrop.
+ * 1.0 = fills canvas, 0.8 = 80% of canvas radius.
+ */
+const BG_RADIUS_RATIO = 1.0;
+
 /** Default backdrop behind the icon for terrain contrast. */
 const DEFAULT_BG = "rgba(15, 23, 42, 0.55)";
 
@@ -74,7 +81,7 @@ export function getHiResIcon(srcUrl: string, bgColor = DEFAULT_BG): Promise<stri
                 // Subtle circle backdrop for terrain contrast
                 const cx = pxSize / 2;
                 ctx.beginPath();
-                ctx.arc(cx, cx, cx, 0, Math.PI * 2);
+                ctx.arc(cx, cx, cx * BG_RADIUS_RATIO, 0, Math.PI * 2);
                 ctx.fillStyle = bgColor;
                 ctx.fill();
 

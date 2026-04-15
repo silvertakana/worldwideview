@@ -10,4 +10,5 @@ export const BUILT_IN_PLUGIN_IDS = [
     "wildfire",
     "camera",
     "borders",
+    "osm-search",
 ] as const;

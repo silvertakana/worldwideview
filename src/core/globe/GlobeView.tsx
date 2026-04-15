@@ -61,6 +61,7 @@ export default function GlobeView() {
         shadowsEnabled, enableLighting,
     }), [showFps, resolutionScale, antiAliasing, maxScreenSpaceError, shadowsEnabled, enableLighting]);
     const filters = useStore((s) => s.filters);
+    const pluginSettings = useStore((s) => s.dataConfig.pluginSettings);
     const lockedEntityId = useStore((s) => s.lockedEntityId);
     const setCameraPosition = useStore((s) => s.setCameraPosition);
     const setFps = useStore((s) => s.setFps);
@@ -71,18 +72,34 @@ export default function GlobeView() {
     const visibleEntities = useMemo(() => {
         const result: Array<{ entity: GeoEntity; options: CesiumEntityOptions }> = [];
         pluginManager.getAllPlugins().forEach((managed) => {
-            if (!layers[managed.plugin.id]?.enabled) return;
+            const pluginId = managed.plugin.id;
+            if (!layers[pluginId]?.enabled) return;
             if (managed.plugin.getLayerConfig().disableDefaultRendering) return;
-            const entities = entitiesByPlugin[managed.plugin.id];
+            const entities = entitiesByPlugin[pluginId];
             if (!Array.isArray(entities)) return;
+
+            const settings = pluginSettings[pluginId];
+            const colorOverrides = settings?.colorOverrides;
+            const customLayerColor = settings?.customLayerColor;
+
             const defs = managed.plugin.getFilterDefinitions?.() || [];
-            const active = filters[managed.plugin.id] || {};
+            const active = filters[pluginId] || {};
             applyFilters(entities, defs, active).forEach((entity) => {
-                result.push({ entity, options: getCachedRenderOptions(managed.plugin, entity) });
+                const originalOptions = getCachedRenderOptions(managed.plugin, entity);
+                
+                // Apply color overrides
+                let options = originalOptions;
+                if (colorOverrides && colorOverrides[originalOptions.color]) {
+                    options = { ...originalOptions, color: colorOverrides[originalOptions.color] };
+                } else if (customLayerColor) {
+                    options = { ...originalOptions, color: customLayerColor };
+                }
+
+                result.push({ entity, options });
             });
         });
         return result;
-    }, [layers, entitiesByPlugin, filters]);
+    }, [layers, entitiesByPlugin, filters, pluginSettings]);
 
     const { isGoogle3D } = useImageryManager(viewerRef.current, viewerReady);
     useBorders(viewerRef.current, showLabels, isGoogle3D);
@@ -201,14 +218,17 @@ export default function GlobeView() {
     }, [lockedEntityId, viewerReady]);
 
     const PluginGlobeComponents = useMemo(() => {
-        return pluginManager.getAllPlugins()
+        const components = pluginManager.getAllPlugins()
             .filter(managed => managed.plugin.getGlobeComponent)
             .map(managed => {
                 const Comp = managed.plugin.getGlobeComponent!();
                 const enabled = layers[managed.plugin.id]?.enabled ?? false;
+                console.log(`[GlobeView] Rendering plugin globe component: ${managed.plugin.id}, enabled: ${enabled}`);
                 return <Comp key={managed.plugin.id} viewer={viewerRef.current} enabled={enabled} />;
             });
-    }, [layers]);
+        console.log(`[GlobeView] Recomputing PluginGlobeComponents. Count: ${components.length}`);
+        return components;
+    }, [layers, viewerReady]);
 
     return (
         <Viewer

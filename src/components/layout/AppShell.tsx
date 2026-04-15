@@ -27,6 +27,7 @@ import { CivilUnrestPlugin } from "@worldwideview/wwv-plugin-civil-unrest";
 import { SurveillanceSatellitesPlugin } from "@worldwideview/wwv-plugin-surveillance-satellites";
 import { CyberAttacksPlugin } from "@worldwideview/wwv-plugin-cyber-attacks";
 import { InternationalSanctionsPlugin } from "@worldwideview/wwv-plugin-international-sanctions";
+import { OSMSearchPlugin } from "@worldwideview/wwv-plugin-osm-search";
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { PanelToggleArrows } from "@/components/layout/PanelToggleArrows";
@@ -97,6 +98,7 @@ export function AppShell() {
                 new SurveillanceSatellitesPlugin(),
                 new CyberAttacksPlugin(),
                 new InternationalSanctionsPlugin(),
+                new OSMSearchPlugin(),
             ];
 
             for (const plugin of builtIns) {

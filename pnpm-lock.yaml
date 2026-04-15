@@ -130,7 +130,7 @@ importers:
         version: 8.20.0
       zustand:
         specifier: ^5.0.11
-        version: 5.0.12(@types/react@19.2.14)(react@19.2.3)
+        version: 5.0.12(@types/react@19.2.14)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.1
@@ -514,6 +514,34 @@ importers:
       '@worldwideview/wwv-plugin-sdk':
         specifier: workspace:*
         version: link:../wwv-plugin-sdk
+
+  packages/wwv-plugin-osm-search:
+    dependencies:
+      '@worldwideview/wwv-plugin-sdk':
+        specifier: workspace:*
+        version: link:../wwv-plugin-sdk
+      cesium:
+        specifier: ^1.139.0
+        version: 1.139.1
+      lucide-react:
+        specifier: ^0.576.0
+        version: 0.576.0(react@19.2.3)
+      react:
+        specifier: 19.2.3
+        version: 19.2.3
+      resium:
+        specifier: 1.19.4
+        version: 1.19.4(cesium@1.139.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      zustand:
+        specifier: ^5.0.11
+        version: 5.0.12(@types/react@19.2.14)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.2
+        version: 19.2.14
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
 
   packages/wwv-plugin-satellite:
     dependencies:
@@ -3746,6 +3774,11 @@ packages:
 
   urijs@1.19.11:
     resolution: {integrity: sha512-HXgFDgDommxn5/bIv0cnQZsPhHDA90NPHD6+c/v21U5+Sx5hoP8+dP9IZXBU1gIfvdRfhG8cel9QNPeionfcCQ==}
+
+  use-sync-external-store@1.6.0:
+    resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
@@ -6998,6 +7031,11 @@ snapshots:
 
   urijs@1.19.11: {}
 
+  use-sync-external-store@1.6.0(react@19.2.3):
+    dependencies:
+      react: 19.2.3
+    optional: true
+
   util-deprecate@1.0.2: {}
 
   uuid@3.4.0: {}
@@ -7168,7 +7206,8 @@ snapshots:
 
   zod@3.25.76: {}
 
-  zustand@5.0.12(@types/react@19.2.14)(react@19.2.3):
+  zustand@5.0.12(@types/react@19.2.14)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3)):
     optionalDependencies:
       '@types/react': 19.2.14
       react: 19.2.3
+      use-sync-external-store: 1.6.0(react@19.2.3)
