@@ -22,6 +22,7 @@ const nextConfig: NextConfig = {
     "@worldwideview/wwv-plugin-international-sanctions",
     "@worldwideview/wwv-plugin-sdk",
     "@worldwideview/wwv-plugin-wildfire",
+    "@worldwideview/wwv-plugin-osm-search",
     "resium",
     "react-player",
     "satellite.js"

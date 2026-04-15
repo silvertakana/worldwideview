@@ -64,6 +64,9 @@
       ],
       "@worldwideview/wwv-plugin-undersea-cables": [
         "./packages/wwv-plugin-undersea-cables/src"
+      ],
+      "@worldwideview/wwv-plugin-osm-search": [
+        "./packages/wwv-plugin-osm-search/src"
       ]
     }
   },
