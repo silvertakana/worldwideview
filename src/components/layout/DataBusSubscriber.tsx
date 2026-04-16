@@ -5,6 +5,7 @@ import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { wsClient } from "@/core/data/WsClient";
+import { resolveEngineUrl } from "@/core/data/resolveEngineUrl";
 
 /**
  * Subscribes to DataBus events and syncs state.
@@ -39,14 +40,12 @@ export function DataBusSubscriber() {
             }, 0);
         });
 
-        // Initialize the global websocket firehose connection
-        wsClient.connect();
-
         const unsubToggle = dataBus.on("layerToggled", ({ pluginId, enabled }) => {
+            const engineUrl = resolveEngineUrl(pluginId);
             if (enabled) {
-                wsClient.subscribe(pluginId);
+                wsClient.subscribe(pluginId, engineUrl);
             } else {
-                wsClient.unsubscribe(pluginId);
+                wsClient.unsubscribe(pluginId, engineUrl);
             }
         });
 
