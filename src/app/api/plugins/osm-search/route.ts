@@ -83,8 +83,10 @@ export async function POST(req: Request) {
                     }
                 }
             } catch (err: any) {
-                console.warn(`[OSMSearchProxy] Mirror ${mirror} threw error:`, err.message);
-                lastError = { status: 500, statusText: "Internal Error", details: err.message };
+                console.warn(`[OSMSearchProxy] Mirror ${mirror} threw error:`);
+                console.warn(err);
+                if (err instanceof Error) console.warn(err.stack);
+                lastError = { status: 500, statusText: "Internal Error", details: String(err && err.message ? err.message : err) };
             }
         }
 
