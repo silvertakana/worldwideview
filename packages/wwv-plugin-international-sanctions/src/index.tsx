@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Scale } from "lucide-react";
 import { Color, PolygonHierarchy, GeoJsonDataSource, JulianDate } from "cesium";
 import { Entity, PolygonGraphics } from "resium";
@@ -19,6 +19,14 @@ const LEVEL_COLORS: Record<string, string> = {
     "medium": "#f97316", // Orange
     "high": "#ef4444",   // Red
 };
+
+/** Attach _wwvEntity to a Resium Entity ref so InteractionHandler can pick it. */
+function bindWwvEntity(ref: any, geoEntity: GeoEntity): void {
+    const cesiumEntity = ref?.cesiumElement;
+    if (cesiumEntity && !cesiumEntity._wwvEntity) {
+        cesiumEntity._wwvEntity = geoEntity;
+    }
+}
 
 export class InternationalSanctionsPlugin implements WorldPlugin {
     id = "international-sanctions";
@@ -164,10 +172,13 @@ export class InternationalSanctionsPlugin implements WorldPlugin {
 
         const elements = useMemo(() => {
              if (!enabled || Object.keys(countryPolygons).length === 0 || this.data.length === 0) return [];
-             const results = [];
+             const results: Array<{
+                 id: string; name: string; geoEntity: GeoEntity;
+                 color: Color; outlineColor: Color; height: number;
+                 hierarchies: PolygonHierarchy[];
+             }> = [];
              for (const entity of this.data) {
                  const code = entity.properties.countryCode as string;
-                 const count = entity.properties.count as number;
                  const level = (entity.properties.level as string) || "low";
                  const hexStr = LEVEL_COLORS[level] || LEVEL_COLORS["low"];
                  const color = Color.fromCssColorString(hexStr).withAlpha(0.65);
@@ -180,13 +191,7 @@ export class InternationalSanctionsPlugin implements WorldPlugin {
                  results.push({
                      id: entity.id,
                      name: `Sanctioned Country: ${code}`,
-                     description: `
-                        <div class="p-3">
-                            <div class="mb-2"><span class="font-semibold text-gray-300">Target Area:</span> ${code}</div>
-                            <div class="mb-2"><span class="font-semibold text-gray-300">Level:</span> <span style="color: ${hexStr}">${level.toUpperCase()}</span></div>
-                            <div class="mb-2"><span class="font-semibold text-gray-300">Active OFAC Sanctions:</span> ${count}</div>
-                        </div>
-                     `,
+                     geoEntity: entity,
                      color,
                      outlineColor,
                      height,
@@ -205,7 +210,7 @@ export class InternationalSanctionsPlugin implements WorldPlugin {
                         <Entity
                             key={`${rc.id}-${idx}`}
                             name={rc.name}
-                            description={rc.description}
+                            ref={(ref: any) => bindWwvEntity(ref, rc.geoEntity)}
                         >
                             <PolygonGraphics
                                 hierarchy={hier}

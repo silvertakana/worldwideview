@@ -17,6 +17,36 @@ function severityToColor(score: number): string {
     return "#fbbf24"; // Monitoring — yellow
 }
 
+/** Attach _wwvEntity to a Resium Entity ref so InteractionHandler can pick it. */
+function bindWwvEntity(ref: any, geoEntity: GeoEntity): void {
+    const cesiumEntity = ref?.cesiumElement;
+    if (cesiumEntity && !cesiumEntity._wwvEntity) {
+        cesiumEntity._wwvEntity = geoEntity;
+    }
+}
+
+/** Build a synthetic GeoEntity from a static ConflictZone definition. */
+function zoneToGeoEntity(zone: typeof CONFLICT_ZONES[number]): GeoEntity {
+    return {
+        id: zone.id,
+        pluginId: "conflict-zones",
+        latitude: zone.lat,
+        longitude: zone.lon,
+        altitude: 0,
+        timestamp: new Date(),
+        properties: {
+            name: zone.name,
+            description: zone.description,
+            type: zone.subtext || "N/A",
+            status: zone.status,
+            escalationScore: zone.escalationScore,
+            escalationTrend: zone.escalationTrend,
+            whyItMatters: zone.whyItMatters,
+            radiusKm: zone.radiusKm,
+        },
+    };
+}
+
 const ConflictZonesRenderer: React.FC<{ viewer: Cesium.Viewer | null; enabled: boolean }> = ({ enabled }) => {
     if (!enabled) return null;
 
@@ -28,24 +58,14 @@ const ConflictZonesRenderer: React.FC<{ viewer: Cesium.Viewer | null; enabled: b
                 const fillColor = Cesium.Color.fromCssColorString(colorHex).withAlpha(0.25);
                 const outlineColor = Cesium.Color.fromCssColorString(colorHex).withAlpha(0.8);
                 const radiusMeters = zone.radiusKm * 1000;
+                const geoEntity = zoneToGeoEntity(zone);
 
                 return (
                     <Entity
                         key={zone.id}
                         position={position}
                         name={zone.name}
-                        description={`
-                            <table class="cesium-infoBox-defaultTable">
-                                <tbody>
-                                    <tr><th>Overview</th><td>${zone.description}</td></tr>
-                                    <tr><th>Type</th><td>${zone.subtext || "N/A"}</td></tr>
-                                    <tr><th>Status</th><td>${zone.status}</td></tr>
-                                    <tr><th>Escalation Score</th><td>${zone.escalationScore} / 5</td></tr>
-                                    <tr><th>Trend</th><td>${zone.escalationTrend}</td></tr>
-                                    <tr><th>Why It Matters</th><td>${zone.whyItMatters}</td></tr>
-                                </tbody>
-                            </table>
-                        `}
+                        ref={(ref: any) => bindWwvEntity(ref, geoEntity)}
                     >
                         <EllipseGraphics
                             semiMajorAxis={radiusMeters}
@@ -118,3 +138,4 @@ export class ConflictZonesPlugin implements WorldPlugin {
         return ConflictZonesRenderer;
     }
 }
+

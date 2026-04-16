@@ -11,6 +11,14 @@ const OFFSET_X = 16;
 const OFFSET_Y = 16;
 const EDGE_PADDING = 12;
 
+const LEVEL_COLORS: Record<string, string> = {
+    low: "#facc15", medium: "#f97316", high: "#ef4444",
+};
+
+const SEVERITY_LABELS: Record<number, string> = {
+    5: "Critical", 4: "High", 3: "Elevated", 2: "Watchlist",
+};
+
 export function EntityInfoCard() {
     const hoveredEntity = useStore((s) => s.hoveredEntity);
     const screenPos = useStore((s) => s.hoveredScreenPosition);
@@ -66,6 +74,18 @@ export function EntityInfoCard() {
     
     const casualtiesDisplay = 
         hoveredEntity.properties?.casualties !== undefined ? String(hoveredEntity.properties.casualties) : null;
+
+    // Sanctions-specific fields
+    const sanctionLevel = hoveredEntity.properties?.level as string | undefined;
+    const sanctionCount = hoveredEntity.properties?.count as number | undefined;
+    const countryCode = hoveredEntity.properties?.countryCode as string | undefined;
+    const isSanctions = hoveredEntity.pluginId === "international-sanctions";
+
+    // Conflict zone-specific fields
+    const escalationScore = hoveredEntity.properties?.escalationScore as number | undefined;
+    const zoneStatus = hoveredEntity.properties?.status as string | undefined;
+    const escalationTrend = hoveredEntity.properties?.escalationTrend as string | undefined;
+    const isConflictZone = hoveredEntity.pluginId === "conflict-zones";
 
     return (
         <div
@@ -149,6 +169,50 @@ export function EntityInfoCard() {
                         </span>
                     </div>
                 )}
+
+                {/* Sanctions-specific hover intel */}
+                {isSanctions && countryCode && (
+                    <div className="entity-info-card__prop">
+                        <span className="entity-info-card__prop-key">Country</span>
+                        <span className="entity-info-card__prop-value">{countryCode}</span>
+                    </div>
+                )}
+                {isSanctions && sanctionLevel && (
+                    <div className="entity-info-card__prop">
+                        <span className="entity-info-card__prop-key">Severity</span>
+                        <span className="entity-info-card__prop-value" style={{ color: LEVEL_COLORS[sanctionLevel] || "inherit" }}>
+                            {sanctionLevel.toUpperCase()}
+                        </span>
+                    </div>
+                )}
+                {isSanctions && sanctionCount !== undefined && (
+                    <div className="entity-info-card__prop">
+                        <span className="entity-info-card__prop-key">OFAC Sanctions</span>
+                        <span className="entity-info-card__prop-value">{sanctionCount}</span>
+                    </div>
+                )}
+
+                {/* Conflict zone-specific hover intel */}
+                {isConflictZone && escalationScore !== undefined && (
+                    <div className="entity-info-card__prop">
+                        <span className="entity-info-card__prop-key">Escalation</span>
+                        <span className="entity-info-card__prop-value" style={{ color: escalationScore >= 5 ? "#991b1b" : escalationScore >= 4 ? "#ef4444" : escalationScore >= 3 ? "#f97316" : "#fbbf24" }}>
+                            {SEVERITY_LABELS[escalationScore] || escalationScore} / 5
+                        </span>
+                    </div>
+                )}
+                {isConflictZone && zoneStatus && (
+                    <div className="entity-info-card__prop">
+                        <span className="entity-info-card__prop-key">Status</span>
+                        <span className="entity-info-card__prop-value">{zoneStatus}</span>
+                    </div>
+                )}
+                {isConflictZone && escalationTrend && (
+                    <div className="entity-info-card__prop">
+                        <span className="entity-info-card__prop-key">Trend</span>
+                        <span className="entity-info-card__prop-value">{escalationTrend}</span>
+                    </div>
+                )}
             </div>
 
             {/* Footer hint */}
@@ -156,3 +220,4 @@ export function EntityInfoCard() {
         </div>
     );
 }
+
