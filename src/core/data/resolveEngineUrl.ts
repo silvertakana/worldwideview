@@ -1,7 +1,21 @@
 import { pluginManager } from "@/core/plugins/PluginManager";
 
-const DEFAULT_ENGINE_URL =
+const RAW_ENGINE_URL =
   process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL || "ws://localhost:5001/stream";
+
+/** Normalize a base URL into a valid WebSocket stream URL. */
+function toWsStreamUrl(url: string): string {
+  let normalized = url
+    .replace(/^https:\/\//, "wss://")
+    .replace(/^http:\/\//, "ws://");
+  // Ensure the path ends with /stream
+  if (!normalized.endsWith("/stream")) {
+    normalized = normalized.replace(/\/+$/, "") + "/stream";
+  }
+  return normalized;
+}
+
+const DEFAULT_ENGINE_URL = toWsStreamUrl(RAW_ENGINE_URL);
 
 /**
  * Resolves the WebSocket engine URL for a given plugin.
@@ -24,6 +38,6 @@ export function resolveEngineUrl(pluginId: string): string {
   const manifest = pluginManager.getManifest(pluginId);
   if (manifest?.dataSource?.streamUrl) return manifest.dataSource.streamUrl;
 
-  // 3. Global default
+  // 3. Global default (already normalized)
   return DEFAULT_ENGINE_URL;
 }
