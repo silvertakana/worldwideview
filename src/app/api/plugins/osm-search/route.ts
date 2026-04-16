@@ -6,14 +6,44 @@ const OVERPASS_MIRRORS = [
     "https://overpass.kumi.systems/api/interpreter"
 ];
 
-async function tryMirror(url: string, query: string, timeout: number) {
-    const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `data=${encodeURIComponent(query)}`,
-        signal: AbortSignal.timeout(timeout)
+import https from "https";
+
+async function tryMirror(urlStr: string, query: string, timeoutMs: number) {
+    return new Promise<any>((resolve, reject) => {
+        const url = new URL(urlStr);
+        const bodyStr = `data=${encodeURIComponent(query)}`;
+        
+        const req = https.request(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Content-Length": Buffer.byteLength(bodyStr),
+                "User-Agent": "WorldWideView/1.11"
+            },
+            timeout: timeoutMs,
+        }, (res) => {
+            let data = "";
+            res.on("data", chunk => data += chunk);
+            res.on("end", () => {
+                resolve({
+                    ok: res.statusCode && res.statusCode >= 200 && res.statusCode < 300,
+                    status: res.statusCode || 500,
+                    statusText: res.statusMessage || "",
+                    json: async () => JSON.parse(data),
+                    text: async () => data
+                });
+            });
+        });
+
+        req.on("error", reject);
+        req.on("timeout", () => {
+            req.destroy();
+            reject(new Error("Request timed out"));
+        });
+        
+        req.write(bodyStr);
+        req.end();
     });
-    return res;
 }
 
 export async function POST(req: Request) {
