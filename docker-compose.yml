@@ -13,46 +13,8 @@ services:
       - "WWV_DEMO_ADMIN_SECRET=${WWV_DEMO_ADMIN_SECRET:-}"
       - "WWV_BRIDGE_TOKEN=${WWV_BRIDGE_TOKEN:-}"
 
-  wwv-data-engine:
-    build: 
-      context: .
-      dockerfile: ./packages/wwv-data-engine/Dockerfile
-    ports:
-      - "5001:5001"
-    volumes:
-      - engine-data:/app/packages/wwv-data-engine/data
-    restart: always
-    depends_on:
-      - redis
-    env_file:
-      - path: .env
-        required: false
-    environment:
-      - "NODE_ENV=production"
-      - "REDIS_URL=${REDIS_URL:-redis://redis:6379}"
-    networks:
-      - coolify
-      - default
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.data-engine.rule=Host(`dataengine.worldwideview.dev`)"
-      - "traefik.http.routers.data-engine.entrypoints=websecure"
-      - "traefik.http.routers.data-engine.tls=true"
-      - "traefik.http.routers.data-engine.tls.certresolver=letsencrypt"
-      - "traefik.http.services.data-engine.loadbalancer.server.port=5001"
-
-  redis:
-    image: redis:7-alpine
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-
 volumes:
   wwv-data:
-  engine-data:
-  redis-data:
 
 networks:
   coolify:

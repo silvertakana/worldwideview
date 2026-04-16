@@ -1,8 +1,0 @@
-Loaded Prisma config from prisma.config.ts.
-
-Prisma schema loaded from prisma\schema.prisma.
-Datasource "db": PostgreSQL database "postgres", schema "public" at "db.oqtfnwsefozpvsoysufm.supabase.co:5432"
-
-Error: P1001: Can't reach database server at `db.oqtfnwsefozpvsoysufm.supabase.co:5432`
-
-Please make sure your database server is running at `db.oqtfnwsefozpvsoysufm.supabase.co:5432`.

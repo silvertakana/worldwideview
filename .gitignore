@@ -83,3 +83,6 @@ packages/*/dist/
 
 # git worktrees
 /.worktrees/
+
+# proprietary extracted services
+packages/wwv-data-engine/
