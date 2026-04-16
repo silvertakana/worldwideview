@@ -74,7 +74,10 @@ export class MilitaryPlugin extends BaseAviationPlugin {
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
-            const res = await globalThis.fetch("/api/external/military-aviation");
+            const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
+                ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
+                : 'http://localhost:5001';
+            const res = await globalThis.fetch(`${engineBase}/data/military-aviation`);
             if (!res.ok) throw new Error(`Military API returned ${res.status}`);
             const data = await res.json();
             const aircraftList = data.ac || data.items;
@@ -91,7 +94,7 @@ export class MilitaryPlugin extends BaseAviationPlugin {
     }
 
     getServerConfig(): ServerPluginConfig {
-        return { apiBasePath: "/api/external/military-aviation", pollingIntervalMs: 0, historyEnabled: true };
+        return { apiBasePath: "/api/military-aviation", pollingIntervalMs: 0, historyEnabled: true };
     }
 
     getFilterDefinitions(): FilterDefinition[] {

@@ -38,7 +38,7 @@ export class ConflictEventsPlugin extends BaseIncidentPlugin {
 
     getServerConfig(): ServerPluginConfig {
         return {
-            apiBasePath: "/api/external/conflict_events",
+            apiBasePath: "/api/conflict_events",
             pollingIntervalMs: 3600 * 24 * 1000, 
             requiresAuth: false,
             historyEnabled: false,
@@ -47,7 +47,10 @@ export class ConflictEventsPlugin extends BaseIncidentPlugin {
     }
 
     async fetch(timeRange: TimeRange): Promise<GeoEntity[]> {
-        const res = await fetch("/api/external/conflict_events");
+        const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
+            ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
+            : 'http://localhost:5001';
+        const res = await fetch(`${engineBase}/data/conflict_events`);
         const json = await res.json();
         
         if (json.data) {

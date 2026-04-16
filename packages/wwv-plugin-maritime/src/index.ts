@@ -113,7 +113,10 @@ export class MaritimePlugin implements WorldPlugin {
             if (lookback === "0h") lookback = "";
             const query = lookback ? `?lookback=${lookback}` : "";
             
-            const res = await fetch(`/api/external/maritime${query}`);
+            const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
+                ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
+                : 'http://localhost:5001';
+            const res = await fetch(`${engineBase}/data/maritime${query}`);
             if (!res.ok) throw new Error(`Maritime API returned ${res.status}`);
             const data = await res.json();
             return this.mapPayloadToEntities(data.items);
@@ -132,7 +135,7 @@ export class MaritimePlugin implements WorldPlugin {
     }
 
     getServerConfig(): ServerPluginConfig {
-        return { apiBasePath: "/api/external/maritime", pollingIntervalMs: 0, historyEnabled: true };
+        return { apiBasePath: "/api/maritime", pollingIntervalMs: 0, historyEnabled: true };
     }
 
     getLayerConfig(): LayerConfig {

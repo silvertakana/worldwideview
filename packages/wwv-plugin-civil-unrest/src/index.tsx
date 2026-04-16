@@ -39,7 +39,7 @@ export class CivilUnrestPlugin implements WorldPlugin {
 
     getServerConfig(): ServerPluginConfig {
         return {
-            apiBasePath: "/api/external/civil_unrest",
+            apiBasePath: "/api/civil_unrest",
             pollingIntervalMs: 43200000, 
             historyEnabled: false,
             availabilityEnabled: false
@@ -47,7 +47,10 @@ export class CivilUnrestPlugin implements WorldPlugin {
     }
 
     async fetch(timeRange: TimeRange): Promise<GeoEntity[]> {
-        const res = await fetch("/api/external/civil_unrest");
+        const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
+            ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
+            : 'http://localhost:5001';
+        const res = await fetch(`${engineBase}/data/civil_unrest`);
         const json = await res.json();
         
         const payload = json.data;

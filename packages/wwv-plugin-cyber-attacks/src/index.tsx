@@ -52,9 +52,12 @@ export class CyberAttacksPlugin implements WorldPlugin {
         try {
             // Note: timeRange is now used properly at the history route.
             // If the start and end aren't passed, data engine returns live snapshot.
+            const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
+                ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
+                : 'http://localhost:5001';
             const url = timeRange 
-                ? `/api/external/cyber_attacks/history?start=${timeRange.start.getTime()}&end=${timeRange.end.getTime()}`
-                : `/api/external/cyber_attacks`;
+                ? `${engineBase}/data/cyber_attacks/history?start=${timeRange.start.getTime()}&end=${timeRange.end.getTime()}`
+                : `${engineBase}/data/cyber_attacks`;
 
             const res = await globalThis.fetch(url);
             if (!res.ok) throw new Error(`Cyber API returned ${res.status}`);
@@ -93,7 +96,7 @@ export class CyberAttacksPlugin implements WorldPlugin {
 
     getServerConfig(): ServerPluginConfig {
         return {
-            apiBasePath: "/api/external/cyber_attacks",
+            apiBasePath: "/api/cyber_attacks",
             pollingIntervalMs: 0,
             historyEnabled: true,
         };

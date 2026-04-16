@@ -47,7 +47,10 @@ export class IranWarLivePlugin extends BaseIncidentPlugin {
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
-            const res = await globalThis.fetch("/api/external/iranwarlive");
+            const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
+                ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
+                : 'http://localhost:5001';
+            const res = await globalThis.fetch(`${engineBase}/data/iranwarlive`);
             
             if (!res.ok) throw new Error(`IranWarLive Backend returned ${res.status}`);
             
@@ -88,7 +91,7 @@ export class IranWarLivePlugin extends BaseIncidentPlugin {
     }
 
     getServerConfig(): ServerPluginConfig {
-        return { apiBasePath: "/api/external/iranwarlive", pollingIntervalMs: 0, historyEnabled: true };
+        return { apiBasePath: "/api/iranwarlive", pollingIntervalMs: 0, historyEnabled: true };
     }
 
     getFilterDefinitions(): FilterDefinition[] {

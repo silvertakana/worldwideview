@@ -47,7 +47,10 @@ export class WildfirePlugin implements WorldPlugin {
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
-            const res = await globalThis.fetch("/api/external/wildfires");
+            const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
+                ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
+                : 'http://localhost:5001';
+            const res = await globalThis.fetch(`${engineBase}/data/wildfires`);
             if (!res.ok) throw new Error(`Wildfire API returned ${res.status}`);
             const data = await res.json();
             if (!data.items || !Array.isArray(data.items)) return [];
@@ -78,7 +81,7 @@ export class WildfirePlugin implements WorldPlugin {
     getPollingInterval(): number { return 0; }
     
     getServerConfig(): ServerPluginConfig {
-        return { apiBasePath: "/api/external/wildfires", pollingIntervalMs: 0, historyEnabled: true };
+        return { apiBasePath: "/api/wildfires", pollingIntervalMs: 0, historyEnabled: true };
     }
     getLayerConfig(): LayerConfig {
         return { color: "#ef4444", clusterEnabled: true, clusterDistance: 30 };

@@ -49,7 +49,10 @@ export class InternationalSanctionsPlugin implements WorldPlugin {
 
     async fetch(timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
-            const res = await globalThis.fetch(`/api/external/sanctions?start=${timeRange.start.toISOString()}&end=${timeRange.end.toISOString()}`);
+            const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
+                ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
+                : 'http://localhost:5001';
+            const res = await globalThis.fetch(`${engineBase}/data/sanctions?start=${timeRange.start.toISOString()}&end=${timeRange.end.toISOString()}`);
             if (!res.ok) throw new Error(`Sanctions API returned ${res.status}`);
             
             const data = await res.json();
@@ -124,7 +127,7 @@ export class InternationalSanctionsPlugin implements WorldPlugin {
 
     getServerConfig(): ServerPluginConfig {
         return {
-            apiBasePath: "/api/external/sanctions",
+            apiBasePath: "/api/sanctions",
             pollingIntervalMs: 60000 * 60,
             historyEnabled: false,
         };

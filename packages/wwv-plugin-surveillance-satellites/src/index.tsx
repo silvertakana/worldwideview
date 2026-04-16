@@ -47,7 +47,10 @@ export class SurveillanceSatellitesPlugin implements WorldPlugin {
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
-            const res = await globalThis.fetch(`/api/external/surveillance_satellites`);
+            const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
+                ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
+                : 'http://localhost:5001';
+            const res = await globalThis.fetch(`${engineBase}/data/surveillance_satellites`);
             if (!res.ok) throw new Error(`Satellite API returned ${res.status}`);
             const data = await res.json();
             const surveillanceSats = data.satellites || data.items || [];
@@ -152,7 +155,7 @@ export class SurveillanceSatellitesPlugin implements WorldPlugin {
 
     getServerConfig(): ServerPluginConfig {
         return {
-            apiBasePath: "/api/external/surveillance_satellites",
+            apiBasePath: "/api/surveillance_satellites",
             pollingIntervalMs: 0,
             historyEnabled: true,
         };

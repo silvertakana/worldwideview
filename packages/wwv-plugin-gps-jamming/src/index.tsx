@@ -45,7 +45,7 @@ export class GpsJammingPlugin implements WorldPlugin {
 
     getServerConfig(): ServerPluginConfig {
         return {
-            apiBasePath: "/api/external/gps_jamming",
+            apiBasePath: "/api/gps_jamming",
             pollingIntervalMs: 3600 * 1000,
             requiresAuth: false,
             historyEnabled: false,
@@ -54,7 +54,10 @@ export class GpsJammingPlugin implements WorldPlugin {
     }
 
     async fetch(timeRange: TimeRange): Promise<GeoEntity[]> {
-        const res = await fetch(`/api/external/gps_jamming`);
+        const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
+            ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
+            : 'http://localhost:5001';
+        const res = await fetch(`${engineBase}/data/gps_jamming`);
         const json = await res.json();
         const items = json.items || [];
         
