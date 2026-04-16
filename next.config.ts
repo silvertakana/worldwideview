@@ -72,16 +72,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  async rewrites() {
-    return [
-      {
-        source: "/api/external/:source*",
-        // Proxy to the shared data engine locally or over docker network 
-        // We use process.env to override the url if running Next.js outside docker
-        destination: `${process.env.WWV_DATA_ENGINE_URL || "http://wwv-data-engine:5001"}/data/:source*`,
-      },
-    ];
-  },
+
   outputFileTracingExcludes: {
     "*": ["./public/cesium/**"],
   },

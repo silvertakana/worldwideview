@@ -67,13 +67,16 @@ export class AviationPlugin extends BaseAviationPlugin {
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
+            const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
+                ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
+                : 'http://localhost:5001';
+
             let res: Response;
-            
             if (this.context!.isPlaybackMode()) {
                 const timeStr = this.context!.getCurrentTime().getTime();
-                res = await fetch(`/api/external/aviation?time=${timeStr}`);
+                res = await fetch(`${engineBase}/data/aviation?time=${timeStr}`);
             } else {
-                res = await fetch("/api/external/aviation?lookback=15m");
+                res = await fetch(`${engineBase}/data/aviation?lookback=15m`);
             }
             
             if (!res.ok) throw new Error(`Data Engine API returned ${res.status}`);
