@@ -15,6 +15,7 @@ async function tryMirror(urlStr: string, query: string, timeoutMs: number) {
         
         const req = https.request(url, {
             method: "POST",
+            family: 4, // Force IPv4 to avoid Docker IPv6 dropout
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
                 "Content-Length": Buffer.byteLength(bodyStr),
