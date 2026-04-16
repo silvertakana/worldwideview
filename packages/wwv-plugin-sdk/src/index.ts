@@ -169,6 +169,8 @@ export interface ServerPluginConfig {
     requiresAuth?: boolean;
     historyEnabled?: boolean;
     availabilityEnabled?: boolean;
+    /** WebSocket URL for direct engine connection. Overrides the global default engine URL. */
+    streamUrl?: string;
 }
 
 // ─── Plugin Context ──────────────────────────────────────────

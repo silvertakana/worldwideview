@@ -30,6 +30,8 @@ export interface DataSourceConfig {
     headers?: Record<string, string>;
     body?: Record<string, unknown>;
     arrayPath?: string;
+    /** WebSocket URL for direct engine connection (e.g., wss://my-engine.example.com/stream). */
+    streamUrl?: string;
 }
 
 export interface FieldMapping {
