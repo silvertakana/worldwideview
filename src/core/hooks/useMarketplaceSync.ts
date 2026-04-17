@@ -78,6 +78,10 @@ export function useMarketplaceSync() {
             console.log(`[MarketplaceSync] Hot-loaded plugin "${manifest.id}"`);
         } catch (err) {
             console.error(`[MarketplaceSync] Failed to load "${manifest.id}":`, err);
+            const store = useStore.getState();
+            if (store.showErrorToast) {
+                store.showErrorToast(`Failed to load plugin: ${manifest.name || manifest.id}. Check console.`);
+            }
         }
     }
 
