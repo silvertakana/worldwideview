@@ -83,9 +83,10 @@ function validateBundle(m: PluginManifest): string[] {
         const isRelative = entry.startsWith("/") || entry.startsWith("./");
         const isLocal = entry.startsWith("http://localhost") || entry.startsWith("http://127.0.0.1") || entry.startsWith("https://localhost") || entry.startsWith("https://127.0.0.1");
         const isWWV = entry.startsWith("https://marketplace.worldwideview.dev") || entry.includes(".worldwideview.dev");
+        const isCDN = entry.startsWith("https://cdn.jsdelivr.net") || entry.startsWith("https://unpkg.com");
 
-        if (!isRelative && !isLocal && !isWWV) {
-            errors.push("Bundle entry URL must be a relative path, localhost, or an official worldwideview.dev domain");
+        if (!isRelative && !isLocal && !isWWV && !isCDN) {
+            errors.push("Bundle entry URL must be a relative path, CDN, localhost, or an official worldwideview.dev domain");
         }
     }
 

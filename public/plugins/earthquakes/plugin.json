@@ -1,0 +1,13 @@
+{
+  "id": "earthquakes",
+  "name": "Earthquakes",
+  "description": "Recent seismic activity from USGS via Active Proxy",
+  "icon": "Activity",
+  "category": "Natural Disasters",
+  "type": "data-layer",
+  "format": "bundle",
+  "entry": "/plugins/earthquakes/frontend.mjs",
+  "trust": "unverified",
+  "capabilities": ["data"],
+  "version": "1.1.0"
+}

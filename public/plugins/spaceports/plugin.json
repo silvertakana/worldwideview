@@ -1,0 +1,12 @@
+{
+  "id": "spaceports",
+  "name": "spaceports",
+  "version": "1.0.2",
+  "description": "WorldWideView plugin — Space launch sites worldwide from OSM",
+  "capabilities": [],
+  "category": "Space",
+  "icon": "Rocket",
+  "entry": "/plugins/spaceports/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}

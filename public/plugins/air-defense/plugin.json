@@ -1,0 +1,12 @@
+{
+  "id": "air-defense",
+  "name": "air-defense",
+  "version": "1.0.0",
+  "description": "WorldWideView plugin — Known Air Defense Identification Zones (ADIZ) and boundaries.",
+  "capabilities": [],
+  "category": "Military",
+  "icon": "ShieldAlert",
+  "entry": "/plugins/air-defense/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}

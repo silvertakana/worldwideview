@@ -1,0 +1,12 @@
+{
+  "id": "lighthouses",
+  "name": "lighthouses",
+  "version": "1.0.1",
+  "description": "WorldWideView plugin — Lighthouses worldwide from OSM",
+  "capabilities": [],
+  "category": "Maritime",
+  "icon": "Lamp",
+  "entry": "/plugins/lighthouses/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}

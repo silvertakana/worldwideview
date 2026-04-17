@@ -1,0 +1,12 @@
+{
+  "id": "military-bases",
+  "name": "military-bases",
+  "version": "1.0.2",
+  "description": "WorldWideView plugin for worldwide military bases, airfields, and barracks from OpenStreetMap",
+  "capabilities": [],
+  "category": "Military",
+  "icon": "Swords",
+  "entry": "/plugins/military-bases/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}

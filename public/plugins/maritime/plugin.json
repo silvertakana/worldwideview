@@ -1,0 +1,12 @@
+{
+  "id": "maritime",
+  "name": "maritime",
+  "version": "1.0.7",
+  "description": "WorldWideView plugin for real-time vessel tracking via AIS feeds. Color-coded by vessel type with speed and heading indicators",
+  "capabilities": [],
+  "category": "Maritime",
+  "icon": "Ship",
+  "entry": "/plugins/maritime/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}

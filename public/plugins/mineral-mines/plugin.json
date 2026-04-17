@@ -1,0 +1,12 @@
+{
+  "id": "mineral-mines",
+  "name": "mineral-mines",
+  "version": "1.0.0",
+  "description": "WorldWideView plugin — Global mining sites and quarries from OpenStreetMap.",
+  "capabilities": [],
+  "category": "Economic",
+  "icon": "Pickaxe",
+  "entry": "/plugins/mineral-mines/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}

@@ -60,12 +60,15 @@ export async function GET(request: Request) {
         }
 
         const allRecords = [...records, ...localPlugins];
-
+        
+        console.log(`[Marketplace API] All Records count: ${allRecords.length}`);
+        
         const manifests = allRecords
             .map((r: any): PluginManifest | null => {
                 try {
                     const manifest = JSON.parse(r.config);
                     if (!manifest.id) manifest.id = r.pluginId;
+                    console.log(`[Marketplace API] Parsed manifest for ${manifest.id} -> format: ${manifest.format}, entry: ${manifest.entry}, dataFile: ${manifest.dataFile}`);
                     return manifest as PluginManifest;
                 } catch {
                     return null;
