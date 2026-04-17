@@ -89,8 +89,11 @@ export async function GET(request: Request) {
                     !m.entry.startsWith("http")
                 ) return false;
                 // Skip records with no usable manifest (e.g. old empty-config installs)
-                const { valid } = validateManifest(m);
-                return valid;
+                const validation = validateManifest(m);
+                if (!validation.valid) {
+                    console.error(`[Marketplace API] Manifest validation failed for ${m.id}:`, validation.errors);
+                }
+                return validation.valid;
             })
             .map((m: any) => {
                 // Re-stamp trust against the live registry so revoked plugins
