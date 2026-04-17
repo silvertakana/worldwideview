@@ -2,7 +2,7 @@
   "name": "@worldwideview/wwv-plugin-volcanoes",
   "version": "1.0.1",
   "description": "WorldWideView plugin — Active and dormant volcanoes worldwide from OSM",
-  "main": "src/index.ts",
+  "main": "dist/frontend.mjs",
   "types": "src/index.ts",
   "files": [
     "src"
@@ -33,5 +33,10 @@
     "icon": "Mountain",
     "category": "Natural Disaster",
     "format": "static"
+  },
+  "type": "module",
+  "module": "dist/frontend.mjs",
+  "scripts": {
+    "build": "vite build"
   }
 }

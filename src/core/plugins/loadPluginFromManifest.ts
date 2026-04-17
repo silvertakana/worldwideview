@@ -33,13 +33,43 @@ async function loadGeoJsonFile(dataFile: string): Promise<GeoJsonFeatureCollecti
 /** Load a bundle-format plugin via dynamic import. */
 async function loadBundlePlugin(entry: string): Promise<WorldPlugin> {
     const module = await import(/* webpackIgnore: true */ entry);
-    const PluginClass = module.default ?? module;
 
-    // Handle both class exports and instance exports
-    if (typeof PluginClass === "function") {
-        return new PluginClass() as WorldPlugin;
+    const instantiate = (maybeClass: any): WorldPlugin | null => {
+        if (typeof maybeClass === "function") {
+            try {
+                const instance = new maybeClass();
+                if (instance && typeof instance.initialize === "function") {
+                    return instance as WorldPlugin;
+                }
+            } catch {
+                return null;
+            }
+        }
+        return null;
+    };
+
+    if (module.default) {
+        if (typeof module.default === "function") {
+            return new module.default() as WorldPlugin;
+        }
+        return module.default as WorldPlugin;
     }
-    return PluginClass as WorldPlugin;
+
+    // Scan for a named export class that implements WorldPlugin
+    for (const key in module) {
+        const instance = instantiate(module[key]);
+        if (instance) return instance;
+    }
+    
+    // Try finding an instantiated object exported by name
+    for (const key in module) {
+        const exp = module[key];
+        if (exp && typeof exp === "object" && typeof exp.initialize === "function") {
+            return exp as WorldPlugin;
+        }
+    }
+
+    throw new Error(`Failed to load valid WorldPlugin from bundle: ${entry}. Make sure you export a class that implements WorldPlugin.`);
 }
 
 /**

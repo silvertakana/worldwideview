@@ -2,7 +2,7 @@
   "name": "@worldwideview/wwv-plugin-camera",
   "version": "1.0.4",
   "description": "WorldWideView plugin for displaying public live cameras and traffic cameras on the globe. Supports custom data sources via URL, file upload, and GeoJSON",
-  "main": "src/index.ts",
+  "main": "dist/frontend.mjs",
   "types": "src/index.ts",
   "files": [
     "src"
@@ -39,5 +39,10 @@
     "icon": "Camera",
     "category": "Infrastructure",
     "format": "bundle"
+  },
+  "type": "module",
+  "module": "dist/frontend.mjs",
+  "scripts": {
+    "build": "vite build"
   }
 }

@@ -2,7 +2,7 @@
   "name": "@worldwideview/wwv-plugin-air-defense",
   "version": "1.0.0",
   "description": "WorldWideView plugin — Known Air Defense Identification Zones (ADIZ) and boundaries.",
-  "main": "src/index.tsx",
+  "main": "dist/frontend.mjs",
   "types": "src/index.tsx",
   "files": [
     "src"
@@ -39,5 +39,10 @@
     "icon": "ShieldAlert",
     "category": "Military",
     "format": "bundle"
+  },
+  "type": "module",
+  "module": "dist/frontend.mjs",
+  "scripts": {
+    "build": "vite build"
   }
 }

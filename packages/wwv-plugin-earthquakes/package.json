@@ -1,7 +1,7 @@
 {
   "name": "@worldwideview/wwv-plugin-earthquakes",
   "version": "1.1.0",
-  "main": "src/index.ts",
+  "main": "dist/frontend.mjs",
   "dependencies": {
     "@worldwideview/wwv-plugin-sdk": "workspace:*",
     "@worldwideview/wwv-lib-incidents": "workspace:*",
@@ -12,5 +12,10 @@
     "icon": "Activity",
     "category": "Natural Disasters",
     "format": "bundle"
+  },
+  "type": "module",
+  "module": "dist/frontend.mjs",
+  "scripts": {
+    "build": "vite build"
   }
 }

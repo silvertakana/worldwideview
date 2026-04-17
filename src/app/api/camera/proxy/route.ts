@@ -16,6 +16,9 @@ function isPrivateUrl(urlStr: string): boolean {
         // Block non-HTTP(S) protocols
         if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return true;
 
+        // If developer overrides local restrictions, bypass checks
+        if (process.env.WWV_PROXY_ALLOW_LOCAL === "true") return false;
+
         // Block localhost variants
         if (host === "localhost" || host === "127.0.0.1" || host === "::1") return true;
 

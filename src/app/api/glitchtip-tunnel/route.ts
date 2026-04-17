@@ -31,6 +31,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "ok" });
   } catch (error: any) {
     console.error("GlitchTip tunnel internal error:", error);
-    return NextResponse.json({ status: "error", message: error.message }, { status: 500 });
+    return NextResponse.json({ status: "error", message: "Tunnel relay failed" }, { status: 500 });
   }
 }

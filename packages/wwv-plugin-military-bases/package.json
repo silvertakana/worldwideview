@@ -2,7 +2,7 @@
   "name": "@worldwideview/wwv-plugin-military-bases",
   "version": "1.0.2",
   "description": "WorldWideView plugin for worldwide military bases, airfields, and barracks from OpenStreetMap",
-  "main": "src/index.ts",
+  "main": "dist/frontend.mjs",
   "types": "src/index.ts",
   "files": [
     "src"
@@ -38,5 +38,10 @@
     "icon": "Swords",
     "category": "Military",
     "format": "static"
+  },
+  "type": "module",
+  "module": "dist/frontend.mjs",
+  "scripts": {
+    "build": "vite build"
   }
 }

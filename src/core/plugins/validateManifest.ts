@@ -78,6 +78,15 @@ function validateBundle(m: PluginManifest): string[] {
 
     if (!m.entry?.trim()) {
         errors.push("Bundle plugins require entry");
+    } else {
+        const entry = m.entry.trim();
+        const isRelative = entry.startsWith("/") || entry.startsWith("./");
+        const isLocal = entry.startsWith("http://localhost") || entry.startsWith("http://127.0.0.1") || entry.startsWith("https://localhost") || entry.startsWith("https://127.0.0.1");
+        const isWWV = entry.startsWith("https://marketplace.worldwideview.dev") || entry.includes(".worldwideview.dev");
+
+        if (!isRelative && !isLocal && !isWWV) {
+            errors.push("Bundle entry URL must be a relative path, localhost, or an official worldwideview.dev domain");
+        }
     }
 
     return errors;

@@ -2,7 +2,7 @@
   "name": "@worldwideview/wwv-plugin-mineral-mines",
   "version": "1.0.0",
   "description": "WorldWideView plugin — Global mining sites and quarries from OpenStreetMap.",
-  "main": "src/index.ts",
+  "main": "dist/frontend.mjs",
   "types": "src/index.ts",
   "files": [
     "src"
@@ -39,5 +39,10 @@
     "icon": "Pickaxe",
     "category": "Economic",
     "format": "bundle"
+  },
+  "type": "module",
+  "module": "dist/frontend.mjs",
+  "scripts": {
+    "build": "vite build"
   }
 }

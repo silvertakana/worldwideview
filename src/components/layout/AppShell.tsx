@@ -10,24 +10,7 @@ import { Timeline } from "@/components/timeline/Timeline";
 import { TimelineSync } from "@/core/globe/TimelineSync";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { pluginRegistry } from "@/core/plugins/PluginRegistry";
-import { AviationPlugin } from "@worldwideview/wwv-plugin-aviation";
-import { MaritimePlugin } from "@worldwideview/wwv-plugin-maritime";
-import { WildfirePlugin } from "@worldwideview/wwv-plugin-wildfire";
-import { BordersPlugin } from "@worldwideview/wwv-plugin-borders";
-import { CameraPlugin } from "@worldwideview/wwv-plugin-camera";
-import { MilitaryPlugin } from "@worldwideview/wwv-plugin-military-aviation";
-import { SatellitePlugin } from "@worldwideview/wwv-plugin-satellite";
-import { IranWarLivePlugin } from "@worldwideview/wwv-plugin-iranwarlive";
-import { EarthquakesPlugin } from "@worldwideview/wwv-plugin-earthquakes";
-import { DayNightPlugin } from "@worldwideview/wwv-plugin-daynight";
-import { UnderseaCablesPlugin } from "@worldwideview/wwv-plugin-undersea-cables";
-import { GpsJammingPlugin } from "@worldwideview/wwv-plugin-gps-jamming";
-import { ConflictEventsPlugin } from "@worldwideview/wwv-plugin-conflict-events";
-import { CivilUnrestPlugin } from "@worldwideview/wwv-plugin-civil-unrest";
-import { SurveillanceSatellitesPlugin } from "@worldwideview/wwv-plugin-surveillance-satellites";
-import { CyberAttacksPlugin } from "@worldwideview/wwv-plugin-cyber-attacks";
-import { InternationalSanctionsPlugin } from "@worldwideview/wwv-plugin-international-sanctions";
-import { OSMSearchPlugin } from "@worldwideview/wwv-plugin-osm-search";
+
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { PanelToggleArrows } from "@/components/layout/PanelToggleArrows";
@@ -91,34 +74,7 @@ export function AppShell() {
                 });
             }
 
-            const builtIns = [
-                new AviationPlugin(),
-                new MaritimePlugin(),
-                new WildfirePlugin(),
-                new BordersPlugin(),
-                new CameraPlugin(),
-                new MilitaryPlugin(),
-                new SatellitePlugin(),
-                new IranWarLivePlugin(),
-                new EarthquakesPlugin(),
-                new DayNightPlugin(),
-                new UnderseaCablesPlugin(),
-                new GpsJammingPlugin(),
-                new ConflictEventsPlugin(),
-                new CivilUnrestPlugin(),
-                new SurveillanceSatellitesPlugin(),
-                new CyberAttacksPlugin(),
-                new InternationalSanctionsPlugin(),
-                new OSMSearchPlugin(),
-            ];
 
-            for (const plugin of builtIns) {
-                if (disabledIds.has(plugin.id)) {
-                    console.log(`[AppShell] Skipping disabled built-in: ${plugin.id}`);
-                    continue;
-                }
-                pluginRegistry.register(plugin);
-            }
 
             await pluginManager.init();
 

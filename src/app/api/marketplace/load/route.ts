@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 import { prisma } from "@/lib/db";
 import { handlePreflight, withCors } from "@/lib/marketplace/cors";
 import { validateManifest } from "@/core/plugins/validateManifest";
@@ -34,7 +36,32 @@ export async function GET(request: Request) {
             getVerifiedPluginIds(),
         ]);
 
-        const manifests = records
+        // Support local sandbox workflows by checking /public/plugins
+        const localPlugins: any[] = [];
+        try {
+            if (process.env.NODE_ENV === "development") {
+                const pluginsDir = path.join(process.cwd(), "public", "plugins");
+                if (fs.existsSync(pluginsDir)) {
+                    for (const folder of fs.readdirSync(pluginsDir)) {
+                        const manifestPath = path.join(pluginsDir, folder, "plugin.json");
+                        if (fs.existsSync(manifestPath)) {
+                            try {
+                                const config = fs.readFileSync(manifestPath, "utf-8");
+                                localPlugins.push({ pluginId: folder, config });
+                            } catch (e) {
+                                console.error(`Error reading local plugin ${folder}:`, e);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Error scanning local plugins directory:", e);
+        }
+
+        const allRecords = [...records, ...localPlugins];
+
+        const manifests = allRecords
             .map((r: any): PluginManifest | null => {
                 try {
                     const manifest = JSON.parse(r.config);

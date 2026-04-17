@@ -12,6 +12,10 @@ function isPrivateUrl(urlStr: string): boolean {
         const parsed = new URL(urlStr);
         if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return true;
         const host = parsed.hostname;
+        
+        // If developer overrides local restrictions, bypass checks
+        if (process.env.WWV_PROXY_ALLOW_LOCAL === "true") return false;
+
         if (BLOCKED_HOSTS.includes(host)) return true;
 
         const parts = host.split(".").map(Number);

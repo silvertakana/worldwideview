@@ -2,7 +2,7 @@
   "name": "@worldwideview/wwv-plugin-iranwarlive",
   "version": "1.0.2",
   "description": "Iran War Live — Live OSINT data sourced from IranWarLive.com",
-  "main": "src/index.ts",
+  "main": "dist/frontend.mjs",
   "types": "src/index.ts",
   "files": [
     "src"
@@ -17,5 +17,10 @@
     "icon": "ShieldAlert",
     "category": "Conflict",
     "format": "bundle"
+  },
+  "type": "module",
+  "module": "dist/frontend.mjs",
+  "scripts": {
+    "build": "vite build"
   }
 }

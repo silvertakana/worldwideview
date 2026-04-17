@@ -36,10 +36,7 @@ export class EarthquakesPlugin extends BaseIncidentPlugin {
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
-            const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
-                ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
-                : 'http://localhost:5001';
-            const res = await globalThis.fetch(`${engineBase}/data/earthquake`);
+            const res = await globalThis.fetch(`/api/earthquake`);
             if (!res.ok) {
                 this.context?.onError(new Error(`Earthquakes API returned ${res.status}`));
                 return [];

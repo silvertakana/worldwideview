@@ -2,7 +2,7 @@
   "name": "@worldwideview/wwv-plugin-airports",
   "version": "1.0.1",
   "description": "WorldWideView plugin — Airports and aerodromes worldwide from OSM",
-  "main": "src/index.ts",
+  "main": "dist/frontend.mjs",
   "types": "src/index.ts",
   "files": [
     "src"
@@ -33,5 +33,10 @@
     "icon": "PlaneTakeoff",
     "category": "Aviation",
     "format": "static"
+  },
+  "type": "module",
+  "module": "dist/frontend.mjs",
+  "scripts": {
+    "build": "vite build"
   }
 }

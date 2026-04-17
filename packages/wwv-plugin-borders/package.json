@@ -2,7 +2,7 @@
   "name": "@worldwideview/wwv-plugin-borders",
   "version": "1.0.4",
   "description": "WorldWideView plugin that displays political borders and country labels as a globe overlay",
-  "main": "src/index.ts",
+  "main": "dist/frontend.mjs",
   "types": "src/index.ts",
   "files": [
     "src"
@@ -36,5 +36,10 @@
     "icon": "Map",
     "category": "Custom",
     "format": "bundle"
+  },
+  "type": "module",
+  "module": "dist/frontend.mjs",
+  "scripts": {
+    "build": "vite build"
   }
 }

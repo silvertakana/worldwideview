@@ -74,9 +74,15 @@ export class MilitaryPlugin extends BaseAviationPlugin {
 
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         try {
-            const engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL
-                ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http')
-                : 'http://localhost:5001';
+            let engineBase = 'http://localhost:5001';
+            
+            // Safe check for BUNDLE environments where process does not exist globally
+            if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL) {
+                engineBase = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http');
+            } else if ((globalThis as any).__WWV_HOST__?.NEXT_PUBLIC_WS_ENGINE_URL) {
+                engineBase = (globalThis as any).__WWV_HOST__.NEXT_PUBLIC_WS_ENGINE_URL.replace(/\/stream$/, '').replace(/^ws/, 'http');
+            }
+
             const res = await globalThis.fetch(`${engineBase}/data/military-aviation`);
             if (!res.ok) throw new Error(`Military API returned ${res.status}`);
             const data = await res.json();

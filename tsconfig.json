@@ -28,45 +28,6 @@
       ],
       "@worldwideview/wwv-plugin-sdk": [
         "./packages/wwv-plugin-sdk/src"
-      ],
-      "@worldwideview/wwv-plugin-aviation": [
-        "./packages/wwv-plugin-aviation/src"
-      ],
-      "@worldwideview/wwv-plugin-maritime": [
-        "./packages/wwv-plugin-maritime/src"
-      ],
-      "@worldwideview/wwv-plugin-wildfire": [
-        "./packages/wwv-plugin-wildfire/src"
-      ],
-      "@worldwideview/wwv-plugin-borders": [
-        "./packages/wwv-plugin-borders/src"
-      ],
-      "@worldwideview/wwv-plugin-camera": [
-        "./packages/wwv-plugin-camera/src"
-      ],
-      "@worldwideview/wwv-plugin-camera/*": [
-        "./packages/wwv-plugin-camera/src/*"
-      ],
-      "@worldwideview/wwv-plugin-military-aviation": [
-        "./packages/wwv-plugin-military-aviation/src"
-      ],
-      "@worldwideview/wwv-plugin-satellite": [
-        "./packages/wwv-plugin-satellite/src"
-      ],
-      "@worldwideview/wwv-plugin-daynight": [
-        "./packages/wwv-plugin-daynight/src"
-      ],
-      "@worldwideview/wwv-plugin-earthquakes": [
-        "./packages/wwv-plugin-earthquakes/src"
-      ],
-      "@worldwideview/wwv-plugin-iranwarlive": [
-        "./packages/wwv-plugin-iranwarlive/src"
-      ],
-      "@worldwideview/wwv-plugin-undersea-cables": [
-        "./packages/wwv-plugin-undersea-cables/src"
-      ],
-      "@worldwideview/wwv-plugin-osm-search": [
-        "./packages/wwv-plugin-osm-search/src"
       ]
     }
   },

@@ -4,14 +4,14 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export function scaffold(name: string): void {
+export function scaffold(name: string, templateType: "frontend" | "fullstack"): void {
     const slug = name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     const dir = resolve(process.cwd(), slug);
 
     console.log(`\n🌍 Creating WorldWideView plugin: ${slug}\n`);
     mkdirSync(join(dir, "src"), { recursive: true });
 
-    const templateDir = join(__dirname, "..", "templates");
+    const templateDir = join(__dirname, "..", "templates", templateType);
     const files = readdirSync(templateDir);
 
     for (const file of files) {
@@ -28,7 +28,7 @@ export function scaffold(name: string): void {
         // Strip .tpl extension and route index.ts into src/
         const outName = file.replace(/\.tpl$/, "");
         const dest =
-            outName === "index.ts"
+            (outName === "index.ts" || outName === "backend.ts")
                 ? join(dir, "src", outName)
                 : join(dir, outName);
 

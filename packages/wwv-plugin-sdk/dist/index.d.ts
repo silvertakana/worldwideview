@@ -100,6 +100,8 @@ export interface ServerPluginConfig {
     requiresAuth?: boolean;
     historyEnabled?: boolean;
     availabilityEnabled?: boolean;
+    /** WebSocket URL for direct engine connection. Overrides the global default engine URL. */
+    streamUrl?: string;
 }
 export interface PluginContext {
     apiBaseUrl: string;
@@ -169,7 +171,9 @@ export interface WorldPlugin {
         filterId?: string;
         filterValue?: string;
     }[];
-    getSidebarComponent?(): ComponentType;
+    getSidebarComponent?(): ComponentType<{
+        plugin?: any;
+    } | any>;
     getDetailComponent?(): ComponentType<{
         entity: GeoEntity;
     }>;
