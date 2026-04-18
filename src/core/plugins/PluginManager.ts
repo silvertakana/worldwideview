@@ -92,8 +92,14 @@ class PluginManager {
             async () => {
                 const managed = this.plugins.get(plugin.id);
                 if (!managed || !managed.enabled) return;
-                const entities = await plugin.fetch(managed.context.timeRange);
-                this.handleDataUpdate(plugin.id, entities);
+                try {
+                    const entities = await plugin.fetch(managed.context.timeRange);
+                    this.handleDataUpdate(plugin.id, entities);
+                } catch (err: any) {
+                    useStore.getState().setLayerLoading(plugin.id, false);
+                    managed.context.onError(err instanceof Error ? err : new Error(String(err)));
+                    throw err;
+                }
             }
         );
     }
