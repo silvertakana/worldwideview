@@ -92,14 +92,11 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json(
-            { 
-                error: "All Overpass mirrors failed or timed out. The OSM servers are likely under heavy load.", 
-                lastError 
-            }, 
-            { status: lastError?.status || 504 }
+            { error: "All Overpass mirrors failed or timed out. The OSM servers are likely under heavy load." }, 
+            { status: 504 }
         );
     } catch (e: any) {
         console.error(`[OSMSearchProxy] Internal error:`, e);
-        return NextResponse.json({ error: e.message }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

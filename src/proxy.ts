@@ -47,14 +47,20 @@ export default async function proxy(req: NextRequest) {
 
     // Not logged in — check if first-run (no users)
     try {
-        const url = new URL("/api/auth/setup-status", req.nextUrl.origin);
-        const res = await fetch(url);
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || `http://127.0.0.1:${process.env.PORT || "3000"}`;
+        const url = new URL("/api/auth/setup-status", appUrl);
+        const res = await fetch(url.toString(), {
+            headers: {
+                "User-Agent": "WorldWideView-Middleware",
+            }
+        });
         const data = await res.json();
         if (data.needsSetup) {
-            return NextResponse.redirect(new URL("/setup", req.nextUrl));
+            return NextResponse.redirect(new URL("/setup", req.nextUrl)); // NextResponse.redirect correctly bounds redirect to client
         }
-    } catch {
+    } catch (e) {
         // Fall through to login redirect
+        console.error("[proxy.ts] Failed to fetch setup status:", e);
     }
 
     return NextResponse.redirect(new URL("/login", req.nextUrl));

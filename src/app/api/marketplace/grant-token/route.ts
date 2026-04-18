@@ -50,13 +50,13 @@ export async function GET(request: NextRequest) {
         const session = await auth();
 
         if (!session?.user) {
-            // Use forwarded host or Host header for correct public URL behind reverse proxy
-            const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? request.nextUrl.host;
-            const proto = request.headers.get("x-forwarded-proto") ?? (request.nextUrl.protocol.replace(":", ""));
-            const origin = `${proto}://${host}`;
+            // Use configured app URL to prevent Host header injection open redirects
+            const origin = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || request.nextUrl.origin;
             const loginUrl = new URL("/login", origin);
-            const callbackUrl = request.nextUrl.pathname + request.nextUrl.search;
-            loginUrl.searchParams.set("callbackUrl", `${origin}${callbackUrl}`);
+            
+            // Construct a relative path for callback to ensure it redirects back to the identical host
+            const callbackPath = request.nextUrl.pathname + request.nextUrl.search;
+            loginUrl.searchParams.set("callbackUrl", callbackPath);
             return NextResponse.redirect(loginUrl);
         }
 

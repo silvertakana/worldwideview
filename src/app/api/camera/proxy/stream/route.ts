@@ -7,7 +7,9 @@ import { getClientIp } from "@/lib/rateLimit";
 const BLOCKED_HOSTS = ["localhost", "127.0.0.1", "::1", "metadata.google.internal"];
 const MAX_STREAM_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
-function isPrivateUrl(urlStr: string): boolean {
+import dns from "dns/promises";
+
+async function isPrivateUrl(urlStr: string): Promise<boolean> {
     try {
         const parsed = new URL(urlStr);
         if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return true;
@@ -18,14 +20,28 @@ function isPrivateUrl(urlStr: string): boolean {
 
         if (BLOCKED_HOSTS.includes(host)) return true;
 
-        const parts = host.split(".").map(Number);
+        let resolvedIp: string;
+        try {
+            const lookupResult = await dns.lookup(host);
+            resolvedIp = lookupResult.address;
+        } catch {
+            return true; // DNS resolution failed
+        }
+
+        const parts = resolvedIp.split(".").map(Number);
         if (parts.length === 4 && parts.every((n) => !isNaN(n))) {
             if (parts[0] === 10) return true;
             if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
             if (parts[0] === 192 && parts[1] === 168) return true;
             if (parts[0] === 169 && parts[1] === 254) return true;
             if (parts[0] === 0) return true;
+            if (parts[0] === 127) return true;
         }
+        
+        if (resolvedIp === "::1" || resolvedIp.startsWith("fe80:") || resolvedIp.startsWith("fc") || resolvedIp.startsWith("fd")) {
+            return true;
+        }
+        
         return false;
     } catch {
         return true;
@@ -52,7 +68,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Missing 'url' parameter" }, { status: 400 });
     }
 
-    if (isPrivateUrl(targetUrl)) {
+    if (await isPrivateUrl(targetUrl)) {
         return NextResponse.json(
             { error: "Requests to private/internal networks are not allowed" },
             { status: 403 },
