@@ -62,7 +62,6 @@ export function useMarketplaceSync() {
         }
     }
 
-    /** Load a single manifest into the plugin manager. */
     async function loadManifest(manifest: PluginManifest) {
         if (!manifest.id || loadedIds.current.has(manifest.id)) return;
         if (pluginManager.getPlugin(manifest.id)) {
@@ -73,7 +72,23 @@ export function useMarketplaceSync() {
         try {
             console.log(`[MarketplaceSync] Loading manifest: ${manifest.id}`);
             await pluginManager.loadFromManifest(manifest);
-            initLayer(manifest.id);
+
+            let shouldEnable = false;
+            if (isDemo) {
+                const envVar = process.env.NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS || "";
+                const demoDefaultPlugins = new Set<string>();
+                envVar.split(",").forEach((s) => {
+                    const clean = s.trim();
+                    if (clean) demoDefaultPlugins.add(clean);
+                });
+                shouldEnable = demoDefaultPlugins.has(manifest.id);
+            }
+
+            initLayer(manifest.id, shouldEnable);
+            if (shouldEnable) {
+                await pluginManager.enablePlugin(manifest.id);
+            }
+
             loadedIds.current.add(manifest.id);
             console.log(`[MarketplaceSync] Hot-loaded plugin "${manifest.id}"`);
         } catch (err) {
