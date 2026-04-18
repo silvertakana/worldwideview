@@ -1,0 +1,1 @@
+docker run --rm -v nmn55t4io3myfubs72worn7k_wwv-data:/data nouchka/sqlite3 /data/wwv.db "UPDATE InstalledPlugin SET config = json_set(config, '$.format', 'static', '$.dataFile', 'https://cdn.jsdelivr.net/npm/@worldwideview/wwv-plugin-military-bases@1.0.10/data/military-bases.geojson') WHERE pluginId = 'military-bases';"

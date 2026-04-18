@@ -20,7 +20,7 @@ export const cameraProxyLimiter = new RateLimiter({
 /** /api/marketplace/install-redirect — prevents install spam. */
 export const installLimiter = new RateLimiter({
     windowMs: 60_000,
-    maxRequests: 10,
+    maxRequests: 60,
 });
 
 /** /api/marketplace/grant-token — prevents JWT generation spam. */
@@ -32,7 +32,7 @@ export const grantTokenLimiter = new RateLimiter({
 /** /api/marketplace/status, install, uninstall — general marketplace API. */
 export const marketplaceApiLimiter = new RateLimiter({
     windowMs: 60_000,
-    maxRequests: 20,
+    maxRequests: 60,
 });
 
 /** /api/auth/[...nextauth] — prevents credential brute-force. */
