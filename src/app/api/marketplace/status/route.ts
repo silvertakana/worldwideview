@@ -43,8 +43,11 @@ export async function GET(request: Request) {
 
         const plugins = [...activeDbPlugins, ...builtInRecords];
 
-        const session = await auth();
-        const canManagePlugins = !isDemo || isDemoAdmin(session);
+        let canManagePlugins = !isDemo;
+        if (isDemo) {
+            const authError = await validateMarketplaceAuth(request);
+            canManagePlugins = authError === null;
+        }
 
         return withCors(NextResponse.json({ plugins, canManagePlugins }), request);
     } catch (err) {
@@ -57,8 +60,11 @@ export async function GET(request: Request) {
             installedAt: "",
         }));
         
-        const session = await auth();
-        const canManagePlugins = !isDemo || isDemoAdmin(session);
+        let canManagePlugins = !isDemo;
+        if (isDemo) {
+            const authError = await validateMarketplaceAuth(request);
+            canManagePlugins = authError === null;
+        }
         
         return withCors(NextResponse.json({ plugins: fallback, canManagePlugins }), request);
     }

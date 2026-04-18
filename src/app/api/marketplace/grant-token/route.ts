@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { issueMarketplaceToken } from "@/lib/marketplace/marketplaceToken";
 import { grantTokenLimiter } from "@/lib/rateLimiters";
 import { getClientIp } from "@/lib/rateLimit";
-import { isPluginInstallEnabled } from "@/core/edition";
+import { isPluginInstallEnabled, isDemo, isDemoAdmin } from "@/core/edition";
 
 const ALLOWED_REDIRECT_HOSTS = new Set([
     "localhost",
@@ -58,6 +58,10 @@ export async function GET(request: NextRequest) {
             const callbackUrl = request.nextUrl.pathname + request.nextUrl.search;
             loginUrl.searchParams.set("callbackUrl", `${origin}${callbackUrl}`);
             return NextResponse.redirect(loginUrl);
+        }
+
+        if (isDemo && !isDemoAdmin(session)) {
+            return NextResponse.json({ error: "Admin access required on Demo edition" }, { status: 403 });
         }
 
         if (!redirectTo || !isSafeRedirect(redirectTo)) {

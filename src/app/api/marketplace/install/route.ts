@@ -21,13 +21,7 @@ export async function POST(request: Request) {
         );
     }
 
-    // On demo, only the admin session may install plugins
-    if (isDemo && !isDemoAdmin(await auth())) {
-        return withCors(
-            NextResponse.json({ error: "Admin access required" }, { status: 403 }),
-            request,
-        );
-    }
+
 
     const rateLimited = marketplaceApiLimiter.check(getClientIp(request));
     if (rateLimited) return withCors(rateLimited, request);

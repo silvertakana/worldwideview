@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { verifyMarketplaceToken } from "./marketplaceToken";
+import { isDemo, isDemoAdmin } from "@/core/edition";
 
 /**
  * Validate marketplace API access. Accepts (in order):
@@ -13,7 +14,12 @@ export async function validateMarketplaceAuth(
 ): Promise<NextResponse | null> {
     // 1. Try session auth first
     const session = await auth();
-    if (session?.user) return null;
+    if (session?.user) {
+        if (isDemo && !isDemoAdmin(session)) {
+            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+        }
+        return null;
+    }
 
     // 2. Try marketplace JWT bearer token
     const authHeader = request.headers.get("authorization");
