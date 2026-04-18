@@ -193,6 +193,10 @@ class PluginManager {
      */
     async loadFromManifest(manifest: PluginManifest): Promise<void> {
         const plugin = await loadPluginFromManifest(manifest);
+        if (manifest.id && plugin.id !== manifest.id) {
+            console.warn(`[PluginManager] Overriding plugin ID from internal '${plugin.id}' to manifest ID '${manifest.id}'`);
+            plugin.id = manifest.id;
+        }
         this.loadedManifests.set(manifest.id, manifest);
         await this.registerPlugin(plugin);
     }
