@@ -1,7 +1,7 @@
 import { pluginManager } from "@/core/plugins/PluginManager";
 
 const RAW_ENGINE_URL =
-  process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL || "ws://localhost:5001/stream";
+  process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL || "wss://dataengine.worldwideview.dev/stream";
 
 /** Normalize a base URL into a valid WebSocket stream URL. */
 function toWsStreamUrl(url: string): string {
@@ -24,7 +24,7 @@ const DEFAULT_ENGINE_URL = toWsStreamUrl(RAW_ENGINE_URL);
  * 1. Plugin's ServerPluginConfig.streamUrl (code-based plugins)
  * 2. Plugin's PluginManifest.dataSource.streamUrl (manifest-based plugins)
  * 3. NEXT_PUBLIC_DEFAULT_ENGINE_URL environment variable
- * 4. Fallback: ws://localhost:5001/stream
+ * 4. Fallback: wss://dataengine.worldwideview.dev/stream
  */
 export function resolveEngineUrl(pluginId: string): string {
   // 1. Check code-based plugin server config

@@ -94,8 +94,6 @@ export function LayerPanel() {
                 className="panel-tabs"
                 onWheel={(e) => {
                     e.currentTarget.scrollLeft += e.deltaY;
-                    // e.preventDefault() is excluded, or included if right panel has it. The right panel has it, but React often warns if preventDefault is called on passive listeners. Let's match it anyway.
-                    e.preventDefault();
                 }}
             >
                 <button

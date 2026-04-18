@@ -83,6 +83,11 @@ export async function loadPluginFromManifest(
     // 1. Validate
     const result = validateManifest(manifest);
     if (!result.valid) {
+        console.error(
+            `[loadPluginFromManifest] ❌ MANIFEST VALIDATION FAILED for "${manifest.id || 'unknown'}"\n` +
+            `Errors: ${result.errors.join(", ")}\n` +
+            `Evaluated Payload:\n${JSON.stringify(manifest, null, 2)}`
+        );
         throw new ManifestLoadError(
             manifest.id,
             `Invalid manifest: ${result.errors.join(", ")}`,

@@ -107,10 +107,15 @@ function validateExtension(m: PluginManifest): string[] {
 }
 
 /** Validate a plugin manifest against all rules. */
-export function validateManifest(manifest: PluginManifest): ValidationResult {
+export function validateManifest(manifest: Partial<PluginManifest>): ValidationResult {
+    // Backwards compatibility default for older plugin metadata
+    if (manifest && !manifest.type) {
+        manifest.type = "data-layer";
+    }
+
     const errors = [
-        ...validateBaseFields(manifest),
-        ...validateExtension(manifest),
+        ...validateBaseFields(manifest as PluginManifest),
+        ...validateExtension(manifest as PluginManifest),
     ];
 
     // Format-specific validation (only if base format is valid)

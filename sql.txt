@@ -1,1 +1,0 @@
-UPDATE installed_plugins SET config = json_set(config, '$.format', 'static', '$.dataFile', 'https://cdn.jsdelivr.net/npm/@worldwideview/wwv-plugin-military-bases@1.0.10/data/military-bases.geojson') WHERE pluginId = 'military-bases';

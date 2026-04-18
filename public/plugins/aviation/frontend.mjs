@@ -133,7 +133,7 @@ var u = class extends c {
 	}
 	async fetch(e) {
 		try {
-			let e = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http") : "http://localhost:5001", t;
+			let e = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http") : "https://dataengine.worldwideview.dev", t;
 			if (this.context.isPlaybackMode()) {
 				let n = this.context.getCurrentTime().getTime();
 				t = await fetch(`${e}/data/aviation?time=${n}`);

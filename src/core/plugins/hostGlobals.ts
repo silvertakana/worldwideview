@@ -48,10 +48,19 @@ export function injectHostGlobals(): void {
         CameraStream,
     };
 
-    if (process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL) {
-        (globalThis as any).__WWV_ENGINE_URL__ = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL;
+    // REST Engine URL
+    if (process.env.NEXT_PUBLIC_WWV_DATA_ENGINE_URL || process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL) {
+        (globalThis as any).__WWV_ENGINE_URL__ = process.env.NEXT_PUBLIC_WWV_DATA_ENGINE_URL || process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL;
     } else {
-        (globalThis as any).__WWV_ENGINE_URL__ = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5001';
+        // ALWAYS default to the cloud engine unless explicitly told otherwise via env var
+        (globalThis as any).__WWV_ENGINE_URL__ = 'https://dataengine.worldwideview.dev';
+    }
+
+    // WebSocket Engine URL
+    if (process.env.NEXT_PUBLIC_WS_ENGINE_URL) {
+        (globalThis as any).__WWV_WS_ENGINE_URL__ = process.env.NEXT_PUBLIC_WS_ENGINE_URL;
+    } else {
+        (globalThis as any).__WWV_WS_ENGINE_URL__ = 'wss://dataengine.worldwideview.dev/stream';
     }
 
     console.log("[HostGlobals] React and SDK injected for dynamic plugins");

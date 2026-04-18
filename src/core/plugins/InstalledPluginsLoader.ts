@@ -25,8 +25,10 @@ export async function loadInstalledPlugins(): Promise<number> {
 
                 const result = validateManifest(manifest);
                 if (!result.valid) {
-                    console.warn(
-                        `[InstalledPlugins] Skipping "${record.pluginId}": ${result.errors.join(", ")}`,
+                    console.error(
+                        `[InstalledPlugins] ❌ MANIFEST VALIDATION FAILED for "${record.pluginId}"\n` +
+                        `Errors: ${result.errors.join(", ")}\n` +
+                        `Evaluated Payload:\n${JSON.stringify(manifest, null, 2)}`
                     );
                     continue;
                 }

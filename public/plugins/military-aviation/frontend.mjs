@@ -137,7 +137,7 @@ var u = class extends c {
 	}
 	async fetch(e) {
 		try {
-			let e = "http://localhost:5001";
+			let e = "https://dataengine.worldwideview.dev";
 			typeof process < "u" && process.env && process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL ? e = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http") : globalThis.__WWV_HOST__?.NEXT_PUBLIC_WS_ENGINE_URL && (e = globalThis.__WWV_HOST__.NEXT_PUBLIC_WS_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http"));
 			let t = await globalThis.fetch(`${e}/data/military-aviation`);
 			if (!t.ok) throw Error(`Military API returned ${t.status}`);

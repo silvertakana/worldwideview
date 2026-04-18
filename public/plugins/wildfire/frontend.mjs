@@ -60,7 +60,7 @@ var d = class {
 	}
 	async fetch(e) {
 		try {
-			let e = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http") : "http://localhost:5001", t = await globalThis.fetch(`${e}/data/wildfires`);
+			let e = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http") : "https://dataengine.worldwideview.dev", t = await globalThis.fetch(`${e}/data/wildfires`);
 			if (!t.ok) throw Error(`Wildfire API returned ${t.status}`);
 			let n = await t.json();
 			return !n.items || !Array.isArray(n.items) ? [] : n.items.map((e) => ({

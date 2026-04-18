@@ -1156,7 +1156,7 @@ var ge = class {
 				t && t.trailDuration && (e = t.trailDuration);
 			}
 			e === "0h" && (e = "");
-			let t = e ? `?lookback=${e}` : "", n = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http") : "http://localhost:5001", r = await fetch(`${n}/data/maritime${t}`);
+			let t = e ? `?lookback=${e}` : "", n = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http") : "https://dataengine.worldwideview.dev", r = await fetch(`${n}/data/maritime${t}`);
 			if (!r.ok) throw Error(`Maritime API returned ${r.status}`);
 			let i = await r.json();
 			return this.mapPayloadToEntities(i.items);

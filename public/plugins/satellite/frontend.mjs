@@ -1,8 +1,7 @@
-//#region ../../node_modules/.pnpm/lucide-react@0.576.0_react@19.2.3/node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.js
-var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), t = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), n = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), r = (e) => {
-	let t = n(e);
+var { useState: e, useEffect: t, useRef: n, useMemo: r, useCallback: i, useContext: a, useReducer: o, useLayoutEffect: s, StrictMode: c, Suspense: l, createContext: u, createElement: d, cloneElement: f, isValidElement: p, Fragment: m, Children: h, Component: g, PureComponent: _, createRef: v, forwardRef: y, memo: b, lazy: x, startTransition: S, useTransition: C, useDeferredValue: w, useId: T, useSyncExternalStore: E, useInsertionEffect: D } = globalThis.__WWV_HOST__.React, O = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), k = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), A = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), j = (e) => {
+	let t = A(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, i = {
+}, M = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -12,27 +11,30 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, a = (e) => {
+}, N = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, o = globalThis.__WWV_HOST__.React.forwardRef(({ color: t = "currentColor", size: n = 24, strokeWidth: r = 2, absoluteStrokeWidth: o, className: s = "", children: c, iconNode: l, ...u }, d) => globalThis.__WWV_HOST__.React.createElement("svg", {
-	ref: d,
-	...i,
-	width: n,
-	height: n,
-	stroke: t,
-	strokeWidth: o ? Number(r) * 24 / Number(n) : r,
-	className: e("lucide", s),
-	...!c && !a(u) && { "aria-hidden": "true" },
-	...u
-}, [...l.map(([e, t]) => globalThis.__WWV_HOST__.React.createElement(e, t)), ...Array.isArray(c) ? c : [c]])), s = ((n, i) => {
-	let a = globalThis.__WWV_HOST__.React.forwardRef(({ className: a, ...s }, c) => globalThis.__WWV_HOST__.React.createElement(o, {
+}, P = u({}), F = () => a(P), I = y(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: o, ...s }, c) => {
+	let { size: l = 24, strokeWidth: u = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = F() ?? {}, h = r ?? f ? Number(n ?? u) * 24 / Number(t ?? l) : n ?? u;
+	return d("svg", {
 		ref: c,
-		iconNode: i,
-		className: e(`lucide-${t(r(n))}`, `lucide-${n}`, a),
+		...M,
+		width: t ?? l ?? M.width,
+		height: t ?? l ?? M.height,
+		stroke: e ?? p,
+		strokeWidth: h,
+		className: O("lucide", m, i),
+		...!a && !N(s) && { "aria-hidden": "true" },
 		...s
+	}, [...o.map(([e, t]) => d(e, t)), ...Array.isArray(a) ? a : [a]]);
+}), L = ((e, t) => {
+	let n = y(({ className: n, ...r }, i) => d(I, {
+		ref: i,
+		iconNode: t,
+		className: O(`lucide-${k(j(e))}`, `lucide-${e}`, n),
+		...r
 	}));
-	return a.displayName = r(n), a;
+	return n.displayName = j(e), n;
 })("satellite", [
 	["path", {
 		d: "m13.5 6.5-3.148-3.148a1.205 1.205 0 0 0-1.704 0L6.352 5.648a1.205 1.205 0 0 0 0 1.704L9.5 10.5",
@@ -54,7 +56,7 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 		d: "M9.352 10.648a1.205 1.205 0 0 0 0 1.704l2.296 2.296a1.205 1.205 0 0 0 1.704 0l4.296-4.296a1.205 1.205 0 0 0 0-1.704l-2.296-2.296a1.205 1.205 0 0 0-1.704 0z",
 		key: "nv9zqy"
 	}]
-]), c = {
+]), { WorldPlugin: R, PluginManifest: z, createSvgIconUrl: B, DEFAULT_ICON_SIZE: V } = globalThis.__WWV_HOST__.WWVPluginSDK, H = {
 	stations: "#00fff7",
 	visual: "#f0abfc",
 	weather: "#a78bfa",
@@ -63,12 +65,12 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 	starlink: "#ffffff",
 	military: "#3b82f6"
 };
-function l(e) {
-	return c[e] ?? "#94a3b8";
+function U(e) {
+	return H[e] ?? "#94a3b8";
 }
-var u = class {
+var W = class {
 	constructor() {
-		this.id = "satellite", this.name = "Satellites", this.description = "Real-time satellite tracking (ISS, GPS, weather, military)", this.icon = s, this.category = "infrastructure", this.version = "1.0.0", this.context = null, this.iconUrls = {};
+		this.id = "satellite", this.name = "Satellites", this.description = "Real-time satellite tracking (ISS, GPS, weather, military)", this.icon = L, this.category = "infrastructure", this.version = "1.0.0", this.context = null, this.iconUrls = {};
 	}
 	async initialize(e) {
 		this.context = e;
@@ -78,10 +80,10 @@ var u = class {
 	}
 	async fetch(e) {
 		try {
-			let e = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http") : "http://localhost:5001", t = await globalThis.fetch(`${e}/data/satellite`);
-			if (!t.ok) throw Error(`Satellite API returned ${t.status}`);
-			let n = await t.json(), r = n.satellites || n.items || [];
-			return !r || !Array.isArray(r) ? [] : r.map((e) => ({
+			let e = typeof globalThis < "u" && globalThis.__WWV_ENGINE_URL__, t = e ? e.replace(/\/stream$/, "").replace(/^ws/, "http") : "http://localhost:5001", n = await globalThis.fetch(`${t}/data/satellite`);
+			if (!n.ok) throw Error(`Satellite API returned ${n.status}`);
+			let r = await n.json(), i = r.satellites || r.items || [];
+			return !i || !Array.isArray(i) ? [] : i.map((e) => ({
 				id: `satellite-${e.noradId}`,
 				pluginId: "satellite",
 				latitude: e.latitude,
@@ -117,8 +119,8 @@ var u = class {
 		};
 	}
 	renderEntity(e) {
-		let t = e.properties.group || "", n = t === "stations", r = l(t);
-		return this.iconUrls[r] || (this.iconUrls[r] = globalThis.__WWV_HOST__.WWVPluginSDK.createSvgIconUrl(s, { color: r })), {
+		let t = e.properties.group || "", n = t === "stations", r = U(t);
+		return this.iconUrls[r] || (this.iconUrls[r] = B(L, { color: r })), {
 			type: "billboard",
 			iconUrl: this.iconUrls[r],
 			color: r,
@@ -175,49 +177,49 @@ var u = class {
 		return [
 			{
 				label: "Space Stations",
-				color: l("stations"),
+				color: U("stations"),
 				filterId: "group",
 				filterValue: "stations"
 			},
 			{
 				label: "Brightest Satellites",
-				color: l("visual"),
+				color: U("visual"),
 				filterId: "group",
 				filterValue: "visual"
 			},
 			{
 				label: "Weather",
-				color: l("weather"),
+				color: U("weather"),
 				filterId: "group",
 				filterValue: "weather"
 			},
 			{
 				label: "GPS",
-				color: l("gps-ops"),
+				color: U("gps-ops"),
 				filterId: "group",
 				filterValue: "gps-ops"
 			},
 			{
 				label: "Earth Observation",
-				color: l("resource"),
+				color: U("resource"),
 				filterId: "group",
 				filterValue: "resource"
 			},
 			{
 				label: "Starlink",
-				color: l("starlink"),
+				color: U("starlink"),
 				filterId: "group",
 				filterValue: "starlink"
 			},
 			{
 				label: "Military",
-				color: l("military"),
+				color: U("military"),
 				filterId: "group",
 				filterValue: "military"
 			},
 			{
 				label: "Other",
-				color: l("other"),
+				color: U("other"),
 				filterId: "group",
 				filterValue: "other"
 			}
@@ -232,4 +234,4 @@ var u = class {
 	}
 };
 //#endregion
-export { u as SatellitePlugin };
+export { W as SatellitePlugin };
