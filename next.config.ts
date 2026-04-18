@@ -98,7 +98,9 @@ export default withSentryConfig(nextConfig, {
   disableLogger: true,
 
   // Hides source maps from generated client bundles
-  hideSourceMaps: true,
+  sourcemaps: {
+    disable: true,
+  },
   
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,

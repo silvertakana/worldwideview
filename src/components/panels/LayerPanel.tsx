@@ -90,7 +90,14 @@ export function LayerPanel() {
         >
             <div className="sidebar__title">Data Sources</div>
 
-            <div className="panel-tabs">
+            <div
+                className="panel-tabs"
+                onWheel={(e) => {
+                    e.currentTarget.scrollLeft += e.deltaY;
+                    // e.preventDefault() is excluded, or included if right panel has it. The right panel has it, but React often warns if preventDefault is called on passive listeners. Let's match it anyway.
+                    e.preventDefault();
+                }}
+            >
                 <button
                     className={`panel-tab ${activeTab === "layers" ? "panel-tab--active" : ""}`}
                     onClick={() => { setActiveTab("layers"); trackEvent("panel-tab-switch", { tab: "layers" }); }}

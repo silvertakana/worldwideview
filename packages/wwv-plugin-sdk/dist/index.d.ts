@@ -227,4 +227,5 @@ export type DataBusEvents = {
     };
     globeReady: Record<string, never>;
 };
+export * from "./viteGlobals.js";
 //# sourceMappingURL=index.d.ts.map

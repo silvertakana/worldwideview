@@ -17,6 +17,7 @@ import { handleEntitySelection, cleanupTrail } from "./SelectionHandler";
 import { useImageryManager } from "./useImageryManager";
 import { getCachedRenderOptions } from "./renderOptionsCache";
 import type { AnimatableItem } from "./EntityRenderer";
+import { PluginErrorBoundary } from "@/components/common/PluginErrorBoundary";
 
 /** Stable references */
 const CONTEXT_OPTIONS = { requestWebgl2: true, webgl: { antialias: true } } as const;
@@ -218,14 +219,23 @@ export default function GlobeView() {
     }, [lockedEntityId, viewerReady]);
 
     const PluginGlobeComponents = useMemo(() => {
-        const components = pluginManager.getAllPlugins()
-            .filter(managed => managed.plugin.getGlobeComponent)
-            .map(managed => {
-                const Comp = managed.plugin.getGlobeComponent!();
+        const components: React.ReactNode[] = [];
+        pluginManager.getAllPlugins().forEach(managed => {
+            if (!managed.plugin.getGlobeComponent) return;
+            
+            try {
+                const Comp = managed.plugin.getGlobeComponent();
                 const enabled = layers[managed.plugin.id]?.enabled ?? false;
-                console.log(`[GlobeView] Rendering plugin globe component: ${managed.plugin.id}, enabled: ${enabled}`);
-                return <Comp key={managed.plugin.id} viewer={viewerRef.current} enabled={enabled} />;
-            });
+                
+                components.push(
+                    <PluginErrorBoundary key={managed.plugin.id} pluginId={managed.plugin.id}>
+                        <Comp viewer={viewerRef.current} enabled={enabled} />
+                    </PluginErrorBoundary>
+                );
+            } catch (err) {
+                console.error(`[GlobeView] Synchronous error initializing plugin component ${managed.plugin.id}:`, err);
+            }
+        });
         console.log(`[GlobeView] Recomputing PluginGlobeComponents. Count: ${components.length}`);
         return components;
     }, [layers, viewerReady]);

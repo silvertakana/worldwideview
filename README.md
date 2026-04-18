@@ -67,7 +67,7 @@ When deploying to production, ensure you mount the following volumes to prevent 
 
 ## 🧠 Core Architecture & Philosophies
 
-- **Modular Intelligence**: Independent plugins supply the data. The core engine remains lightweight and isolated.
+- **Dynamic, Decentralized Plugins**: The plugin ecosystem uses a decentralized architecture fetching ES module CDN bundles (e.g., from unpkg) at runtime. The core engine is a lightweight shell that loads data providers dynamically via the marketplace.
 - **High-Performance Rendering**: Engineered for scale using raw Cesium primitives to smoothly handle upwards of 100,000+ objects simultaneously without GPU stalls.
 - **Cinematic Situational Awareness**: Implements horizon culling, smooth camera tracking, orientation-locked billboarding, and stack spiderification for dense locations.
 
