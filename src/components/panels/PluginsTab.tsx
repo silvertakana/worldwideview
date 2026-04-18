@@ -103,6 +103,7 @@ export function PluginsTab() {
     const [checkingUpdates, setCheckingUpdates] = useState(false);
     const [updating, setUpdating] = useState<string | null>(null);
     const [needsReload, setNeedsReload] = useState(false);
+    const [canInstall, setCanInstall] = useState<boolean>(isPluginInstallEnabled);
 
     const loadPlugins = useCallback(async () => {
         try {
@@ -110,6 +111,9 @@ export function PluginsTab() {
             if (!res.ok) return;
             const data = await res.json();
             setPlugins(data.plugins ?? []);
+            if (typeof data.canManagePlugins === "boolean") {
+                setCanInstall(data.canManagePlugins);
+            }
         } catch {
             /* non-critical */
         }
@@ -275,7 +279,7 @@ export function PluginsTab() {
                                 <TrustBadge trust={getTrust(record)} />
                             </div>
                         </div>
-                        {isPluginInstallEnabled && (
+                        {canInstall && (
                             <div className="plugin-item__actions">
                                 {updates[record.pluginId] ? (
                                     <button
@@ -303,27 +307,29 @@ export function PluginsTab() {
                 ))}
             </div>
             
-            <div className="plugins-tab__actions-bottom">
-                <button 
-                    className="plugins-tab__check-updates"
-                    onClick={handleCheckUpdates}
-                    disabled={checkingUpdates}
-                >
-                    <RefreshCw size={14} className={checkingUpdates ? "spinning" : ""} />
-                    {checkingUpdates ? "Checking..." : "Check for Updates"}
-                </button>
-                
-                {Object.keys(updates).length > 1 && (
+            {canInstall && (
+                <div className="plugins-tab__actions-bottom">
                     <button 
-                        className="plugins-tab__update-all"
-                        onClick={handleUpdateAll}
-                        disabled={updating !== null}
+                        className="plugins-tab__check-updates"
+                        onClick={handleCheckUpdates}
+                        disabled={checkingUpdates}
                     >
-                        <Download size={14} />
-                        Update All ({Object.keys(updates).length})
+                        <RefreshCw size={14} className={checkingUpdates ? "spinning" : ""} />
+                        {checkingUpdates ? "Checking..." : "Check for Updates"}
                     </button>
-                )}
-            </div>
+                    
+                    {Object.keys(updates).length > 1 && (
+                        <button 
+                            className="plugins-tab__update-all"
+                            onClick={handleUpdateAll}
+                            disabled={updating !== null}
+                        >
+                            <Download size={14} />
+                            Update All ({Object.keys(updates).length})
+                        </button>
+                    )}
+                </div>
+            )}
 
             <BrowseLink />
         </div>

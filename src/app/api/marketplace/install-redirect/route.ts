@@ -7,7 +7,7 @@ import type { PluginManifest } from "@/core/plugins/PluginManifest";
 import { validateManifest } from "@/core/plugins/validateManifest";
 import { installLimiter } from "@/lib/rateLimiters";
 import { getClientIp } from "@/lib/rateLimit";
-import { isPluginInstallEnabled } from "@/core/edition";
+import { isPluginInstallEnabled, isDemo, isDemoAdmin } from "@/core/edition";
 import { getVerifiedPluginIds } from "@/lib/marketplace/registryClient";
 
 const ALLOWED_REDIRECT_HOSTS = new Set([
@@ -52,6 +52,13 @@ export async function GET(request: NextRequest) {
             const loginUrl = new URL("/login", request.nextUrl.origin);
             loginUrl.searchParams.set("callbackUrl", request.nextUrl.toString());
             return NextResponse.redirect(loginUrl);
+        }
+
+        if (isDemo && !isDemoAdmin(session)) {
+            return NextResponse.json(
+                { error: "Admin access required on Demo edition" },
+                { status: 403 }
+            );
         }
 
         const pluginId = searchParams.get("pluginId");
