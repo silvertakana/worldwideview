@@ -48,5 +48,11 @@ export function injectHostGlobals(): void {
         CameraStream,
     };
 
+    if (process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL) {
+        (globalThis as any).__WWV_ENGINE_URL__ = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL;
+    } else {
+        (globalThis as any).__WWV_ENGINE_URL__ = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5001';
+    }
+
     console.log("[HostGlobals] React and SDK injected for dynamic plugins");
 }
