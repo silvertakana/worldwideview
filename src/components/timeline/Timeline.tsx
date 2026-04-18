@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useStore } from "@/core/state/store";
-import { isHistoryEnabled } from "@/core/edition";
+import { isHistoryEnabled as default_isHistoryEnabled, isDemo, DEMO_ADMIN_ROLE } from "@/core/edition";
 
 export function Timeline() {
     const currentTime = useStore((s) => s.currentTime);
@@ -18,10 +18,18 @@ export function Timeline() {
     const timeRange = useStore((s) => s.timeRange);
 
     const [mounted, setMounted] = useState(false);
+    const [isDemoAdmin, setIsDemoAdmin] = useState(false);
 
     useEffect(() => {
         setMounted(true);
+        if (!isDemo) return;
+        fetch("/api/auth/session")
+            .then((r) => r.json())
+            .then((s) => setIsDemoAdmin(s?.user?.role === DEMO_ADMIN_ROLE))
+            .catch(() => {});
     }, []);
+
+    const isHistoryEnabled = default_isHistoryEnabled || isDemoAdmin;
 
     const totalMs = timeRange.end.getTime() - timeRange.start.getTime();
     const currentMs = currentTime.getTime() - timeRange.start.getTime();

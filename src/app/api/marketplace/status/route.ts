@@ -42,7 +42,11 @@ export async function GET(request: Request) {
             }));
 
         const plugins = [...activeDbPlugins, ...builtInRecords];
-        return withCors(NextResponse.json({ plugins }), request);
+
+        const session = await auth();
+        const canManagePlugins = !isDemo || isDemoAdmin(session);
+
+        return withCors(NextResponse.json({ plugins, canManagePlugins }), request);
     } catch (err) {
         console.error("[marketplace/status] Error:", err);
         // Fallback: return built-in plugins when DB is unavailable
@@ -52,7 +56,11 @@ export async function GET(request: Request) {
             config: "{}",
             installedAt: "",
         }));
-        return withCors(NextResponse.json({ plugins: fallback }), request);
+        
+        const session = await auth();
+        const canManagePlugins = !isDemo || isDemoAdmin(session);
+        
+        return withCors(NextResponse.json({ plugins: fallback, canManagePlugins }), request);
     }
 }
 
