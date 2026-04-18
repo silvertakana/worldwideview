@@ -34,6 +34,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: npx prisma generate
       - run: pnpm test
 
   build:
@@ -54,4 +55,5 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: npx prisma generate
       - run: pnpm build
