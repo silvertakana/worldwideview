@@ -1,7 +1,7 @@
 {
   "id": "satellite",
   "name": "satellite",
-  "version": "1.0.2",
+  "version": "1.0.15",
   "description": "WorldWideView plugin for real-time satellite tracking using CelesTrak TLE data and SGP4 propagation. Tracks ISS, Starlink, GPS, weather, military, and reconnaissance satellites on the 3D globe.",
   "capabilities": [],
   "category": "Space",

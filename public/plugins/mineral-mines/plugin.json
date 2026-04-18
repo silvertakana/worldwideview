@@ -1,7 +1,7 @@
 {
   "id": "mineral-mines",
   "name": "mineral-mines",
-  "version": "1.0.0",
+  "version": "1.0.9",
   "description": "WorldWideView plugin — Global mining sites and quarries from OpenStreetMap.",
   "capabilities": [],
   "category": "Economic",

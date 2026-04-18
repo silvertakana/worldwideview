@@ -1,5 +1,4 @@
-//#region ../../node_modules/.pnpm/lucide-react@0.368.0_react@19.2.3/node_modules/lucide-react/dist/esm/defaultAttributes.js
-var e = {
+var { useState: e, useEffect: t, useRef: n, useMemo: r, useCallback: i, useContext: a, useReducer: o, useLayoutEffect: s, StrictMode: c, Suspense: l, createContext: u, createElement: d, cloneElement: f, isValidElement: p, Fragment: m, Children: h, Component: g, PureComponent: _, createRef: v, forwardRef: y, memo: b, lazy: x, startTransition: S, useTransition: C, useDeferredValue: w, useId: T, useSyncExternalStore: E, useInsertionEffect: D } = globalThis.__WWV_HOST__.React, O = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -9,26 +8,26 @@ var e = {
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, t = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), n = ((n, r) => {
-	let i = globalThis.__WWV_HOST__.React.forwardRef(({ color: i = "currentColor", size: a = 24, strokeWidth: o = 2, absoluteStrokeWidth: s, className: c = "", children: l, ...u }, d) => globalThis.__WWV_HOST__.React.createElement("svg", {
-		ref: d,
-		...e,
-		width: a,
-		height: a,
-		stroke: i,
-		strokeWidth: s ? Number(o) * 24 / Number(a) : o,
+}, k = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), A = ((e, t) => {
+	let n = y(({ color: n = "currentColor", size: r = 24, strokeWidth: i = 2, absoluteStrokeWidth: a, className: o = "", children: s, ...c }, l) => d("svg", {
+		ref: l,
+		...O,
+		width: r,
+		height: r,
+		stroke: n,
+		strokeWidth: a ? Number(i) * 24 / Number(r) : i,
 		className: [
 			"lucide",
-			`lucide-${t(n)}`,
-			c
+			`lucide-${k(e)}`,
+			o
 		].join(" "),
-		...u
-	}, [...r.map(([e, t]) => globalThis.__WWV_HOST__.React.createElement(e, t)), ...Array.isArray(l) ? l : [l]]));
-	return i.displayName = `${n}`, i;
+		...c
+	}, [...t.map(([e, t]) => d(e, t)), ...Array.isArray(s) ? s : [s]]));
+	return n.displayName = `${e}`, n;
 })("Activity", [["path", {
 	d: "M22 12h-4l-3 9L9 3l-3 9H2",
 	key: "d5dnw9"
-}]]), r = class {
+}]]), { WorldPlugin: j, PluginManifest: M, createSvgIconUrl: N, DEFAULT_ICON_SIZE: P } = globalThis.__WWV_HOST__.WWVPluginSDK, F = class {
 	context = null;
 	iconUrls = {};
 	defaultLayerColor = "#ef4444";
@@ -54,7 +53,7 @@ var e = {
 	}
 	renderEntity(e) {
 		let t = this.getSeverityValue(e), n = this.getSeverityColor(t), r = this.getSeveritySize(t), i = this.getEntityIcon(e), a = `${i?.displayName || i?.name || "default"}-${n}`;
-		return this.iconUrls[a] || (this.iconUrls[a] = globalThis.__WWV_HOST__.WWVPluginSDK.createSvgIconUrl(i, { color: n })), {
+		return this.iconUrls[a] || (this.iconUrls[a] = N(i, { color: n })), {
 			type: "billboard",
 			iconUrl: this.iconUrls[a],
 			color: n,
@@ -65,9 +64,9 @@ var e = {
 			labelFont: "11px JetBrains Mono, monospace"
 		};
 	}
-}, i = class extends r {
+}, I = class extends F {
 	constructor(...e) {
-		super(...e), this.id = "earthquakes", this.name = "Earthquakes", this.description = "Recent seismic activity from USGS", this.icon = n, this.category = "natural-disaster", this.version = "1.1.0", this.defaultLayerColor = "#f97316";
+		super(...e), this.id = "earthquakes", this.name = "Earthquakes", this.description = "Recent seismic activity from USGS", this.icon = A, this.category = "natural-disaster", this.version = "1.1.0", this.defaultLayerColor = "#f97316";
 	}
 	getSeverityValue(e) {
 		return Number(e.properties.magnitude ?? 0) || 0;
@@ -195,4 +194,4 @@ var e = {
 	}
 };
 //#endregion
-export { i as EarthquakesPlugin };
+export { I as EarthquakesPlugin };

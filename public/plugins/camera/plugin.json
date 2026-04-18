@@ -1,7 +1,7 @@
 {
   "id": "camera",
   "name": "camera",
-  "version": "1.0.4",
+  "version": "1.0.12",
   "description": "WorldWideView plugin for displaying public live cameras and traffic cameras on the globe. Supports custom data sources via URL, file upload, and GeoJSON",
   "capabilities": [],
   "category": "Infrastructure",

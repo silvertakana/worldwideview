@@ -1,7 +1,7 @@
 {
   "id": "military-bases",
   "name": "military-bases",
-  "version": "1.0.2",
+  "version": "1.0.10",
   "description": "WorldWideView plugin for worldwide military bases, airfields, and barracks from OpenStreetMap",
   "capabilities": [],
   "category": "Military",

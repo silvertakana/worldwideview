@@ -1,8 +1,7 @@
-//#region ../../node_modules/.pnpm/lucide-react@0.576.0_react@19.2.3/node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.js
-var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), t = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), n = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), r = (e) => {
-	let t = n(e);
+var { useState: e, useEffect: t, useRef: n, useMemo: r, useCallback: i, useContext: a, useReducer: o, useLayoutEffect: s, StrictMode: c, Suspense: l, createContext: u, createElement: d, cloneElement: f, isValidElement: p, Fragment: m, Children: h, Component: g, PureComponent: _, createRef: v, forwardRef: y, memo: b, lazy: x, startTransition: S, useTransition: C, useDeferredValue: w, useId: T, useSyncExternalStore: E, useInsertionEffect: D } = globalThis.__WWV_HOST__.React, O = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), k = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), A = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), j = (e) => {
+	let t = A(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, i = {
+}, M = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -12,31 +11,34 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, a = (e) => {
+}, N = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, o = globalThis.__WWV_HOST__.React.forwardRef(({ color: t = "currentColor", size: n = 24, strokeWidth: r = 2, absoluteStrokeWidth: o, className: s = "", children: c, iconNode: l, ...u }, d) => globalThis.__WWV_HOST__.React.createElement("svg", {
-	ref: d,
-	...i,
-	width: n,
-	height: n,
-	stroke: t,
-	strokeWidth: o ? Number(r) * 24 / Number(n) : r,
-	className: e("lucide", s),
-	...!c && !a(u) && { "aria-hidden": "true" },
-	...u
-}, [...l.map(([e, t]) => globalThis.__WWV_HOST__.React.createElement(e, t)), ...Array.isArray(c) ? c : [c]])), s = ((n, i) => {
-	let a = globalThis.__WWV_HOST__.React.forwardRef(({ className: a, ...s }, c) => globalThis.__WWV_HOST__.React.createElement(o, {
+}, P = u({}), F = () => a(P), I = y(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: o, ...s }, c) => {
+	let { size: l = 24, strokeWidth: u = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = F() ?? {}, h = r ?? f ? Number(n ?? u) * 24 / Number(t ?? l) : n ?? u;
+	return d("svg", {
 		ref: c,
-		iconNode: i,
-		className: e(`lucide-${t(r(n))}`, `lucide-${n}`, a),
+		...M,
+		width: t ?? l ?? M.width,
+		height: t ?? l ?? M.height,
+		stroke: e ?? p,
+		strokeWidth: h,
+		className: O("lucide", m, i),
+		...!a && !N(s) && { "aria-hidden": "true" },
 		...s
+	}, [...o.map(([e, t]) => d(e, t)), ...Array.isArray(a) ? a : [a]]);
+}), L = ((e, t) => {
+	let n = y(({ className: n, ...r }, i) => d(I, {
+		ref: i,
+		iconNode: t,
+		className: O(`lucide-${k(j(e))}`, `lucide-${e}`, n),
+		...r
 	}));
-	return a.displayName = r(n), a;
+	return n.displayName = j(e), n;
 })("shield", [["path", {
 	d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
 	key: "oel41y"
-}]]), c = class {
+}]]), R = class {
 	category = "aviation";
 	context = null;
 	defaultLayerColor = "#3b82f6";
@@ -89,12 +91,12 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 };
 //#endregion
 //#region src/index.ts
-function l(e) {
+function z(e) {
 	return e * .3048;
 }
-var u = class extends c {
+var B = class extends R {
 	constructor(...e) {
-		super(...e), this.id = "military-aviation", this.name = "Military Aviation", this.description = "Real-time military aircraft tracking via adsb.lol", this.icon = s, this.version = "1.0.4", this.defaultLayerColor = "#ff6f00", this.defaultTrailColor = "#ffea00", this.iconUrl = "/military-plane-icon.svg";
+		super(...e), this.id = "military-aviation", this.name = "Military Aviation", this.description = "Real-time military aircraft tracking via adsb.lol", this.icon = L, this.version = "1.0.4", this.defaultLayerColor = "#ff6f00", this.defaultTrailColor = "#ffea00", this.iconUrl = "/military-plane-icon.svg";
 	}
 	getAltitudeColor(e) {
 		let t = e === null ? null : e / .3048;
@@ -106,7 +108,7 @@ var u = class extends c {
 		else if (e && typeof e == "object") t = Object.values(e);
 		else return [];
 		return t.filter((e) => e.lat != null && e.lon != null).map((e) => {
-			let t = typeof e.alt_baro == "number" ? e.alt_baro : null, n = t === null ? null : l(t), r = e.alt_baro === "ground";
+			let t = typeof e.alt_baro == "number" ? e.alt_baro : null, n = t === null ? null : z(t), r = e.alt_baro === "ground";
 			return {
 				id: `military-aviation-${e.hex}`,
 				pluginId: "military-aviation",
@@ -222,4 +224,4 @@ var u = class extends c {
 	}
 };
 //#endregion
-export { u as MilitaryPlugin };
+export { B as MilitaryPlugin };

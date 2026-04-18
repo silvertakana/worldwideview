@@ -1,13 +1,12 @@
 {
   "id": "military-aviation",
-  "name": "Military Aviation",
-  "description": "Live WebSocket tracking of military aircraft via wwv-data-engine (Microservice)",
-  "icon": "Crosshair",
+  "name": "military-aviation",
+  "version": "1.0.13",
+  "description": "WorldWideView plugin for real-time military aircraft tracking via adsb.lol. Features altitude-based coloring, flight trail rendering, and aircraft type filters",
+  "capabilities": [],
   "category": "Aviation",
-  "type": "data-layer",
-  "format": "bundle",
+  "icon": "Shield",
   "entry": "/plugins/military-aviation/frontend.mjs",
-  "trust": "unverified",
-  "capabilities": ["data", "websocket"],
-  "version": "1.0.4"
+  "format": "bundle",
+  "trust": "unverified"
 }

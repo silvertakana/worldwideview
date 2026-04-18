@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-const packagesDir = path.resolve(process.cwd(), "packages");
+const packagesDir = path.resolve(process.cwd(), "..", "worldwideview-plugins", "packages");
 const publicPluginsDir = path.resolve(process.cwd(), "public", "plugins");
 
 if (!fs.existsSync(publicPluginsDir)) {

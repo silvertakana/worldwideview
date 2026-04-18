@@ -1,8 +1,7 @@
-//#region ../../node_modules/.pnpm/lucide-react@0.576.0_react@19.2.3/node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.js
-var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), t = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), n = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), r = (e) => {
-	let t = n(e);
+var { useState: e, useEffect: t, useRef: n, useMemo: r, useCallback: i, useContext: a, useReducer: o, useLayoutEffect: s, StrictMode: c, Suspense: l, createContext: u, createElement: d, cloneElement: f, isValidElement: p, Fragment: m, Children: h, Component: g, PureComponent: _, createRef: v, forwardRef: y, memo: b, lazy: x, startTransition: S, useTransition: C, useDeferredValue: w, useId: T, useSyncExternalStore: E, useInsertionEffect: D } = globalThis.__WWV_HOST__.React, O = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), k = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), A = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), j = (e) => {
+	let t = A(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, i = {
+}, M = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -12,28 +11,31 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, a = (e) => {
+}, N = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, o = globalThis.__WWV_HOST__.React.forwardRef(({ color: t = "currentColor", size: n = 24, strokeWidth: r = 2, absoluteStrokeWidth: o, className: s = "", children: c, iconNode: l, ...u }, d) => globalThis.__WWV_HOST__.React.createElement("svg", {
-	ref: d,
-	...i,
-	width: n,
-	height: n,
-	stroke: t,
-	strokeWidth: o ? Number(r) * 24 / Number(n) : r,
-	className: e("lucide", s),
-	...!c && !a(u) && { "aria-hidden": "true" },
-	...u
-}, [...l.map(([e, t]) => globalThis.__WWV_HOST__.React.createElement(e, t)), ...Array.isArray(c) ? c : [c]])), s = (n, i) => {
-	let a = globalThis.__WWV_HOST__.React.forwardRef(({ className: a, ...s }, c) => globalThis.__WWV_HOST__.React.createElement(o, {
+}, P = u({}), F = () => a(P), I = y(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: o, ...s }, c) => {
+	let { size: l = 24, strokeWidth: u = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = F() ?? {}, h = r ?? f ? Number(n ?? u) * 24 / Number(t ?? l) : n ?? u;
+	return d("svg", {
 		ref: c,
-		iconNode: i,
-		className: e(`lucide-${t(r(n))}`, `lucide-${n}`, a),
+		...M,
+		width: t ?? l ?? M.width,
+		height: t ?? l ?? M.height,
+		stroke: e ?? p,
+		strokeWidth: h,
+		className: O("lucide", m, i),
+		...!a && !N(s) && { "aria-hidden": "true" },
 		...s
+	}, [...o.map(([e, t]) => d(e, t)), ...Array.isArray(a) ? a : [a]]);
+}), L = (e, t) => {
+	let n = y(({ className: n, ...r }, i) => d(I, {
+		ref: i,
+		iconNode: t,
+		className: O(`lucide-${k(j(e))}`, `lucide-${e}`, n),
+		...r
 	}));
-	return a.displayName = r(n), a;
-}, c = s("atom", [
+	return n.displayName = j(e), n;
+}, R = L("atom", [
 	["circle", {
 		cx: "12",
 		cy: "12",
@@ -48,7 +50,7 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 		d: "M15.7 15.7c4.52-4.54 6.54-9.87 4.5-11.9-2.03-2.04-7.36-.02-11.9 4.5-4.52 4.54-6.54 9.87-4.5 11.9 2.03 2.04 7.36.02 11.9-4.5Z",
 		key: "1wam0m"
 	}]
-]), l = s("radiation", [
+]), z = L("radiation", [
 	["path", {
 		d: "M12 12h.01",
 		key: "1mp3jc"
@@ -65,7 +67,7 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 		d: "M8 12a4 4 0 0 1 2-3.464L7.528 4.254a1 1 0 0 0-1.46-.305 10 10 0 0 0-4.006 6.94A1 1 0 0 0 3 12z",
 		key: "1l9i0b"
 	}]
-]), u = class {
+]), { WorldPlugin: B, PluginManifest: V, createSvgIconUrl: H, DEFAULT_ICON_SIZE: U } = globalThis.__WWV_HOST__.WWVPluginSDK, W = class {
 	context = null;
 	iconUrls = {};
 	defaultLayerColor = "#3b82f6";
@@ -100,27 +102,27 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 	}
 	renderEntity(e) {
 		let t = this.getEntityColor(e), n = this.getEntityIcon(e), r = `${n?.displayName || n?.name || "default"}-${t}`;
-		return this.iconUrls[r] || (this.iconUrls[r] = globalThis.__WWV_HOST__.WWVPluginSDK.createSvgIconUrl(n, { color: t })), {
+		return this.iconUrls[r] || (this.iconUrls[r] = H(n, { color: t })), {
 			type: "billboard",
 			iconUrl: this.iconUrls[r],
 			color: t,
 			iconScale: this.iconScale
 		};
 	}
-}, d = {
+}, G = {
 	operational: "#22c55e",
 	"under construction": "#eab308",
 	decommissioned: "#64748b",
 	abandoned: "#ef4444"
-}, f = class extends u {
+}, K = class extends W {
 	constructor(...e) {
-		super(...e), this.id = "nuclear", this.name = "Nuclear Facilities", this.description = "Global nuclear power plants and reactors from OSM.", this.icon = c, this.category = "infrastructure", this.version = "1.0.2", this.defaultLayerColor = "#22d3ee", this.maxEntities = 1e3;
+		super(...e), this.id = "nuclear", this.name = "Nuclear Facilities", this.description = "Global nuclear power plants and reactors from OSM.", this.icon = R, this.category = "infrastructure", this.version = "1.0.2", this.defaultLayerColor = "#22d3ee", this.maxEntities = 1e3;
 	}
 	getEntityColor(e) {
-		return d[(e.properties?.status)?.toLowerCase() || "unknown"] || this.defaultLayerColor;
+		return G[(e.properties?.status)?.toLowerCase() || "unknown"] || this.defaultLayerColor;
 	}
 	getEntityIcon(e) {
-		return d[(e.properties?.status)?.toLowerCase() || "unknown"] ? l : c;
+		return G[(e.properties?.status)?.toLowerCase() || "unknown"] ? z : R;
 	}
 	getFilterDefinitions() {
 		return [{
@@ -152,25 +154,25 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 		return [
 			{
 				label: "Operational",
-				color: d.operational,
+				color: G.operational,
 				filterId: "status",
 				filterValue: "operational"
 			},
 			{
 				label: "Under Const.",
-				color: d["under construction"],
+				color: G["under construction"],
 				filterId: "status",
 				filterValue: "under construction"
 			},
 			{
 				label: "Decommissioned",
-				color: d.decommissioned,
+				color: G.decommissioned,
 				filterId: "status",
 				filterValue: "decommissioned"
 			},
 			{
 				label: "Abandoned",
-				color: d.abandoned,
+				color: G.abandoned,
 				filterId: "status",
 				filterValue: "abandoned"
 			}
@@ -178,4 +180,4 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 	}
 };
 //#endregion
-export { f as NuclearPlugin };
+export { K as NuclearPlugin };

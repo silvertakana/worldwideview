@@ -1,7 +1,7 @@
 {
   "id": "nuclear-facilities",
   "name": "nuclear",
-  "version": "1.0.2",
+  "version": "1.0.10",
   "description": "WorldWideView plugin displaying global nuclear power plants, reactors, and decommissioned facilities from OpenStreetMap",
   "capabilities": [],
   "category": "Infrastructure",

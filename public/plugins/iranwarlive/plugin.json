@@ -1,7 +1,7 @@
 {
   "id": "iranwarlive",
   "name": "iranwarlive",
-  "version": "1.0.2",
+  "version": "1.0.14",
   "description": "Iran War Live — Live OSINT data sourced from IranWarLive.com",
   "capabilities": [],
   "category": "Conflict",

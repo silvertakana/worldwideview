@@ -167,36 +167,43 @@ var Y = class extends q {
 	getEntityIcon(e) {
 		return J(e.properties.type || "Unknown");
 	}
+	mapPayloadToEntities(e) {
+		let t = Array.isArray(e) ? e : e.items && Array.isArray(e.items) ? e.items : [];
+		return t.length === 0 && !Array.isArray(e) && (e.event_id || e._osint_meta) && t.push(e), t.map((e) => {
+			let t = e._osint_meta?.coordinates?.lat || 0, n = e._osint_meta?.coordinates?.lng || 0, r = new Date(e.timestamp || Date.now()), i = Math.max(0, Math.round((Date.now() - r.getTime()) / (1e3 * 60 * 60)));
+			return {
+				id: e.event_id,
+				pluginId: "iranwarlive",
+				latitude: t,
+				longitude: n,
+				timestamp: r,
+				label: e.type + (e.location ? ` in ${e.location}` : ""),
+				properties: {
+					hours_ago: i,
+					type: e.type,
+					confidence: e.confidence,
+					location: e.location,
+					summary: e.event_summary,
+					casualties: e._osint_meta?.casualties || 0,
+					source_url: e.source_url,
+					preview_image: e.preview_image,
+					preview_video: e.preview_video
+				}
+			};
+		});
+	}
 	async fetch(e) {
 		try {
-			let e = typeof globalThis < "u" && globalThis.__WWV_ENGINE_URL__, t = e ? e.replace(/\/stream$/, "").replace(/^ws/, "http") : "http://localhost:5001", n = await globalThis.fetch(`${t}/data/iranwarlive`);
+			let e = typeof globalThis < "u" && globalThis.__WWV_ENGINE_URL__, t = e ? e.replace(/\/stream$/, "").replace(/^ws/, "http") : "https://dataengine.worldwideview.dev", n = await globalThis.fetch(`${t}/data/iranwarlive`);
 			if (!n.ok) throw Error(`IranWarLive Backend returned ${n.status}`);
 			let r = await n.json();
-			return !r.items || !Array.isArray(r.items) ? [] : r.items.map((e) => {
-				let t = e._osint_meta?.coordinates?.lat || 0, n = e._osint_meta?.coordinates?.lng || 0, r = new Date(e.timestamp), i = Math.max(0, Math.round((Date.now() - r.getTime()) / (1e3 * 60 * 60)));
-				return {
-					id: e.event_id,
-					pluginId: "iranwarlive",
-					latitude: t,
-					longitude: n,
-					timestamp: r,
-					label: e.type + (e.location ? ` in ${e.location}` : ""),
-					properties: {
-						hours_ago: i,
-						type: e.type,
-						confidence: e.confidence,
-						location: e.location,
-						summary: e.event_summary,
-						casualties: e._osint_meta?.casualties || 0,
-						source_url: e.source_url,
-						preview_image: e.preview_image,
-						preview_video: e.preview_video
-					}
-				};
-			});
+			return this.mapPayloadToEntities(r);
 		} catch (e) {
 			return console.error("[IranWarLivePlugin] Fetch error from microservice backend:", e), [];
 		}
+	}
+	mapWebsocketPayload(e) {
+		return this.mapPayloadToEntities(e);
 	}
 	getServerConfig() {
 		return {

@@ -1,7 +1,7 @@
 {
   "id": "volcanoes",
   "name": "volcanoes",
-  "version": "1.0.1",
+  "version": "1.0.10",
   "description": "WorldWideView plugin — Active and dormant volcanoes worldwide from OSM",
   "capabilities": [],
   "category": "Natural Disaster",

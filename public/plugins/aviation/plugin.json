@@ -1,7 +1,7 @@
 {
   "id": "aviation",
   "name": "aviation",
-  "version": "1.0.8",
+  "version": "1.0.19",
   "description": "WorldWideView plugin for real-time commercial aircraft tracking via the OpenSky Network API. Renders 3D aircraft models with altitude-based coloring, flight trails, and country/altitude/callsign filters",
   "capabilities": [],
   "category": "Aviation",

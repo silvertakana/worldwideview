@@ -1,8 +1,7 @@
-//#region ../../node_modules/.pnpm/lucide-react@0.576.0_react@19.2.3/node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.js
-var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), t = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), n = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), r = (e) => {
-	let t = n(e);
+var { useState: e, useEffect: t, useRef: n, useMemo: r, useCallback: i, useContext: a, useReducer: o, useLayoutEffect: s, StrictMode: c, Suspense: l, createContext: u, createElement: d, cloneElement: f, isValidElement: p, Fragment: m, Children: h, Component: g, PureComponent: _, createRef: v, forwardRef: y, memo: b, lazy: x, startTransition: S, useTransition: C, useDeferredValue: w, useId: T, useSyncExternalStore: E, useInsertionEffect: D } = globalThis.__WWV_HOST__.React, O = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), k = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), A = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), j = (e) => {
+	let t = A(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, i = {
+}, M = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -12,45 +11,48 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, a = (e) => {
+}, N = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, o = globalThis.__WWV_HOST__.React.forwardRef(({ color: t = "currentColor", size: n = 24, strokeWidth: r = 2, absoluteStrokeWidth: o, className: s = "", children: c, iconNode: l, ...u }, d) => globalThis.__WWV_HOST__.React.createElement("svg", {
-	ref: d,
-	...i,
-	width: n,
-	height: n,
-	stroke: t,
-	strokeWidth: o ? Number(r) * 24 / Number(n) : r,
-	className: e("lucide", s),
-	...!c && !a(u) && { "aria-hidden": "true" },
-	...u
-}, [...l.map(([e, t]) => globalThis.__WWV_HOST__.React.createElement(e, t)), ...Array.isArray(c) ? c : [c]])), s = ((n, i) => {
-	let a = globalThis.__WWV_HOST__.React.forwardRef(({ className: a, ...s }, c) => globalThis.__WWV_HOST__.React.createElement(o, {
+}, P = u({}), F = () => a(P), I = y(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: o, ...s }, c) => {
+	let { size: l = 24, strokeWidth: u = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = F() ?? {}, h = r ?? f ? Number(n ?? u) * 24 / Number(t ?? l) : n ?? u;
+	return d("svg", {
 		ref: c,
-		iconNode: i,
-		className: e(`lucide-${t(r(n))}`, `lucide-${n}`, a),
+		...M,
+		width: t ?? l ?? M.width,
+		height: t ?? l ?? M.height,
+		stroke: e ?? p,
+		strokeWidth: h,
+		className: O("lucide", m, i),
+		...!a && !N(s) && { "aria-hidden": "true" },
 		...s
+	}, [...o.map(([e, t]) => d(e, t)), ...Array.isArray(a) ? a : [a]]);
+}), L = ((e, t) => {
+	let n = y(({ className: n, ...r }, i) => d(I, {
+		ref: i,
+		iconNode: t,
+		className: O(`lucide-${k(j(e))}`, `lucide-${e}`, n),
+		...r
 	}));
-	return a.displayName = r(n), a;
+	return n.displayName = j(e), n;
 })("flame", [["path", {
 	d: "M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4",
 	key: "1slcih"
-}]]);
+}]]), { WorldPlugin: R, PluginManifest: z, createSvgIconUrl: B, DEFAULT_ICON_SIZE: V } = globalThis.__WWV_HOST__.WWVPluginSDK;
 //#endregion
 //#region src/index.ts
-function c(e) {
+function H(e) {
 	return e < 10 ? "#fbbf24" : e < 50 ? "#f97316" : e < 100 ? "#ef4444" : "#dc2626";
 }
-function l(e) {
+function U(e) {
 	return e < 10 ? 5 : e < 50 ? 7 : e < 100 ? 9 : 12;
 }
-function u(e) {
+function W(e) {
 	return e < 10 ? "low" : e < 50 ? "moderate" : e < 100 ? "high" : "extreme";
 }
-var d = class {
+var G = class {
 	constructor() {
-		this.id = "wildfire", this.name = "Wildfire", this.description = "Active fire detection via NASA FIRMS (VIIRS)", this.icon = s, this.category = "natural-disaster", this.version = "1.0.0", this.context = null, this.iconUrls = {};
+		this.id = "wildfire", this.name = "Wildfire", this.description = "Active fire detection via NASA FIRMS (VIIRS)", this.icon = L, this.category = "natural-disaster", this.version = "1.0.0", this.context = null, this.iconUrls = {};
 	}
 	async initialize(e) {
 		this.context = e;
@@ -60,7 +62,9 @@ var d = class {
 	}
 	async fetch(e) {
 		try {
-			let e = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http") : "https://dataengine.worldwideview.dev", t = await globalThis.fetch(`${e}/data/wildfires`);
+			let e = "https://dataengine.worldwideview.dev";
+			typeof globalThis < "u" && globalThis.__WWV_ENGINE_URL__ ? e = globalThis.__WWV_ENGINE_URL__.replace(/\/stream$/, "").replace(/^ws/, "http") : typeof process < "u" && process.env && process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL && (e = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http"));
+			let t = await globalThis.fetch(`${e}/data/wildfires`);
 			if (!t.ok) throw Error(`Wildfire API returned ${t.status}`);
 			let n = await t.json();
 			return !n.items || !Array.isArray(n.items) ? [] : n.items.map((e) => ({
@@ -72,7 +76,7 @@ var d = class {
 				label: `FRP: ${e.frp}`,
 				properties: {
 					frp: e.frp,
-					frp_band: u(e.frp),
+					frp_band: W(e.frp),
 					confidence: e.confidence,
 					satellite: e.satellite,
 					acq_date: e.acq_date,
@@ -104,7 +108,7 @@ var d = class {
 		};
 	}
 	renderEntity(e) {
-		let t = e.properties.frp || 0, n = c(t), r = e.properties.tier || 3, i;
+		let t = e.properties.frp || 0, n = H(t), r = e.properties.tier || 3, i;
 		return r === 1 ? i = {
 			near: 35e5,
 			far: Infinity
@@ -114,11 +118,11 @@ var d = class {
 		} : r === 3 && (i = {
 			near: 0,
 			far: 1e6
-		}), this.iconUrls[n] || (this.iconUrls[n] = globalThis.__WWV_HOST__.WWVPluginSDK.createSvgIconUrl(s, { color: n })), {
+		}), this.iconUrls[n] || (this.iconUrls[n] = B(L, { color: n })), {
 			type: "billboard",
 			iconUrl: this.iconUrls[n],
 			color: n,
-			iconScale: l(t) / 10 * (r === 1 ? 2 : r === 2 ? 1.5 : 1),
+			iconScale: U(t) / 10 * (r === 1 ? 2 : r === 2 ? 1.5 : 1),
 			distanceDisplayCondition: i
 		};
 	}
@@ -231,4 +235,4 @@ var d = class {
 	}
 };
 //#endregion
-export { d as WildfirePlugin };
+export { G as WildfirePlugin };

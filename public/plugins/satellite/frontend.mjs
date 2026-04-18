@@ -78,34 +78,44 @@ var W = class {
 	destroy() {
 		this.context = null;
 	}
+	mapPayloadToEntities(e) {
+		let t = [];
+		return Array.isArray(e) ? t = e : e && Array.isArray(e.satellites) ? t = e.satellites : e && Array.isArray(e.items) ? t = e.items : e && typeof e == "object" && (t = Object.values(e)), !t || !Array.isArray(t) ? [] : t.map((e) => ({
+			id: `satellite-${e.noradId}`,
+			pluginId: "satellite",
+			latitude: e.latitude,
+			longitude: e.longitude,
+			altitude: e.altitude * 1e3,
+			heading: e.heading,
+			speed: e.speed,
+			timestamp: /* @__PURE__ */ new Date(),
+			label: e.name,
+			properties: {
+				noradId: e.noradId,
+				name: e.name,
+				group: e.group,
+				country: e.country,
+				objectType: e.objectType,
+				altitudeKm: e.altitude,
+				period: e.period
+			}
+		}));
+	}
 	async fetch(e) {
+		let t = "https://dataengine.worldwideview.dev";
 		try {
-			let e = typeof globalThis < "u" && globalThis.__WWV_ENGINE_URL__, t = e ? e.replace(/\/stream$/, "").replace(/^ws/, "http") : "http://localhost:5001", n = await globalThis.fetch(`${t}/data/satellite`);
+			let e = typeof globalThis < "u" && globalThis.__WWV_ENGINE_URL__;
+			t = e ? e.replace(/\/stream$/, "").replace(/^ws/, "http") : "https://dataengine.worldwideview.dev", console.log(`[SatellitePlugin] Fetching data from: ${t}/data/satellite`);
+			let n = await globalThis.fetch(`${t}/data/satellite`);
 			if (!n.ok) throw Error(`Satellite API returned ${n.status}`);
-			let r = await n.json(), i = r.satellites || r.items || [];
-			return !i || !Array.isArray(i) ? [] : i.map((e) => ({
-				id: `satellite-${e.noradId}`,
-				pluginId: "satellite",
-				latitude: e.latitude,
-				longitude: e.longitude,
-				altitude: e.altitude * 1e3,
-				heading: e.heading,
-				speed: e.speed,
-				timestamp: /* @__PURE__ */ new Date(),
-				label: e.name,
-				properties: {
-					noradId: e.noradId,
-					name: e.name,
-					group: e.group,
-					country: e.country,
-					objectType: e.objectType,
-					altitudeKm: e.altitude,
-					period: e.period
-				}
-			}));
+			let r = await n.json();
+			return this.mapPayloadToEntities(r);
 		} catch (e) {
-			return console.error("[SatellitePlugin] Fetch error:", e), [];
+			return console.error("[SatellitePlugin] Extremely Fatal Fetch Error ->", e.message), console.error(`[SatellitePlugin] Engine URL attempted: ${t}/data/satellite`), this.context && this.context.onError && this.context.onError(e), [];
 		}
+	}
+	mapWebsocketPayload(e) {
+		return this.mapPayloadToEntities(e);
 	}
 	getPollingInterval() {
 		return 0;

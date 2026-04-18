@@ -1,8 +1,7 @@
-//#region ../../node_modules/.pnpm/lucide-react@0.576.0_react@19.2.3/node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.js
-var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), t = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), n = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), r = (e) => {
-	let t = n(e);
+var { useState: e, useEffect: t, useRef: n, useMemo: r, useCallback: i, useContext: a, useReducer: o, useLayoutEffect: s, StrictMode: c, Suspense: l, createContext: u, createElement: d, cloneElement: f, isValidElement: p, Fragment: m, Children: h, Component: ee, PureComponent: te, createRef: ne, forwardRef: g, memo: re, lazy: ie, startTransition: ae, useTransition: oe, useDeferredValue: se, useId: ce, useSyncExternalStore: le, useInsertionEffect: ue } = globalThis.__WWV_HOST__.React, _ = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), v = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), y = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), b = (e) => {
+	let t = y(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, i = {
+}, x = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -12,27 +11,30 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, a = (e) => {
+}, S = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, o = globalThis.__WWV_HOST__.React.forwardRef(({ color: t = "currentColor", size: n = 24, strokeWidth: r = 2, absoluteStrokeWidth: o, className: s = "", children: c, iconNode: l, ...u }, d) => globalThis.__WWV_HOST__.React.createElement("svg", {
-	ref: d,
-	...i,
-	width: n,
-	height: n,
-	stroke: t,
-	strokeWidth: o ? Number(r) * 24 / Number(n) : r,
-	className: e("lucide", s),
-	...!c && !a(u) && { "aria-hidden": "true" },
-	...u
-}, [...l.map(([e, t]) => globalThis.__WWV_HOST__.React.createElement(e, t)), ...Array.isArray(c) ? c : [c]])), s = ((n, i) => {
-	let a = globalThis.__WWV_HOST__.React.forwardRef(({ className: a, ...s }, c) => globalThis.__WWV_HOST__.React.createElement(o, {
+}, C = u({}), w = () => a(C), T = g(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: o, ...s }, c) => {
+	let { size: l = 24, strokeWidth: u = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = w() ?? {}, h = r ?? f ? Number(n ?? u) * 24 / Number(t ?? l) : n ?? u;
+	return d("svg", {
 		ref: c,
-		iconNode: i,
-		className: e(`lucide-${t(r(n))}`, `lucide-${n}`, a),
+		...x,
+		width: t ?? l ?? x.width,
+		height: t ?? l ?? x.height,
+		stroke: e ?? p,
+		strokeWidth: h,
+		className: _("lucide", m, i),
+		...!a && !S(s) && { "aria-hidden": "true" },
 		...s
+	}, [...o.map(([e, t]) => d(e, t)), ...Array.isArray(a) ? a : [a]]);
+}), E = ((e, t) => {
+	let n = g(({ className: n, ...r }, i) => d(T, {
+		ref: i,
+		iconNode: t,
+		className: _(`lucide-${v(b(e))}`, `lucide-${e}`, n),
+		...r
 	}));
-	return a.displayName = r(n), a;
+	return n.displayName = b(e), n;
 })("crosshair", [
 	["circle", {
 		cx: "12",
@@ -68,7 +70,7 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 		y2: "18",
 		key: "15g9kq"
 	}]
-]), c = [
+]), { Viewer: de, Entity: fe, Cartesian3: D, Cartesian2: pe, Color: O, CallbackProperty: k, DistanceDisplayCondition: A, NearFarScalar: j, HeightReference: M, Resource: N, Rectangle: P, PolygonHierarchy: F, ClassificationType: I, ArcType: L, Math: R, JulianDate: z, TimeInterval: B, TimeIntervalCollection: me, SampledPositionProperty: he, GeoJsonDataSource: ge, PinBuilder: _e } = globalThis.__WWV_HOST__.Cesium, { Entity: V, PointGraphics: ve, BillboardGraphics: ye, CustomDataSource: be, Camera: xe, PolygonGraphics: Se, PolylineGraphics: Ce, EllipseGraphics: H, LabelGraphics: we, ModelGraphics: Te, PathGraphics: Ee, BoxGraphics: De, GeoJsonDataSource: Oe, ScreenSpaceEventHandler: ke, ScreenSpaceEvent: Ae } = globalThis.__WWV_HOST__.Resium, { WorldPlugin: U, PluginManifest: je, createSvgIconUrl: W, DEFAULT_ICON_SIZE: Me } = globalThis.__WWV_HOST__.WWVPluginSDK, G = [
 	{
 		id: "ukraine-russia",
 		name: "Eastern Ukraine / Russian Border",
@@ -160,17 +162,19 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 		whyItMatters: "Nuclear risk, East Asia security, US alliance.",
 		radiusKm: 150
 	}
-];
+], K = globalThis.__WWV_HOST__.jsxRuntime, q = K.jsx;
+K.jsxs;
+var J = K.Fragment;
 //#endregion
 //#region src/index.tsx
-function l(e) {
+function Y(e) {
 	return e >= 5 ? "#991b1b" : e >= 4 ? "#ef4444" : e >= 3 ? "#f97316" : "#fbbf24";
 }
-function u(e, t) {
+function X(e, t) {
 	let n = e?.cesiumElement;
 	n && !n._wwvEntity && (n._wwvEntity = t);
 }
-function d(e) {
+function Z(e) {
 	return {
 		id: e.id,
 		pluginId: "conflict-zones",
@@ -190,13 +194,13 @@ function d(e) {
 		}
 	};
 }
-var f = ({ enabled: e }) => e ? /* @__PURE__ */ globalThis.__WWV_HOST__.jsxRuntime.jsx(globalThis.__WWV_HOST__.jsxRuntime.Fragment, { children: c.map((e) => {
-	let t = globalThis.__WWV_HOST__.Cesium.Cartesian3.fromDegrees(e.lon, e.lat), n = l(e.escalationScore), r = globalThis.__WWV_HOST__.Cesium.Color.fromCssColorString(n).withAlpha(.25), i = globalThis.__WWV_HOST__.Cesium.Color.fromCssColorString(n).withAlpha(.8), a = e.radiusKm * 1e3, o = d(e);
-	return /* @__PURE__ */ globalThis.__WWV_HOST__.jsxRuntime.jsx(globalThis.__WWV_HOST__.Resium.Entity, {
+var Q = ({ enabled: e }) => e ? /* @__PURE__ */ q(J, { children: G.map((e) => {
+	let t = D.fromDegrees(e.lon, e.lat), n = Y(e.escalationScore), r = O.fromCssColorString(n).withAlpha(.25), i = O.fromCssColorString(n).withAlpha(.8), a = e.radiusKm * 1e3, o = Z(e);
+	return /* @__PURE__ */ q(V, {
 		position: t,
 		name: e.name,
-		ref: (e) => u(e, o),
-		children: /* @__PURE__ */ globalThis.__WWV_HOST__.jsxRuntime.jsx(globalThis.__WWV_HOST__.Resium.EllipseGraphics, {
+		ref: (e) => X(e, o),
+		children: /* @__PURE__ */ q(H, {
 			semiMajorAxis: a,
 			semiMinorAxis: a,
 			material: r,
@@ -206,9 +210,9 @@ var f = ({ enabled: e }) => e ? /* @__PURE__ */ globalThis.__WWV_HOST__.jsxRunti
 			height: 0
 		})
 	}, e.id);
-}) }) : null, p = class {
+}) }) : null, $ = class {
 	constructor() {
-		this.id = "conflict-zones", this.name = "Conflict Zones", this.description = "Active conflict zones and geopolitical hotspots worldwide.", this.icon = s, this.category = "conflict", this.version = "1.0.0", this.iconUrls = {};
+		this.id = "conflict-zones", this.name = "Conflict Zones", this.description = "Active conflict zones and geopolitical hotspots worldwide.", this.icon = E, this.category = "conflict", this.version = "1.0.0", this.iconUrls = {};
 	}
 	async initialize(e) {}
 	destroy() {}
@@ -226,8 +230,8 @@ var f = ({ enabled: e }) => e ? /* @__PURE__ */ globalThis.__WWV_HOST__.jsxRunti
 		};
 	}
 	renderEntity(e) {
-		let t = l(e.properties.escalationScore || 3);
-		return this.iconUrls[t] || (this.iconUrls[t] = globalThis.__WWV_HOST__.WWVPluginSDK.createSvgIconUrl(s, { color: t })), {
+		let t = Y(e.properties.escalationScore || 3);
+		return this.iconUrls[t] || (this.iconUrls[t] = W(E, { color: t })), {
 			type: "billboard",
 			iconUrl: this.iconUrls[t],
 			color: t
@@ -279,8 +283,8 @@ var f = ({ enabled: e }) => e ? /* @__PURE__ */ globalThis.__WWV_HOST__.jsxRunti
 		}];
 	}
 	getGlobeComponent() {
-		return f;
+		return Q;
 	}
 };
 //#endregion
-export { p as ConflictZonesPlugin };
+export { $ as ConflictZonesPlugin };

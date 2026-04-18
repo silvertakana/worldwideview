@@ -1,8 +1,7 @@
-//#region ../../node_modules/.pnpm/lucide-react@0.576.0_react@19.2.3/node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.js
-var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), t = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), n = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), r = (e) => {
-	let t = n(e);
+var { useState: e, useEffect: t, useRef: n, useMemo: r, useCallback: i, useContext: a, useReducer: o, useLayoutEffect: s, StrictMode: c, Suspense: l, createContext: u, createElement: d, cloneElement: f, isValidElement: p, Fragment: m, Children: h, Component: ee, PureComponent: te, createRef: g, forwardRef: _, memo: ne, lazy: re, startTransition: v, useTransition: y, useDeferredValue: ie, useId: ae, useSyncExternalStore: oe, useInsertionEffect: se } = globalThis.__WWV_HOST__.React, b = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), x = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), S = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), C = (e) => {
+	let t = S(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, i = {
+}, w = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -12,27 +11,30 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, a = (e) => {
+}, T = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, o = globalThis.__WWV_HOST__.React.forwardRef(({ color: t = "currentColor", size: n = 24, strokeWidth: r = 2, absoluteStrokeWidth: o, className: s = "", children: c, iconNode: l, ...u }, d) => globalThis.__WWV_HOST__.React.createElement("svg", {
-	ref: d,
-	...i,
-	width: n,
-	height: n,
-	stroke: t,
-	strokeWidth: o ? Number(r) * 24 / Number(n) : r,
-	className: e("lucide", s),
-	...!c && !a(u) && { "aria-hidden": "true" },
-	...u
-}, [...l.map(([e, t]) => globalThis.__WWV_HOST__.React.createElement(e, t)), ...Array.isArray(c) ? c : [c]])), s = ((n, i) => {
-	let a = globalThis.__WWV_HOST__.React.forwardRef(({ className: a, ...s }, c) => globalThis.__WWV_HOST__.React.createElement(o, {
+}, E = u({}), D = () => a(E), O = _(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: o, ...s }, c) => {
+	let { size: l = 24, strokeWidth: u = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = D() ?? {}, h = r ?? f ? Number(n ?? u) * 24 / Number(t ?? l) : n ?? u;
+	return d("svg", {
 		ref: c,
-		iconNode: i,
-		className: e(`lucide-${t(r(n))}`, `lucide-${n}`, a),
+		...w,
+		width: t ?? l ?? w.width,
+		height: t ?? l ?? w.height,
+		stroke: e ?? p,
+		strokeWidth: h,
+		className: b("lucide", m, i),
+		...!a && !T(s) && { "aria-hidden": "true" },
 		...s
+	}, [...o.map(([e, t]) => d(e, t)), ...Array.isArray(a) ? a : [a]]);
+}), k = ((e, t) => {
+	let n = _(({ className: n, ...r }, i) => d(O, {
+		ref: i,
+		iconNode: t,
+		className: b(`lucide-${x(C(e))}`, `lucide-${e}`, n),
+		...r
 	}));
-	return a.displayName = r(n), a;
+	return n.displayName = C(e), n;
 })("shield-alert", [
 	["path", {
 		d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
@@ -46,7 +48,7 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 		d: "M12 16h.01",
 		key: "1drbdi"
 	}]
-]), c = [
+]), { Viewer: ce, Entity: A, Cartesian3: j, Cartesian2: M, Color: N, CallbackProperty: P, DistanceDisplayCondition: F, NearFarScalar: I, HeightReference: L, Resource: R, Rectangle: z, PolygonHierarchy: B, ClassificationType: V, ArcType: H, Math: U, JulianDate: W, TimeInterval: G, TimeIntervalCollection: le, SampledPositionProperty: ue, GeoJsonDataSource: de, PinBuilder: fe } = globalThis.__WWV_HOST__.Cesium, { Entity: K, PointGraphics: pe, BillboardGraphics: me, CustomDataSource: he, Camera: ge, PolygonGraphics: q, PolylineGraphics: _e, EllipseGraphics: ve, LabelGraphics: ye, ModelGraphics: be, PathGraphics: xe, BoxGraphics: Se, GeoJsonDataSource: Ce, ScreenSpaceEventHandler: we, ScreenSpaceEvent: Te } = globalThis.__WWV_HOST__.Resium, J = [
 	{
 		id: "taiwan-adiz",
 		name: "Taiwan ADIZ",
@@ -136,9 +138,11 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 			[-130, 54]
 		]
 	}
-], l = ({ enabled: e }) => e ? /* @__PURE__ */ globalThis.__WWV_HOST__.jsxRuntime.jsx(globalThis.__WWV_HOST__.jsxRuntime.Fragment, { children: c.map((e) => {
-	let t = globalThis.__WWV_HOST__.Cesium.Cartesian3.fromDegreesArray(e.polygon.flatMap((e) => [e[0], e[1]])), n = e.type === "ADIZ", r = globalThis.__WWV_HOST__.Cesium.Color.fromCssColorString(n ? "#ef4444" : "#fb923c").withAlpha(.2), i = globalThis.__WWV_HOST__.Cesium.Color.fromCssColorString(n ? "#ef4444" : "#fb923c");
-	return /* @__PURE__ */ globalThis.__WWV_HOST__.jsxRuntime.jsx(globalThis.__WWV_HOST__.Resium.Entity, {
+], Y = globalThis.__WWV_HOST__.jsxRuntime, X = Y.jsx;
+Y.jsxs;
+var Z = Y.Fragment, Q = ({ enabled: e }) => e ? /* @__PURE__ */ X(Z, { children: J.map((e) => {
+	let t = j.fromDegreesArray(e.polygon.flatMap((e) => [e[0], e[1]])), n = e.type === "ADIZ", r = N.fromCssColorString(n ? "#ef4444" : "#fb923c").withAlpha(.2), i = N.fromCssColorString(n ? "#ef4444" : "#fb923c");
+	return /* @__PURE__ */ X(K, {
 		name: e.name,
 		description: `
                             <table class="cesium-infoBox-defaultTable">
@@ -149,7 +153,7 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
                                 </tbody>
                             </table>
                         `,
-		children: /* @__PURE__ */ globalThis.__WWV_HOST__.jsxRuntime.jsx(globalThis.__WWV_HOST__.Resium.PolygonGraphics, {
+		children: /* @__PURE__ */ X(q, {
 			hierarchy: t,
 			material: r,
 			outline: !0,
@@ -158,9 +162,9 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 			height: 0
 		})
 	}, e.id);
-}) }) : null, u = class {
+}) }) : null, $ = class {
 	constructor() {
-		this.id = "air-defense", this.name = "Air Defense Zones", this.description = "Known ADIZ boundaries, no-fly zones, and restricted airspace.", this.icon = s, this.category = "conflict", this.version = "1.0.0";
+		this.id = "air-defense", this.name = "Air Defense Zones", this.description = "Known ADIZ boundaries, no-fly zones, and restricted airspace.", this.icon = k, this.category = "conflict", this.version = "1.0.0";
 	}
 	async initialize(e) {}
 	destroy() {}
@@ -184,8 +188,8 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 		};
 	}
 	getGlobeComponent() {
-		return l;
+		return Q;
 	}
 };
 //#endregion
-export { u as AirDefensePlugin };
+export { $ as AirDefensePlugin };

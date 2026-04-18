@@ -1,8 +1,7 @@
-//#region ../../node_modules/.pnpm/lucide-react@0.576.0_react@19.2.3/node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.js
-var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), t = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), n = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), r = (e) => {
-	let t = n(e);
+var { useState: e, useEffect: t, useRef: n, useMemo: r, useCallback: i, useContext: a, useReducer: o, useLayoutEffect: s, StrictMode: c, Suspense: l, createContext: u, createElement: d, cloneElement: f, isValidElement: p, Fragment: m, Children: h, Component: g, PureComponent: _, createRef: v, forwardRef: y, memo: b, lazy: x, startTransition: S, useTransition: C, useDeferredValue: w, useId: T, useSyncExternalStore: E, useInsertionEffect: D } = globalThis.__WWV_HOST__.React, O = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) === t).join(" ").trim(), k = (e) => e.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), A = (e) => e.replace(/^([A-Z])|[\s-_]+(\w)/g, (e, t, n) => n ? n.toUpperCase() : t.toLowerCase()), j = (e) => {
+	let t = A(e);
 	return t.charAt(0).toUpperCase() + t.slice(1);
-}, i = {
+}, M = {
 	xmlns: "http://www.w3.org/2000/svg",
 	width: 24,
 	height: 24,
@@ -12,31 +11,34 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 	strokeWidth: 2,
 	strokeLinecap: "round",
 	strokeLinejoin: "round"
-}, a = (e) => {
+}, N = (e) => {
 	for (let t in e) if (t.startsWith("aria-") || t === "role" || t === "title") return !0;
 	return !1;
-}, o = globalThis.__WWV_HOST__.React.forwardRef(({ color: t = "currentColor", size: n = 24, strokeWidth: r = 2, absoluteStrokeWidth: o, className: s = "", children: c, iconNode: l, ...u }, d) => globalThis.__WWV_HOST__.React.createElement("svg", {
-	ref: d,
-	...i,
-	width: n,
-	height: n,
-	stroke: t,
-	strokeWidth: o ? Number(r) * 24 / Number(n) : r,
-	className: e("lucide", s),
-	...!c && !a(u) && { "aria-hidden": "true" },
-	...u
-}, [...l.map(([e, t]) => globalThis.__WWV_HOST__.React.createElement(e, t)), ...Array.isArray(c) ? c : [c]])), s = ((n, i) => {
-	let a = globalThis.__WWV_HOST__.React.forwardRef(({ className: a, ...s }, c) => globalThis.__WWV_HOST__.React.createElement(o, {
+}, P = u({}), F = () => a(P), I = y(({ color: e, size: t, strokeWidth: n, absoluteStrokeWidth: r, className: i = "", children: a, iconNode: o, ...s }, c) => {
+	let { size: l = 24, strokeWidth: u = 2, absoluteStrokeWidth: f = !1, color: p = "currentColor", className: m = "" } = F() ?? {}, h = r ?? f ? Number(n ?? u) * 24 / Number(t ?? l) : n ?? u;
+	return d("svg", {
 		ref: c,
-		iconNode: i,
-		className: e(`lucide-${t(r(n))}`, `lucide-${n}`, a),
+		...M,
+		width: t ?? l ?? M.width,
+		height: t ?? l ?? M.height,
+		stroke: e ?? p,
+		strokeWidth: h,
+		className: O("lucide", m, i),
+		...!a && !N(s) && { "aria-hidden": "true" },
 		...s
+	}, [...o.map(([e, t]) => d(e, t)), ...Array.isArray(a) ? a : [a]]);
+}), L = ((e, t) => {
+	let n = y(({ className: n, ...r }, i) => d(I, {
+		ref: i,
+		iconNode: t,
+		className: O(`lucide-${k(j(e))}`, `lucide-${e}`, n),
+		...r
 	}));
-	return a.displayName = r(n), a;
+	return n.displayName = j(e), n;
 })("plane", [["path", {
 	d: "M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z",
 	key: "1v9wt8"
-}]]), c = class {
+}]]), R = class {
 	category = "aviation";
 	context = null;
 	defaultLayerColor = "#3b82f6";
@@ -89,12 +91,12 @@ var e = (...e) => e.filter((e, t, n) => !!e && e.trim() !== "" && n.indexOf(e) =
 };
 //#endregion
 //#region src/index.ts
-function l(e) {
+function z(e) {
 	return e === null || e <= 0 ? "grounded" : e < 3e3 ? "low" : e < 8e3 ? "mid" : e < 12e3 ? "high" : "extreme";
 }
-var u = class extends c {
+var B = class extends R {
 	constructor(...e) {
-		super(...e), this.id = "aviation", this.name = "Aviation", this.description = "Real-time aircraft tracking via OpenSky Network", this.icon = s, this.version = "1.0.8";
+		super(...e), this.id = "aviation", this.name = "Aviation", this.description = "Real-time aircraft tracking via OpenSky Network", this.icon = L, this.version = "1.0.8";
 	}
 	getAltitudeColor(e) {
 		return e === null || e <= 0 ? "#4ade80" : e < 3e3 ? "#22d3ee" : e < 8e3 ? "#3b82f6" : e < 12e3 ? "#a78bfa" : "#f472b6";
@@ -121,7 +123,7 @@ var u = class extends c {
 					callsign: e.callsign,
 					origin_country: e.origin_country,
 					altitude_m: e.alt,
-					altitude_band: l(e.alt || 0),
+					altitude_band: z(e.alt || 0),
 					velocity_ms: e.spd,
 					heading: e.hdg,
 					vertical_rate: e.vertical_rate,
@@ -133,7 +135,9 @@ var u = class extends c {
 	}
 	async fetch(e) {
 		try {
-			let e = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL ? process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http") : "https://dataengine.worldwideview.dev", t;
+			let e = "https://dataengine.worldwideview.dev";
+			typeof globalThis < "u" && globalThis.__WWV_ENGINE_URL__ ? e = globalThis.__WWV_ENGINE_URL__.replace(/\/stream$/, "").replace(/^ws/, "http") : process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL && (e = process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL.replace(/\/stream$/, "").replace(/^ws/, "http"));
+			let t;
 			if (this.context.isPlaybackMode()) {
 				let n = this.context.getCurrentTime().getTime();
 				t = await fetch(`${e}/data/aviation?time=${n}`);
@@ -316,4 +320,4 @@ var u = class extends c {
 	}
 };
 //#endregion
-export { u as AviationPlugin };
+export { B as AviationPlugin };

@@ -51,11 +51,15 @@ export async function POST(request: Request) {
             try {
                 const res = await fetch(`${MARKETPLACE_URL}/api/plugins/${pluginId}`);
                 if (res.ok) {
-                    finalManifest = await res.json();
+                    const card = await res.json();
+                    finalManifest = { ...card };
                     
-                    // Reconstruct entry URL for bundle plugins
-                    if (finalManifest && finalManifest.format === "bundle" && finalManifest.npmPackage) {
+                    // Reconstruct entry URL for plugins that are distributed via NPM.
+                    // We also forcefully coerce format to "bundle" here because 
+                    // the marketplace cache might still return "static" for plugins we recently converted.
+                    if (finalManifest.npmPackage) {
                         const targetVersion = version || finalManifest.version || "1.0.0";
+                        finalManifest.format = "bundle";
                         finalManifest.entry = `https://unpkg.com/${finalManifest.npmPackage}@${targetVersion}/dist/frontend.mjs`;
                     }
                 }

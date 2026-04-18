@@ -1,7 +1,7 @@
 {
   "id": "lighthouses",
   "name": "lighthouses",
-  "version": "1.0.1",
+  "version": "1.0.10",
   "description": "WorldWideView plugin — Lighthouses worldwide from OSM",
   "capabilities": [],
   "category": "Maritime",
