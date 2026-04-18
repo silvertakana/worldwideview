@@ -7,8 +7,9 @@ import { sectionHeaderStyle } from "./sharedStyles";
 import { TimestampProperty } from "../properties/TimestampProperty";
 import { DynamicPropertiesRender } from "../properties/DynamicPropertiesRender";
 import { useRef, useEffect } from "react";
+import { PluginErrorBoundary } from "@/components/common/PluginErrorBoundary";
 
-function LegendItem({ 
+function LegendItem({
     label, 
     color, 
     pluginId, 
@@ -197,7 +198,9 @@ export function IntelTab() {
 
                         {SidebarComp && (
                             <div style={{ marginBottom: "var(--space-lg)", paddingBottom: "var(--space-lg)", borderBottom: "1px solid var(--border-subtle)" }}>
-                                <SidebarComp plugin={layerPlugin.plugin} />
+                                <PluginErrorBoundary pluginId={layerPlugin.plugin.id}>
+                                    <SidebarComp plugin={layerPlugin.plugin} />
+                                </PluginErrorBoundary>
                             </div>
                         )}
 
@@ -345,7 +348,9 @@ export function IntelTab() {
 
                 {DetailComp ? (
                     <div className="intel-panel__custom-detail" style={{ marginTop: "var(--space-md)", maxWidth: "100%", overflow: "hidden" }}>
-                        <DetailComp entity={selectedEntity} />
+                        <PluginErrorBoundary pluginId={selectedEntity.pluginId}>
+                            <DetailComp entity={selectedEntity} />
+                        </PluginErrorBoundary>
                     </div>
                 ) : (
                     <DynamicPropertiesRender entity={selectedEntity} />

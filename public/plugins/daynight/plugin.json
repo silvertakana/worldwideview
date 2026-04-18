@@ -1,0 +1,12 @@
+{
+  "id": "daynight",
+  "name": "daynight",
+  "version": "1.0.0",
+  "description": "WorldWideView plugin — Day/Night terminator overlay showing sunlit and dark regions of the globe in real-time.",
+  "capabilities": [],
+  "category": "Custom",
+  "icon": "SunMoon",
+  "entry": "/plugins/daynight/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}

@@ -85,6 +85,7 @@ export function useImageryManager(viewer: CesiumViewer | null, viewerReady: bool
                     }
 
                     // Add as base layer (bottom)
+                    if (viewer.isDestroyed()) return;
                     viewer.imageryLayers.add(newLayer, 0);
                     currentImageryLayerRef.current = newLayer;
                 } catch (err) {

@@ -1,0 +1,12 @@
+{
+  "id": "embassies",
+  "name": "embassies",
+  "version": "1.0.3",
+  "description": "WorldWideView plugin — Global embassies, consulates, and diplomatic missions from OpenStreetMap",
+  "capabilities": [],
+  "category": "Custom",
+  "icon": "Landmark",
+  "entry": "/plugins/embassies/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}

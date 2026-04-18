@@ -1,0 +1,12 @@
+{
+  "id": "conflict-zones",
+  "name": "conflict-zones",
+  "version": "1.1.0",
+  "description": "WorldWideView plugin — Active conflict zones and geopolitical hotspots worldwide.",
+  "capabilities": [],
+  "category": "Conflict",
+  "icon": "Crosshair",
+  "entry": "/plugins/conflict-zones/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}

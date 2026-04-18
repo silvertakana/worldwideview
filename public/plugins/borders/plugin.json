@@ -1,0 +1,12 @@
+{
+  "id": "borders",
+  "name": "borders",
+  "version": "1.0.4",
+  "description": "WorldWideView plugin that displays political borders and country labels as a globe overlay",
+  "capabilities": [],
+  "category": "Custom",
+  "icon": "Map",
+  "entry": "/plugins/borders/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}

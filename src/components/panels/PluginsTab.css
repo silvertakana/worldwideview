@@ -124,6 +124,14 @@
 }
 
 /* ─── Uninstall Button ───────────────────────────────────── */
+.plugin-item__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    gap: var(--space-xs);
+}
+
 .plugin-item__uninstall {
     display: flex;
     align-items: center;
@@ -183,4 +191,105 @@
     border-color: rgba(var(--accent-rgb), 0.4);
     box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.15);
     transform: translateY(-1px);
+}
+
+/* ─── Actions Bottom ─────────────────────────────────────── */
+.plugins-tab__actions-bottom {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    justify-content: stretch;
+    padding-top: var(--space-md);
+}
+
+.plugins-tab__update-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(var(--accent-rgb), 0.15);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    border-radius: var(--radius-md);
+    color: var(--accent-cyan);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-smooth);
+    width: 100%;
+}
+
+.plugins-tab__update-all:hover {
+    background: rgba(var(--accent-rgb), 0.25);
+    border-color: rgba(var(--accent-rgb), 0.4);
+}
+
+.plugins-tab__update-all:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.plugins-tab__check-updates {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-smooth);
+    width: 100%;
+}
+
+.plugins-tab__check-updates:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.plugins-tab__check-updates:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.plugin-item__update {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    border-radius: var(--radius-sm);
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    color: var(--accent-green);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.plugin-item__update:hover {
+    background: rgba(74, 222, 128, 0.25);
+    border-color: rgba(74, 222, 128, 0.5);
+}
+
+.plugin-item__update:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

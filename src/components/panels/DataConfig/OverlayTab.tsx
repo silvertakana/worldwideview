@@ -1,6 +1,7 @@
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { sectionHeaderStyle, inputGroupStyle, labelStyle, inputStyle, checkboxStyle } from "./sharedStyles";
+import { PluginErrorBoundary } from "@/components/common/PluginErrorBoundary";
 
 export function OverlayTab() {
     const dataConfig = useStore((s) => s.dataConfig);
@@ -60,7 +61,9 @@ export function OverlayTab() {
                                         paddingTop: "var(--space-md)",
                                         borderTop: "1px solid var(--border-subtle)"
                                     }}>
-                                        <SettingsComp pluginId={pluginId} />
+                                        <PluginErrorBoundary pluginId={pluginId}>
+                                            <SettingsComp pluginId={pluginId} />
+                                        </PluginErrorBoundary>
                                     </div>
                                 )}
                             </div>

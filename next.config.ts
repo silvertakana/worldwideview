@@ -3,27 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["better-sqlite3", "@prisma/adapter-better-sqlite3", "@prisma/client", "prisma"],
-  transpilePackages: [
-    "@worldwideview/wwv-plugin-aviation",
-    "@worldwideview/wwv-plugin-borders",
-    "@worldwideview/wwv-plugin-camera",
-    "@worldwideview/wwv-plugin-conflict-events",
-    "@worldwideview/wwv-plugin-civil-unrest",
-    "@worldwideview/wwv-plugin-daynight",
-    "@worldwideview/wwv-plugin-undersea-cables",
-    "@worldwideview/wwv-plugin-earthquakes",
-    "@worldwideview/wwv-plugin-iranwarlive",
-    "@worldwideview/wwv-plugin-maritime",
-    "@worldwideview/wwv-plugin-military-aviation",
-    "@worldwideview/wwv-plugin-satellite",
-    "@worldwideview/wwv-plugin-gps-jamming",
-    "@worldwideview/wwv-plugin-surveillance-satellites",
-    "@worldwideview/wwv-plugin-cyber-attacks",
-    "@worldwideview/wwv-plugin-international-sanctions",
-    "@worldwideview/wwv-plugin-sdk",
-    "@worldwideview/wwv-plugin-wildfire",
-    "@worldwideview/wwv-plugin-osm-search",
-    "resium",
+  transpilePackages: ["@worldwideview/wwv-plugin-sdk","resium",
     "react-player",
     "satellite.js"
   ],
@@ -118,7 +98,9 @@ export default withSentryConfig(nextConfig, {
   disableLogger: true,
 
   // Hides source maps from generated client bundles
-  hideSourceMaps: true,
+  sourcemaps: {
+    disable: true,
+  },
   
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,

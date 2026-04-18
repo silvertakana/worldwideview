@@ -72,12 +72,25 @@ function validateStatic(m: PluginManifest): string[] {
     return errors;
 }
 
-/** Validate fields required for bundle format. */
 function validateBundle(m: PluginManifest): string[] {
     const errors: string[] = [];
 
     if (!m.entry?.trim()) {
         errors.push("Bundle plugins require entry");
+    } else {
+        const entry = m.entry.trim();
+        const isRelative = entry.startsWith("/") || entry.startsWith("./");
+        const isLocal = entry.startsWith("http://localhost") || entry.startsWith("http://127.0.0.1") || entry.startsWith("https://localhost") || entry.startsWith("https://127.0.0.1");
+        const isWWV = entry.startsWith("https://marketplace.worldwideview.dev") || entry.includes(".worldwideview.dev");
+        const isCDN = entry.startsWith("https://cdn.jsdelivr.net") || entry.startsWith("https://unpkg.com");
+
+        if (!isRelative && !isLocal && !isWWV && !isCDN) {
+            errors.push("Bundle entry URL must be a relative path, CDN, localhost, or an official worldwideview.dev domain");
+        }
+
+        if (entry.includes("unknown-package")) {
+            errors.push("Bundle entry contains a placeholder package name ('unknown-package'). Manifest generation failed.");
+        }
     }
 
     return errors;

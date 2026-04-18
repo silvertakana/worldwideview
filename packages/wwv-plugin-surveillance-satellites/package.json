@@ -1,8 +1,0 @@
-{
-  "name": "@worldwideview/wwv-plugin-surveillance-satellites",
-  "version": "1.1.0",
-  "main": "src/index.tsx",
-  "dependencies": {
-    "lucide-react": "^0.364.0"
-  }
-}

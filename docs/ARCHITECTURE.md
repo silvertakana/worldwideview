@@ -4,7 +4,9 @@ WorldWideView is a high-performance, event-driven geospatial intelligence engine
 
 ## Module Breakdown
 
-1. **`src/core/plugins`**: The registration and lifecycle management layer. Defines how plugins are booted and destroyed.
+1. **`src/core/plugins`**: The registration and lifecycle management layer.
+   - **PluginManager**: Orchestrator for enabling/disabling plugins.
+   - **InstalledPluginsLoader**: Dynamically discovers and loads external marketplace plugins at runtime via CDN bundles (e.g. UNPKG).
 2. **`src/core/data`**: The "Heartbeat" of the system.
    - **DataBus**: Decentralized event pipeline for all system actions.
    - **PollingManager**: Intelligent scheduler for external API calls with backoff logic.
@@ -12,7 +14,7 @@ WorldWideView is a high-performance, event-driven geospatial intelligence engine
 3. **`src/core/globe`**: The Rendering Engine.
    - **Cesium Integration**: Low-level control over the Cesium Viewer.
    - **EntityRenderer**: High-performance "Primitive" renderer.
-4. **`src/plugins`**: Domain-specific logic (Aviation, Maritime, etc.).
+4. **`packages/wwv-plugin-*`**: Monorepo plugin packages, externalized into standalone dynamically loaded CDNs.
 
 ## Performance: Primitives vs. Entities
 

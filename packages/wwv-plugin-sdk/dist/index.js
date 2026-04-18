@@ -42,3 +42,4 @@ export function createSvgIconUrl(Icon, opts = {}) {
     ].join("");
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(wrappedSvg)}`;
 }
+export * from "./viteGlobals.js";

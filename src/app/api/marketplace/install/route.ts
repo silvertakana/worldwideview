@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     try {
         const body = await request.json();
         const { pluginId, version, manifest } = body;
+        console.log("[Marketplace Install Route] Payload received:", JSON.stringify(body, null, 2));
 
         if (!pluginId || typeof pluginId !== "string") {
             return withCors(

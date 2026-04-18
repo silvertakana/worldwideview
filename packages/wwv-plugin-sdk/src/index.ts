@@ -258,3 +258,5 @@ export type DataBusEvents = {
     cameraGoTo: { lat: number; lon: number; alt: number; distance?: number; maxPitch?: number; heading?: number };
     globeReady: Record<string, never>;
 };
+
+export * from "./viteGlobals";

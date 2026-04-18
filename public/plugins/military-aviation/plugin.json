@@ -1,0 +1,13 @@
+{
+  "id": "military-aviation",
+  "name": "Military Aviation",
+  "description": "Live WebSocket tracking of military aircraft via wwv-data-engine (Microservice)",
+  "icon": "Crosshair",
+  "category": "Aviation",
+  "type": "data-layer",
+  "format": "bundle",
+  "entry": "/plugins/military-aviation/frontend.mjs",
+  "trust": "unverified",
+  "capabilities": ["data", "websocket"],
+  "version": "1.0.4"
+}

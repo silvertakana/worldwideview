@@ -1,0 +1,12 @@
+{
+  "id": "iranwarlive",
+  "name": "iranwarlive",
+  "version": "1.0.2",
+  "description": "Iran War Live — Live OSINT data sourced from IranWarLive.com",
+  "capabilities": [],
+  "category": "Conflict",
+  "icon": "ShieldAlert",
+  "entry": "/plugins/iranwarlive/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}

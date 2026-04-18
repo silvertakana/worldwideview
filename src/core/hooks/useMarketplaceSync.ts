@@ -71,12 +71,17 @@ export function useMarketplaceSync() {
         }
 
         try {
+            console.log(`[MarketplaceSync] Loading manifest: ${manifest.id}`);
             await pluginManager.loadFromManifest(manifest);
             initLayer(manifest.id);
             loadedIds.current.add(manifest.id);
             console.log(`[MarketplaceSync] Hot-loaded plugin "${manifest.id}"`);
         } catch (err) {
             console.error(`[MarketplaceSync] Failed to load "${manifest.id}":`, err);
+            const store = useStore.getState();
+            if (store.showErrorToast) {
+                store.showErrorToast(`Failed to load plugin: ${manifest.name || manifest.id}. Check console.`);
+            }
         }
     }
 
@@ -84,9 +89,14 @@ export function useMarketplaceSync() {
     async function syncMarketplacePlugins() {
         try {
             const res = await fetch("/api/marketplace/load");
-            if (!res.ok) return;
+            const json = await res.json();
+            console.log(`[MarketplaceSync] Received raw JSON from /api/marketplace/load:`, JSON.stringify(json, null, 2));
 
-            const { manifests } = (await res.json()) as { manifests: PluginManifest[] };
+            if (!res.ok) {
+                throw new Error(json.error || `Failed to fetch marketplace configuration (Status ${res.status})`);
+            }
+
+            const { manifests } = json as { manifests: PluginManifest[] };
             const approved = getApprovedUnverifiedIds();
             const newPending: PluginManifest[] = [];
 

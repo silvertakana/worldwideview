@@ -1,0 +1,12 @@
+{
+  "id": "seaports",
+  "name": "seaports",
+  "version": "1.0.1",
+  "description": "WorldWideView plugin — Harbours and seaports worldwide from OSM",
+  "capabilities": [],
+  "category": "Maritime",
+  "icon": "Anchor",
+  "entry": "/plugins/seaports/frontend.mjs",
+  "format": "bundle",
+  "trust": "unverified"
+}
