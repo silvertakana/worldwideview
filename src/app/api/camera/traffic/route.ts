@@ -56,7 +56,7 @@ export async function GET() {
             });
         }
         return NextResponse.json(
-            { error: "Failed to fetch traffic cameras", details: error.message },
+            { error: "Failed to fetch traffic cameras" },
             { status: 502 },
         );
     }

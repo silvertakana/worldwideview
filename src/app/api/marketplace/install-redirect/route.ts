@@ -49,8 +49,10 @@ export async function GET(request: NextRequest) {
 
         // Not logged in — send to login with this URL as callbackUrl
         if (!session?.user) {
-            const loginUrl = new URL("/login", request.nextUrl.origin);
-            loginUrl.searchParams.set("callbackUrl", request.nextUrl.toString());
+            const origin = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || request.nextUrl.origin;
+            const loginUrl = new URL("/login", origin);
+            const callbackPath = request.nextUrl.pathname + request.nextUrl.search;
+            loginUrl.searchParams.set("callbackUrl", callbackPath);
             return NextResponse.redirect(loginUrl);
         }
 

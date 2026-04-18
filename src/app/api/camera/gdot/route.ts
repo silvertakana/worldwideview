@@ -24,7 +24,7 @@ export async function GET() {
             return NextResponse.json({ cameras: cache.data, cached: true, stale: true });
         }
         return NextResponse.json(
-            { error: "Failed to fetch GDOT cameras", details: error.message },
+            { error: "Failed to fetch GDOT cameras" },
             { status: 502 },
         );
     }
