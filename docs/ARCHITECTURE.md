@@ -1,64 +1,27 @@
-# System Architecture
+<!-- Generated: 2026-04-19 02:20:00 UTC -->
+# WorldWideView - Architecture
 
-WorldWideView is a high-performance, event-driven geospatial intelligence engine. It is designed to ingest live, fast-moving signals—such as aviation ADS-B, maritime AIS, or satellite feeds—and transform them into cinematic, real-time visual layers on a 3D globe.
+## Overview
+WorldWideView fundamentally separates the core 3D spatial rendering engine from the data ingest protocols. It achieves this primarily through a custom 'Data Engine' that funnels external data directly into a local state via WebSocket streams and a strict 'All-Bundle' dynamic plugin loader.
 
-## Module Breakdown
+UI features conform strictly to a VS Code-style extension pipeline using capability declarations rather than deeply coupling into monolithic application code.
 
-1. **`src/core/plugins`**: The registration and lifecycle management layer.
-   - **PluginManager**: Orchestrator for enabling/disabling plugins.
-   - **InstalledPluginsLoader**: Dynamically discovers and loads external marketplace plugins at runtime via CDN bundles (e.g. UNPKG).
-2. **`src/core/data`**: The "Heartbeat" of the system.
-   - **DataBus**: Decentralized event pipeline for all system actions.
-   - **PollingManager**: Intelligent scheduler for external API calls with backoff logic.
-   - **CacheLayer**: 2-stage persistent caching (In-Memory + IndexedDB).
-3. **`src/core/globe`**: The Rendering Engine.
-   - **Cesium Integration**: Low-level control over the Cesium Viewer.
-   - **EntityRenderer**: High-performance "Primitive" renderer.
-4. **`packages/wwv-plugin-*`**: Monorepo plugin packages, externalized into standalone dynamically loaded CDNs.
+## Component Map
+- **Globe Core**: The Cesium 3D canvas and interaction loops. (`src/core/globe/GlobeView.tsx`)
+- **Plugin Registry**: Registration, validation, and execution pipeline for all 3rd party components. (`src/core/plugins/PluginManager.ts`)
+- **Event Bus Pipeline**: High-throughput web socket translation. (`src/core/data/DataBus.ts`)
+- **Store**: Unified state for UI and filtering. (`src/core/state/`)
+- **Data Engine**: The backend container managing persistent Redis caching and sqlite history (`packages/wwv-data-engine/`).
 
-## Performance: Primitives vs. Entities
+## Key Files
+- [src/core/plugins/loadPluginFromManifest.ts](../src/core/plugins/loadPluginFromManifest.ts): Fetches bundle plugins asynchronously from CDN or local storage and triggers their init sequence.
+- [packages/wwv-plugin-sdk/src/manifest.ts](../packages/wwv-plugin-sdk/src/manifest.ts): Core typing definitions for `PluginManifest` and capability enums.
+- [src/core/data/DataBus.ts](../src/core/data/DataBus.ts): Manages `dataUpdated` and websocket frame distribution events.
 
-One of our core design decisions is using **Cesium Primitives** instead of the standard high-level **Entity API** for high-count datasets.
-
-| Feature | Entity API | Primitive API (WWV) |
-|---|---|---|
-| **Abstraction** | High (Easy to use) | Low (Direct GPU access) |
-| **Overhead** | Significant per-entity JS objects | Minimal (Batched rendering) |
-| **Max Capacity** | ~1,000 entities | **100,000+ points/billboards** |
-| **WWV Use Case** | Info window content | Live data point visualization |
-
-**Why?** The Entity API in Cesium is great for rich features but triggers significant CPU overhead when managing thousands of moving objects. By using `PointPrimitiveCollection` and `BillboardCollection`, WorldWideView batches these draw calls, ensuring 60FPS even with dense global data.
-
-## Data Pipeline (Example: Aviation)
-
-The following diagram trace the journey of a single data point from a remote sensor to the user's screen:
-
-```mermaid
-sequenceDiagram
-    participant S as Remote API (e.g. OpenSky)
-    participant P as Plugin (AviationPlugin)
-    participant D as DataBus
-    participant R as EntityRenderer
-    participant G as GPU (Cesium)
-
-    Note over S, P: Polling Interval (e.g. 30s)
-    S->>P: raw JSON data
-    rect rgb(200, 230, 255)
-    Note right of P: Mapping to GeoEntity
-    P->>P: parse, filter, sanitize
-    end
-    P->>D: emit("dataUpdated", { entities })
-    D->>R: trigger render cycle
-    rect rgb(255, 230, 200)
-    Note right of R: Batch Update Primitives
-    R->>G: update collection buffer
-    end
-    G-->>G: 60FPS visualization
-```
-
-## Design Principles
-
-- **Single Responsibility (SRP)**: Plugins only handle data mapping; they don't know about the UI or the Cache.
-- **Dependency Inversion**: The `PluginManager` communicates with plugins through the `WorldPlugin` interface, allowing new plugins to be added without modifying core code.
-- **Event-Driven Architecture**: The system is reactive. Components subscribe to what they need, reducing prop-drilling and unnecessary re-renders.
-- **Defensive Programming**: All external API calls in plugins are wrapped in error boundaries and handled by the `PollingManager`'s backoff logic to prevent system-wide failures.
+## Data Flow
+1. User activates a Plugin via UI (triggers `activationEvents`).
+2. `PluginManager` invokes `loadPluginFromManifest.ts` which uses ES imports.
+3. Once active, the plugin connects to its data source (or the central WebSocket).
+4. Raw data hits `DataBusSubscriber` -> emitted to `DataBus.emit("dataUpdated")`.
+5. The `Zustand` store's `dataSlice.ts` captures this, structuring by plugin ID.
+6. The `EntityRenderer.tsx` diffs the new state and renders primitives.

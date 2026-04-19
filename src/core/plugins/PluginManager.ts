@@ -42,8 +42,25 @@ class PluginManager {
             return;
         }
 
+        const envVars: Record<string, string> = {};
+        if (typeof process !== "undefined" && process.env) {
+            for (const [key, value] of Object.entries(process.env)) {
+                if (key.startsWith("NEXT_PUBLIC_WWV_PLUGIN_")) {
+                    envVars[key.replace("NEXT_PUBLIC_WWV_PLUGIN_", "")] = value || "";
+                }
+            }
+        }
+        
+        const edition = (process.env.NEXT_PUBLIC_WWV_EDITION || "local") as "local" | "cloud" | "demo";
+
+        if (Object.keys(envVars).length > 0) {
+            console.debug(`[PluginManager] Injected ${Object.keys(envVars).length} custom env vars into "${plugin.id}"`);
+        }
+
         const context: PluginContext = {
             apiBaseUrl: "",
+            env: envVars,
+            edition,
             timeRange: {
                 start: new Date(Date.now() - 24 * 60 * 60 * 1000),
                 end: new Date(),

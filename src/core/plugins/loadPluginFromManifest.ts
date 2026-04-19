@@ -1,14 +1,10 @@
-// ─── Plugin Loader Router ────────────────────────────────────
-// Given a PluginManifest, instantiates the correct plugin implementation.
-// Routes: declarative → DeclarativePlugin, static → StaticDataPlugin,
-//         bundle → dynamic import.
+// ─── Plugin Loader ───────────────────────────────────────────
+// All plugins are bundles. Given a manifest, dynamically import
+// the entry and return a WorldPlugin instance.
 
 import type { WorldPlugin } from "./PluginTypes";
 import type { PluginManifest } from "./PluginManifest";
 import { validateManifest } from "./validateManifest";
-import { DeclarativePlugin } from "./loaders/DeclarativePlugin";
-import { StaticDataPlugin } from "./loaders/StaticDataPlugin";
-import type { GeoJsonFeatureCollection } from "@/types/geojson";
 
 export class ManifestLoadError extends Error {
     constructor(
@@ -21,16 +17,7 @@ export class ManifestLoadError extends Error {
     }
 }
 
-/** Load a static GeoJSON file referenced by a static-format manifest. */
-async function loadGeoJsonFile(dataFile: string): Promise<GeoJsonFeatureCollection> {
-    const res = await fetch(dataFile);
-    if (!res.ok) {
-        throw new Error(`Failed to load GeoJSON file "${dataFile}": HTTP ${res.status}`);
-    }
-    return res.json() as Promise<GeoJsonFeatureCollection>;
-}
-
-/** Load a bundle-format plugin via dynamic import. */
+/** Load a bundle plugin via dynamic import. */
 async function loadBundlePlugin(entry: string): Promise<WorldPlugin> {
     const module = await import(/* webpackIgnore: true */ entry);
 
@@ -55,13 +42,11 @@ async function loadBundlePlugin(entry: string): Promise<WorldPlugin> {
         return module.default as WorldPlugin;
     }
 
-    // Scan for a named export class that implements WorldPlugin
     for (const key in module) {
         const instance = instantiate(module[key]);
         if (instance) return instance;
     }
-    
-    // Try finding an instantiated object exported by name
+
     for (const key in module) {
         const exp = module[key];
         if (exp && typeof exp === "object" && typeof exp.initialize === "function") {
@@ -69,24 +54,25 @@ async function loadBundlePlugin(entry: string): Promise<WorldPlugin> {
         }
     }
 
-    throw new Error(`Failed to load valid WorldPlugin from bundle: ${entry}. Make sure you export a class that implements WorldPlugin.`);
+    throw new Error(
+        `Failed to load valid WorldPlugin from bundle: ${entry}. ` +
+        `Make sure you export a class that implements WorldPlugin.`,
+    );
 }
 
 /**
  * Given a PluginManifest, returns a fully constructed WorldPlugin instance.
- *
  * @throws ManifestLoadError if validation fails or loading fails
  */
 export async function loadPluginFromManifest(
     manifest: PluginManifest,
 ): Promise<WorldPlugin> {
-    // 1. Validate
     const result = validateManifest(manifest);
     if (!result.valid) {
         console.error(
-            `[loadPluginFromManifest] ❌ MANIFEST VALIDATION FAILED for "${manifest.id || 'unknown'}"\n` +
+            `[loadPluginFromManifest] ❌ VALIDATION FAILED for "${manifest.id || "unknown"}"\n` +
             `Errors: ${result.errors.join(", ")}\n` +
-            `Evaluated Payload:\n${JSON.stringify(manifest, null, 2)}`
+            `Payload:\n${JSON.stringify(manifest, null, 2)}`,
         );
         throw new ManifestLoadError(
             manifest.id,
@@ -95,26 +81,8 @@ export async function loadPluginFromManifest(
         );
     }
 
-    // 2. Route by format
     try {
-        switch (manifest.format) {
-            case "declarative":
-                return new DeclarativePlugin(manifest);
-
-            case "static": {
-                const geojson = await loadGeoJsonFile(manifest.dataFile!);
-                return new StaticDataPlugin(manifest, geojson.features);
-            }
-
-            case "bundle":
-                return await loadBundlePlugin(manifest.entry!);
-
-            default:
-                throw new ManifestLoadError(
-                    manifest.id,
-                    `Unknown format: "${manifest.format}"`,
-                );
-        }
+        return await loadBundlePlugin(manifest.entry!);
     } catch (err) {
         if (err instanceof ManifestLoadError) throw err;
         throw new ManifestLoadError(

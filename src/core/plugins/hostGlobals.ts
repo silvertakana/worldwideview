@@ -49,19 +49,17 @@ export function injectHostGlobals(): void {
     };
 
     // REST Engine URL
-    if (process.env.NEXT_PUBLIC_WWV_DATA_ENGINE_URL || process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL) {
-        (globalThis as any).__WWV_ENGINE_URL__ = process.env.NEXT_PUBLIC_WWV_DATA_ENGINE_URL || process.env.NEXT_PUBLIC_DEFAULT_ENGINE_URL;
+    const envDataEngine = process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL;
+    if (envDataEngine) {
+        (globalThis as any).__WWV_ENGINE_URL__ = envDataEngine;
     } else {
         // ALWAYS default to the cloud engine unless explicitly told otherwise via env var
         (globalThis as any).__WWV_ENGINE_URL__ = 'https://dataengine.worldwideview.dev';
     }
 
     // WebSocket Engine URL
-    if (process.env.NEXT_PUBLIC_WS_ENGINE_URL) {
-        (globalThis as any).__WWV_WS_ENGINE_URL__ = process.env.NEXT_PUBLIC_WS_ENGINE_URL;
-    } else {
-        (globalThis as any).__WWV_WS_ENGINE_URL__ = 'wss://dataengine.worldwideview.dev/stream';
-    }
+    const fallbackWs = envDataEngine ? envDataEngine.replace(/^http/, "ws") + "/stream" : 'wss://dataengine.worldwideview.dev/stream';
+    (globalThis as any).__WWV_WS_ENGINE_URL__ = fallbackWs;
 
     console.log("[HostGlobals] React and SDK injected for dynamic plugins");
 }
