@@ -3,10 +3,18 @@
 WorldWideView is a real-time geospatial intelligence engine that visualizes live global data on an interactive 3D globe. It leverages a modern Next.js 16 frontend and a decoupled, dynamic plugin architecture to render high-density datasets synchronously.
 
 ## Self-Hosting (Docker)
-Get the platform running on your own server instantly using Docker Compose:
+Get the platform running on your own server instantly using Docker Compose.
+
+**Mac/Linux:**
 ```bash
 mkdir worldwideview && cd worldwideview
 curl -fsSL https://raw.githubusercontent.com/silvertakana/worldwideview/main/setup.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+mkdir worldwideview; cd worldwideview
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/silvertakana/worldwideview/main/setup.ps1 -UseBasicParsing | Invoke-Expression
 ```
 
 ## Local Development
