@@ -18,10 +18,16 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/silvertakana/worldwidev
 ```
 
 ## Local Development
+Get the source code running locally for contributing or building new plugins.
+
+**Mac/Linux:**
 ```bash
-pnpm install
-pnpm run setup
-pnpm dev
+bash local-dev.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+.\local-dev.ps1
 ```
 
 ## Key Files
