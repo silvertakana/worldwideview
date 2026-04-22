@@ -1,45 +1,32 @@
-<!-- Generated: 2026-04-19 02:20:00 UTC -->
-# WorldWideView 🌍
+# WorldWideView
 
-**The Open-Source, Plugin-Driven Geospatial Intelligence Engine**
+WorldWideView is a real-time geospatial intelligence engine that visualizes live global data on an interactive 3D globe. It leverages a modern Next.js 16 frontend and a decoupled, dynamic plugin architecture to render high-density datasets synchronously.
 
-WorldWideView is a real-time geospatial engine visualizing live global data on an interactive 3D globe. Utilizing a dynamic "All-Bundle" plugin architecture, independent data sources—like live aircraft, satellites, or OSINT news clusters—are ingested and rendered decoupled from the core 3D viewer.
+## Self-Hosting (Docker)
+Get the platform running on your own server instantly using Docker Compose:
+```bash
+mkdir worldwideview && cd worldwideview
+curl -fsSL https://raw.githubusercontent.com/silvertakana/worldwideview/main/setup.sh | bash
+```
 
-## Key Entry Points
-- UI Loader: `src/components/layout/AppShell.tsx` 
-- Dynamic Plugin Ingestion: `src/core/plugins/loadPluginFromManifest.ts`
-- Global WebSocket Event Loop: `src/core/data/DataBus.ts`
-- Environment Config: `.env.local` alongside `src/core/edition.ts`
-
-## Quick Build & Execute
+## Local Development
 ```bash
 pnpm install
 pnpm run setup
-pnpm dev:all # boots the UI, cache layers, and the marketplace engine
+pnpm dev
 ```
 
-## Plugin Development Quick Start
-You can build your own WorldWideView plugins without cloning the main repository using the officially supported CLI toolchain.
+## Key Files
+- Main App Layout: `src/app/layout.tsx`
+- Globe Visualizer: `src/core/globe/GlobeView.tsx`
+- Plugin Registry: `src/core/plugins/PluginManager.ts`
+- Environment Config: `.env.local`
 
-```bash
-# 1. Scaffold a new WWV plugin anywhere on your machine
-npx @worldwideview/create-plugin my-custom-layer
-
-# 2. Navigate into your new plugin directory
-cd my-custom-layer
-npm install
-
-# 3. Stream your local plugin directly into a running WorldWideView instance!
-npm run link ../worldwideview
-
-# 4. Check that your configuration is completely valid before publishing
-npm run validate
-```
-
-## LLM Documentation Indexes
-- **[Architecture (architecture.md)](docs/architecture.md)**: Explore the separation of 3D globe primitives from unified DataBus flows.
-- **[Build System (build-system.md)](docs/build-system.md)**: Find compile targets for UI bundles and internal `wwvStaticCompiler` plugin bundling.
-- **[Testing Overview (testing.md)](docs/testing.md)**: Understanding Vitest strategies and isolated typing execution targets.
-- **[Development Patterns (development.md)](docs/development.md)**: View standard hook approaches, Zustand architecture rules, and snippet targets.
-- **[Deployment Workflows (deployment.md)](docs/deployment.md)**: Detailed insights on Next.js standalone execution and persistent database volume arrays.
-- **[Source File Catalog (files.md)](docs/files.md)**: High-level mappings of core ingestion controllers to rendering context interfaces.
+## Documentation Links
+- [Project Overview](docs/project-overview.md) - High-level goals, tech stack, and core value proposition.
+- [Architecture](docs/architecture.md) - Deep dive into event systems, state management, and the plugin ecosystem.
+- [Build System](docs/build-system.md) - Production building requirements, monorepo paths, workspace configurations.
+- [Testing](docs/testing.md) - Vitest framework usage and automated workflow examples.
+- [Development](docs/development.md) - Recommended styles, standard paradigms, and code-formatting limitations.
+- [Deployment](docs/deployment.md) - Server orchestration mechanics regarding Coolify and Docker volumes.
+- [Files Catalog](docs/files.md) - Directory structures mapped strictly to functional application requirements.
