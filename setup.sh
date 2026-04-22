@@ -3,10 +3,17 @@ set -e
 
 echo "🌍 Setting up WorldWideView for local self-hosting..."
 
-# Check if docker is installed
-if ! command -v docker &> /dev/null; then
-    echo "❌ Error: Docker is required but not installed."
-    echo "Please install Docker Desktop or Docker Engine first: https://docs.docker.com/get-docker/"
+# Check if docker is actually available and running
+if ! docker info > /dev/null 2>&1; then
+    echo "❌ Error: Docker is not running or not accessible."
+    echo "If you are on Windows using WSL, ensure Docker Desktop is running and WSL integration is enabled for your default distro."
+    echo "Please install or start Docker Desktop: https://docs.docker.com/get-docker/"
+    exit 1
+fi
+
+# Check for docker compose plugin
+if ! docker compose version > /dev/null 2>&1; then
+    echo "❌ Error: Docker Compose is not installed or accessible."
     exit 1
 fi
 
