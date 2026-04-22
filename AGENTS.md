@@ -101,11 +101,13 @@ Visibility Toggle → DataBusSubscriber subscribes to layer via WsClient
   → Store → EntityRenderer → Globe
 ```
 
-Four plugin architectures exist:
-1. **Static** — GeoJSON file in `public/data/`, loaded by `StaticDataPlugin`
-2. **Active Proxied** — Next.js API routes in `src/app/api/` as CORS proxy
-3. **Microservice** — Standalone Fastify container with SQLite (e.g., `iranwarlive-backend`)
-4. **Dynamic CDN Loaded (Bundle)** — Externally developed plugins dynamically imported at runtime via ES module CDNs (e.g., `unpkg.com` version-pinned URLs). Handled by `loadBundlePlugin` using `import(/* webpackIgnore: true */ entry)`.
+Four plugin architectures exist (All-Bundle Model):
+1. **Data Engine Seeder** — Standalone Fastify container with SQLite microservice or unified seeders (e.g., `iranwarlive-backend`).
+2. **Dynamic CDN Loaded (Bundle)** — Externally developed plugins dynamically imported at runtime via ES module CDNs (e.g., `unpkg.com` version-pinned URLs).
+3. **Static Compiled (Bundle)** — Static GeoJSON data wrapped into JS bundles via `wwvStaticCompiler` during build/sync (previously `StaticDataPlugin`).
+4. **Active Proxied (Bundle)** — Next.js API routes bundled to provide frontend interactions (previously `DeclarativePlugin`).
+
+All plugins are now dynamically imported at runtime as ES module bundles via `loadPluginFromManifest` utilizing `import(/* webpackIgnore: true */ entry)`. The legacy `StaticDataPlugin` and `DeclarativePlugin` runtimes are fully deprecated.
 
 Plugin types are re-exported from SDK through `src/core/plugins/PluginTypes.ts` and `PluginManifest.ts` — **source of truth is always `@worldwideview/wwv-plugin-sdk`**.
 
@@ -128,6 +130,18 @@ Engine push /stream → DataBusSubscriber WsClient router
   → AnimationLoop (horizon culling, hover/selection)
   → StackManager (co-located entity grouping)
 ```
+
+### 4.3.1 Split-Routing (Cloud Fallback)
+
+When a local engine is detected at `localhost:5001`, the frontend fetches its `/manifest` to discover available seeders. Per-plugin routing via `resolveEngineUrl`:
+- Plugin's seeder is in local manifest → `ws://localhost:5001/stream`
+- Plugin's seeder is NOT in local manifest → `wss://dataengine.worldwideview.dev/stream`
+
+This enables core contributors running the public (community) engine locally to see local data for their seeders while proprietary sources (aviation, maritime) continue streaming from the cloud.
+
+The data engine uses a **public upstream / private fork** model:
+- `wwv-data-engine` (public) — community seeders, contributors fork and PR here
+- `wwv-data-engine-internal` (private) — all seeders, deploys to Coolify via `git merge upstream/main`
 
 ### 4.4 Rendering Pipeline
 
@@ -215,6 +229,7 @@ Whenever agents generate temporary debugging scripts, test REST endpoints via `.
 | `NEXT_PUBLIC_BING_MAPS_KEY` | No | Bing Maps imagery |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | No | Google 3D Tiles |
 | `NEXT_PUBLIC_WWV_EDITION` | No | `local` / `cloud` / `demo` (default: `local`) |
+| `NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL` | No | Override engine WebSocket URL (default: cloud) |
 | `OPENSKY_CREDENTIALS` | No | Comma-separated `id:secret` pairs for credential rotation |
 | `WWV_BRIDGE_TOKEN` | No | Shared secret for marketplace → WWV install bridge |
 | `WWV_DEMO_ADMIN_SECRET` | No | Demo edition admin password |
@@ -281,7 +296,10 @@ Configured in `next.config.ts` `headers()`:
 | Repo | Purpose |
 |---|---|
 | `worldwideview` | Main application (this repo) |
+| `wwv-data-engine` | Open-source data engine — community seeders (PUBLIC) |
+| `wwv-data-engine-internal` | Proprietary data engine — all seeders (PRIVATE, deployed to Coolify) |
 | `worldwideview-marketplace` | Plugin marketplace web app |
+| `worldwideview-plugins` | Published npm plugin packages |
 | `worldwideview-web` | Marketing / landing page |
 
 ---
