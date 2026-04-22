@@ -140,6 +140,28 @@ npm run validate
 - **High-Performance Rendering**: Engineered for scale using raw Cesium primitives to smoothly handle upwards of 100,000+ objects simultaneously without GPU stalls.
 - **Cinematic Situational Awareness**: Implements horizon culling, smooth camera tracking, orientation-locked billboarding, and stack spiderification for dense locations.
 
+---
+
+## 🏛 Repository Ecosystem
+
+WorldWideView follows an **Open-Core** philosophy distributed across several independent, specialized repositories:
+
+1. **[worldwideview](https://github.com/silvertakana/worldwideview)** *(This Repo)*
+   The main Next.js frontend, CesiumJS rendering engine, and core plugin loading framework.
+2. **[wwv-data-engine](https://github.com/silvertakana/wwv-data-engine)**
+   The open-source community data backend. It polls public APIs (like ISS tracking or USGS earthquakes) and streams them to the frontend via WebSocket. 
+   *(Note: The official production deployment uses a proprietary internal fork of this engine that includes additional restricted seeders like aviation and maritime).*
+3. **[worldwideview-plugins](https://github.com/silvertakana/worldwideview-plugins)**
+   Our first-party maintained plugins (borders, nuclear sites, military bases, etc.) developed directly by the core team.
+4. **[worldwideview-marketplace](https://github.com/silvertakana/worldwideview-marketplace)**
+   The web application driving the plugin directory and community submissions.
+5. **[worldwideview-web](https://github.com/silvertakana/worldwideview-web)**
+   The marketing, documentation, and landing site.
+
+---
+
+## 🏗 Development & Code Map
+
 ### Key Entry Points
 - UI Loader: `src/components/layout/AppShell.tsx` 
 - Dynamic Plugin Ingestion: `src/core/plugins/loadPluginFromManifest.ts`
