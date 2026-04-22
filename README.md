@@ -21,6 +21,28 @@ WorldWideView is a real-time geospatial engine visualizing live global data on a
 
 ---
 
+## 🛠 Prerequisites
+
+Before starting, ensure you have the required tools installed based on how you want to use WorldWideView:
+- **For Self-Hosting:** You only need Docker.
+- **For Local Development/Contributing:** You need Node.js and `pnpm`.
+
+### Installing Docker (For Self-Hosting)
+- **Windows / Mac:** Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/). *(Windows users: Ensure WSL 2 integration is enabled in Settings > Resources > WSL Integration).*
+- **Linux (Ubuntu/Debian):**
+  ```bash
+  curl -fsSL https://get.docker.com -o get-docker.sh
+  sudo sh get-docker.sh
+  ```
+
+### Installing pnpm (For Developers)
+If you want to contribute to the code, you'll need the `pnpm` package manager:
+- **Windows (PowerShell):** `iwr https://get.pnpm.io/install.ps1 -useb | iex`
+- **Mac / Linux:** `curl -fsSL https://get.pnpm.io/install.sh | sh -`
+- **Or via npm:** `npm install -g pnpm`
+
+---
+
 ## 🐋 Self-Hosting & Production Deployment (Docker)
 
 WorldWideView uses a multi-stage Dockerfile designed for standalone output, natively supporting deployment via Coolify or standard Docker Compose. 
