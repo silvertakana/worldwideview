@@ -113,6 +113,7 @@ npm run validate
 
 ## 🧠 Core Architecture & Philosophies
 
+- **Open-Core Data Engine**: The real-time backend data pipeline operates on a public/private split-routing model. Community seeders (like ISS tracking) live in the open-source `wwv-data-engine`, while proprietary sources seamlessly interleave via our internal cloud endpoints.
 - **Dynamic, Decentralized Plugins**: The plugin ecosystem uses a decentralized architecture fetching ES module CDN bundles (e.g., from unpkg) at runtime. The core engine is a lightweight shell that loads data providers dynamically via the marketplace.
 - **High-Performance Rendering**: Engineered for scale using raw Cesium primitives to smoothly handle upwards of 100,000+ objects simultaneously without GPU stalls.
 - **Cinematic Situational Awareness**: Implements horizon culling, smooth camera tracking, orientation-locked billboarding, and stack spiderification for dense locations.
