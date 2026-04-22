@@ -66,7 +66,7 @@ export function wwvPluginGlobals(): any {
                     const Cesium = globalThis.__WWV_HOST__.Cesium;
                     export default Cesium;
                     // Export common bindings for direct destructuring
-                    export const { Viewer, Entity, Cartesian3, Cartesian2, Color, CallbackProperty, DistanceDisplayCondition, NearFarScalar, HeightReference, Resource, Rectangle, PolygonHierarchy, ClassificationType, ArcType, Math, JulianDate, TimeInterval, TimeIntervalCollection, SampledPositionProperty, GeoJsonDataSource, PinBuilder } = Cesium;
+                    export const { Viewer, Entity, Cartesian3, Cartesian2, Color, CallbackProperty, DistanceDisplayCondition, NearFarScalar, HeightReference, Resource, Rectangle, PolygonHierarchy, ClassificationType, ArcType, Math, JulianDate, TimeInterval, TimeIntervalCollection, SampledPositionProperty, GeoJsonDataSource, PinBuilder, CustomDataSource, ConstantProperty, ColorMaterialProperty, Cartographic } = Cesium;
                 `;
             }
             if (originalId === "resium") {

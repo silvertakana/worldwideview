@@ -110,23 +110,47 @@ Visit `http://localhost:3000` to see the live globe.
 
 ## ⚡ Plugin Development Quick Start
 
-WorldWideView’s architecture means **everything is a plugin**. The core engine is completely data-agnostic. Rather than touching complex 3D rendering code, you can build a plugin that simply pipes a REST API into GeoJSON, and the engine handles the rest!
+WorldWideView’s architecture means **everything is a plugin**. The core engine is completely data-agnostic. You can build your own WorldWideView plugins using the officially supported CLI toolchain.
 
-You can build your own WorldWideView plugins without cloning the main repository using the officially supported CLI toolchain.
-
+### 1. Scaffold your plugin
+The plugin folder is pure code. It contains no Docker boilerplate.
 ```bash
-# 1. Scaffold a new WWV plugin anywhere on your machine
-npx @worldwideview/create-plugin my-custom-layer
-
-# 2. Navigate into your new plugin directory
-cd my-custom-layer
+npx @worldwideview/create-plugin my-layer
+cd my-layer
 npm install
+```
 
-# 3. Stream your local plugin directly into a running WorldWideView instance!
-npm run link ../worldwideview
+### 2. Sideload the plugin into your platform
+The CLI acts as a bridge, injecting your compiled plugin directly into your running WorldWideView instance.
 
-# 4. Check that your configuration is completely valid before publishing
+**If you are running the platform via Docker:**
+Ensure your Docker Compose file has a volume mount exposing the plugin directory:
+`volumes: [ "./my-local-plugins:/app/public/plugins-local" ]`
+And set the environment variable: `WWV_PLUGIN_DEV=true`
+
+Then, tell the CLI where that exposed folder is:
+```bash
+# Save the path so you only have to type it once
+npx wwv config set wwv-path /absolute/path/to/my-local-plugins
+
+# Start the dev server and link the plugin!
+npm run link
+```
+
+**If you cloned the platform repository (`pnpm dev`):**
+```bash
+npx wwv config set wwv-path ../worldwideview
+npm run link
+```
+
+The CLI will start Vite in watch mode. Every time you save a file, it compiles in milliseconds and pushes the update directly into your WorldWideView instance. Refresh your browser to see changes!
+
+### 3. Validate & Publish
+If you are building a simple, static data layer and don't need local testing:
+```bash
 npm run validate
+npm run build
+npm publish
 ```
 
 📖 **[Read the Full Plugin Guide](docs/PLUGIN_GUIDE.md)** for a deep dive into hooking up websockets or static datasets.

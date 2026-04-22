@@ -36,11 +36,11 @@ export async function GET(request: Request) {
             getVerifiedPluginIds(),
         ]);
 
-        // Support local sandbox workflows by checking /public/plugins
+        // Support local sandbox workflows by checking /public/plugins-local
         const localPlugins: any[] = [];
         try {
-            if (process.env.NODE_ENV === "development") {
-                const pluginsDir = path.join(process.cwd(), "public", "plugins");
+            if (process.env.NODE_ENV === "development" || process.env.WWV_PLUGIN_DEV === "true") {
+                const pluginsDir = path.join(process.cwd(), "public", "plugins-local");
                 if (fs.existsSync(pluginsDir)) {
                     for (const folder of fs.readdirSync(pluginsDir)) {
                         const manifestPath = path.join(pluginsDir, folder, "plugin.json");
@@ -61,14 +61,14 @@ export async function GET(request: Request) {
 
         const allRecords = [...records, ...localPlugins];
         
-        console.log(`[Marketplace API] All Records count: ${allRecords.length}`);
+
         
         const manifests = allRecords
             .map((r: any): PluginManifest | null => {
                 try {
                     const manifest = JSON.parse(r.config);
                     if (!manifest.id) manifest.id = r.pluginId;
-                    console.log(`[Marketplace API] Parsed manifest for ${manifest.id} -> format: ${manifest.format}, entry: ${manifest.entry}, dataFile: ${manifest.dataFile}`);
+
                     return manifest as PluginManifest;
                 } catch {
                     return null;

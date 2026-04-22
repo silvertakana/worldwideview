@@ -1,43 +1,26 @@
-<!-- Generated: 2026-04-19 02:20:00 UTC -->
-# WorldWideView - Development Environment
+<!-- Generated: 2026-04-19 15:23:00 UTC -->
+# Development
 
-## Overview
-Active repository development centers around a pnpm workspaces monorepo containing a Next.js application interacting heavily with internal plugin directories.
+Development on WorldWideView leverages modern, rigid structural constraints to ensure cross-plugin consistency, extreme browser optimization, and a minimal global footprint. 
+
+New features are designed within isolated workspaces, using SDK structures rather than forcing logic into the core engine.
 
 ## Code Style
-- **TypeScript First**: Strict mode forced globally.
-- **Vanilla CSS**: Absolutely no tailwind. Native CSS Modules `[name].module.css` or global variables only.
-- **File Limits**: Modules should be constrained to 150 lines. Components should be decomposed recursively past this point.
+- **TypeScript Strictness:** Strict types are enforced across all domains (`tsconfig.json` lines 4-20). Any use of `any` inside platform routers is forbidden.
+- **Styling constraints:** All CSS is strictly limited to Vanilla CSS via CSS Modules (`.module.css`). Tailwind is prohibited to prevent styling collisions natively with dynamically loaded elements from third-party plugins. (`src/app/globals.css`).
 
 ## Common Patterns
-
-### Unified Data Ingest (DataBus)
-Avoid manual React fetch intervals. Instead rely on the pub/sub singleton:
+- **Env Variable Injection:** Plugins read remote contexts generically instantiated via the SDK.
 ```typescript
-// See: src/core/data/DataBus.ts 
-DataBus.getInstance().emit('dataUpdated', { 
-    pluginId: "myplugin", 
-    entities: [] 
-});
+// From wwv-plugin-aviation/src/index.ts:60-70
+let engineBase = this.context?.env?.DATA_ENGINE_URL || "https://dataengine.worldwideview.dev";
 ```
-
-### Zustand Slices
-Global application state is segregated by explicit context domains.
-```typescript
-// From src/core/state/layersSlice.ts
-export const createLayersSlice: StateCreator<LayersSlice> = (set) => ({
-    activeLayers: [],
-    toggleLayer: (id) => set(...)
-})
-```
+- **Zustand Slices:** The store is heavily splintered based on structural domain, keeping the hook listeners granular so mapping updates don't aggressively trigger `AppShell` root rerenders. (`src/core/state/globeSlice.ts`).
 
 ## Workflows
-1. Run `pnpm dev:all` when needing the UI and backend seeder modules to parallel execute.
-2. **Creating Plugins**: Use the standalone CLI `npx @worldwideview/create-plugin <name>` to scaffold new plugins without cloning the main repository.
-3. **Linking Plugins**: Run `npm run link ../worldwideview` (which calls `wwv link`) inside your plugin to stream live Vite output into the engine development server.
-4. **Validating Plugins**: Run `npm run validate` (which calls `wwv validate`) to ensure your `package.json` manifest strictly follows WorldWideView rules before publishing.
+- **Local Database Setup:** Run `pnpm db:reset` to nuke and redeploy the standard Prisma schema across `data/wwv.db`.
+- **Generating Plugins:** Use the global CLI `npx @worldwideview/create-plugin@latest <name>` to initialize a decoupled plugin outside of the monorepo.
+- **Linking Plugins:** Use `npm run link` in the plugin directory after setting `npx wwv config set wwv-path <path>`.
 
 ## Reference
-- **All-Bundle Registry Manager**: `src/core/plugins/PluginManager.ts`
-- **Auth Provider**: `src/lib/auth.ts`
-- **Main App Shell**: `src/components/layout/AppShell.tsx`
+File size is constrained to a 150-line soft cap. Hooks and computational math helpers must be rigorously offloaded (e.g. `src/core/globe/hooks/useModelRendering.ts`).

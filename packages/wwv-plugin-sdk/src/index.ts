@@ -178,6 +178,16 @@ export interface ServerPluginConfig {
 // All plugins (built-in and 3rd party) receive the same context.
 export interface PluginContext {
     apiBaseUrl: string;
+    /** 
+     * Key-value map of generic environment variables.
+     * The engine surfaces any variable starting with NEXT_PUBLIC_WWV_PLUGIN_
+     * 
+     * WARNING: These are exposed to the client-side browser bundle. 
+     * DO NOT USE THIS FOR API KEYS. For sensitive tokens, use getSecret() if provided.
+     */
+    env: Record<string, string>;
+    /** The running edition of the WWV engine */
+    edition: "local" | "cloud" | "demo";
     timeRange: TimeRange;
     onDataUpdate: (entities: GeoEntity[]) => void;
     onError: (error: Error) => void;
@@ -260,3 +270,4 @@ export type DataBusEvents = {
 };
 
 export * from "./viteGlobals";
+export { wwvStaticCompiler } from "./vite/wwvStaticCompiler";
