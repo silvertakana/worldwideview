@@ -10,6 +10,7 @@ import { getVerifiedPluginIds } from "@/lib/marketplace/registryClient";
 
 import { isDemo, isDemoAdmin } from "@/core/edition";
 import { auth } from "@/lib/auth";
+import { seedDefaultPlugins } from "@/lib/marketplace/seedDefaultPlugins";
 
 export async function OPTIONS(request: Request) {
     return handlePreflight(request);
@@ -24,6 +25,9 @@ export async function OPTIONS(request: Request) {
  * from the verified list are correctly flagged as unverified.
  */
 export async function GET(request: Request) {
+    // Seed default plugins on fresh installs (idempotent — runs once)
+    await seedDefaultPlugins();
+
     // On demo, all installed plugins are visible to everyone (admin vetted them)
     if (!isDemo) {
         const authError = await validateMarketplaceAuth(request);
