@@ -3,12 +3,4 @@
  * Used by the status endpoint to always report these as "installed"
  * even when they haven't been installed via the marketplace flow.
  */
-export const BUILT_IN_PLUGIN_IDS = [
-    "aviation",
-    "maritime",
-    "military-aviation",
-    "wildfire",
-    "camera",
-    "borders",
-    "osm-search",
-] as const;
+export const BUILT_IN_PLUGIN_IDS = [] as const;
