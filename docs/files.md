@@ -1,25 +1,33 @@
-<!-- Generated: 2026-04-19 15:23:00 UTC -->
+<!-- Generated: 2026-04-23 06:11:00 UTC -->
 # Files Catalog
 
-WorldWideView maps rigid structural directories to manage its layered microservice architecture, distinguishing tightly between UI layout routing, system memory, 3D visualization, and microservice ingestion mechanisms.
+## Overview
+WorldWideView is structured as a pnpm monorepo. The primary application resides in the root `src/` directory, while external dependencies, plugins, and the core Plugin SDK are abstracted into the `packages/` directory.
 
-Every major component is siloed deeply to ensure the monolithic main engine remains perfectly isolated and agnostic to individual data sources. 
+The system is highly modularized to separate React UI rendering from heavy CesiumJS 3D operations and high-frequency real-time WebSocket state management.
 
 ## Core Source Files
-- `src/app/` - The Next.js 16 core routing platform, housing layout constraints, `api/` backends, and full-screen auth portals.
-- `src/components/` - Segmented React JSX components handling overlay panels, timeline UI, and floating popups.
-- `src/core/plugins/` - Essential bridge scripts that validate manifested metadata parameters before dynamically allocating JS module environments to run external logic. (`PluginManager.ts`)
+- `src/app/` - The Next.js App Router entry points. Contains `layout.tsx` (the core React shell), `page.tsx` (the globe view), and `/api/` (server-side NextAuth and API handlers).
+- `src/core/plugins/PluginManager.ts` - Central orchestration unit for dynamic plugins. Handles loading, lifecycle (`initialize`, `destroy`), and manifest resolution.
+- `src/core/globe/GlobeView.tsx` - The primary CesiumJS container. It memoizes Zustand state to prevent heavy re-renders while injecting `EntityRenderer` primitives.
+- `src/core/data/DataBus.ts` - Singleton pub/sub event bus handling all high-velocity WebSocket stream events without triggering React re-renders.
+- `src/core/state/store.ts` - The primary Zustand state registry exporting all nine discrete slices (`globe`, `layers`, `timeline`, `ui`, `filter`, `data`, `config`, `favorites`, `geojson`).
 
 ## Platform Implementation
-- `src/core/globe/GlobeView.tsx` - Initializer mapping global config hooks to the main Cesium `Viewer`.
-- `src/core/globe/EntityRenderer.tsx` - Extremely hot processing loop extracting Zustand state variables directly to WebGL GPU hardware calls via Cesium Primitives.
-- `src/core/globe/StackManager.ts` - Spiderifier spatial engine dynamically resolving overlapping coordinate markers geometrically in 3D-space.
+- `src/core/plugins/loaders/InstalledPluginsLoader.ts` - Platform-specific loader that dynamically injects ES module CDNs via `import(/* webpackIgnore: true */)`.
+- `src/core/globe/hooks/useCameraActions.ts` - Abstraction connecting React UI logic to raw CesiumJS camera math (flyTo, lookAt).
+- `src/lib/edition.ts` - Platform edition configuration. Exposes runtime feature flags for `local`, `cloud`, and `demo` deployments.
 
 ## Build System
-- `Dockerfile` - Multi-stage container instructions targeting a 110MB production Alpine build footprint.
-- `next.config.ts` - NextJS 16 overrides forcing standalone rendering extraction and tight CSP headers.
-- `prisma/schema.prisma` - DB tables strictly configuring Prisma to bind exclusively towards locally-mounted SQLite structures.
+- `package.json` - Root monorepo configuration with `pnpm` workspace bindings.
+- `next.config.ts` - Next.js compiler settings, security headers, and standalone output configuration.
+- `docker-compose.yml` - Defines the orchestration of the frontend, Redis cache, and all local plugin microservice backends (`wwv-data-engine`).
 
 ## Configuration
-- `.agents/` - Complete repository workflow configuration (Antigravity Code). Contains AI `rules/`, `skills/`, and internal architectural `context/` for automatic coordination. 
-- `public/cesium/` - Runtime engine bundles duplicated exclusively during pre-build tracking (copied from `node_modules`).
+- `prisma/schema.prisma` - Local SQLite and cloud PostgreSQL database schema for storing user settings and installed plugin manifests.
+- `scripts/copy-cesium.mjs` - Crucial build-time script that extracts and copies CesiumJS static web workers to `public/cesium/`.
+- `public/` - Static assets, plugin icons, and compiled Cesium workers.
+
+## Reference
+- **Plugins Directory:** All plugins conform to the `@worldwideview/wwv-plugin-sdk` interface and are developed inside `packages/wwv-plugin-<name>/`.
+- **Microservices Directory:** Standalone Fastify backends are nested within `packages/wwv-plugin-<name>/backend/`.
