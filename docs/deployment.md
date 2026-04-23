@@ -1,18 +1,34 @@
-<!-- Generated: 2026-04-19 15:23:00 UTC -->
+<!-- Generated: 2026-04-23 06:11:00 UTC -->
 # Deployment
 
-WorldWideView is container-first. The codebase relies entirely on Dockerizing the Next.js `output: "standalone"` artifact and its localized Prisma SQLite core to enable horizontal orchestration.
-
-Deployments are coordinated directly via Coolify natively compiling the Docker configurations.
+## Overview
+WorldWideView utilizes a containerized deployment strategy based on Docker's multi-stage builds. To minimize the footprint of the Next.js runtime, it leverages the Next.js `standalone` output trace, effectively dropping unnecessary development dependencies and generating a highly optimized Node.js artifact.
 
 ## Package Types
-- **Next.js Core Bundle:** Built directly via `pnpm build`, extracting into `<root>/.next/standalone`.
-- **Plugin Microservices:** Hosted alongside the Next.js router natively using Fastify images (defined in `docker-compose.yml`), enabling real-time Python/Node scraping backends exclusively connected via docker network aliases.
-- **CDN ESM Bundles:** Independent frontend plugins run via Vite rollup configurations (`vite.config.ts`), generating `dist/frontend.mjs` payloads published to the public NPM registry.
+
+### Main Application
+- **Build Output:** Located at `.next/standalone/`.
+- **Static Assets:** Cesium static workers are injected at build time via `scripts/copy-cesium.mjs`.
+
+### Plugin Microservices
+- Standalone plugin backends (e.g., `wwv-plugin-iranwarlive/backend`) are isolated via individual `Dockerfile` configurations and orchestrated together in production using `docker-compose.yml`.
 
 ## Platform Deployment
-- **Dockerfile:** `Dockerfile` explicitly targets `node:22-alpine` instances to restrict vulnerability surface areas while mapping the necessary system volume at `/app/data` to capture the `wwv.db` SQLite instantiation safely out-of-container (lines 80-112).
-- **Environment Hydration:** Coolify directly passes the active environment headers `.env` values at runtime, utilizing `.env.local` natively for credentials like `AUTH_SECRET` and `DATABASE_URL`.
+
+### Coolify Integration
+WorldWideView deploys optimally to Coolify using a Dockerfile builder.
+- **Environment Variables:** Must be explicitly mapped in the Coolify UI (e.g., `DATABASE_URL`, `AUTH_SECRET`).
+- **Persistent Storage:** SQLite requires a persistent volume mounted to `/app/data` to ensure the frontend registry (installed plugins, user configs) survives container rebuilds.
+- **Microservices Deployment:** The `wwv-data-engine-internal` and associated plugin seeders are deployed as separate Coolify services communicating over private internal networks.
+
+### Docker Structure
+- **Dockerfile:** Found at the project root (`Dockerfile`). Uses an Extractor Pattern (`deps` → `builder` → `runner`). The `.git` and `node_modules` folders must be explicitly untracked to prevent cache overlap.
+- **Compose:** Local multi-container emulation is handled via `docker-compose.yml`.
 
 ## Reference
-The core production mapping operates cleanly off HTTP port `3000`. Refer to `next.config.ts` (lines 5-15) for strict caching strategies utilized globally across deployments.
+- **Standalone Config:** `next.config.ts` (sets `output: "standalone"`).
+- **Prisma Export:** `prisma.config.ts` ensures no CLI wrappers are invoked inside the standalone container, preventing fatal `MODULE_NOT_FOUND` runtime crashes.
+- **Docker Mounts:** 
+  - Main App: `/app/data` (SQLite DB)
+  - Data Engine: `/app/packages/wwv-data-engine/data` (SQLite DB)
+  - Cache: `/data` (Redis)
