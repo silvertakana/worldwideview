@@ -1,22 +1,25 @@
-<!-- Generated: 2026-04-19 02:20:00 UTC -->
-# WorldWideView - Testing
+<!-- Generated: 2026-04-19 15:23:00 UTC -->
+# Testing
 
-## Overview
-WWV relies on `Vitest` with a `jsdom` testing environment to mock frontend primitives. Testing primarily covers isolated core modules and strict typescript typings rather than E2E Cesium testing to minimize pipeline fragility.
+WorldWideView maintains a robust Vitest testing infrastructure utilizing `jsdom` environments to mock browser globals and React Testing Library utilities for accurate integration flow testing.
+
+The primary requirement is full test coverage over authentication routes, edge-case platform parsing, and API rate-limit security.
 
 ## Test Types
-- **SDK Typing Asserts**: Ensuring plugin schemas validate against the zod structure perfectly (`PluginManifest.ts`).
-- **Core Library Services**: Testing ratelimiting, backend marketplace sync APIs, and authentication flows.
-- **Component Behaviors**: Testing UI slice changes in Zustand independently of UI components.
-- **Plugin Registries**: Verifying trust verification logic inside `PluginManager.ts`.
+- **Unit Logic:** Verifies math, utilities, and configuration mappings (e.g. `edition.test.ts`).
+- **Middleware Integration:** Evaluates Request/Response blocks (e.g. `rateLimit.test.ts`).
+- **Component Mocking:** Exercises the React ecosystem state behaviors (e.g. `DeclarativePlugin.test.ts`).
+
+## Key Files
+- `vitest.config.ts` (lines 5-25): Defines the inclusion criteria spanning `src/lib/**`, `src/core/**`, and `src/plugins/**`.
+- `src/lib/rateLimit.test.ts` (lines 15-60): Demonstrates test encapsulation regarding the Upstash Redis fallbacks.
+- `src/core/edition.test.ts` (lines 10-30): Confirms valid feature flag evaluations across local/demo builds.
 
 ## Running Tests
-Run all tests efficiently using Vitest:
+Run tests natively within the root directory utilizing `pnpm`:
 ```bash
+# Execute standard test suite runs over all watched directories
 pnpm test
+# OR
+vitest run
 ```
-
-## Reference
-- Test execution script maps to standard: `vitest run`
-- Core tests are scoped inside isolated plugin files (e.g., `packages/wwv-plugin-sdk/src/*.test.ts`) and `src/lib/*.test.ts`.
-- Important test: `src/lib/rateLimit.test.ts` (API route protection).

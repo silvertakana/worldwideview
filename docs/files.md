@@ -1,21 +1,25 @@
-<!-- Generated: 2026-04-19 02:20:00 UTC -->
-# WorldWideView - Files Catalog
+<!-- Generated: 2026-04-19 15:23:00 UTC -->
+# Files Catalog
 
-## Overview
-The codebase separates Next.js UI routing from highly complex custom engine modules. The primary domain is completely driven by an extensive, plug-and-play ES Module ingestion platform.
+WorldWideView maps rigid structural directories to manage its layered microservice architecture, distinguishing tightly between UI layout routing, system memory, 3D visualization, and microservice ingestion mechanisms.
+
+Every major component is siloed deeply to ensure the monolithic main engine remains perfectly isolated and agnostic to individual data sources. 
 
 ## Core Source Files
-- [src/core/plugins/PluginManager.ts](../src/core/plugins/PluginManager.ts): Handles runtime tracking of plugins and lifecycle states (enabled/disabled).
-- [src/core/plugins/loadPluginFromManifest.ts](../src/core/plugins/loadPluginFromManifest.ts): Orchestrates the dynamic bundle importing (All-Bundle format engine loader).
-- [src/core/data/DataBus.ts](../src/core/data/DataBus.ts): Manages all data ingestion distribution.
-- [src/core/globe/GlobeView.tsx](../src/core/globe/GlobeView.tsx): Cesium Resium primary mount component handling camera and context.
-- [src/core/globe/EntityRenderer.tsx](../src/core/globe/EntityRenderer.tsx): Handles rendering Point/Billboard instances efficiently to the Cesium context.
+- `src/app/` - The Next.js 16 core routing platform, housing layout constraints, `api/` backends, and full-screen auth portals.
+- `src/components/` - Segmented React JSX components handling overlay panels, timeline UI, and floating popups.
+- `src/core/plugins/` - Essential bridge scripts that validate manifested metadata parameters before dynamically allocating JS module environments to run external logic. (`PluginManager.ts`)
 
-## Build System & Internal Monorepo Packages
-- [packages/wwv-plugin-sdk/src/manifest.ts](../packages/wwv-plugin-sdk/src/manifest.ts): Core metadata interface.
-- [next.config.ts](../next.config.ts): Handles CSP, module transpilation, and redirects.
-- [scripts/copy-cesium.mjs](../scripts/copy-cesium.mjs): Static asset distributor needed for local execution.
+## Platform Implementation
+- `src/core/globe/GlobeView.tsx` - Initializer mapping global config hooks to the main Cesium `Viewer`.
+- `src/core/globe/EntityRenderer.tsx` - Extremely hot processing loop extracting Zustand state variables directly to WebGL GPU hardware calls via Cesium Primitives.
+- `src/core/globe/StackManager.ts` - Spiderifier spatial engine dynamically resolving overlapping coordinate markers geometrically in 3D-space.
+
+## Build System
+- `Dockerfile` - Multi-stage container instructions targeting a 110MB production Alpine build footprint.
+- `next.config.ts` - NextJS 16 overrides forcing standalone rendering extraction and tight CSP headers.
+- `prisma/schema.prisma` - DB tables strictly configuring Prisma to bind exclusively towards locally-mounted SQLite structures.
 
 ## Configuration
-- [prisma/schema.prisma](../prisma/schema.prisma): SQLite database mappings tracking locally registered plugins and settings.
-- [.agents/rules](../.agents/rules): Domain-centric constraints guiding LLM operation inside this repo.
+- `.agents/` - Complete repository workflow configuration (Antigravity Code). Contains AI `rules/`, `skills/`, and internal architectural `context/` for automatic coordination. 
+- `public/cesium/` - Runtime engine bundles duplicated exclusively during pre-build tracking (copied from `node_modules`).

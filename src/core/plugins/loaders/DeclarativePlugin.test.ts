@@ -114,6 +114,8 @@ describe("DeclarativePlugin", () => {
             getPluginSettings: () => undefined,
             isPlaybackMode: () => false,
             getCurrentTime: () => new Date(),
+            env: {},
+            edition: "local",
         });
 
         const entities = await plugin.fetch({ start: new Date(), end: new Date() });

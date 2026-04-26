@@ -1,27 +1,25 @@
-<!-- Generated: 2026-04-19 02:20:00 UTC -->
-# WorldWideView - Architecture
+<!-- Generated: 2026-04-19 15:23:00 UTC -->
+# System Architecture
 
-## Overview
-WorldWideView fundamentally separates the core 3D spatial rendering engine from the data ingest protocols. It achieves this primarily through a custom 'Data Engine' that funnels external data directly into a local state via WebSocket streams and a strict 'All-Bundle' dynamic plugin loader.
+WorldWideView operates on a decoupled Core-and-Plugin architecture. The central platform provides the 3D globe, HUD, timeline, and rendering optimizations, while separate intelligence domains are entirely handled by external plugin packages that are bundled and ingested at runtime.
 
-UI features conform strictly to a VS Code-style extension pipeline using capability declarations rather than deeply coupling into monolithic application code.
+The underlying data backbone uses a WebSocket Firehose, streaming continuous high-frequency metrics from standalone data engine microservices perfectly isolated from the visualization layer.
 
 ## Component Map
-- **Globe Core**: The Cesium 3D canvas and interaction loops. (`src/core/globe/GlobeView.tsx`)
-- **Plugin Registry**: Registration, validation, and execution pipeline for all 3rd party components. (`src/core/plugins/PluginManager.ts`)
-- **Event Bus Pipeline**: High-throughput web socket translation. (`src/core/data/DataBus.ts`)
-- **Store**: Unified state for UI and filtering. (`src/core/state/`)
-- **Data Engine**: The backend container managing persistent Redis caching and sqlite history (`packages/wwv-data-engine/`).
+- **UI Platform:** `src/components/layout/AppShell.tsx`
+- **3D Visualizer:** `src/core/globe/GlobeView.tsx`
+- **State Store:** `src/core/state/globeSlice.ts` and peers.
+- **Event Bus:** `src/core/data/DataBus.ts`
+- **Microservice Connectors:** `packages/wwv-plugin-sdk/src/PluginManifest.ts`
 
 ## Key Files
-- [src/core/plugins/loadPluginFromManifest.ts](../src/core/plugins/loadPluginFromManifest.ts): Fetches bundle plugins asynchronously from CDN or local storage and triggers their init sequence.
-- [packages/wwv-plugin-sdk/src/manifest.ts](../packages/wwv-plugin-sdk/src/manifest.ts): Core typing definitions for `PluginManifest` and capability enums.
-- [src/core/data/DataBus.ts](../src/core/data/DataBus.ts): Manages `dataUpdated` and websocket frame distribution events.
+- `src/core/globe/GlobeView.tsx` (lines 60-150): The central CesiumJS ingestion point and scene orchestrator.
+- `src/core/globe/EntityRenderer.tsx` (lines 45-120): High-performance batched Primitive mapping for geometric entities.
+- `src/core/plugins/PluginManager.ts` (lines 20-100): Validates and bootstraps compiled ES Modules from CDN/local sources.
 
 ## Data Flow
-1. User activates a Plugin via UI (triggers `activationEvents`).
-2. `PluginManager` invokes `loadPluginFromManifest.ts` which uses ES imports.
-3. Once active, the plugin connects to its data source (or the central WebSocket).
-4. Raw data hits `DataBusSubscriber` -> emitted to `DataBus.emit("dataUpdated")`.
-5. The `Zustand` store's `dataSlice.ts` captures this, structuring by plugin ID.
-6. The `EntityRenderer.tsx` diffs the new state and renders primitives.
+The real-time data flow triggers globally via WebSockets:
+1. `src/lib/WsClient.ts` captures the socket frame from `dataengine.worldwideview.dev`.
+2. Emits payload through `src/core/data/DataBus.ts` (lines 30-50).
+3. The `DataBusSubscriber.tsx` hook catches the event, sanitizing and merging the data into `src/core/state/dataSlice.ts`.
+4. `EntityRenderer` automatically reacts to State changes, triggering low-level Cesium Primitive re-draws against the GPU.

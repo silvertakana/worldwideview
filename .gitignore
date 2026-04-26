@@ -80,7 +80,7 @@ packages/*/dist/
 
 # Developmental scripts & temporary sandbox
 /local-scripts/
-/public/plugins/
+/public/plugins-local/
 
 # git worktrees
 /.worktrees/

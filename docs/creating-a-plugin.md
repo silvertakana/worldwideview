@@ -21,63 +21,45 @@ There are **three plugin formats**:
 ## Prerequisites
 
 - Node.js ≥ 18
-- pnpm (`npm install -g pnpm`)
-- A npm account (for publishing to the npm registry)
-- The WorldWideView monorepo cloned locally
+- An NPM account (for publishing)
+- A running WorldWideView instance (local clone or Docker container)
 
 ---
 
-## Step 1 — Create Your Plugin Package
+## Step 1 — Scaffold Your Plugin
 
-All plugins live under `packages/` in the monorepo.
+WorldWideView plugins are strictly decoupled from the core application. You do **not** build them inside the WorldWideView monorepo. Instead, use the official CLI tool:
 
 ```bash
-mkdir packages/wwv-plugin-my-data
-cd packages/wwv-plugin-my-data
+npx @worldwideview/create-plugin@latest my-data-layer
+cd my-data-layer
+npm install
 ```
 
-Create `package.json`:
+This will generate a ready-to-use template including your `package.json`, `plugin.json`, and Vite build configuration. 
 
-```json
-{
-  "name": "@worldwideview/wwv-plugin-my-data",
-  "version": "1.0.0",
-  "description": "WorldWideView plugin — my custom data layer",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
-  "files": ["src"],
-  "keywords": [
-    "worldwideview",
-    "worldwideview-plugin",
-    "geojson",
-    "cesium",
-    "globe"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/silvertakana/worldwideview.git",
-    "directory": "packages/wwv-plugin-my-data"
-  },
-  "license": "ISC",
-  "author": "WorldWideView",
-  "peerDependencies": {
-    "@worldwideview/wwv-plugin-sdk": "*"
-  },
-  "worldwideview": {
-    "id": "my-data",
-    "icon": "MapPin",
-    "category": "Custom",
-    "format": "bundle"
-  }
-}
-```
+### Linking During Development
+
+To see your plugin live on the globe while you develop:
+
+1. Configure your CLI to point to your running WorldWideView instance:
+   ```bash
+   npx wwv config set wwv-path C:\path\to\your\worldwideview
+   ```
+2. Link the plugin:
+   ```bash
+   npm run link
+   ```
+3. Run the dev watcher to rebuild on save:
+   ```bash
+   npm run dev
+   ```
+
+*Note: If you are running WorldWideView via Docker, ensure `WWV_PLUGIN_DEV=true` is set in your environment variables and mount your plugin's `dist/` folder into the container's `/app/plugins-local/` directory.*
 
 > [!IMPORTANT]
-> The `"worldwideview"` object block is strictly required if you intend to publish your plugin to the WorldWideView Marketplace. The marketplace uses this internal manifest to determine how to categorize and display your plugin automatically.
+> The `worldwideview` object block inside your `package.json` is strictly required for the CLI link command and if you intend to publish your plugin to the WorldWideView Marketplace. The marketplace uses this internal manifest to determine how to categorize and display your plugin automatically.
 > * `id`: The unique string identifier.
-> * `icon`: The Lucide React icon name (e.g. `MapPin`, `Satellite`, `Plane`).
-> * `category`: Must match an existing category (e.g. `Aviation`, `Maritime`, `Natural Disaster`, `Custom`).
-> * `format`: Either `bundle`, `static`, or `declarative`.
 
 > [!IMPORTANT]
 > The SDK is declared as a **peer dependency**, not a direct dependency. The host application provides it at runtime.

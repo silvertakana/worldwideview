@@ -6,6 +6,7 @@ import { dataBus } from "@/core/data/DataBus";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { wsClient } from "@/core/data/WsClient";
 import { resolveEngineUrl } from "@/core/data/resolveEngineUrl";
+import { fetchLocalEngineManifest } from "@/core/data/engineManifest";
 
 /**
  * Subscribes to DataBus events and syncs state.
@@ -18,6 +19,8 @@ export function DataBusSubscriber() {
     const cacheMaxAge = useStore((s) => s.dataConfig.cacheMaxAge);
 
     useEffect(() => {
+        // Detect local engine before subscribing to plugins
+        fetchLocalEngineManifest();
         pluginManager.setCacheMaxAge(cacheMaxAge);
     }, [cacheMaxAge]);
 
