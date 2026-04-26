@@ -1,0 +1,14 @@
+{
+  "id": "iss-tracker",
+  "name": "IssTracker",
+  "version": "1.0.0",
+  "description": "A custom WorldWideView plugin",
+  "type": "data-layer",
+  "format": "bundle",
+  "trust": "unverified",
+  "capabilities": ["data:own"],
+  "category": "custom",
+  "icon": "📍",
+  "entry": "dist/frontend.mjs",
+  "backend": "dist/backend.mjs"
+}

@@ -1,0 +1,28 @@
+{
+  "name": "wwv-plugin-iss-tracker",
+  "version": "1.0.0",
+  "description": "WorldWideView plugin: IssTracker",
+  "type": "module",
+  "module": "dist/frontend.mjs",
+  "files": ["dist"],
+  "worldwideview": {
+    "id": "iss-tracker"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "wwv sandbox",
+    "validate": "wwv validate",
+    "link": "wwv link",
+    "deploy:backend": "wwv deploy-backend"
+  },
+  "devDependencies": {
+    "@worldwideview/cli": "*",
+    "@worldwideview/wwv-plugin-sdk": "*",
+    "vite": "^6.0.0",
+    "rollup-plugin-external-globals": "^0.12.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}
