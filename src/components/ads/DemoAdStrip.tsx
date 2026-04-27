@@ -14,6 +14,9 @@ const BOTTOM_AD_SLOT = "6006554079";
 /** Width of the ad strip — must match the CSS value. */
 const AD_STRIP_WIDTH = 160;
 
+/** Toggle to temporarily disable ads in the demo edition. */
+const ENABLE_ADS = false;
+
 export function DemoAdStrip() {
     const [showMessage, setShowMessage] = useState(false);
     const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -42,7 +45,7 @@ export function DemoAdStrip() {
     // Set the --ad-strip-inset CSS variable on the page root
     // so fixed-position panels (header, timeline) stay within bounds.
     useEffect(() => {
-        if (!isDemo) return;
+        if (!isDemo || !ENABLE_ADS) return;
         const root = document.querySelector(".page-root") as HTMLElement | null;
         if (root) root.style.setProperty("--ad-strip-inset", `${AD_STRIP_WIDTH}px`);
         return () => {
@@ -50,7 +53,7 @@ export function DemoAdStrip() {
         };
     }, []);
 
-    if (!isDemo) return null;
+    if (!isDemo || !ENABLE_ADS) return null;
 
     return (
         <aside 
