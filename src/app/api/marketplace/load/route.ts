@@ -11,6 +11,7 @@ import { getVerifiedPluginIds } from "@/lib/marketplace/registryClient";
 import { isDemo, isDemoAdmin } from "@/core/edition";
 import { auth } from "@/lib/auth";
 import { seedDefaultPlugins } from "@/lib/marketplace/seedDefaultPlugins";
+import * as Sentry from "@sentry/nextjs";
 
 export async function OPTIONS(request: Request) {
     return handlePreflight(request);
@@ -100,7 +101,18 @@ export async function GET(request: Request) {
                 // For anything that looks like a real manifest, validate it and log if it fails
                 const validation = validateManifest(m);
                 if (!validation.valid) {
-                    console.error(`[Marketplace API] Manifest validation failed for ${m.id}:`, validation.errors);
+                    const errorMessage = `Manifest validation failed for ${m.id}`;
+                    console.error(`[Marketplace API] ${errorMessage}:`, validation.errors);
+                    
+                    // Capture in Sentry so we have visibility into malformed third-party plugins
+                    Sentry.captureMessage(errorMessage, {
+                        level: "error",
+                        extra: {
+                            pluginId: m.id,
+                            validationErrors: validation.errors,
+                            manifest: m
+                        }
+                    });
                 }
                 return validation.valid;
             })
