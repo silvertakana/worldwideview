@@ -87,3 +87,6 @@ packages/*/dist/
 
 # proprietary extracted services
 packages/wwv-data-engine/
+
+# IDE workspace files
+*.code-workspace
