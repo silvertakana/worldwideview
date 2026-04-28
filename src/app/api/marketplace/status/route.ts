@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { validateMarketplaceAuth } from "@/lib/marketplace/auth";
 import { getInstalledPlugins } from "@/lib/marketplace/repository";
 import { handlePreflight, withCors } from "@/lib/marketplace/cors";
-import { BUILT_IN_PLUGIN_IDS } from "@/lib/marketplace/builtinPlugins";
 import { marketplaceApiLimiter } from "@/lib/rateLimiters";
 import { getClientIp } from "@/lib/rateLimit";
 import { isDemo, isDemoAdmin } from "@/core/edition";
@@ -31,17 +30,7 @@ export async function GET(request: Request) {
         // Collect active DB plugins (exclude disabled ones)
         const activeDbPlugins = dbPlugins.filter((p: any) => p.enabled !== false);
 
-        // Add built-in plugins that aren't in the DB at all (default = installed)
-        const builtInRecords = BUILT_IN_PLUGIN_IDS
-            .filter((id) => !dbMap.has(id))
-            .map((id) => ({
-                pluginId: id,
-                version: "built-in",
-                config: "{}",
-                installedAt: "",
-            }));
-
-        const plugins = [...activeDbPlugins, ...builtInRecords];
+        const plugins = activeDbPlugins;
 
         let canManagePlugins = !isDemo;
         if (isDemo) {
@@ -52,21 +41,13 @@ export async function GET(request: Request) {
         return withCors(NextResponse.json({ plugins, canManagePlugins }), request);
     } catch (err) {
         console.error("[marketplace/status] Error:", err);
-        // Fallback: return built-in plugins when DB is unavailable
-        const fallback = BUILT_IN_PLUGIN_IDS.map((id) => ({
-            pluginId: id,
-            version: "built-in",
-            config: "{}",
-            installedAt: "",
-        }));
-        
         let canManagePlugins = !isDemo;
         if (isDemo) {
             const authError = await validateMarketplaceAuth(request);
             canManagePlugins = authError === null;
         }
         
-        return withCors(NextResponse.json({ plugins: fallback, canManagePlugins }), request);
+        return withCors(NextResponse.json({ plugins: [], canManagePlugins }), request);
     }
 }
 

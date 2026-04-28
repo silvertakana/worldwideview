@@ -12,13 +12,41 @@ if (!branchName) {
 }
 
 const rootDir = process.cwd();
-const worktreeDirName = branchName.replace(/\//g, '-');
-const worktreePath = path.join(rootDir, '.worktrees', worktreeDirName);
 
-// 2. Validate worktree exists
+// 2. Find worktree path dynamically
+let worktreePath = null;
+try {
+  const output = execSync('git worktree list --porcelain', { encoding: 'utf8' });
+  const blocks = output.trim().split(/\r?\n\r?\n/);
+  
+  for (const block of blocks) {
+    const lines = block.split(/\r?\n/);
+    const wtPathLine = lines.find(l => l.startsWith('worktree '));
+    const branchLine = lines.find(l => l.startsWith('branch '));
+    
+    if (wtPathLine && branchLine) {
+      const currentBranch = branchLine.substring('branch refs/heads/'.length);
+      if (currentBranch === branchName) {
+        worktreePath = wtPathLine.substring('worktree '.length);
+        break;
+      }
+    }
+  }
+} catch (err) {
+  console.warn('\x1b[33mWarning: Failed to parse git worktree list.\x1b[0m');
+}
+
+// Fallback to legacy behavior if not found via git
+if (!worktreePath) {
+  const worktreeDirName = branchName.replace(/\//g, '-');
+  worktreePath = path.join(rootDir, '.worktrees', worktreeDirName);
+}
+
+// 3. Validate worktree exists
 if (!fs.existsSync(worktreePath)) {
-  console.error(`\x1b[31mError: Worktree directory not found at ${worktreePath}\x1b[0m`);
-  console.error(`Ensure you have created it using 'git worktree add .worktrees/${worktreeDirName} -b ${branchName}'`);
+  console.error(`\x1b[31mError: Worktree directory not found for branch '${branchName}'\x1b[0m`);
+  console.error(`Searched path: ${worktreePath}`);
+  console.error(`Ensure you have created it using 'git worktree add <path> -b ${branchName}'`);
   process.exit(1);
 }
 

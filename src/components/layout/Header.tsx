@@ -60,10 +60,10 @@ export function Header() {
         return (
             <header className="header header--mobile glass-panel">
                 <div className="header__brand">
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <a href="https://worldwideview.dev/" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", color: "inherit" }}>
                         <img src="/logo/logo-icon.svg" alt="Logo" style={{ width: 20, height: 20, objectFit: "contain" }} />
                         <div className="header__logo header__logo--compact">WWV</div>
-                    </div>
+                    </a>
                     <span className="alpha-badge">ALPHA</span>
                     {isDemoAdmin && <span className="alpha-badge" style={{ background: "var(--accent-orange, #f59e0b)" }}>ADMIN</span>}
                 </div>
@@ -87,7 +87,7 @@ export function Header() {
     return (
         <header className="header glass-panel">
             <div className="header__brand">
-                <div>
+                <a href="https://worldwideview.dev/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                         <img src="/logo/logo-icon.svg" alt="Logo" style={{ width: 22, height: 22, objectFit: "contain" }} />
                         <div className="header__logo">WORLD WIDE VIEW</div>
@@ -95,7 +95,7 @@ export function Header() {
                         {isDemoAdmin && <span className="alpha-badge" style={{ background: "var(--accent-orange, #f59e0b)" }}>ADMIN</span>}
                     </div>
                     <div className="header__subtitle">Geospatial Intelligence</div>
-                </div>
+                </a>
                 <div style={{ marginLeft: "var(--space-xl)" }}>
                     <SearchBar />
                 </div>

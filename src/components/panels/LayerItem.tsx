@@ -4,7 +4,6 @@ import { ShieldAlert } from "lucide-react";
 import { PluginIcon } from "@/components/common/PluginIcon";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { pluginManager } from "@/core/plugins/PluginManager";
-import { BUILT_IN_PLUGIN_IDS } from "@/lib/marketplace/builtinPlugins";
 import type { WorldPlugin } from "@/core/plugins/PluginTypes";
 import "./LayerItem.css";
 
@@ -26,9 +25,6 @@ const CATEGORY_LABELS: Record<string, string> = {
 type TrustTier = "built-in" | "verified" | "unverified";
 
 function getTrust(pluginId: string): TrustTier {
-    if ((BUILT_IN_PLUGIN_IDS as readonly string[]).includes(pluginId)) {
-        return "built-in";
-    }
     const manifest = pluginManager.getManifest(pluginId);
     return manifest?.trust ?? "unverified";
 }
