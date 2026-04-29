@@ -1,6 +1,6 @@
 {
   "name": "worldwideview",
-  "version": "1.19.6",
+  "version": "1.19.7",
   "private": true,
   "scripts": {
     "setup": "node scripts/setup.mjs",
