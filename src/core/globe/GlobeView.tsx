@@ -75,7 +75,7 @@ export default function GlobeView() {
         pluginManager.getAllPlugins().forEach((managed) => {
             const pluginId = managed.plugin.id;
             if (!layers[pluginId]?.enabled) return;
-            if (managed.plugin.getLayerConfig().disableDefaultRendering) return;
+            if (managed.plugin.getLayerConfig?.().disableDefaultRendering) return;
             const entities = entitiesByPlugin[pluginId];
             if (!Array.isArray(entities)) return;
 
