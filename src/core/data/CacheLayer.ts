@@ -67,7 +67,7 @@ class CacheLayer {
     }
 
     async getFromPersistent(pluginId: string): Promise<GeoEntity[] | null> {
-        if (!this.db) return null;
+        if (!this.db || !pluginId) return null;
         return new Promise((resolve) => {
             const tx = this.db!.transaction(this.storeName, "readonly");
             const request = tx.objectStore(this.storeName).get(pluginId);
