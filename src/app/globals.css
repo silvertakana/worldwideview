@@ -1261,6 +1261,15 @@ html, body {
   z-index: -1;
 }
 
+/* Extend inward trigger area so it's harder to miss when coming from the panel */
+.panel-toggle-btn--left::after {
+  left: -60px;
+}
+
+.panel-toggle-btn--right::after {
+  right: -60px;
+}
+
 .panel-toggle-btn:hover {
   background: var(--bg-glass-active);
   color: var(--text-primary);
