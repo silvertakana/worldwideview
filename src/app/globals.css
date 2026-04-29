@@ -1250,6 +1250,26 @@ html, body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
+/* Invisible pseudo-element to expand the effective touch/click trigger area */
+.panel-toggle-btn::after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  bottom: -20px;
+  left: -25px;
+  right: -25px;
+  z-index: -1;
+}
+
+/* Extend inward trigger area so it's harder to miss when coming from the panel */
+.panel-toggle-btn--left::after {
+  left: -60px;
+}
+
+.panel-toggle-btn--right::after {
+  right: -60px;
+}
+
 .panel-toggle-btn:hover {
   background: var(--bg-glass-active);
   color: var(--text-primary);

@@ -35,7 +35,7 @@ export function useViewerInitialization(sceneSettings: any) {
         sscc.zoomEventTypes = [CameraEventType.WHEEL, CameraEventType.PINCH];
 
         if ("ontouchstart" in window || navigator.maxTouchPoints > 0) {
-            (sscc as any)._zoomFactor = 15;
+            (sscc as any)._zoomFactor = 5;
             (sscc as any)._translateFactor = 2;
             (sscc as any)._tiltFactor = 50;
         }

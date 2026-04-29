@@ -3,10 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["better-sqlite3", "@prisma/adapter-better-sqlite3", "@prisma/client", "prisma"],
-  transpilePackages: ["@worldwideview/wwv-plugin-sdk","resium",
-    "react-player",
-    "satellite.js"
-  ],
+  transpilePackages: ["@worldwideview/wwv-plugin-sdk", "resium", "react-player", "satellite.js"],
+  allowedDevOrigins: process.env.ALLOWED_DEV_ORIGIN ? [process.env.ALLOWED_DEV_ORIGIN] : undefined,
   experimental: {
     memoryBasedWorkersCount: true,
     cpus: 2,
