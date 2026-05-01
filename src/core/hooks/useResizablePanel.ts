@@ -26,6 +26,7 @@ export function useResizablePanel(initialWidth: number, minWidth: number, maxWid
                 isResizing.current = false;
                 document.body.style.cursor = 'default';
                 document.body.style.userSelect = 'auto';
+                document.body.classList.remove('is-resizing-sidebar');
             }
         };
 
@@ -42,6 +43,7 @@ export function useResizablePanel(initialWidth: number, minWidth: number, maxWid
         isResizing.current = true;
         document.body.style.cursor = 'col-resize';
         document.body.style.userSelect = 'none';
+        document.body.classList.add('is-resizing-sidebar');
     };
 
     return { width, startResizing };
