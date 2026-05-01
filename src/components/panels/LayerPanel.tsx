@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Search } from "lucide-react";
 
 import { useStore } from "@/core/state/store";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
@@ -28,13 +29,23 @@ export function LayerPanel() {
     const setSelectedEntity = useStore((s) => s.setSelectedEntity);
 
     const allPlugins = pluginManager.getAllPlugins();
+    const [searchQuery, setSearchQuery] = useState("");
 
     // Group by category
     const grouped: Record<string, typeof allPlugins> = {};
+    const query = searchQuery.toLowerCase();
+    
     allPlugins.forEach((managed) => {
-        const cat = managed.plugin.category;
-        if (!grouped[cat]) grouped[cat] = [];
-        grouped[cat].push(managed);
+        if (
+            !query ||
+            managed.plugin.name.toLowerCase().includes(query) ||
+            managed.plugin.description?.toLowerCase().includes(query) ||
+            managed.plugin.id.toLowerCase().includes(query)
+        ) {
+            const cat = managed.plugin.category;
+            if (!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(managed);
+        }
     });
 
     const categoryLabels: Record<string, string> = {
@@ -130,6 +141,33 @@ export function LayerPanel() {
 
             {activeTab === "layers" && (
                 <div className="layers-tab-content">
+                    <div style={{ padding: "0 var(--space-md) var(--space-md) var(--space-md)" }}>
+                        <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            background: "var(--bg-layer-2)",
+                            border: "1px solid var(--border-subtle)",
+                            borderRadius: "var(--radius-sm)",
+                            padding: "0 var(--space-sm)",
+                        }}>
+                            <Search size={14} style={{ color: "var(--text-muted)", marginRight: 8 }} />
+                            <input
+                                type="text"
+                                placeholder="Search layers..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                style={{
+                                    flex: 1,
+                                    background: "transparent",
+                                    border: "none",
+                                    color: "var(--text-primary)",
+                                    fontSize: "13px",
+                                    padding: "var(--space-sm) 0",
+                                    outline: "none"
+                                }}
+                            />
+                        </div>
+                    </div>
                     <div className="layers-tab-content__list">
                         {Object.entries(grouped).map(([category, plugins]) => (
                             <div key={category} style={{ marginBottom: "var(--space-lg)" }}>

@@ -82,11 +82,11 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => (
         }
         set((state) => ({
             selectedEntity: entity,
-            rightSidebarOpen: entity !== null,
-            configPanelOpen: entity !== null,
+            rightSidebarOpen: entity !== null ? true : state.rightSidebarOpen,
+            configPanelOpen: entity !== null ? true : state.configPanelOpen,
             openMobilePanel: entity !== null ? state.openMobilePanel : null,
             mobileRightPanelGlow: entity !== null,
-            activeConfigTab: entity !== null ? "intel" : "filters"
+            activeConfigTab: entity !== null ? "intel" : state.activeConfigTab
         }));
     },
     setHoveredEntity: (entity, screenPos) =>
