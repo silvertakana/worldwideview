@@ -5,6 +5,10 @@ export function useResizablePanel(initialWidth: number, minWidth: number, maxWid
     const isResizing = useRef(false);
 
     useEffect(() => {
+        document.documentElement.style.setProperty(`--${direction}-sidebar-width`, `${initialWidth}px`);
+    }, [initialWidth, direction]);
+
+    useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!isResizing.current) return;
             
@@ -14,6 +18,7 @@ export function useResizablePanel(initialWidth: number, minWidth: number, maxWid
             if (newWidth > maxWidth) newWidth = maxWidth;
             
             setWidth(newWidth);
+            document.documentElement.style.setProperty(`--${direction}-sidebar-width`, `${newWidth}px`);
         };
 
         const handleMouseUp = () => {

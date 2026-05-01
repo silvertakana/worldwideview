@@ -19,7 +19,7 @@ import { trackEvent } from "@/lib/analytics";
 
 export function LayerPanel() {
     const isMobile = useIsMobile();
-    const { width, startResizing } = useResizablePanel(320, 260, 800, 'left');
+    const { width, startResizing } = useResizablePanel(280, 260, 800, 'left');
     const leftSidebarOpen = useStore((s) => s.leftSidebarOpen);
     const openMobilePanel = useStore((s) => s.openMobilePanel);
     const layers = useStore((s) => s.layers);
