@@ -2,6 +2,7 @@ import { useStore } from "@/core/state/store";
 import { FilterSection } from "@/components/panels/FilterPanel";
 import { Info, Key, MessageSquare } from "lucide-react";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
+import { useResizablePanel } from "@/core/hooks/useResizablePanel";
 
 import { IntelTab } from "./IntelTab";
 import { CacheTab } from "./CacheTab";
@@ -11,6 +12,7 @@ import { sectionHeaderStyle } from "./sharedStyles";
 
 export function DataConfigPanel() {
     const isMobile = useIsMobile();
+    const { width, startResizing } = useResizablePanel(320, 260, 800, 'right');
     const configPanelOpen = useStore((s) => s.configPanelOpen);
     const openMobilePanel = useStore((s) => s.openMobilePanel);
     const selectedEntity = useStore((s) => s.selectedEntity);
@@ -22,8 +24,24 @@ export function DataConfigPanel() {
     return (
         <aside
             className={`sidebar sidebar--right glass-panel ${isMobile ? "sidebar--mobile" : ""} ${(isMobile ? openMobilePanel === "right" : configPanelOpen) ? "" : "sidebar--closed"}`}
-            style={{ width: isMobile ? undefined : 320, padding: "var(--space-xl)", zIndex: 101, borderLeft: "var(--glass-border)" }}
+            style={{ width: isMobile ? undefined : width, padding: "var(--space-xl)", zIndex: 101, borderLeft: "var(--glass-border)" }}
         >
+            {/* Drag Handle */}
+            {!isMobile && (
+                <div
+                    onMouseDown={startResizing}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: -4,
+                        width: 8,
+                        height: '100%',
+                        cursor: 'col-resize',
+                        zIndex: 10,
+                        backgroundColor: 'transparent'
+                    }}
+                />
+            )}
             <div className="sidebar__title" style={{ marginBottom: "var(--space-md)", color: "var(--text-primary)", fontSize: "14px", fontWeight: 600 }}>
                 Data Configuration
             </div>

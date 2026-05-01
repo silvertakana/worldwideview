@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 
 import { useStore } from "@/core/state/store";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
+import { useResizablePanel } from "@/core/hooks/useResizablePanel";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { ImageryPicker } from "./ImageryPicker";
 import { LayerItem } from "./LayerItem";
@@ -18,6 +19,7 @@ import { trackEvent } from "@/lib/analytics";
 
 export function LayerPanel() {
     const isMobile = useIsMobile();
+    const { width, startResizing } = useResizablePanel(320, 260, 800, 'left');
     const leftSidebarOpen = useStore((s) => s.leftSidebarOpen);
     const openMobilePanel = useStore((s) => s.openMobilePanel);
     const layers = useStore((s) => s.layers);
@@ -98,7 +100,24 @@ export function LayerPanel() {
     return (
         <aside
             className={`sidebar sidebar--left glass-panel ${isMobile ? "sidebar--mobile" : ""} ${(isMobile ? openMobilePanel === "left" : leftSidebarOpen) ? "" : "sidebar--closed"}`}
+            style={{ width: isMobile ? undefined : width }}
         >
+            {/* Drag Handle */}
+            {!isMobile && (
+                <div
+                    onMouseDown={startResizing}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        right: -4,
+                        width: 8,
+                        height: '100%',
+                        cursor: 'col-resize',
+                        zIndex: 10,
+                        backgroundColor: 'transparent'
+                    }}
+                />
+            )}
             <div className="sidebar__title">Data Sources</div>
 
             <div
