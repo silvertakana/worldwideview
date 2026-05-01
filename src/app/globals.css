@@ -1250,6 +1250,11 @@ html, body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
+body.is-resizing-sidebar .panel-toggle-btn,
+body.is-resizing-sidebar .sidebar {
+  transition: none !important;
+}
+
 /* Invisible pseudo-element to expand the effective touch/click trigger area */
 .panel-toggle-btn::after {
   content: "";
@@ -1292,8 +1297,8 @@ html, body {
 }
 
 .panel-toggle-btn--left.panel-toggle-btn--open {
-  /* Attach to the right edge of the left panel (width 280px + left padding 24px) */
-  left: calc(280px + var(--space-lg)); 
+  /* Attach to the right edge of the left panel */
+  left: calc(var(--left-sidebar-width, 280px) + var(--space-lg)); 
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   border-left: none;
   /* Stay slightly hidden under the panel to look attached, poke out 24px */
@@ -1320,8 +1325,8 @@ html, body {
 }
 
 .panel-toggle-btn--right.panel-toggle-btn--open {
-  /* Attach to the left edge of the right panel (width 320px + right padding 24px) */
-  right: calc(320px + var(--space-lg) + var(--ad-strip-inset, 0px));
+  /* Attach to the left edge of the right panel */
+  right: calc(var(--right-sidebar-width, 320px) + var(--space-lg) + var(--ad-strip-inset, 0px));
   border-radius: var(--radius-sm) 0 0 var(--radius-sm);
   border-right: none;
   /* Stay slightly hidden under the panel to look attached, poke out 24px */

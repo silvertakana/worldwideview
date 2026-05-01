@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Search } from "lucide-react";
 
 import { useStore } from "@/core/state/store";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
+import { useResizablePanel } from "@/core/hooks/useResizablePanel";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { ImageryPicker } from "./ImageryPicker";
 import { LayerItem } from "./LayerItem";
@@ -17,6 +19,7 @@ import { trackEvent } from "@/lib/analytics";
 
 export function LayerPanel() {
     const isMobile = useIsMobile();
+    const { width, startResizing } = useResizablePanel(280, 260, 800, 'left');
     const leftSidebarOpen = useStore((s) => s.leftSidebarOpen);
     const openMobilePanel = useStore((s) => s.openMobilePanel);
     const layers = useStore((s) => s.layers);
@@ -28,13 +31,23 @@ export function LayerPanel() {
     const setSelectedEntity = useStore((s) => s.setSelectedEntity);
 
     const allPlugins = pluginManager.getAllPlugins();
+    const [searchQuery, setSearchQuery] = useState("");
 
     // Group by category
     const grouped: Record<string, typeof allPlugins> = {};
+    const query = searchQuery.toLowerCase();
+    
     allPlugins.forEach((managed) => {
-        const cat = managed.plugin.category;
-        if (!grouped[cat]) grouped[cat] = [];
-        grouped[cat].push(managed);
+        if (
+            !query ||
+            managed.plugin.name.toLowerCase().includes(query) ||
+            managed.plugin.description?.toLowerCase().includes(query) ||
+            managed.plugin.id.toLowerCase().includes(query)
+        ) {
+            const cat = managed.plugin.category;
+            if (!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(managed);
+        }
     });
 
     const categoryLabels: Record<string, string> = {
@@ -87,7 +100,24 @@ export function LayerPanel() {
     return (
         <aside
             className={`sidebar sidebar--left glass-panel ${isMobile ? "sidebar--mobile" : ""} ${(isMobile ? openMobilePanel === "left" : leftSidebarOpen) ? "" : "sidebar--closed"}`}
+            style={{ width: isMobile ? undefined : width }}
         >
+            {/* Drag Handle */}
+            {!isMobile && (
+                <div
+                    onMouseDown={startResizing}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        right: -4,
+                        width: 8,
+                        height: '100%',
+                        cursor: 'col-resize',
+                        zIndex: 10,
+                        backgroundColor: 'transparent'
+                    }}
+                />
+            )}
             <div className="sidebar__title">Data Sources</div>
 
             <div
@@ -130,6 +160,33 @@ export function LayerPanel() {
 
             {activeTab === "layers" && (
                 <div className="layers-tab-content">
+                    <div style={{ padding: "0 var(--space-md) var(--space-md) var(--space-md)" }}>
+                        <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            background: "var(--bg-layer-2)",
+                            border: "1px solid var(--border-subtle)",
+                            borderRadius: "var(--radius-sm)",
+                            padding: "0 var(--space-sm)",
+                        }}>
+                            <Search size={14} style={{ color: "var(--text-muted)", marginRight: 8 }} />
+                            <input
+                                type="text"
+                                placeholder="Search layers..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                style={{
+                                    flex: 1,
+                                    background: "transparent",
+                                    border: "none",
+                                    color: "var(--text-primary)",
+                                    fontSize: "13px",
+                                    padding: "var(--space-sm) 0",
+                                    outline: "none"
+                                }}
+                            />
+                        </div>
+                    </div>
                     <div className="layers-tab-content__list">
                         {Object.entries(grouped).map(([category, plugins]) => (
                             <div key={category} style={{ marginBottom: "var(--space-lg)" }}>
