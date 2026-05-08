@@ -54,17 +54,12 @@ export function createPrismaClient() {
             },
         }) as unknown as PrismaClient; // Cast to avoid complex type issues in consuming code for now
     } else {
-        const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
-        const Database = require("better-sqlite3");
-        
-        // Strip file: prefix if present for better-sqlite3
-        let url = process.env.DATABASE_URL || "file:./data/wwv.db";
-        if (url.startsWith("file:")) {
-            url = url.slice(5);
-        }
-        
-        const sqlite = new Database(url);
-        const adapter = new PrismaBetterSqlite3(sqlite);
-        return new PrismaClient({ adapter });
+        return new PrismaClient({
+            datasources: {
+                db: {
+                    url: process.env.DATABASE_URL || "file:./data/wwv.db"
+                }
+            }
+        });
     }
 }
