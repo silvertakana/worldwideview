@@ -5,6 +5,7 @@ import { issueMarketplaceToken } from "@/lib/marketplace/marketplaceToken";
 import { grantTokenLimiter } from "@/lib/rateLimiters";
 import { getClientIp } from "@/lib/rateLimit";
 import { isPluginInstallEnabled, isDemo, isDemoAdmin } from "@/core/edition";
+import { getRequestOrigin } from "@/lib/origin";
 
 const ALLOWED_REDIRECT_HOSTS = new Set([
     "localhost",
@@ -50,8 +51,7 @@ export async function GET(request: NextRequest) {
         const session = await auth();
 
         if (!session?.user) {
-            // Use configured app URL to prevent Host header injection open redirects
-            const origin = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || request.nextUrl.origin;
+            const origin = getRequestOrigin(request);
             const loginUrl = new URL("/login", origin);
             
             // Construct a relative path for callback to ensure it redirects back to the identical host

@@ -31,7 +31,7 @@ ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 # Run our pregenerate schema swap script and then generate Prisma client
-RUN NEXT_PUBLIC_WWV_EDITION=$NEXT_PUBLIC_WWV_EDITION pnpm run generate
+RUN npx prisma generate
 
 # Create an empty SQLite database with all tables applied ONLY IF NOT CLOUD
 # (For cloud, we'll run migrations against Postgres at runtime)

@@ -9,6 +9,7 @@ import { installLimiter } from "@/lib/rateLimiters";
 import { getClientIp } from "@/lib/rateLimit";
 import { isPluginInstallEnabled, isDemo, isDemoAdmin } from "@/core/edition";
 import { getVerifiedPluginIds } from "@/lib/marketplace/registryClient";
+import { getRequestOrigin } from "@/lib/origin";
 
 const ALLOWED_REDIRECT_HOSTS = new Set([
     "localhost",
@@ -49,7 +50,8 @@ export async function GET(request: NextRequest) {
 
         // Not logged in — send to login with this URL as callbackUrl
         if (!session?.user) {
-            const origin = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || request.nextUrl.origin;
+            const origin = getRequestOrigin(request);
+
             const loginUrl = new URL("/login", origin);
             const callbackPath = request.nextUrl.pathname + request.nextUrl.search;
             loginUrl.searchParams.set("callbackUrl", callbackPath);
