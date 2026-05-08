@@ -87,7 +87,6 @@ function createPrismaClient(): PrismaClient {
     
     return applyTenantIsolation(client);
 }
-
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {

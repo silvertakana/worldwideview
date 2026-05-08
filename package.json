@@ -18,6 +18,7 @@
     "start": "next start",
     "test": "vitest run",
     "db:reset": "npx prisma migrate reset --force",
+    "pregenerate": "node scripts/prepare-schema.mjs",
     "generate": "prisma generate"
   },
   "dependencies": {
@@ -58,6 +59,7 @@
     "@types/bcryptjs": "^3.0.0",
     "@types/cesium": "^1.70.4",
     "@types/node": "^20",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
@@ -75,6 +77,7 @@
     "onlyBuiltDependencies": [
       "@prisma/engines",
       "@sentry/cli",
+
       "prisma",
       "protobufjs",
       "sharp",
