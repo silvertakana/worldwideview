@@ -135,7 +135,11 @@ git commit -m "refactor(db): remove better-sqlite3 dependencies"
 Replace the entire contents of `src/lib/db.ts` with:
 
 ```typescript
+<<<<<<< HEAD:.agents/plans/2026-05-09-unify-database-adapter.md
 import { PrismaClient } from "../generated/prisma";
+=======
+import { PrismaClient } from "../generated/prisma/client";
+>>>>>>> d277a01 (feat(db): unify database adapter to PostgreSQL-only [Minor]):docs/superpowers/plans/2026-05-09-unify-database-adapter.md
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
@@ -207,7 +211,11 @@ git commit -m "refactor(db): unify adapter to postgresql-only via PrismaPg"
 Replace the entire contents of `scripts/cleanup-plugins.ts`:
 
 ```typescript
+<<<<<<< HEAD:.agents/plans/2026-05-09-unify-database-adapter.md
 import { PrismaClient } from "../src/generated/prisma/index.js";
+=======
+import { PrismaClient } from "../src/generated/prisma/client.js";
+>>>>>>> d277a01 (feat(db): unify database adapter to PostgreSQL-only [Minor]):docs/superpowers/plans/2026-05-09-unify-database-adapter.md
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
@@ -243,7 +251,11 @@ main().catch(console.error);
 Replace the entire contents of `scripts/manage-users.ts`:
 
 ```typescript
+<<<<<<< HEAD:.agents/plans/2026-05-09-unify-database-adapter.md
 import { PrismaClient } from "../src/generated/prisma/index.js";
+=======
+import { PrismaClient } from "../src/generated/prisma/client.js";
+>>>>>>> d277a01 (feat(db): unify database adapter to PostgreSQL-only [Minor]):docs/superpowers/plans/2026-05-09-unify-database-adapter.md
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { hashSync } from "bcryptjs";
