@@ -13,6 +13,7 @@
     "dev:backends": "cd ../wwv-data-engine && pnpm dev",
     "predev": "node scripts/boot-db.mjs && npx dotenv-cli -e .env.local -c -- npx prisma db push --accept-data-loss && npx prisma generate && node scripts/copy-cesium.mjs",
     "copy-cesium": "node scripts/copy-cesium.mjs",
+    "prebuild": "node scripts/check-build-env.mjs",
     "build": "next build --webpack",
     "start": "next start",
     "test": "vitest run",
