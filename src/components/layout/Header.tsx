@@ -11,6 +11,7 @@ import { isDemo, DEMO_ADMIN_ROLE } from "@/core/edition";
 import { SearchBar } from "./SearchBar";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 import { ApiKeysTab } from "./ApiKeysTab";
+import "./timeSelect.css"
 
 const REGIONS = [
     { id: "global", label: "Global", icon: Globe },
@@ -33,6 +34,11 @@ export function Header() {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [isDemoAdmin, setIsDemoAdmin] = useState(false);
     const [showApiKeys, setShowApiKeys] = useState(false);
+
+    const [timeOpen, setTimeOpen] = useState(false);
+    const timeRef = useRef<HTMLDivElement>(null);
+    const timeButtonRef = useRef<HTMLButtonElement>(null);
+    const [timePos, setTimePos] = useState({ top: 0, right: 0 });
 
     useEffect(() => {
         if (!isDemo) return;
@@ -85,6 +91,8 @@ export function Header() {
         );
     }
 
+
+
     // Desktop: full header
     return (
         <>
@@ -134,31 +142,41 @@ export function Header() {
                         <Key size={14} />
                     </button>
                     <div style={{ width: 1, height: 20, background: "var(--border-subtle)", flexShrink: 0 }} />
-                    <select
-                        id="time"
-                        className="btn"
-                        value={timeWindow}
-                        onChange={(e) => {
-                            const tw = e.target.value as typeof TIME_WINDOWS[number];
-                        
-                            setTimeWindow(tw);
-                        
-                            const range = useStore.getState().timeRange;
-                            pluginManager.updateTimeRange(range);
-                        
-                            trackEvent("time-window-change", { window: tw });
-                        }}
-                        style={{ flexShrink: 0 }}
-                    >
-                        {TIME_WINDOWS.map((tw) => (
-                            <option key={tw} value={tw}>
-                                {tw}
-                            </option>
-                        ))}
-                    </select>
+                    <div style={{ position: "relative", flexShrink: 0 }} ref={timeRef}>
+                      <button
+                          ref={timeButtonRef}
+                          className="btn btn--glow"
+                          type="button"
+                          onClick={() => {
+                            if (!timeOpen && timeButtonRef.current) {
+                              const rect = timeButtonRef.current.getBoundingClientRect();
+                              setTimePos({
+                                top: rect.bottom + 8,
+                                right: window.innerWidth - (rect.right + 2),
+                              });
+                            }
+                            setTimeOpen((v) => !v);
+                          }}
+                          style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                        >
+                          {timeWindow}
+                           <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 10 10"
+                          style={{
+                            transform: timeOpen ? "rotate(180deg)" : "rotate(0deg)",
+                            transition: "transform 0.2s ease",
+                            opacity: 0.6,
+                          }}
+                        >
+                          <path d="M1 3 L5 7 L9 3" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        </button>
+                      </div>
+                    <div style={{ width: 1, height: 20, background: "var(--border-subtle)", flexShrink: 0 }} />
                 </div>
                 <div className="header__actions">
-                    <div style={{ width: 1, height: 20, background: "var(--border-subtle)" }} />
                     <div className="status-badge">
                         <span className="status-badge__dot" />
                         LIVE
@@ -166,6 +184,54 @@ export function Header() {
                 </div>
             </div>
         </header>
+        {timeOpen && (
+          <div
+            className="glass-panel"
+            style={{
+              position: "fixed",          // <-- key change
+              top: timePos.top,
+              right: timePos.right - 2,
+              zIndex: 99999,
+              padding: 4,
+              minWidth: 72,
+            }}
+          >
+            {TIME_WINDOWS.map((tw) => (
+              <div
+                key={tw}
+                onClick={() => {
+                  setTimeWindow(tw);
+                  const range = useStore.getState().timeRange;
+                  pluginManager.updateTimeRange(range);
+                  trackEvent("time-window-change", { window: tw });
+                  setTimeOpen(false);
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#63b3ed";
+                  e.currentTarget.style.boxShadow = "0 0 8px rgba(99,179,237,0.5)";
+                  e.currentTarget.style.border = "1px solid rgba(99,179,237,0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = tw === timeWindow ? "#63b3ed" : "var(--text-muted, #94a3b8)";
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.border = "1px solid transparent";
+                }}
+                style={{
+                  padding: "7px 12px",
+                  cursor: "pointer",
+                  borderRadius: 7,
+                  fontSize: 12,
+                  letterSpacing: "0.05em",
+                  color: tw === timeWindow ? "var(--accent-blue, #63b3ed)" : "var(--text-muted, #94a3b8)",
+                  background: tw === timeWindow ? "rgba(99,179,237,0.12)" : "transparent",
+                  textShadow: tw === timeWindow ? "0 0 8px rgba(99,179,237,0.9)" : "none",
+                }}
+              >
+                {tw}
+              </div>
+            ))}
+          </div>
+        )}
         {showApiKeys && (
                         <div
                             style={{

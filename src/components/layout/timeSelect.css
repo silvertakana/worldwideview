@@ -1,0 +1,43 @@
+.time-select {
+    display: inline-flex;
+    align-items: center;
+}
+
+.time-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+
+    min-width: 80px;
+
+    padding: 6px;
+    border-radius: 12px;
+
+    backdrop-filter: blur(12px);
+    background: rgba(20, 20, 25, 0.6);
+
+    border: 1px solid var(--border-subtle);
+
+    box-shadow: var(--glow);
+    z-index: 9999;
+}
+
+.time-option {
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+
+    color: var(--text);
+}
+
+.time-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.time-option.active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+canvas {
+    pointer-events: none;
+}
