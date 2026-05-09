@@ -218,9 +218,6 @@ Built-in plugins are instantiated in `AppShell.tsx` and registered via `PluginRe
 ### 5.8 Workspace Hygiene
 Whenever agents generate temporary debugging scripts, test REST endpoints via `.mjs`, or dump traces/JSON outputs, they **MUST** save these exclusively inside `/local-scripts/`. The root directory is strictly for production configuration files.
 
-### 5.9 Architectural Integrity
-Always interface-based, extensible, composable. Never band-aids on band-aids. Before adding flags or cross-domain dependencies, you MUST consult `.agents/rules/coding-principles.md`.
-
 ---
 
 ## 6. Environment Variables
@@ -314,7 +311,6 @@ Read the relevant rule file when working in that domain:
 
 | Rule | When to use | Path |
 |---|---|---|
-| `coding-principles` | When writing new features, refactoring, or making architectural decisions | `.agents/rules/coding-principles.md` |
 | `monorepo-workflow` | pnpm commands, adding packages, workspace config | `.agents/rules/monorepo-workflow.md` |
 | `plugin-architecture` | Creating/modifying plugins, lifecycle, registration | `.agents/rules/plugin-architecture.md` |
 | `cesium-rendering` | Globe rendering, entity types, primitives, LOD, culling | `.agents/rules/cesium-rendering.md` |

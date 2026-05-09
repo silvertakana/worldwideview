@@ -18,11 +18,7 @@ node_modules/
 /out/
 
 # agents
-/.agents/*
-!/.agents/rules/
-!/.agents/skills/
-!/.agents/settings.json
-!/.agents/global-skills-index.md
+/.agents/
 
 # claude code IDE config
 /.claude/

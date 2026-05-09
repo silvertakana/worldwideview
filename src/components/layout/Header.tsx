@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { pluginManager } from "@/core/plugins/PluginManager";
-import { Globe } from "lucide-react";
+import { Globe,Key } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { isDemo, DEMO_ADMIN_ROLE } from "@/core/edition";
 
 import { SearchBar } from "./SearchBar";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
+import { ApiKeysTab } from "./ApiKeysTab";
 
 const REGIONS = [
     { id: "global", label: "Global", icon: Globe },
@@ -31,6 +32,7 @@ export function Header() {
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [isDemoAdmin, setIsDemoAdmin] = useState(false);
+    const [showApiKeys, setShowApiKeys] = useState(false);
 
     useEffect(() => {
         if (!isDemo) return;
@@ -73,7 +75,7 @@ export function Header() {
                 </div>
 
                 <div className="header__actions">
-
+                
                     <div className="status-badge">
                         <span className="status-badge__dot" />
                         LIVE
@@ -85,6 +87,7 @@ export function Header() {
 
     // Desktop: full header
     return (
+        <>
         <header className="header glass-panel">
             <div className="header__brand">
                 <a href="https://worldwideview.dev/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}>
@@ -118,25 +121,44 @@ export function Header() {
                         </button>
                     ))}
                     <div style={{ width: 1, height: 20, background: "var(--border-subtle)", flexShrink: 0 }} />
-                    {TIME_WINDOWS.map((tw) => (
-                        <button
-                            key={tw}
-                            className={`btn ${timeWindow === tw ? "btn--active" : ""}`}
-                            style={{ flexShrink: 0 }}
-                            onClick={() => {
-                                setTimeWindow(tw);
-                                const range = useStore.getState().timeRange;
-                                pluginManager.updateTimeRange(range);
-                                trackEvent("time-window-change", { window: tw });
-                            }}
-                        >
-                            {tw}
-                        </button>
-                    ))}
+                    <button
+                        className="btn btn--glow"
+                        onClick={() => setShowApiKeys(true)}
+                        title="API Keys"
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                        }}
+                    >
+                        <Key size={14} />
+                    </button>
+                    <div style={{ width: 1, height: 20, background: "var(--border-subtle)", flexShrink: 0 }} />
+                    <select
+                        id="time"
+                        className="btn"
+                        value={timeWindow}
+                        onChange={(e) => {
+                            const tw = e.target.value as typeof TIME_WINDOWS[number];
+                        
+                            setTimeWindow(tw);
+                        
+                            const range = useStore.getState().timeRange;
+                            pluginManager.updateTimeRange(range);
+                        
+                            trackEvent("time-window-change", { window: tw });
+                        }}
+                        style={{ flexShrink: 0 }}
+                    >
+                        {TIME_WINDOWS.map((tw) => (
+                            <option key={tw} value={tw}>
+                                {tw}
+                            </option>
+                        ))}
+                    </select>
                 </div>
                 <div className="header__actions">
                     <div style={{ width: 1, height: 20, background: "var(--border-subtle)" }} />
-
                     <div className="status-badge">
                         <span className="status-badge__dot" />
                         LIVE
@@ -144,5 +166,57 @@ export function Header() {
                 </div>
             </div>
         </header>
+        {showApiKeys && (
+                        <div
+                            style={{
+                                position: "fixed",
+                                inset: 0,
+                                background: "rgba(0,0,0,0.45)",
+                                display: "flex",
+                                alignItems: "flex-start",
+                                justifyContent: "center",
+                                paddingTop: "5vh",
+                                paddingBottom: "5vh",
+                                overflowY: "auto",
+                                zIndex: 9999,
+                            }}
+                            onClick={() => setShowApiKeys(false)}
+                        >
+                            <div
+                                className="glass-panel"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    width: "min(700px, 90vw)",
+                                    maxHeight: "80vh",
+                                    overflowY: "auto",
+                                    padding: "24px",
+                                    borderRadius: "16px",
+                                    margin: "20px",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        marginBottom: "16px",
+                                    }}
+                                >
+                                    <h2 style={{ margin: 0 }}>API Keys</h2>
+                                
+                                    <button
+                                        className="btn"
+                                        onClick={() => setShowApiKeys(false)}
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                                
+                                <ApiKeysTab />
+                            </div>
+                        </div>
+                    )}
+        </>
     );
+    
 }

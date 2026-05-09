@@ -3,6 +3,7 @@ import { pluginManager } from "@/core/plugins/PluginManager";
 import { sectionHeaderStyle, inputGroupStyle, labelStyle, inputStyle, checkboxStyle } from "./sharedStyles";
 import { PluginErrorBoundary } from "@/components/common/PluginErrorBoundary";
 
+
 export function OverlayTab() {
     const dataConfig = useStore((s) => s.dataConfig);
     const updateDataConfig = useStore((s) => s.updateDataConfig);
@@ -99,11 +100,48 @@ export function OverlayTab() {
             </div>
 
             <div style={{ marginBottom: "var(--space-lg)" }}>
-                <div style={sectionHeaderStyle}>Map Overlays</div>
-                <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                    Map overlays such as Borders & Labels can now be found in the Layers Panel.
-                </div>
+            <div style={sectionHeaderStyle}>Cache & Limits</div>
+
+            <div style={inputGroupStyle}>
+                <label style={labelStyle}>Enable Cache</label>
+                <input
+                    type="checkbox"
+                    checked={dataConfig.cacheEnabled}
+                    onChange={(e) => updateDataConfig({ cacheEnabled: e.target.checked })}
+                    style={checkboxStyle}
+                />
             </div>
+
+            <div style={inputGroupStyle}>
+                <label style={labelStyle}>Cache Max Age (ms)</label>
+                <input
+                    type="number"
+                    value={dataConfig.cacheMaxAge}
+                    onChange={(e) => updateDataConfig({ cacheMaxAge: parseInt(e.target.value) || 0 })}
+                    style={inputStyle}
+                />
+            </div>
+
+            <div style={inputGroupStyle}>
+                <label style={labelStyle}>Max Concurrent Req</label>
+                <input
+                    type="number"
+                    value={dataConfig.maxConcurrentRequests}
+                    onChange={(e) => updateDataConfig({ maxConcurrentRequests: parseInt(e.target.value) || 0 })}
+                    style={inputStyle}
+                />
+            </div>
+
+            <div style={inputGroupStyle}>
+                <label style={labelStyle}>Retry Attempts</label>
+                <input
+                    type="number"
+                    value={dataConfig.retryAttempts}
+                    onChange={(e) => updateDataConfig({ retryAttempts: parseInt(e.target.value) || 0 })}
+                    style={inputStyle}
+                />
+            </div>
+        </div>
         </>
     );
 }

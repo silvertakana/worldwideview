@@ -54,7 +54,7 @@ function BrowseLink() {
             onClick={() => trackEvent("marketplace-browse-click")}
         >
             <ExternalLink size={14} />
-            Browse Marketplace
+            Marketplace
         </a>
     );
 }
@@ -309,6 +309,8 @@ export function PluginsTab() {
             
             {canInstall && (
                 <div className="plugins-tab__actions-bottom">
+                    <BrowseLink />
+
                     <button 
                         className="plugins-tab__check-updates"
                         onClick={handleCheckUpdates}
@@ -317,7 +319,7 @@ export function PluginsTab() {
                         <RefreshCw size={14} className={checkingUpdates ? "spinning" : ""} />
                         {checkingUpdates ? "Checking..." : "Check for Updates"}
                     </button>
-                    
+
                     {Object.keys(updates).length > 1 && (
                         <button 
                             className="plugins-tab__update-all"
@@ -330,8 +332,6 @@ export function PluginsTab() {
                     )}
                 </div>
             )}
-
-            <BrowseLink />
         </div>
     );
 }

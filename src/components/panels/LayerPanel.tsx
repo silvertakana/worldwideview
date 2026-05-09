@@ -36,6 +36,8 @@ export function LayerPanel() {
     // Group by category
     const grouped: Record<string, typeof allPlugins> = {};
     const query = searchQuery.toLowerCase();
+
+    
     
     allPlugins.forEach((managed) => {
         if (
@@ -96,6 +98,7 @@ export function LayerPanel() {
     };
 
     const [activeTab, setActiveTab] = useState<"layers" | "imagery" | "favorites" | "import" | "plugins">("layers");
+    const fontSize = "13px";
 
     return (
         <aside
@@ -130,31 +133,42 @@ export function LayerPanel() {
                     className={`panel-tab ${activeTab === "layers" ? "panel-tab--active" : ""}`}
                     onClick={() => { setActiveTab("layers"); trackEvent("panel-tab-switch", { tab: "layers" }); }}
                 >
-                    Data Layers
+                    <div style={{fontSize: fontSize}}>
+                        Data Layers
+                    </div>
                 </button>
                 <button
                     className={`panel-tab ${activeTab === "imagery" ? "panel-tab--active" : ""}`}
                     onClick={() => { setActiveTab("imagery"); trackEvent("panel-tab-switch", { tab: "imagery" }); }}
                 >
-                    Imagery
+                    <div style={{fontSize: fontSize}}>
+                        Imagery
+                    </div>
+
                 </button>
                 <button
                     className={`panel-tab ${activeTab === "favorites" ? "panel-tab--active" : ""}`}
                     onClick={() => { setActiveTab("favorites"); trackEvent("panel-tab-switch", { tab: "favorites" }); }}
                 >
-                    Favorites
+                    <div style={{fontSize: fontSize}}>
+                        Favorites
+                    </div>
                 </button>
                 <button
                     className={`panel-tab ${activeTab === "import" ? "panel-tab--active" : ""}`}
                     onClick={() => { setActiveTab("import"); trackEvent("panel-tab-switch", { tab: "import" }); }}
                 >
-                    Import
+                    <div style={{fontSize: fontSize}}>
+                        Import
+                    </div>
                 </button>
                 <button
                     className={`panel-tab ${activeTab === "plugins" ? "panel-tab--active" : ""}`}
                     onClick={() => { setActiveTab("plugins"); trackEvent("panel-tab-switch", { tab: "plugins" }); }}
                 >
-                    Plugins
+                    <div style={{fontSize: fontSize}}>
+                        Plugins
+                    </div>
                 </button>
             </div>
 

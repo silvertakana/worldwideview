@@ -162,10 +162,10 @@
 .plugins-tab__browse {
     display: flex;
     align-items: center;
+    flex-direction: column;
     justify-content: center;
-    gap: var(--space-sm);
+    gap: 4px;
     padding: var(--space-md) var(--space-lg);
-    margin-top: var(--space-md);
     background: linear-gradient(
         135deg,
         rgba(var(--accent-rgb), 0.1),
@@ -179,7 +179,9 @@
     font-weight: 500;
     cursor: pointer;
     transition: all var(--duration-fast) var(--ease-smooth);
-    flex-shrink: 0;
+    flex-shrink: 0%;
+    width: 100%;
+    min-height: 25%;
 }
 
 .plugins-tab__browse:hover {
@@ -197,17 +199,21 @@
 .plugins-tab__actions-bottom {
     margin-top: auto;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: var(--space-sm);
-    justify-content: stretch;
     padding-top: var(--space-md);
+}
+
+.plugins-tab__actions-bottom > * {
+    flex: 1;
 }
 
 .plugins-tab__update-all {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-sm);
+    gap: 4px;
     padding: var(--space-sm) var(--space-md);
     background: rgba(var(--accent-rgb), 0.15);
     border: 1px solid rgba(var(--accent-rgb), 0.3);
@@ -218,7 +224,9 @@
     font-weight: 500;
     cursor: pointer;
     transition: all var(--duration-fast) var(--ease-smooth);
+    flex-shrink: 0%;
     width: 100%;
+    min-height: 25%;
 }
 
 .plugins-tab__update-all:hover {
@@ -233,9 +241,10 @@
 
 .plugins-tab__check-updates {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-sm);
+    gap: 4px;
     padding: var(--space-sm) var(--space-md);
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
