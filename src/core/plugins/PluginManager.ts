@@ -50,6 +50,20 @@ class PluginManager {
                 }
             }
         }
+
+        // Next.js inlines `process.env.NEXT_PUBLIC_*` only at known static
+        // reference sites. The iteration above can come back empty in the
+        // browser bundle even when NEXT_PUBLIC_WWV_PLUGIN_* is set at build,
+        // because `Object.entries(process.env)` is not a static reference and
+        // the bundler doesn't expose every NEXT_PUBLIC_ key on the runtime
+        // object. Add explicit static references so the values reach plugin
+        // contexts. Add new known keys here as they're introduced.
+        const explicitVars: Record<string, string | undefined> = {
+            DATA_ENGINE_URL: process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL,
+        };
+        for (const [k, v] of Object.entries(explicitVars)) {
+            if (v && !envVars[k]) envVars[k] = v;
+        }
         
         const edition = (process.env.NEXT_PUBLIC_WWV_EDITION || "local") as "local" | "cloud" | "demo";
 
