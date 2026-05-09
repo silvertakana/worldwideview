@@ -8,7 +8,7 @@ RUN find . -type f \! -name 'package.json' \! -name 'pnpm-workspace.yaml' \! -na
 # Stage 1: Install ALL dependencies (needed for build)
 FROM node:26-alpine AS deps
 RUN npm install -g pnpm@9.15.0
-RUN apk add --no-cache python3 make g++
+# python3/make/g++ no longer needed — removed better-sqlite3 native compilation
 WORKDIR /app
 # Copy only the extracted package.jsons
 COPY --from=extractor /app ./
