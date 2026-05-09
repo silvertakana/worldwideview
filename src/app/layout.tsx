@@ -40,11 +40,13 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         {children}
         {process.env.VERCEL && <Analytics />}
-        <Script
-          src="https://analytics.worldwideview.dev/script.js"
-          data-website-id="2c8f6c09-2651-4a2a-af99-b8cee1612b9a"
-          strategy="afterInteractive"
-        />
+        {process.env.NEXT_PUBLIC_WWV_ANALYTICS === "true" && (
+          <Script
+            src="https://analytics.worldwideview.dev/script.js"
+            data-website-id="2c8f6c09-2651-4a2a-af99-b8cee1612b9a"
+            strategy="afterInteractive"
+          />
+        )}
       </body>
     </html>
   );
