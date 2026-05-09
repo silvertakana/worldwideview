@@ -1,60 +1,38 @@
-import { NextResponse } from "next/server";
-import { fetchGdotCameras, type GdotCameraFeature } from "../gdot/gdotFetcher";
-import { fetchTflCameras } from "../tfl/tflFetcher";
-import { fetchCaltransCameras } from "../caltrans/caltransFetcher";
-
-/** In-memory cache for traffic cameras with 24h TTL. */
-let cache: { data: GdotCameraFeature[]; expiry: number } | null = null;
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+import { NextResponse, type NextRequest } from "next/server";
+import { fetchManyAdapters, resolveSources } from "../adapters/registry";
 
 /**
- * Merge all traffic camera sources.
- * Add new fetchers here as they are implemented.
+ * Aggregator. Reads the adapter registry and fetches the requested sources.
+ * Per-adapter caching lives in the registry, so individual sources can have
+ * different TTLs without colliding here.
+ *
+ * Query params:
+ *   ?sources=caltrans,gdot   → only those adapters
+ *   ?sources=all (default)   → all registered adapters (back-compat with
+ *                              the old behavior — every existing client
+ *                              that hits this URL with no query continues
+ *                              to receive the merged-everything payload)
+ *   ?sources=none            → empty list (used by clients to short-circuit
+ *                              without changing the default-on behavior of
+ *                              this endpoint)
+ *
+ * Response shape kept backwards-compatible with the old /traffic endpoint:
+ *   { cameras: CameraFeature[], total: number, sources: string[] }
  */
-async function fetchAllTrafficCameras(): Promise<GdotCameraFeature[]> {
-    const results = await Promise.allSettled([
-        fetchGdotCameras(),
-        fetchTflCameras(),
-        fetchCaltransCameras(),
-    ]);
-
-    const all: GdotCameraFeature[] = [];
-    for (const r of results) {
-        if (r.status === "fulfilled") all.push(...r.value);
+export async function GET(req: NextRequest) {
+    const sources = resolveSources(req.nextUrl.searchParams.get("sources"));
+    if (sources.length === 0) {
+        return NextResponse.json({ cameras: [], total: 0, sources: [] });
     }
-    return all;
-}
-
-export async function GET() {
     try {
-        const now = Date.now();
-
-        if (cache && now < cache.expiry) {
-            return NextResponse.json({
-                cameras: cache.data,
-                total: cache.data.length,
-                cached: true,
-            });
-        }
-
-        const cameras = await fetchAllTrafficCameras();
-        cache = { data: cameras, expiry: now + CACHE_TTL_MS };
-
+        const cameras = await fetchManyAdapters(sources);
         return NextResponse.json({
             cameras,
             total: cameras.length,
-            cached: false,
+            sources,
         });
     } catch (error: any) {
         console.error("[TrafficCameras] Error:", error);
-        if (cache) {
-            return NextResponse.json({
-                cameras: cache.data,
-                total: cache.data.length,
-                cached: true,
-                stale: true,
-            });
-        }
         return NextResponse.json(
             { error: "Failed to fetch traffic cameras" },
             { status: 502 },

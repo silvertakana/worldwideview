@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # 1. Maintain Node.js / pnpm dependencies
+  - package-ecosystem: "npm" 
+    directory: "/" 
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    # Group all minor/patch updates into a single PR so it doesn't spam you
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # 2. Maintain Docker base images
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+
+  # 3. Maintain GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly" # Actions update less frequently, monthly is fine

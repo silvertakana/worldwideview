@@ -6,7 +6,7 @@ RUN find . -type f \! -name 'package.json' \! -name 'pnpm-workspace.yaml' \! -na
     find . -type d -empty -delete
 
 # Stage 1: Install ALL dependencies (needed for build)
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 RUN npm install -g pnpm@9.15.0
 
 WORKDIR /app
@@ -44,7 +44,7 @@ RUN node scripts/copy-cesium.mjs
 RUN pnpm --filter worldwideview deploy --prod /app/prod
 
 # Stage 4: Production runner
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 
 RUN apk add --no-cache openssl
