@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { fetchGdotCameras, type GdotCameraFeature } from "../gdot/gdotFetcher";
 import { fetchTflCameras } from "../tfl/tflFetcher";
 import { fetchCaltransCameras } from "../caltrans/caltransFetcher";
+import { fetch511NyCameras } from "../ny511/ny511Fetcher";
 
 /** In-memory cache for traffic cameras with 24h TTL. */
 let cache: { data: GdotCameraFeature[]; expiry: number } | null = null;
@@ -16,6 +17,7 @@ async function fetchAllTrafficCameras(): Promise<GdotCameraFeature[]> {
         fetchGdotCameras(),
         fetchTflCameras(),
         fetchCaltransCameras(),
+        fetch511NyCameras(),
     ]);
 
     const all: GdotCameraFeature[] = [];
