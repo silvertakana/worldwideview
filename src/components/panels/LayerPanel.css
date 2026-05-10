@@ -1,0 +1,29 @@
+.discord-sidebar-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--discord-bg);
+    border: 1px solid var(--discord-border);
+    border-radius: var(--radius-md);
+    color: var(--discord-color);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-normal) var(--ease-spring);
+    flex-shrink: 0;
+    width: 100%;
+    min-height: 25%;
+    letter-spacing: 0.03em;
+    box-shadow: 0 0 12px var(--discord-glow), inset 0 1px 0 rgba(88, 37, 254, 0.42);
+}
+
+.discord-sidebar-link:hover {
+    background: var(--discord-bg-hover);
+    border-color: var(--discord-border-hover);
+    color: var(--discord-color-hover);
+    box-shadow: 0 0 20px var(--discord-glow), inset 0 1px 0 rgba(88, 37, 254, 0.8);
+    transform: translateY(-1px);
+}
