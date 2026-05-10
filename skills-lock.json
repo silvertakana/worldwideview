@@ -37,6 +37,12 @@
       "skillPath": "prisma-database-setup/SKILL.md",
       "computedHash": "0d6f44ac34b1ed3f8ed2970ecf90483d0f658fd1d204458f62bfefa28f31b095"
     },
+    "prisma-expert": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/prisma-expert/SKILL.md",
+      "computedHash": "1c8d1b6e40a7c3b1160bde8d37f0a14229afad89644fa0734e9240771a5bb912"
+    },
     "prisma-postgres": {
       "source": "prisma/skills",
       "sourceType": "github",

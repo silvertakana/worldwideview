@@ -1,7 +1,7 @@
 /**
  * @license
  * Cesium - https://github.com/CesiumGS/cesium
- * Version 1.139.1
+ * Version 1.141.0
  *
  * Copyright 2011-2022 Cesium Contributors
  *
@@ -23,4 +23,4 @@
  * See https://github.com/CesiumGS/cesium/blob/main/LICENSE.md for full licensing details.
  */
 
-import{a as y}from"./chunk-CMB3O7X2.js";import{a as c}from"./chunk-HJG35BQ3.js";import"./chunk-XVAXSA53.js";import{b as a}from"./chunk-R6PWD5CA.js";import"./chunk-OEIACSKL.js";import{a as n}from"./chunk-VGILZD7B.js";import"./chunk-RXYBLNW3.js";import"./chunk-TXOEXY5C.js";import"./chunk-VIMSDF2W.js";var b=new n,d=new n,A=[new n,new n,new n],x=new c,f=new n(.5,.5,.5),p=new n(-.5,-.5,-.5);function h(e,r){let o=new Float64Array(e.aabbs),g=Array.from({length:4},(t,i)=>{let s=n.unpack(o,i*6,b),B=n.unpack(o,i*6+3,d);return c.fromCorners(s,B,new c)}),w=new Float64Array(e.inverseTransform),T=a.unpack(w,0,new a),u=new Uint32Array(e.triangleIndices),m=new Float64Array(e.trianglePositions),l=Array.from({length:4},()=>[]);for(let t=0;t<u.length;t++){n.unpack(m,t*9,A[0]),n.unpack(m,t*9+3,A[1]),n.unpack(m,t*9+6,A[2]);let i=k(T,A);for(let s=0;s<4;s++)g[s].intersectAxisAlignedBoundingBox(i)&&l[s].push(u[t])}return{intersectingTrianglesArrays:l.map(t=>{let i=new Uint32Array(t);return r.push(i.buffer),i.buffer})}}function k(e,r){a.multiplyByPoint(e,r[0],r[0]),a.multiplyByPoint(e,r[1],r[1]),a.multiplyByPoint(e,r[2],r[2]);let o=c.fromPoints(r,x);return n.clamp(o.minimum,p,f,o.minimum),n.clamp(o.maximum,p,f,o.maximum),o}var P=y(h);export{P as default};
+import{a as y}from"./chunk-XR7MN4PJ.js";import{a as c}from"./chunk-VBYOXOSM.js";import"./chunk-FC6IYMYF.js";import{b as a}from"./chunk-XZBHEBLF.js";import"./chunk-PQ3V63XF.js";import{a as n}from"./chunk-TM6SYYHO.js";import"./chunk-VXAZXMUX.js";import"./chunk-GF67PEXE.js";import"./chunk-5XHUDY37.js";var b=new n,d=new n,A=[new n,new n,new n],x=new c,f=new n(.5,.5,.5),p=new n(-.5,-.5,-.5);function h(e,r){let o=new Float64Array(e.aabbs),g=Array.from({length:4},(t,i)=>{let s=n.unpack(o,i*6,b),B=n.unpack(o,i*6+3,d);return c.fromCorners(s,B,new c)}),w=new Float64Array(e.inverseTransform),T=a.unpack(w,0,new a),u=new Uint32Array(e.triangleIndices),m=new Float64Array(e.trianglePositions),l=Array.from({length:4},()=>[]);for(let t=0;t<u.length;t++){n.unpack(m,t*9,A[0]),n.unpack(m,t*9+3,A[1]),n.unpack(m,t*9+6,A[2]);let i=k(T,A);for(let s=0;s<4;s++)g[s].intersectAxisAlignedBoundingBox(i)&&l[s].push(u[t])}return{intersectingTrianglesArrays:l.map(t=>{let i=new Uint32Array(t);return r.push(i.buffer),i.buffer})}}function k(e,r){a.multiplyByPoint(e,r[0],r[0]),a.multiplyByPoint(e,r[1],r[1]),a.multiplyByPoint(e,r[2],r[2]);let o=c.fromPoints(r,x);return n.clamp(o.minimum,p,f,o.minimum),n.clamp(o.maximum,p,f,o.maximum),o}var P=y(h);export{P as default};
