@@ -1,0 +1,201 @@
+/* ─── Design Tokens ───────────────────────────────────────── */
+:root {
+  /* Palette — Dark Gray / Black & White (Default) */
+  --bg-primary: #171717;
+  --bg-secondary: #262626;
+  --bg-tertiary: #404040;
+  --bg-glass: rgba(38, 38, 38, 0.85);
+  --bg-glass-hover: rgba(64, 64, 64, 0.85);
+  --bg-glass-active: rgba(82, 82, 82, 0.9);
+
+  --border-subtle: rgba(255, 255, 255, 0.15);
+  --border-medium: rgba(255, 255, 255, 0.25);
+  --border-bright: rgba(255, 255, 255, 0.4);
+  --border-glow: rgba(255, 255, 255, 0.2);
+
+  --text-primary: #ffffff;
+  --text-secondary: #e5e5e5;
+  --text-muted: #a3a3a3;
+  --text-accent: #ffffff;
+
+  --accent-cyan: #ffffff;
+  --accent-rgb: 255, 255, 255;
+  --accent-teal: #e5e5e5;
+  --accent-blue: #ffffff;
+  --accent-purple: #a3a3a3;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-green: #22c55e;
+
+  --glow-cyan: 0 0 24px rgba(255, 255, 255, 0.15);
+  --glow-blue: 0 0 24px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='black'] {
+  /* Palette — Black & White (Previous Default) */
+  --bg-primary: #09090b;
+  --bg-secondary: #18181b;
+  --bg-tertiary: #27272a;
+  --bg-glass: rgba(9, 9, 11, 0.75);
+  --bg-glass-hover: rgba(24, 24, 27, 0.85);
+  --bg-glass-active: rgba(39, 39, 42, 0.9);
+
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-medium: rgba(255, 255, 255, 0.2);
+  --border-bright: rgba(255, 255, 255, 0.3);
+  --border-glow: rgba(255, 255, 255, 0.25);
+
+  --text-primary: #ffffff;
+  --text-secondary: #e4e4e7;
+  --text-muted: #a1a1aa;
+  --text-accent: #ffffff;
+
+  --accent-cyan: #ffffff;
+  --accent-rgb: 255, 255, 255;
+  --accent-teal: #e4e4e7;
+  --accent-blue: #d4d4d8;
+  --accent-purple: #a1a1aa;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-green: #22c55e;
+
+  --glow-cyan: 0 0 24px rgba(255, 255, 255, 0.3);
+  --glow-blue: 0 0 24px rgba(255, 255, 255, 0.2);
+
+  --discord-color: #8b9cf4;
+  --discord-color-hover: #ffffff;
+  --discord-bg: rgba(88, 101, 242, 0.2);
+  --discord-bg-hover: rgba(88, 101, 242, 0.35);
+  --discord-border: rgba(88, 101, 242, 0.5);
+  --discord-border-hover: rgba(88, 101, 242, 0.8);
+  --discord-glow: rgba(88, 101, 242, 0.3);
+}
+
+[data-theme='legacy'] {
+  /* Palette — deep OLED navy → charcoal with vibrant cyan/teal accents */
+  --bg-primary: #050914;
+  --bg-secondary: #0b1121;
+  --bg-tertiary: #121a2f;
+  --bg-glass: rgba(5, 9, 20, 0.75);
+  --bg-glass-hover: rgba(11, 17, 33, 0.85);
+  --bg-glass-active: rgba(18, 26, 47, 0.9);
+
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-medium: rgba(255, 255, 255, 0.2);
+  --border-bright: rgba(255, 255, 255, 0.3);
+  --border-glow: rgba(34, 211, 238, 0.5);
+
+  --text-primary: #ffffff;
+  --text-secondary: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-accent: #22d3ee;
+
+  --accent-cyan: #22d3ee;
+  --accent-rgb: 34, 211, 238;
+  --accent-teal: #2dd4bf;
+  --accent-blue: #3b82f6;
+  --accent-purple: #a855f7;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-green: #22c55e;
+
+  --glow-cyan: 0 0 24px rgba(var(--accent-rgb), 0.5);
+  --glow-blue: 0 0 24px rgba(59, 130, 246, 0.5);
+
+  --discord-color: #8b9cf4;
+  --discord-color-hover: #ffffff;
+  --discord-bg: rgba(88, 101, 242, 0.2);
+  --discord-bg-hover: rgba(88, 101, 242, 0.35);
+  --discord-border: rgba(88, 101, 242, 0.5);
+  --discord-border-hover: rgba(88, 101, 242, 0.8);
+  --discord-glow: rgba(88, 101, 242, 0.3);
+}
+
+:root {
+
+  /* Typography */
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing (4/8dp rhythm) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+
+  /* Radii (Apple HIG inspired) */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --ease-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+
+  /* Glassmorphism Pro Max */
+  --glass-blur: 24px;
+  --glass-border: 1px solid var(--border-subtle);
+  --glass-border-inner: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='light'] {
+  --bg-primary: #f4f4f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #18181b;
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  --bg-glass-hover: rgba(244, 244, 245, 0.9);
+  --bg-glass-active: rgba(228, 228, 231, 0.95);
+
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-medium: rgba(0, 0, 0, 0.2);
+  --border-bright: rgba(0, 0, 0, 0.3);
+  --border-glow: rgba(0, 0, 0, 0.05);
+
+  --text-primary: #18181b;
+  --text-secondary: #3f3f46;
+  --text-muted: #a1a1aa;
+  --text-accent: #18181b;
+
+  --accent-cyan: #18181b;
+  --accent-rgb: 24, 24, 27;
+  --accent-teal: #18181b;
+  --accent-blue: #18181b;
+  --accent-purple: #18181b;
+  --accent-amber: #d97706;
+  --accent-red: #dc2626;
+  --accent-green: #16a34a;
+
+  --glow-cyan: 0 0 16px rgba(0, 0, 0, 0.05);
+  --glow-blue: 0 0 16px rgba(0, 0, 0, 0.05);
+
+  --glass-border: 1px solid var(--border-subtle);
+  --glass-border-inner: inset 0 1px 1px rgba(255, 255, 255, 1);
+  --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+
+  /* Custom Buttons */
+  
+  --discord-color: #4752c4;
+  --discord-color-hover: #3c45a5;
+  --discord-bg: rgba(96, 108, 250, 0.168);
+  --discord-bg-hover: rgba(88, 101, 242, 0.22);
+  --discord-border: rgba(88, 101, 242, 0.5);
+  --discord-border-hover: rgba(88, 101, 242, 0.85);
+  --discord-glow: rgba(88, 101, 242, 0.762);
+
+  --feedback-color: #449bd5;
+  --feedback-color-hover: #3c45a5;
+  --feedback-bg: rgba(96, 142, 250, 0.765);
+  --feedback-bg-hover: rgba(88, 101, 242, 0.22);
+  --feedback-border: rgba(88, 101, 242, 0.5);
+  --feedback-border-hover: rgba(88, 101, 242, 0.85);
+  --feedback-glow: rgba(88, 101, 242, 0.762);
+}
