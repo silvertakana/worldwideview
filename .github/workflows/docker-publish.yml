@@ -48,8 +48,16 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
+          # Push to GHCR only when the workflow has write access to the
+          # registry: any push event, workflow_dispatch, or PRs whose head
+          # branch lives in this repo (not a fork). Fork PRs still build —
+          # so the Dockerfile is exercised and the image is verified — but
+          # skip the push step that would 403 with
+          # "denied: installation not allowed to Write organization package".
+          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # GHA cache writes also require write permission, so gate it on
+          # the same condition. (Reads are fine for everyone.)
+          cache-to: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && 'type=gha,mode=max' || '' }}
