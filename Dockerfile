@@ -6,7 +6,7 @@ RUN find . -type f \! -name 'package.json' \! -name 'pnpm-workspace.yaml' \! -na
     find . -type d -empty -delete
 
 # Stage 1: Install ALL dependencies (needed for build)
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 RUN npm install -g pnpm@9.15.0
 
 WORKDIR /app
@@ -26,6 +26,7 @@ ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 ARG NEXT_PUBLIC_BING_MAPS_KEY
 ARG NEXT_PUBLIC_WWV_EDITION
 ARG NEXT_PUBLIC_WS_ENGINE_URL
+ARG NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL
 ARG NEXT_PUBLIC_ADSENSE_CLIENT_ID
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -44,10 +45,11 @@ RUN node scripts/copy-cesium.mjs
 RUN pnpm --filter worldwideview deploy --prod /app/prod
 
 # Stage 4: Production runner
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 
 RUN apk add --no-cache openssl
+RUN npm install -g prisma@7.5.0
 
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0

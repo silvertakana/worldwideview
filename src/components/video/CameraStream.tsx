@@ -24,6 +24,10 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
     const [error, setError] = useState<string | null>(null);
     const [hlsFailed, setHlsFailed] = useState(false);
     const [activeStreamUrl, setActiveStreamUrl] = useState(streamUrl);
+    // Cache-buster tick that increments every JPEG_REFRESH_MS while playing,
+    // so static-image / MJPEG sources actually feel "live" instead of freezing
+    // on the first frame the browser cached.
+    const [imgRefreshTick, setImgRefreshTick] = useState(0);
 
     useEffect(() => { 
         setIsPlaying(false); setError(null); setIsLoading(false); setHlsFailed(false); 
@@ -62,6 +66,24 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
     const handlePlay = (e?: React.MouseEvent) => {
         e?.stopPropagation(); setError(null); setIsLoading(true); setIsPlaying(true);
     };
+
+    // For JPEG / MJPEG / static-image sources, re-fetch every JPEG_REFRESH_MS
+    // by bumping a cache-buster query param. Skip for HLS / iframe / known
+    // video platforms — they manage their own playback. Cleared when the
+    // stream stops (handleStop sets isPlaying false → effect cleanup runs).
+    const JPEG_REFRESH_MS = 10_000;
+    const isImageSource =
+        !isHlsUrl(activeStreamUrl) &&
+        !isIframe &&
+        !isKnownVideoPlatform(activeStreamUrl);
+    useEffect(() => {
+        if (!isPlaying || !isImageSource) return;
+        const t = setInterval(
+            () => setImgRefreshTick((v) => v + 1),
+            JPEG_REFRESH_MS,
+        );
+        return () => clearInterval(t);
+    }, [isPlaying, isImageSource]);
 
     const handleStop = (e?: React.MouseEvent) => {
         e?.stopPropagation(); setIsPlaying(false); setIsLoading(false); setError(null); setHlsFailed(false);
@@ -104,13 +126,19 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
             );
         }
 
-        // Fallback: static image / MJPEG snapshot (proxy HTTP→HTTPS if needed)
-        // When HLS failed and a preview JPEG exists, show that instead
+        // Fallback: static image / MJPEG snapshot (proxy HTTP→HTTPS if needed).
+        // When HLS failed and a preview JPEG exists, show that instead.
         const fallbackUrl = hlsFailed && previewUrl ? previewUrl : activeStreamUrl;
         const resolvedUrl = getProxiedStreamUrl(fallbackUrl);
+        // Cache-bust the URL on every refresh tick so the browser actually
+        // re-fetches instead of serving the same frame from disk cache.
+        const sep = resolvedUrl.includes("?") ? "&" : "?";
+        const refreshedUrl = imgRefreshTick > 0
+            ? `${resolvedUrl}${sep}_t=${imgRefreshTick}`
+            : resolvedUrl;
         return (
             <img
-                src={resolvedUrl}
+                src={refreshedUrl}
                 alt={label || "Live camera stream"}
                 style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
                 onLoad={() => setIsLoading(false)}

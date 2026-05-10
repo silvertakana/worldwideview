@@ -103,10 +103,20 @@ export default async function proxy(req: NextRequest) {
         }
     }
 
-    // Check JWT session from Auth.js cookie
+    // Check JWT session from Auth.js cookie.
+    // Behind a TLS-terminating reverse proxy, the cookie was set with the
+    // `__Secure-` prefix (because the public URL is https), but the request
+    // reaching us is plain http, so getToken's auto-detection looks for the
+    // unprefixed name and misses it. Detect via X-Forwarded-Proto / AUTH_URL.
+    const xfProto = req.headers.get("x-forwarded-proto");
+    const authUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
+    const isSecure = xfProto === "https"
+        || authUrl.startsWith("https://")
+        || req.nextUrl.protocol === "https:";
     const token = await getToken({
         req,
         secret: process.env.AUTH_SECRET,
+        secureCookie: isSecure,
     });
 
     if (token) {

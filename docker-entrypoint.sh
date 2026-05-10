@@ -29,7 +29,7 @@ if [ -z "$DATABASE_URL" ]; then
 fi
 
 echo "[entrypoint] Running database migrations..."
-npx -y prisma migrate deploy
+prisma migrate deploy
 echo "[entrypoint] Migrations complete."
 
 # Generate self-signed SSL certificates for local HTTPS bridging if they don't exist
