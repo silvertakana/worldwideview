@@ -277,6 +277,39 @@ export function Header() {
                         </button>
                       </div>
                     <div style={{ width: 1, height: 20, background: "var(--border-subtle)", flexShrink: 0 }} />
+                    <div style={{ position: "relative", flexShrink: 0 }} ref={timeRef}>
+                      <button
+                          ref={timeButtonRef}
+                          className="btn btn--glow"
+                          type="button"
+                          onClick={() => {
+                            if (!timeOpen && timeButtonRef.current) {
+                              const rect = timeButtonRef.current.getBoundingClientRect();
+                              setTimePos({
+                                top: rect.bottom + 8,
+                                right: window.innerWidth - (rect.right + 2),
+                              });
+                            }
+                            setTimeOpen((v) => !v);
+                          }}
+                          style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                        >
+                          {timeWindow}
+                           <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 10 10"
+                          style={{
+                            transform: timeOpen ? "rotate(180deg)" : "rotate(0deg)",
+                            transition: "transform 0.2s ease",
+                            opacity: 0.6,
+                          }}
+                        >
+                          <path d="M1 3 L5 7 L9 3" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        </button>
+                      </div>
+                    <div style={{ width: 1, height: 20, background: "var(--border-subtle)", flexShrink: 0 }} />
                 </div>
                 <div className="header__actions">
                     <div className="status-badge">

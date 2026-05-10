@@ -1,6 +1,6 @@
 import { useStore } from "@/core/state/store";
 import { FilterSection } from "@/components/panels/FilterPanel";
-import { Info, Key, MessageSquare } from "lucide-react";
+import { Cog, FilterIcon, Info, Key, MessageSquare } from "lucide-react";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 import { useResizablePanel } from "@/core/hooks/useResizablePanel";
 
@@ -8,6 +8,8 @@ import { IntelTab } from "./IntelTab";
 import { CacheTab } from "./CacheTab";
 import { OverlayTab } from "./OverlayTab";
 import { sectionHeaderStyle } from "./sharedStyles";
+
+import "./index.css";
 
 export function DataConfigPanel() {
     const isMobile = useIsMobile();
@@ -55,27 +57,26 @@ export function DataConfigPanel() {
                 <button
                     className={`panel-tab ${activeTab === "intel" ? "panel-tab--active" : ""}`}
                     onClick={() => setActiveTab("intel")}
+                    title="Intel"
+                    style={{width: "100%"}}
                 >
-                    <Info size={15} style={{ marginRight: 4 }} />
-                    <div style={{fontSize: "13px"}}>
-                        Intel
-                    </div>
+                    <Info size="20" style={{ margin: 5, maxHeight: "20%" }} />
                 </button>
                 <button
                     className={`panel-tab ${activeTab === "filters" ? "panel-tab--active" : ""}`}
                     onClick={() => setActiveTab("filters")}
+                    title="Filters"
+                    style={{width: "100%"}}
                 >
-                    <div style={{fontSize: "13px"}}>
-                        Filters
-                    </div>
+                    <FilterIcon size="20" style={{ margin: 5, maxHeight: "20%" }} />
                 </button>
                 <button
                     className={`panel-tab ${activeTab === "overlay" ? "panel-tab--active" : ""}`}
                     onClick={() => setActiveTab("overlay")}
+                    title="Config & Overlay"
+                    style={{width: "100%"}}
                 >
-                    <div style={{fontSize: "13px"}}>
-                        Config & Overlay
-                    </div>
+                    <Cog size="20" style={{ margin: 5, maxHeight: "20%" }} />
                 </button>
             </div>
 
@@ -99,6 +100,7 @@ export function DataConfigPanel() {
             <button 
                 className="feedback-sidebar-link" 
                 onClick={() => setFeedbackDialogOpen(true)}
+                style={{width: "100%", minHeight: "10%", maxHeight: "20%"}}
             >
                 <MessageSquare size={16} />
                 Provide Feedback
