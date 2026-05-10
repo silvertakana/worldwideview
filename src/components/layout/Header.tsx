@@ -275,6 +275,7 @@ export function Header() {
                           <path d="M1 3 L5 7 L9 3" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         </button>
+                        </div>
                       </div>
                     <div style={{ width: 1, height: 20, background: "var(--border-subtle)", flexShrink: 0 }} />
                 <div className="header__actions">
