@@ -90,3 +90,8 @@ packages/wwv-data-engine/
 
 # IDE workspace files
 *.code-workspace
+
+# Build outputs and generated assets
+/public/cesium/
+build_output*.log
+build_output*.txt

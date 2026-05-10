@@ -32,8 +32,11 @@ declare global {
 }
 
 /** Inject host globals. Call once at app startup, before any plugin loads. */
-export function injectHostGlobals(): void {
+export async function injectHostGlobals(): Promise<void> {
     if (globalThis.__WWV_HOST__) return;
+
+    const Cesium = await import("cesium");
+    const Resium = await import("resium");
 
     globalThis.__WWV_HOST__ = {
         React,

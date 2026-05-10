@@ -50,7 +50,7 @@ export function AppShell() {
             console.log("[AppShell] Initializing Platform...");
 
             // Inject host libraries for dynamic plugin loading
-            injectHostGlobals();
+            await injectHostGlobals();
 
             // Fetch disabled built-in plugins before registration
             let disabledIds = new Set<string>();
