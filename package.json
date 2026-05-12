@@ -70,7 +70,7 @@
     "rollup-plugin-external-globals": "^0.13.0",
     "tsx": "^4.21.0",
     "typescript": "^5",
-    "vite": "^6.4.2",
+    "vite": "^8.0.12",
     "vitest": "^4.1.6"
   },
   "pnpm": {
