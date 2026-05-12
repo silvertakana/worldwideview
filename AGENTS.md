@@ -116,13 +116,13 @@ Feature flags derived from edition in `src/core/edition.ts`.
 
 ### 5.1 File Size
 
-**Max 150 lines per file.** If a file grows beyond this, modularize it. Extract helpers, split components, use hooks.
+**Guideline: ~300 lines per file.** If a file grows excessively large, consider modularizing it. Extract helpers, split components, or use hooks.
 
 ### 5.2 Import Aliases
 
 - `@/*` → `./src/*`
 - `@worldwideview/wwv-plugin-sdk` → `./packages/wwv-plugin-sdk/src`
-- Each plugin has its own alias in `tsconfig.json`
+- Plugin modules are dynamically imported and do not require individual `tsconfig.json` aliases
 
 ### 5.3 CSS Rules
 
@@ -164,7 +164,8 @@ Built-in plugins are instantiated in `AppShell.tsx` and registered via `PluginRe
 > - **MUST Detail Commit Levels & Bumps**: On description changes or release notes, you must detail the level of commit (Major/Minor/Fix) for *each* individual change. If there are multiple accumulated changes, you MUST EITHER commit them individually and bump the version each time, OR commit them all at once and bump the version multiple times.
 > - **MUST Explain Complex Concepts Simply**: Whenever providing a complicated technical explanation to the user, you MUST include a simple explanation below it. Use an analogy with reference to the correct terminology, comparing the concept to something from everyday life to ensure the user easily understands it.
 > - **MUST Be Transparent & Narrate Actions (Gemini 3.1 Agents)**: If you are a Gemini 3.1 agent, you MUST always be fully transparent. **Whenever you do anything, you must explicitly say what you are going to do in a visible chat message to the user, and ONLY THEN do it.** This ensures the user can actually see and verify what you are doing in real time. Do not jump to destructive actions without stating your intent first. Keep this narration conversational and natural. Avoid stiff, robotic templates. Just explicitly drop a brief, casual note about what you are checking, fixing, or deleting *before* you run the tool.
-> - **MUST Wait for Explicit Authorization**: Do not take action unless explicitly told to do so. If the user highlights a piece of code, brings up a bug, or asks a question, your ONLY job is to analyze it, investigate the root cause, and explain what is wrong or answer the question. **Do not write the fix, delete files, or execute changes unless the user explicitly gives you the order to do so.** Wait for clear authorization before taking action. **Crucially, if you realize you have violated this rule by taking an unauthorized action, DO NOT automatically revert it. Reverting is itself an action that requires authorization. Just answer the question.**
+> - **MUST Require Explicit Authorization**: Do NOT execute any state-changing tools (e.g., modifying files, writing code, running scripts, executing git commands) without first obtaining clear, explicit permission from the user to proceed with that specific action, **UNLESS** the action is a simple, straightforward, and safe operation (e.g., no deletion or dangerous operations). For safe operations, you may proceed without explicit permission. Otherwise, inform the user of your proposed plan and WAIT for their approval before acting. **Crucially, if you realize you have violated this rule by taking an unauthorized action, DO NOT automatically revert it. Reverting is itself an action that requires authorization. Just answer the question.**
+> - **MUST Ask Clarifying Questions**: Never assume anything. If requirements are unclear, if you encounter an unexpected roadblock, or if the user's intent could be interpreted in multiple ways, you MUST pause and ask clarifying questions. Do NOT proceed until the developer has explicitly answered your question or requested you to proceed anyway.
 
 ### 5.8 Workspace Hygiene
 Whenever agents generate temporary debugging scripts, test REST endpoints via `.mjs`, or dump traces/JSON outputs, they **MUST** save these exclusively inside `/local-scripts/`. The root directory is strictly for production configuration files.

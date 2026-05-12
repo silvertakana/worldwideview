@@ -21,7 +21,7 @@ try {
 
 # Generate docker-compose.yml
 Write-Host "[*] Downloading docker-compose.yml..."
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/silvertakana/worldwideview/main/self-host/docker-compose.yml" -OutFile docker-compose.yml
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/silvertakana/worldwideview/main/docker-compose.yml" -OutFile docker-compose.yml
 
 # Generate .env
 if (-Not (Test-Path .env)) {

@@ -104,7 +104,15 @@ export interface ServerPluginConfig {
     streamUrl?: string;
 }
 export interface PluginContext {
+    /**
+     * @deprecated Use `getEngineUrl()` instead. This property is statically resolved at registration time.
+     */
     apiBaseUrl: string;
+    /**
+     * Dynamically resolves the HTTP base URL for the data engine.
+     * Evaluates local overrides, manifests, and fallbacks at the moment it is called.
+     */
+    getEngineUrl: () => string;
     /**
      * Key-value map of generic environment variables.
      * The engine surfaces any variable starting with NEXT_PUBLIC_WWV_PLUGIN_

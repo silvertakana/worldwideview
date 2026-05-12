@@ -15,7 +15,7 @@
     transition: all var(--duration-normal) var(--ease-spring);
     flex-shrink: 0;
     width: 100%;
-    min-height: 25%;
+    height: 42px;
     letter-spacing: 0.03em;
     box-shadow: 0 0 12px var(--discord-glow), inset 0 1px 0 rgba(88, 37, 254, 0.42);
 }

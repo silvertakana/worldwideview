@@ -254,7 +254,7 @@ export function LayerPanel() {
                         rel="noopener noreferrer"
                         className="discord-sidebar-link"
                         onClick={() => trackEvent("discord-link-click")}
-                        style={{width: "100%", minHeight: "10%", maxHeight: "20%"}}
+                        style={{width: "100%", height: "42px"}}
                     >
                         <DiscordIcon size={18} />
                         <span>Join our Discord</span>

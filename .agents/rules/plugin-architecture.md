@@ -84,7 +84,7 @@ To rapidly iterate on plugins without polluting the core monorepo `packages/` di
 
 1. **Create**: Run `node packages/wwv-cli/dist/index.js create <name> --local` to scaffold a full plugin structure inside the `local-plugins/` directory.
 2. **Develop**: Running `pnpm dev` or `pnpm dev:all` automatically spawns the `dev:plugins` watcher. Any changes made to plugins in `local-plugins/` will be instantly rebuilt using Vite (externalizing large globals) and synced to `public/plugins-local/` for hot-reloading.
-3. **Promote**: Once the plugin is stable and ready to be committed or published, run `node packages/wwv-cli/dist/index.js link <name>` to automatically move it to `packages/` and clean up the sandbox.
+3. **Publish**: The `dev:plugins` script natively supports hot-reloading local plugins within the workspace. Once the plugin is ready, you can simply use `node packages/wwv-cli/dist/index.js publish <name>` to publish it.
 
 ## When to Apply
 When writing `fetch` implementations for plugins, or tracing why an entity dropped off the map. Ensure missing data correctly triggers the cache fallback via the DataBus. Ensure all new external plugins use the `bundle` format and exist in the marketplace registry to avoid CDN 404 hydrating crashes.
@@ -383,8 +383,8 @@ While avoiding monolithic coupling, WWV plans to implement the following high-UX
 
 ### 1. Local Sandbox Workflow
 - **Scaffold**: `node packages/wwv-cli/dist/index.js create <name> --local` (creates inside `local-plugins/wwv-plugin-<name>`).
-- **Develop**: `pnpm dev` triggers hot-reloading.
-- **Promote**: `node packages/wwv-cli/dist/index.js link <name>` moves it to `packages/`.
+- **Develop**: `pnpm dev` triggers hot-reloading via `dev:plugins` watch script.
+- **Publish**: `node packages/wwv-cli/dist/index.js publish <name>` publishes the plugin. (No linking is needed; the sandbox natively functions in the workspace).
 
 ### 2. Data Engine Seeders
 Seeders in `wwv-data-engine/src/seeders/` provide the backend data.

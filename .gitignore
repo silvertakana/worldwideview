@@ -65,7 +65,6 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
-!.env
 
 # vercel
 .vercel
@@ -102,6 +101,17 @@ packages/wwv-data-engine/
 /public/cesium/
 build_output*.log
 build_output*.txt
+/build*.log
+
+# Root-level scratch scripts and agent artifacts
+tmp_*.js
+dump-*.js
+dump_*.py
+test*.js
+test*.mjs
+delete-dups.js
+commit.json
+skills-lock.json
 
 # Seeder repositories
 /local-seeders/

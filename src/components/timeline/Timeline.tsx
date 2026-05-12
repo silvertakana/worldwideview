@@ -16,12 +16,17 @@ export function Timeline() {
     const setPlaybackSpeed = useStore((s) => s.setPlaybackSpeed);
     const setPlaybackMode = useStore((s) => s.setPlaybackMode);
     const timeRange = useStore((s) => s.timeRange);
+    const timelineOpen = useStore((s) => s.timelineOpen);
+    const setTimelineOpen = useStore((s) => s.setTimelineOpen);
 
     const [mounted, setMounted] = useState(false);
     const [isDemoAdmin, setIsDemoAdmin] = useState(false);
 
     useEffect(() => {
         setMounted(true);
+        if (window.innerWidth < 768) {
+            setTimelineOpen(false);
+        }
         if (!isDemo) return;
         fetch("/api/auth/session")
             .then((r) => r.json())
@@ -46,8 +51,32 @@ export function Timeline() {
     const formatTime = (date: Date) =>
         mounted ? `${date.toLocaleTimeString()} — ${date.toLocaleDateString()}` : "...";
 
+    if (!timelineOpen) {
+        return (
+            <div className="timeline-toggle-wrapper">
+                <button 
+                    className="timeline-toggle-btn glass-panel" 
+                    onClick={() => setTimelineOpen(true)}
+                    title="Open Timeline"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="timeline glass-panel">
+            <button className="timeline-close-btn" onClick={() => setTimelineOpen(false)} title="Hide Timeline">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6 6 18"/>
+                    <path d="m6 6 12 12"/>
+                </svg>
+            </button>
+            
             {/* Row 1: Controls */}
             <div className="timeline__controls-row">
                 {isHistoryEnabled ? (

@@ -1,6 +1,7 @@
 services:
   wwv:
-    build: .
+    image: ghcr.io/silvertakana/worldwideview:latest
+    pull_policy: always
     ports:
       - "3000:3000"
     volumes:
@@ -22,10 +23,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    restart: unless-stopped
 
   db:
     image: postgres:15-alpine
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -40,11 +42,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 60s
-    profiles:
-      - "${WWV_SKIP_LOCAL_DB:-}"
 
   wwv-data-engine:
-    build: ../wwv-data-engine-public
+    image: ghcr.io/silvertakana/wwv-data-engine:latest
     ports:
       - '5000:5000'
     environment:
@@ -71,7 +71,3 @@ services:
 volumes:
   wwv-data:
   postgres-data:
-
-networks:
-  coolify:
-    external: true

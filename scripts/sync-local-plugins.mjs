@@ -73,9 +73,19 @@ export async function buildPlugin({ dir, manifest, pluginDir }) {
                     external: Object.keys(EXTERNAL_GLOBALS),
                     output: {
                         globals: EXTERNAL_GLOBALS,
-                        codeSplitting: false,
+                        inlineDynamicImports: true,
+                        banner: '"use client";',
                     },
                     plugins: [(await import("rollup-plugin-external-globals")).default(EXTERNAL_GLOBALS)],
+                    onwarn(warning, warn) {
+                        if (warning.code === 'MODULE_LEVEL_DIRECTIVE' && warning.message.includes('"use client"')) {
+                            return;
+                        }
+                        if (warning.code === 'SOURCEMAP_ERROR') {
+                            return;
+                        }
+                        warn(warning);
+                    }
                 },
                 minify: false, // Keep readable for dev
                 sourcemap: true,

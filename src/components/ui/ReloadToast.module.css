@@ -17,7 +17,7 @@
     gap: 14px;
     padding: 14px 22px;
     background: var(--bg-glass);
-    backdrop-filter: var(--glass-blur);
+    backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--glass-shadow);

@@ -100,7 +100,7 @@ export function DataConfigPanel() {
             <button 
                 className="feedback-sidebar-link" 
                 onClick={() => setFeedbackDialogOpen(true)}
-                style={{width: "100%", minHeight: "10%", maxHeight: "20%"}}
+                style={{width: "100%", height: "42px"}}
             >
                 <MessageSquare size={16} />
                 Provide Feedback

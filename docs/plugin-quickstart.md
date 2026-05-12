@@ -14,14 +14,26 @@ Before you start, ensure you have:
 
 ## 2. Scaffold Your Plugin
 
-WorldWideView plugins are built as standard packages within the monorepo workspace. To generate a new plugin sandbox, use the official CLI from the root of your `worldwideview` repository:
+WorldWideView plugins are built as standard packages within the monorepo workspace. To generate a new plugin sandbox, use the official interactive CLI from the root of your `worldwideview` repository:
 
 ```bash
-node packages/wwv-cli/dist/index.js create my-first-plugin --local
-pnpm install
+node packages/wwv-cli/dist/index.js create --local
 ```
 
-This creates a lightweight Vite-based project pre-configured with the `@worldwideview/wwv-plugin-sdk` inside the `local-plugins/wwv-plugin-my-first-plugin/` directory.
+The CLI will launch an interactive survey to configure your plugin:
+1. **Unique ID**: `my-first-plugin`
+2. **Display Name**: `My First Data Layer`
+3. **Description**: `A simple example plugin.`
+4. **Category**: `Custom`
+5. **Data Architecture**: `REST Polling / Static Data (Frontend only)`
+6. **Globe Rendering**: `Map Point`
+
+This automatically creates a lightweight Vite-based project pre-configured with the `@worldwideview/wwv-plugin-sdk` inside the `local-plugins/wwv-plugin-my-first-plugin/` directory.
+
+Once the scaffolding completes, install the dependencies:
+```bash
+pnpm install
+```
 
 ## 3. Develop Your Plugin
 
