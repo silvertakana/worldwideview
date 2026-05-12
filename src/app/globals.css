@@ -51,7 +51,6 @@ html, body {
   border-radius: var(--radius-lg);
   transition: all var(--duration-fast) var(--ease-smooth);
   backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
 }
 
 /* ─── Page Root (flex row: app + optional ad strip) ───────── */
