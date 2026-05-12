@@ -30,6 +30,10 @@ ARG NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL
 ARG NEXT_PUBLIC_ADSENSE_CLIENT_ID
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_WWV_AGENT_BUS_ENABLED
+ARG NEXT_PUBLIC_WWV_ANALYTICS
+ARG NEXT_PUBLIC_WWV_BUILD_ID
+ARG NEXT_PUBLIC_WWV_BUILD_AT
 
 # Run our pregenerate schema swap script and then generate Prisma client
 RUN NEXT_PUBLIC_WWV_EDITION=$NEXT_PUBLIC_WWV_EDITION pnpm run generate
@@ -37,8 +41,42 @@ RUN NEXT_PUBLIC_WWV_EDITION=$NEXT_PUBLIC_WWV_EDITION pnpm run generate
 # Database migrations run at container startup via docker-entrypoint.sh
 # DATABASE_URL must be set to a PostgreSQL connection string
 
-# Run Next.js build with Webpack cache mounted
-RUN --mount=type=cache,target=/app/.next/cache NODE_OPTIONS="--max_old_space_size=3072" pnpm run build
+# Stamp the build with a millisecond-precision id + iso timestamp. If the
+# operator hasn't passed NEXT_PUBLIC_WWV_BUILD_ID via build args, generate
+# one here at build time so /api/build and the client console.log both
+# carry a unique value per `docker build`.
+RUN if [ -z "$NEXT_PUBLIC_WWV_BUILD_ID" ]; then \
+        NEXT_PUBLIC_WWV_BUILD_ID="$(date +%s%3N)" ; \
+    fi && \
+    if [ -z "$NEXT_PUBLIC_WWV_BUILD_AT" ]; then \
+        NEXT_PUBLIC_WWV_BUILD_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)" ; \
+    fi && \
+    echo "$NEXT_PUBLIC_WWV_BUILD_ID" > /app/.build-id && \
+    echo "$NEXT_PUBLIC_WWV_BUILD_AT" > /app/.build-at
+
+# Write a .env.production.local so Next.js sees every NEXT_PUBLIC_* var
+# whose ARG was passed in. Docker doesn't reliably promote ARGs into the
+# Node process's environment for the build command; writing the file is
+# explicit, predictable, and the way Next docs document it.
+RUN set +e ; { \
+        echo "NEXT_PUBLIC_WWV_BUILD_ID=$(cat /app/.build-id)" ; \
+        echo "NEXT_PUBLIC_WWV_BUILD_AT=$(cat /app/.build-at)" ; \
+        if [ -n "$NEXT_PUBLIC_WWV_EDITION" ]; then echo "NEXT_PUBLIC_WWV_EDITION=$NEXT_PUBLIC_WWV_EDITION" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_WWV_AGENT_BUS_ENABLED" ]; then echo "NEXT_PUBLIC_WWV_AGENT_BUS_ENABLED=$NEXT_PUBLIC_WWV_AGENT_BUS_ENABLED" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_WWV_ANALYTICS" ]; then echo "NEXT_PUBLIC_WWV_ANALYTICS=$NEXT_PUBLIC_WWV_ANALYTICS" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_CESIUM_ION_TOKEN" ]; then echo "NEXT_PUBLIC_CESIUM_ION_TOKEN=$NEXT_PUBLIC_CESIUM_ION_TOKEN" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" ]; then echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_BING_MAPS_KEY" ]; then echo "NEXT_PUBLIC_BING_MAPS_KEY=$NEXT_PUBLIC_BING_MAPS_KEY" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_WS_ENGINE_URL" ]; then echo "NEXT_PUBLIC_WS_ENGINE_URL=$NEXT_PUBLIC_WS_ENGINE_URL" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL" ]; then echo "NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL=$NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_ADSENSE_CLIENT_ID" ]; then echo "NEXT_PUBLIC_ADSENSE_CLIENT_ID=$NEXT_PUBLIC_ADSENSE_CLIENT_ID" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_SUPABASE_URL" ]; then echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" ; fi ; \
+    } > /app/.env.production.local
+
+# Run Next.js build with Webpack cache mounted.
+RUN --mount=type=cache,target=/app/.next/cache \
+    NODE_OPTIONS="--max_old_space_size=3072" pnpm run build
 RUN node scripts/copy-cesium.mjs
 
 # Deploy flattened production dependencies
@@ -78,6 +116,11 @@ COPY --from=builder /app/prod/node_modules ./node_modules
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/scripts/https-proxy.mjs ./scripts/https-proxy.mjs
+COPY --from=builder /app/scripts/run-plugin-backends.mjs ./scripts/run-plugin-backends.mjs
+
+# Plugin packages (frontend bundles go through public/plugins-local; backends
+# need their source on disk so the supervisor can spawn them).
+COPY --from=builder /app/packages ./packages
 
 # Entrypoint: migrate DB on first run, then start server
 COPY docker-entrypoint.sh ./docker-entrypoint.sh

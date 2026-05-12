@@ -88,3 +88,92 @@ To distribute your plugin globally:
 ### Debugging Marketplace Submissions
 - **"Invalid Manifest" Error:** Ensure you are using `@worldwideview/wwv-plugin-sdk` as a `peerDependency` (not a direct dependency) so the host application injects the context correctly.
 - **Icon Not Showing:** Icons must be valid Lucide icon strings (e.g., `"Plane"`, `"Anchor"`).
+
+## On-Demand Server-Side Work: Plugin Backends
+
+The Data Engine Seeder model above handles **batch / interval** server work: poll a source, normalise, snapshot to Redis, broadcast. It doesn't fit **request/response** patterns the frontend can't safely do itself — per-entity lookups, 302 redirects, OAuth flows, webhook receivers, CORS-strict third-party APIs. The browser blocks those for good reason, and the host's core Next.js API isn't the right home for plugin-specific endpoints either.
+
+For that, plugins ship a **backend**: a Node process supervised by the host, listening on a localhost port, reached by the frontend via a same-origin proxy.
+
+### Opting In
+
+Declare a `backend` block in your plugin's `package.json`:
+
+```json
+{
+  "worldwideview": {
+    "id": "myplugin",
+    ...,
+    "backend": {
+      "entry": "backend/server.mjs",
+      "port": 5101
+    }
+  }
+}
+```
+
+- `entry` is required, resolved relative to the package root.
+- `port` is optional. Without it the supervisor assigns a deterministic port from `hash(pluginId) % 100 + 5100` (range 5100–5199 reserved for plugin backends).
+
+### Backend Contract
+
+Your backend is just a Node process. Use Fastify, hono, express, or built-in `http` — the supervisor doesn't care, as long as you honour:
+
+- Listen on `process.env.PORT`.
+- Bind to `process.env.HOST` (always `127.0.0.1`; the host's authenticated proxy is the only ingress).
+- `process.env.PLUGIN_ID` is set to your plugin id for logging convenience.
+- Handle `SIGTERM` and `SIGINT` for graceful shutdown.
+- Exit code `0` means "intentional shutdown, don't restart". Any non-zero exit triggers exponential-backoff restart (1s → 30s cap, reset after 60s of uptime).
+
+Minimum viable example (zero external deps):
+
+```javascript
+// backend/server.mjs
+import { createServer } from "http";
+
+const PORT = Number(process.env.PORT);
+const HOST = process.env.HOST ?? "127.0.0.1";
+
+const server = createServer(async (req, res) => {
+    if (req.method === "GET" && req.url === "/hello") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ msg: "hello from my plugin" }));
+        return;
+    }
+    res.writeHead(404).end();
+});
+
+server.listen(PORT, HOST, () => console.log(`listening on ${HOST}:${PORT}`));
+process.on("SIGTERM", () => server.close(() => process.exit(0)));
+process.on("SIGINT", () => server.close(() => process.exit(0)));
+```
+
+### Reaching the Backend from the Frontend
+
+Same-origin: `fetch("/api/plugin/<your-plugin-id>/<your-path>", ...)`.
+
+The host's Next.js proxy at `src/app/api/plugin/[id]/[...path]/route.ts` reads the runtime registry written by the supervisor (`.plugin-backends.json`) and forwards your request to the right localhost port. **No CORS, no port discovery in the plugin bundle.** Cookies pass through naturally.
+
+```typescript
+// In your plugin's frontend bundle:
+const res = await fetch("/api/plugin/myplugin/hello", { credentials: "include" });
+const body = await res.json();
+```
+
+### Orchestration
+
+- **Dev:** `pnpm dev` runs the supervisor concurrently with `next dev` (script `dev:plugin-backends`). Crashes auto-restart with backoff. Logs are prefixed `[plugin:<id>]`.
+- **Prod:** `docker-entrypoint.sh` launches the supervisor in the background before the Next.js server. One container, no compose changes required for the base case. If a plugin needs resource limits or isolation, the supervisor can be moved into its own compose service later — the registry file makes this swap mechanical.
+
+### When to Use a Backend vs. a Seeder
+
+| Need                                                     | Use            |
+| -------------------------------------------------------- | -------------- |
+| Bulk data refreshed on an interval                       | Seeder         |
+| WebSocket push of new entities                           | Seeder         |
+| Per-id lookup on demand                                  | **Backend**    |
+| Following a third-party 302 / proxying audio bytes       | **Backend**    |
+| OAuth dance / webhook receiver                           | **Backend**    |
+| One-shot fetch the frontend can do directly              | Neither        |
+
+A plugin can ship both — they're orthogonal. The seeder handles the bulk index, the backend handles the per-entity lookups.

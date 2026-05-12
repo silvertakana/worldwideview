@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const LOCAL_PLUGINS_DIR = path.join(ROOT, "local-plugins");
+const PACKAGES_DIR = path.join(ROOT, "packages");
 const OUTPUT_DIR = path.join(ROOT, "public", "plugins-local");
 
 // External globals — must match extract-plugins.mjs pattern
@@ -21,26 +22,50 @@ const EXTERNAL_GLOBALS = {
     "resium": "globalThis.__WWV_HOST__.Resium",
 };
 
-export function discoverLocalPlugins() {
-    if (!fs.existsSync(LOCAL_PLUGINS_DIR)) return [];
-
-    return fs.readdirSync(LOCAL_PLUGINS_DIR)
+function discoverFromDir(parentDir, prefixFilter) {
+    if (!fs.existsSync(parentDir)) return [];
+    return fs.readdirSync(parentDir)
         .filter(dir => {
             if (dir.startsWith(".")) return false;
-            const pkgPath = path.join(LOCAL_PLUGINS_DIR, dir, "package.json");
+            if (prefixFilter && !dir.startsWith(prefixFilter)) return false;
+            const pkgPath = path.join(parentDir, dir, "package.json");
             if (!fs.existsSync(pkgPath)) return false;
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+            let pkg;
+            try {
+                pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+            } catch {
+                return false;
+            }
             return !!pkg.worldwideview;
         })
         .map(dir => {
-            const pkgPath = path.join(LOCAL_PLUGINS_DIR, dir, "package.json");
+            const pkgPath = path.join(parentDir, dir, "package.json");
             const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
             const manifest = pkg.worldwideview;
             manifest.version = pkg.version;
             manifest.name = pkg.name;
             manifest.description = pkg.description;
-            return { dir, manifest, pluginDir: path.join(LOCAL_PLUGINS_DIR, dir) };
+            return { dir, manifest, pluginDir: path.join(parentDir, dir) };
         });
+}
+
+/**
+ * Discover plugins from both the sandbox (`local-plugins/`) and the
+ * canonical monorepo location (`packages/wwv-plugin-*`). Sandbox
+ * plugins win on id collision — they're the in-flight version.
+ */
+export function discoverLocalPlugins() {
+    const sandbox = discoverFromDir(LOCAL_PLUGINS_DIR, null);
+    const inTree = discoverFromDir(PACKAGES_DIR, "wwv-plugin-");
+
+    const seenIds = new Set(sandbox.map(p => p.manifest.id || p.dir));
+    const merged = [...sandbox];
+    for (const p of inTree) {
+        const id = p.manifest.id || p.dir.replace(/^wwv-plugin-/, "");
+        if (seenIds.has(id)) continue;
+        merged.push(p);
+    }
+    return merged;
 }
 
 export async function buildPlugin({ dir, manifest, pluginDir }) {

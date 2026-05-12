@@ -44,4 +44,13 @@ if [ -f "./scripts/https-proxy.mjs" ]; then
   node ./scripts/https-proxy.mjs &
 fi
 
+# Plugin-backend supervisor — discovers packages/wwv-plugin-*/backend
+# entries and runs each in its own Node process on a localhost port.
+# The /api/plugin/<id>/<path> Next.js proxy reads .plugin-backends.json
+# to forward requests to the right backend. If no plugins ship backends,
+# the supervisor exits silently after writing an empty registry.
+if [ -f "./scripts/run-plugin-backends.mjs" ]; then
+  node ./scripts/run-plugin-backends.mjs &
+fi
+
 exec node server.js

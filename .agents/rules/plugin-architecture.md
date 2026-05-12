@@ -83,8 +83,64 @@ DataBus.getInstance().emit('dataUpdated', {
 To rapidly iterate on plugins without polluting the core monorepo `packages/` directory or git history, use the local devkit:
 
 1. **Create**: Run `node packages/wwv-cli/dist/index.js create <name> --local` to scaffold a full plugin structure inside the `local-plugins/` directory.
-2. **Develop**: Running `pnpm dev` or `pnpm dev:all` automatically spawns the `dev:plugins` watcher. Any changes made to plugins in `local-plugins/` will be instantly rebuilt using Vite (externalizing large globals) and synced to `public/plugins-local/` for hot-reloading.
+2. **Develop**: Running `pnpm dev` or `pnpm dev:all` automatically spawns the `dev:plugins` watcher. Any changes made to plugins in `local-plugins/` will be instantly rebuilt using Vite (externalizing large globals) and synced to `public/plugins-local/` for hot-reloading. The same sync also picks up canonical in-tree plugins under `packages/wwv-plugin-*` (sandbox wins on id collision so you can shadow a published plugin for local debugging).
 3. **Publish**: The `dev:plugins` script natively supports hot-reloading local plugins within the workspace. Once the plugin is ready, you can simply use `node packages/wwv-cli/dist/index.js publish <name>` to publish it.
+
+## Plugin Backends (On-Demand Server-Side Work)
+
+The plugin model has three extension dimensions:
+
+1. **Frontend bundle** — ESM at `packages/wwv-plugin-<id>/dist/index.mjs`, served via marketplace/CDN, runs in the browser.
+2. **Engine seeder** — Node module at `seeders/community/<id>/`, runs in the data engine, batch/interval data over WebSocket.
+3. **Plugin backend** — Node process at `packages/wwv-plugin-<id>/backend/server.mjs`, runs on a localhost port supervised by the host, for on-demand work (per-entity lookups, CORS-bypassing proxies, OAuth flows, webhook receivers).
+
+### When to use a backend (vs. a seeder)
+
+| Need                                                        | Use         |
+| ----------------------------------------------------------- | ----------- |
+| Bulk data refreshed on an interval                          | Seeder      |
+| WebSocket push of new entities                              | Seeder      |
+| Per-id lookup on demand (`/place/:id/channels`)             | Backend     |
+| Following a third-party 302 / proxying audio bytes          | Backend     |
+| OAuth dance / webhook receiver                              | Backend     |
+| One-shot fetch the frontend can do directly                 | Neither     |
+
+### Opting in
+
+Add a `backend` block to the plugin's manifest:
+
+```json
+{
+  "worldwideview": {
+    "id": "myplugin",
+    ...,
+    "backend": {
+      "entry": "backend/server.mjs",
+      "port": 5100
+    }
+  }
+}
+```
+
+- `entry` is required, resolved relative to the package root.
+- `port` is optional; if omitted the supervisor assigns a deterministic port from `hash(pluginId) % 100 + 5100` so the proxy can find the backend without shared state at boot.
+
+### Contract the backend must honour
+
+- Listen on `process.env.PORT` and bind to `process.env.HOST` (always `127.0.0.1` — internet exposure is the host's responsibility).
+- `process.env.PLUGIN_ID` is set to your plugin id for logging convenience.
+- Use any HTTP framework (or Node's built-in `http`); the supervisor only cares that the process listens on the port.
+- Respond to `SIGTERM` and `SIGINT` for graceful shutdown.
+- Exit code `0` means "intentional shutdown, don't restart"; any non-zero exit triggers exponential-backoff restart (1s → 30s cap, reset after 60s of uptime).
+
+### How the frontend reaches it
+
+Same-origin: `fetch("/api/plugin/<your-plugin-id>/<path>", ...)`. The host's Next.js route at `src/app/api/plugin/[id]/[...path]/route.ts` reads `.plugin-backends.json` and forwards the request to the right localhost port. No CORS, no port discovery in the plugin code.
+
+### Orchestration
+
+- **Dev**: `pnpm dev` runs the supervisor concurrently with `next dev` (script `dev:plugin-backends`).
+- **Prod**: `docker-entrypoint.sh` launches the supervisor in background before `node server.js`. One container, no compose changes needed for the base case. Per-backend Docker isolation can be added later if any plugin needs resource limits.
 
 ## When to Apply
 When writing `fetch` implementations for plugins, or tracing why an entity dropped off the map. Ensure missing data correctly triggers the cache fallback via the DataBus. Ensure all new external plugins use the `bundle` format and exist in the marketplace registry to avoid CDN 404 hydrating crashes.
