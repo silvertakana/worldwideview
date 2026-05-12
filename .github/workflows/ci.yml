@@ -19,6 +19,19 @@ jobs:
       - run: npx prisma generate
       - run: pnpm exec tsc --noEmit
 
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
