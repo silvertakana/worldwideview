@@ -88,6 +88,8 @@ The data engine is a **content-agnostic runner** (`wwv-data-engine`, public) tha
 - **Local Dev**: Engine runs via Docker Compose on port 5000, reading seeders dynamically from `local-seeders/` (split into `community` and `private` tiers).
 - **Production**: Engine container on Coolify, downloads release bundles from `wwv-seeders-community` and `wwv-seeders-private` on startup and unzips them into `/app/seeders`.
 - **Split-routing**: `resolveEngineUrl` prioritizes the **Local Dev Engine (localhost:5001)** for local testing (following 12-Factor App methodology), falling back to cloud-hosted endpoints.
+- **Agnostic Frontend Architecture**: WorldWideView is a completely agnostic renderer. It has absolutely no concept of a "unified" Data Engine. If 30 plugins require 30 different WebSocket servers, the application will blindly open 30 connections.
+- **Self-Contained Plugins**: Each plugin is a self-contained package and **MUST explicitly declare its own `streamUrl` in its manifest or config**. Do NOT assume the frontend acts as a unified pipe. It just so happens that our default plugins share the `wwv-data-engine` backend, but the platform is 100% decentralized.
 - **Dual-Output Engine**: Each seeder automatically exposes a WebSocket stream (`/stream`) and a REST API endpoint (`/api/[plugin-id]`).
 - **Scope Boundary (99% vs 1%)**: The engine handles standard caching and broadcasting (99%). Plugins requiring complex on-demand compute (1%) must host their own custom backend.
 
@@ -114,13 +116,13 @@ Feature flags derived from edition in `src/core/edition.ts`.
 
 ### 5.1 File Size
 
-**Max 150 lines per file.** If a file grows beyond this, modularize it. Extract helpers, split components, use hooks.
+**Guideline: ~300 lines per file.** If a file grows excessively large, consider modularizing it. Extract helpers, split components, or use hooks.
 
 ### 5.2 Import Aliases
 
 - `@/*` → `./src/*`
 - `@worldwideview/wwv-plugin-sdk` → `./packages/wwv-plugin-sdk/src`
-- Each plugin has its own alias in `tsconfig.json`
+- Plugin modules are dynamically imported and do not require individual `tsconfig.json` aliases
 
 ### 5.3 CSS Rules
 
@@ -149,10 +151,10 @@ Built-in plugins are instantiated in `AppShell.tsx` and registered via `PluginRe
 - Globs for `packages/*`, `packages/*/backend`, and `local-plugins/*` are mapped in `pnpm-workspace.yaml` and `tsconfig.json` paths
 - Add new `packages/` plugins to `transpilePackages` in `next.config.ts` if required
 
-### 5.7 AI Meta-Directives: Antigravity Standard (Claude Code)
+### 5.7 AI Meta-Directives: Antigravity Standard
 
 > [!NOTE]
-> This repository is orchestrated via the **Antigravity open standard** using **Claude Code** as the active agent. The entry point for Claude Code is `CLAUDE.md` at the project root.
+> This repository is orchestrated via the **Antigravity open standard**. The entry point for the agent framework is `CLAUDE.md` / `AGENTS.md` at the project root.
 
 > [!WARNING]
 > - **Always** use standard `.md` file extensions for rules, skills, and workflows. 
@@ -161,7 +163,9 @@ Built-in plugins are instantiated in `AppShell.tsx` and registered via `PluginRe
 > - **MUST**: You MUST update Semantic Versioning numbering inside the relevant `package.json` file prior to executing any code commits, adhering strictly to the `[/commit]` workflow rules (`feat:` -> Minor, `fix/refactor/perf:` -> Patch).
 > - **MUST Detail Commit Levels & Bumps**: On description changes or release notes, you must detail the level of commit (Major/Minor/Fix) for *each* individual change. If there are multiple accumulated changes, you MUST EITHER commit them individually and bump the version each time, OR commit them all at once and bump the version multiple times.
 > - **MUST Explain Complex Concepts Simply**: Whenever providing a complicated technical explanation to the user, you MUST include a simple explanation below it. Use an analogy with reference to the correct terminology, comparing the concept to something from everyday life to ensure the user easily understands it.
-> - **MUST Be Transparent & Narrate Actions**: You MUST always be transparent about what you are doing. Narrate your goals, your current step in the process, and exactly what actions you are taking or tools you are executing **before** or **while** you do them, not after they are done. Do not work in silence or lock all your reasoning behind hidden "thought" blocks. Use visible chat messages to bring the user along the journey by describing your plan as it unfolds. **Crucially, keep this narration conversational and natural.** Avoid stiff, robotic templates (e.g., "My Goal: X. My Step: Y."). Just occasionally drop a brief, casual note about what you are checking or doing next so the user isn't left in the dark.
+> - **MUST Be Transparent & Narrate Actions (Gemini 3.1 Agents)**: If you are a Gemini 3.1 agent, you MUST always be fully transparent. **Whenever you do anything, you must explicitly say what you are going to do in a visible chat message to the user, and ONLY THEN do it.** This ensures the user can actually see and verify what you are doing in real time. Do not jump to destructive actions without stating your intent first. Keep this narration conversational and natural. Avoid stiff, robotic templates. Just explicitly drop a brief, casual note about what you are checking, fixing, or deleting *before* you run the tool.
+> - **MUST Require Explicit Authorization**: Do NOT execute any state-changing tools (e.g., modifying files, writing code, running scripts, executing git commands) without first obtaining clear, explicit permission from the user to proceed with that specific action, **UNLESS** the action is a simple, straightforward, and safe operation (e.g., no deletion or dangerous operations). For safe operations, you may proceed without explicit permission. Otherwise, inform the user of your proposed plan and WAIT for their approval before acting. **Crucially, if you realize you have violated this rule by taking an unauthorized action, DO NOT automatically revert it. Reverting is itself an action that requires authorization. Just answer the question.**
+> - **MUST Ask Clarifying Questions**: Never assume anything. If requirements are unclear, if you encounter an unexpected roadblock, or if the user's intent could be interpreted in multiple ways, you MUST pause and ask clarifying questions. Do NOT proceed until the developer has explicitly answered your question or requested you to proceed anyway.
 
 ### 5.8 Workspace Hygiene
 Whenever agents generate temporary debugging scripts, test REST endpoints via `.mjs`, or dump traces/JSON outputs, they **MUST** save these exclusively inside `/local-scripts/`. The root directory is strictly for production configuration files.
@@ -201,6 +205,7 @@ Read the relevant rule file when working in that domain:
 | `server-management` | Server development and debugging using SSH and Coolify MCP | `.agents/rules/server-management.md` |
 | `stakeholders-and-human-centered-design` | Human-centered design principles and stakeholder map | `.agents/rules/stakeholders-and-human-centered-design.md` |
 | `directory-structure` | Project structure and related repositories | `.agents/rules/directory-structure.md` |
+| `ecosystem-repositories` | WorldWideView ecosystem repositories and cross-repository workflows | `.agents/rules/ecosystem-repositories.md` |
 | `deployment-and-testing` | Docker build patterns, testing strategies, security headers | `.agents/rules/deployment-and-testing.md` |
 | `environment-config` | Secrets and environment variables | `.agents/rules/environment-config.md` |
 | `monorepo-workflow` | pnpm commands, adding packages, workspace config | `.agents/rules/monorepo-workflow.md` |

@@ -84,7 +84,7 @@ To rapidly iterate on plugins without polluting the core monorepo `packages/` di
 
 1. **Create**: Run `node packages/wwv-cli/dist/index.js create <name> --local` to scaffold a full plugin structure inside the `local-plugins/` directory.
 2. **Develop**: Running `pnpm dev` or `pnpm dev:all` automatically spawns the `dev:plugins` watcher. Any changes made to plugins in `local-plugins/` will be instantly rebuilt using Vite (externalizing large globals) and synced to `public/plugins-local/` for hot-reloading.
-3. **Promote**: Once the plugin is stable and ready to be committed or published, run `node packages/wwv-cli/dist/index.js link <name>` to automatically move it to `packages/` and clean up the sandbox.
+3. **Publish**: The `dev:plugins` script natively supports hot-reloading local plugins within the workspace. Once the plugin is ready, you can simply use `node packages/wwv-cli/dist/index.js publish <name>` to publish it.
 
 ## When to Apply
 When writing `fetch` implementations for plugins, or tracing why an entity dropped off the map. Ensure missing data correctly triggers the cache fallback via the DataBus. Ensure all new external plugins use the `bundle` format and exist in the marketplace registry to avoid CDN 404 hydrating crashes.
@@ -373,7 +373,7 @@ While WorldWideView draws UI/UX and feature inspiration from WorldMonitor as a b
 ### Planned Features (Inspired by Monolithic Systems / WM)
 While avoiding monolithic coupling, WWV plans to implement the following high-UX features natively or via generic plugin capabilities:
 
-1. **Global WebSocket Firehose (Unified Data Pipeline)**: Instead of the browser running individual `setInterval` HTTP polling loops for every activated plugin (which degrades performance and fragments data timing), WWV will shift to a single WebSocket connection. When a user activates a plugin, the frontend sends a `subscribe` message. The Data Engine then handles all background polling and simply streams the parsed updates down the singular socket. This dramatically simplifies the developer mental model—plugin developers won't write `fetch()` loops; they just provide a render configuration and respond to incoming data events.
+1. **Decentralized Plugin Connections (Agnostic Client)**: WorldWideView is entirely agnostic to the backend. It does NOT enforce a single unified pipeline. If a user activates 30 different plugins hosted on 30 different custom servers, the frontend will happily open 30 separate WebSocket connections. The client application knows absolutely nothing about the Data Engine—it only reads the `streamUrl` provided by each individual plugin's manifest.
 2. **Cross-Layer Geofencing & Alerts**: A new `User Alert System` designed explicitly as a **plugin**. Utilizing the unified `GeoEntity` outputs, users can draw a polygon on the map and trigger webhooks/notifications if *any* entity from *any* active plugin crosses the boundary.
 3. **Advanced Dead-Reckoning Hooks**: Building a `useDeadReckoning()` hook directly into the `@worldwideview/wwv-plugin-sdk`. It will automatically use standard `speed` and `heading` props to smoothly glide vehicle entities across the Cesium globe at 60 FPS between data pings, preventing plugin authors from rewriting complex math logic.
 4. **Curated Workspaces / Scenarios**: The ability for users to save their current state as a "Workspace URL." This generates a shareable link that encodes the exact camera position, timeline bounds, activated plugins, and their respective layer configurations/filters.
@@ -383,8 +383,8 @@ While avoiding monolithic coupling, WWV plans to implement the following high-UX
 
 ### 1. Local Sandbox Workflow
 - **Scaffold**: `node packages/wwv-cli/dist/index.js create <name> --local` (creates inside `local-plugins/wwv-plugin-<name>`).
-- **Develop**: `pnpm dev` triggers hot-reloading.
-- **Promote**: `node packages/wwv-cli/dist/index.js link <name>` moves it to `packages/`.
+- **Develop**: `pnpm dev` triggers hot-reloading via `dev:plugins` watch script.
+- **Publish**: `node packages/wwv-cli/dist/index.js publish <name>` publishes the plugin. (No linking is needed; the sandbox natively functions in the workspace).
 
 ### 2. Data Engine Seeders
 Seeders in `wwv-data-engine/src/seeders/` provide the backend data.

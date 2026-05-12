@@ -11,7 +11,7 @@ The core build configuration resides in `package.json` and `next.config.ts`. A c
 ### Standard Development
 - **Install Dependencies:** `pnpm install` (Installs all workspace packages defined in `pnpm-workspace.yaml`).
 - **Initial Setup:** `pnpm run setup` (Executes `scripts/setup.mjs` to generate a `.env.local` with a fresh `AUTH_SECRET`).
-- **Run Development Server (All):** `pnpm dev:all` (Concurrently starts the Next.js frontend and the local `wwv-data-engine` + Redis containers via Docker Compose).
+- **Run Development Server (All):** `pnpm dev:all` (Concurrently starts the Next.js frontend and the local `wwv-data-engine-v2` + Redis containers via Docker Compose).
 
 ### Production Build
 - **Build Command:** `pnpm build` (Executes `next build --webpack`).
@@ -21,7 +21,7 @@ The core build configuration resides in `package.json` and `next.config.ts`. A c
 ## Platform Setup
 
 - **Database Migrations:** Prisma schema is located at `prisma/schema.prisma`. During development, `pnpm dev` triggers a `predev` hook running `npx prisma migrate deploy` to ensure PostgreSQL tables are initialized.
-- **Data Engine:** The generic data engine runner and Redis cache are started via `docker compose up wwv-data-engine wwv-redis`. Custom data seeders are placed in the `local-seeders/` sandbox and dynamically loaded by the engine.
+- **Data Engine:** The generic data engine runner and Redis cache are started via `docker compose up wwv-data-engine-v2 wwv-redis`. Custom data seeders are placed in the `local-seeders/community/` or `local-seeders/private/` sandboxes and dynamically loaded by the engine.
 - **Plugin Packages:** Internal plugin packages must be properly listed in `tsconfig.json` paths and `next.config.ts`'s `transpilePackages` array.
 
 ## Reference

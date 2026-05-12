@@ -20,24 +20,28 @@ WorldWideView operates on a strict **Dynamic CDN Loaded (Bundle)** architecture.
 
 Relying on the frontend `fetch()` method is insufficient for high-frequency real-time tracking (like aviation or maritime). For continuous telemetry, you must build a **Data Engine Seeder** — a lightweight Javascript data polling script.
 
-### Data Engine Seeder Architecture
-Instead of the frontend fetching data, you write a lightweight seeder script that connects to an upstream source, normalizes the data, and is executed by the central `wwv-data-engine` runner.
+WorldWideView is a completely agnostic renderer. It has absolutely no concept of a "unified" Data Engine. If 30 plugins require 30 different WebSocket servers, the application will blindly open 30 connections. Each plugin is a self-contained package and **MUST explicitly declare its own `streamUrl` in its manifest or config**. Do NOT assume the frontend acts as a unified pipe.
 
-1. **Create a Seeder Directory:** Inside your WorldWideView project, create a folder under `local-seeders/` (e.g., `local-seeders/my-plugin/`).
+While you can host your own backend, we provide the `DataEngineV2` runner as a standardized environment for seeders.
+
+### Data Engine V2 Seeder Architecture
+Instead of the frontend fetching data, you write a lightweight seeder script that connects to an upstream source, normalizes the data, and is executed by the central `wwv-data-engine-v2` host runner.
+
+1. **Create a Seeder Directory:** Inside your WorldWideView project, create a folder under `local-seeders/` (e.g., `local-seeders/community/my-plugin/`). Note that seeders are split into `community` and `private` tiers to prevent namespace collisions.
 2. **Write the Seeder Script:** Create a `seeder.mjs` file that exports a `fetch(ctx)` function.
-3. **Engine Auto-Discovery:** The local Docker-based `wwv-data-engine` automatically mounts this directory, discovers your script, and runs it on the defined interval.
-4. **WebSocket Delivery:** The central `wwv-data-engine` immediately broadcasts your returned updates over WebSockets to all connected clients.
+3. **Engine Auto-Discovery:** The local Docker-based `wwv-data-engine-v2` automatically mounts this directory, discovers your script, and runs it on the defined interval.
+4. **WebSocket & REST Delivery:** Seeders in V2 expose both a WebSocket stream (`/stream`) for real-time instantaneous updates, and a REST API endpoint (`/api/:id`) for fetching live data snapshots directly from Redis.
 
 ### Dependency Management & Monorepo Hoisting
 Seeders within `local-seeders/` are strictly orchestrated within the pnpm workspace. They are executed by the central runner, not as standalone applications.
 - **Keep `package.json` clean**: Do not include bulky `dependencies` in your seeder's local `package.json` (unless it's an exceptional, bespoke library).
-- **Workspace Resolution**: Standard packages (e.g., `axios`, `ioredis`, `@worldwideview/wwv-plugin-sdk`) are provided by the engine. At runtime, the `wwv-data-engine` leverages native Node.js module resolution to fetch the required dependencies directly from the root workspace or its own containerized runtime. 
+- **Workspace Resolution**: Standard packages (e.g., `zod`, `ws`, `node-cron`, `undici`) are provided by the engine. At runtime, `wwv-data-engine-v2` leverages native Node.js module resolution to fetch the required dependencies directly from the root workspace or its own containerized runtime. Seeders MUST NOT bundle these dependencies.
 - **Lightweight by Design**: This dependency orchestration guarantees that seeders remain extremely lightweight, hot-reloading takes milliseconds, and Docker container size stays optimized.
 
 > [!TIP]
 > **Debugging WebSockets:** If your frontend isn't receiving data from your backend seeder:
-> 1. Check the `wwv-data-engine` logs to ensure your seeder is publishing to Redis successfully.
-> 2. Verify the frontend is connected to the correct WebSocket endpoint. Local instances default to `ws://localhost:5000/stream`, while unrecognized seeders fall back to the cloud at `wss://dataengine.worldwideview.dev/stream`.
+> 1. Check the `wwv-data-engine-v2` logs to ensure your seeder is publishing to Redis successfully.
+> 2. Verify the frontend is connected to the correct WebSocket endpoint. Local instances default to `ws://localhost:5001/stream`, while unrecognized plugins should explicitly define their own `streamUrl`, or fallback to the cloud at `wss://dataenginev2.worldwideview.dev/stream`.
 
 ## Advanced Cesium Rendering
 
@@ -71,9 +75,12 @@ renderEntity(entity: GeoEntity): CesiumEntityOptions {
 To distribute your plugin globally:
 
 1. **Publish to NPM:**
+   In your plugin terminal, log in to NPM and publish your package using the WWV CLI:
    ```bash
-   npm publish --access public
+   npm login
+   node ../../packages/wwv-cli/dist/index.js publish
    ```
+   *(Or `npx wwv publish` if installed globally)*
 2. **Submit:** Navigate to `https://marketplace.worldwideview.dev/submit`.
 3. **Register:** Enter your NPM package name. The marketplace automatically scrapes your `package.json` for the required `"worldwideview"` object block (containing your `id`, `icon`, and `category`).
 4. **Review:** Once approved, your plugin's ES Module bundle will be served via CDN to all WorldWideView instances worldwide.

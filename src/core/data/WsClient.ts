@@ -149,6 +149,24 @@ class WebSocketClient {
       }, CLEANUP_GRACE_MS);
     }
   }
+
+  public printConnections() {
+    const table: any[] = [];
+    this.engines.forEach((engine, url) => {
+      table.push({
+        'Engine URL': url,
+        'Status': engine.ws ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][engine.ws.readyState] || 'UNKNOWN' : 'DISCONNECTED',
+        'Plugins Subscribed': Array.from(engine.subscriptions).join(", ") || "(None)",
+      });
+    });
+    console.groupCollapsed("[WSClient] Active Engine Connections Matrix");
+    console.table(table);
+    console.groupEnd();
+  }
 }
 
 export const wsClient = new WebSocketClient();
+
+if (typeof window !== "undefined") {
+  (window as any).wwvDebugConnections = () => wsClient.printConnections();
+}

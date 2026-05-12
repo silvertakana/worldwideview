@@ -1,0 +1,35 @@
+services:
+  wwv-data-engine:
+    image: ghcr.io/silvertakana/wwv-data-engine:latest
+    pull_policy: always
+    ports:
+      - '5002:5000'
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - PORT=5000
+      - REDIS_URL=redis://wwv-redis:6379
+      - DOWNLOAD_SEEDERS=true
+      - GITHUB_PAT=${GITHUB_PAT:-}
+      - DB_PATH=/app/data/engine.db
+    depends_on:
+      wwv-redis:
+        condition: service_healthy
+    volumes:
+      - wwv-engine-data:/app/data
+      - wwv-seeders:/app/seeders
+    restart: unless-stopped
+
+  wwv-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  wwv-engine-data:
+  wwv-seeders:

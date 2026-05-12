@@ -1,0 +1,12 @@
+services:
+  wwv:
+    build: .
+    pull_policy: build
+
+  db:
+    profiles:
+      - "${WWV_SKIP_LOCAL_DB:-}"
+
+networks:
+  coolify:
+    external: true

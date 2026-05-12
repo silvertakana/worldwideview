@@ -65,7 +65,7 @@ Whenever generating temporary debugging scripts, testing REST endpoints via `.mj
 - *Reference:* The root directory is strictly for production configuration files.
 
 ### Local Plugin & Seeder Testing
-When developing a custom seeder for a plugin, place the seeder directory inside `local-seeders/`. The local `wwv-data-engine` Docker container automatically mounts this folder and discovers scripts on startup, providing a seamless sandbox.
+When developing a custom seeder for a plugin, place the seeder directory inside `local-seeders/community/` or `local-seeders/private/`. The local `wwv-data-engine-v2` Docker container automatically mounts this folder and discovers scripts on startup, providing a seamless sandbox.
 
 ### Scaffold a New Component
 1. Create a new directory under `src/components/{category}/MyComponent`.

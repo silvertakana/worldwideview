@@ -50,6 +50,8 @@ export interface UISlice {
     errorToastMessage: string | null;
     showErrorToast: (message: string) => void;
     clearErrorToast: () => void;
+    timelineOpen: boolean;
+    setTimelineOpen: (open: boolean) => void;
 }
 
 export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => ({
@@ -68,6 +70,7 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => (
     openMobilePanel: null,
     mobileRightPanelGlow: false,
     feedbackDialogOpen: false,
+    timelineOpen: true,
     toggleTheme: () => set((state) => {
         const nextTheme = {
             "dark": "black",
@@ -147,5 +150,6 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => (
     errorToastMessage: null,
     showErrorToast: (message) => set({ errorToastMessage: message }),
     clearErrorToast: () => set({ errorToastMessage: null }),
+    setTimelineOpen: (open) => set({ timelineOpen: open }),
 });
 

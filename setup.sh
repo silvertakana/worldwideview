@@ -19,7 +19,7 @@ fi
 
 # 1. Download docker-compose.yml
 echo "📦 Downloading docker-compose.yml..."
-curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/silvertakana/worldwideview/main/self-host/docker-compose.yml
+curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/silvertakana/worldwideview/main/docker-compose.yml
 
 # 2. Generate .env with a persistent secret
 if [ ! -f .env ]; then

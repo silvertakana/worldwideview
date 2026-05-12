@@ -1,6 +1,6 @@
 {
   "name": "worldwideview",
-  "version": "2.7.7",
+  "version": "2.8.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.4",
@@ -12,7 +12,7 @@
     "dev:all": "concurrently -n \"dev,backends\" -c \"magenta,blue\" \"pnpm dev\" \"pnpm dev:backends\"",
     "dev:backends": "docker compose up wwv-data-engine wwv-redis",
     "dev:plugins": "node scripts/watch-local-plugins.mjs",
-    "predev": "node scripts/boot-db.mjs && npx dotenv-cli -e .env.local -c -- npx prisma db push --accept-data-loss && npx prisma generate && node scripts/copy-cesium.mjs && node scripts/sync-local-plugins.mjs",
+    "predev": "node scripts/boot-db.mjs && npx dotenv-cli -e .env.local -c -- node scripts/safe-db-push.mjs && npx prisma generate && node scripts/copy-cesium.mjs && node scripts/sync-local-plugins.mjs",
     "copy-cesium": "node scripts/copy-cesium.mjs",
     "prebuild": "node scripts/check-build-env.mjs",
     "build": "next build --webpack",
@@ -38,7 +38,7 @@
     "hls.js": "^1.6.16",
     "insecam-api": "^0.0.3",
     "jose": "^6.2.3",
-    "lucide-react": "^0.576.0",
+    "lucide-react": "^1.14.0",
     "next": "16.2.6",
     "next-auth": "^5.0.0-beta.30",
     "pg": "^8.20.0",
@@ -58,20 +58,20 @@
     "@testing-library/react": "^16.3.2",
     "@types/bcryptjs": "^3.0.0",
     "@types/cesium": "^1.70.4",
-    "@types/node": "^20",
+    "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^5.1.4",
-    "@vitest/coverage-v8": "4.1.5",
+    "@vitest/coverage-v8": "4.1.6",
     "concurrently": "^9.2.1",
     "copy-webpack-plugin": "^14.0.0",
     "jsdom": "^28.1.0",
     "rollup-plugin-external-globals": "^0.13.0",
     "tsx": "^4.21.0",
     "typescript": "^5",
-    "vite": "^8.0.11",
-    "vitest": "^4.1.5"
+    "vite": "^8.0.12",
+    "vitest": "^4.1.6"
   },
   "pnpm": {
     "overrides": {
@@ -83,7 +83,12 @@
       "prisma",
       "protobufjs",
       "sharp",
-      "esbuild"
+      "esbuild",
+      "better-sqlite3"
     ]
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
   }
 }

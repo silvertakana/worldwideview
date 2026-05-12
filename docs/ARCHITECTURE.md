@@ -4,7 +4,7 @@
 ## Overview
 WorldWideView operates on a decoupled, plugin-based architecture designed for real-time visualization of geospatial data. The system is split between a Next.js 16 frontend that handles UI and CesiumJS 3D rendering, and a network of plugin data seeders that stream live updates via WebSockets.
 
-The core design philosophy is the "All-Bundle Model," where plugins are dynamically imported at runtime as ES module bundles (`Dynamic CDN Loaded`). The frontend maintains a modular state architecture using Zustand, routing high-frequency data updates through a custom `DataBus` singleton to avoid React render cycle bottlenecks.
+The core design philosophy is the "All-Bundle Model," where plugins are dynamically imported at runtime as ES module bundles (`Dynamic CDN Loaded`). The frontend maintains a modular state architecture using Zustand, routing high-frequency data updates through a custom `DataBus` singleton to avoid React render cycle bottlenecks. WorldWideView is a completely agnostic renderer with absolutely no concept of a "unified" Data Engine; each plugin is a self-contained package that explicitly declares its own `streamUrl` in its manifest or config.
 
 ## Component Map
 - **Frontend App Shell:** Next.js App Router providing layout and base API routes (in `src/app/`).
@@ -24,7 +24,7 @@ The core design philosophy is the "All-Bundle Model," where plugins are dynamica
 ## Data Flow
 Real-time data follows a strict unidirectional stream optimized for sub-second updates:
 
-1. **Engine Push:** A remote data engine pushes state over WebSocket (`/stream`) from either local seeders (`ws://localhost:5000/stream`) or the cloud fallback (`wss://dataengine.worldwideview.dev/stream`).
+1. **Engine Push:** A remote data engine pushes state over WebSocket (`/stream`) from a custom backend or our default `DataEngineV2` runner. (Local dev defaults to `ws://localhost:5001/stream`, while cloud fallback is `wss://dataenginev2.worldwideview.dev/stream`). Seeders in Data Engine V2 expose both a WebSocket stream for real-time instantaneous updates and a REST API endpoint (`/api/:id`) for fetching live data snapshots.
 2. **WebSocket Client Router:** `WsClient.handleMessage()` receives the payload and pipes it to the event bus.
 3. **DataBus Emission:** The bus fires `DataBus.emit("websocketData", WsStreamPayload)`.
 4. **State Hydration:** The `DataBusSubscriber` component listens to the bus and calls `_hydrateSnapshot()` to update the Zustand store's `entitiesByPlugin` cache.

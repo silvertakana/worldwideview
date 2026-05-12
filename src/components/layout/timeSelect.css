@@ -10,8 +10,8 @@
     min-width: 80px;
     padding: 6px;
     border-radius: 12px;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
     background: var(--bg-glass);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);

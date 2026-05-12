@@ -11,7 +11,7 @@ WorldWideView utilizes a containerized deployment strategy based on Docker's mul
 - **Static Assets:** Cesium static workers are injected at build time via `scripts/copy-cesium.mjs`.
 
 ### Data Engine Runner
-- The generic `wwv-data-engine` runner is deployed as a single Coolify service, orchestrating telemetry data by executing lightweight scripts from volume-mounted seeder directories.
+- The generic `wwv-data-engine-v2` runner is deployed as a single Coolify service, orchestrating telemetry data by executing lightweight scripts from volume-mounted seeder directories. It features a dual-output architecture, exposing both WebSocket streams and REST APIs natively.
 
 ## Platform Deployment
 
@@ -19,7 +19,7 @@ WorldWideView utilizes a containerized deployment strategy based on Docker's mul
 WorldWideView deploys optimally to Coolify using a Dockerfile builder.
 - **Environment Variables:** Must be explicitly mapped in the Coolify UI (e.g., `DATABASE_URL`, `AUTH_SECRET`).
 - **Persistent Storage:** PostgreSQL databases must be hosted externally or mounted via persistent volumes to ensure the frontend registry (installed plugins, user configs) survives container rebuilds.
-- **Seeder Deployment:** The generic `wwv-data-engine` runner is deployed as a Coolify service, reading plugin seeders dynamically from a volume-mounted directory. Seeders are pulled from private/community repositories via GitHub releases.
+- **Seeder Deployment:** The generic `wwv-data-engine-v2` runner is deployed as a Coolify service, reading plugin seeders dynamically from a volume-mounted directory. Seeders are pulled from private/community repositories via GitHub releases, maintaining strict namespace separation between community and private plugins.
 
 ### Docker Structure
 - **Dockerfile:** Found at the project root (`Dockerfile`). Uses an Extractor Pattern (`deps` → `builder` → `runner`). The `.git` and `node_modules` folders must be explicitly untracked to prevent cache overlap.

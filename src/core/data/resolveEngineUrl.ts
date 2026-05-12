@@ -2,7 +2,7 @@
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { localEngineHasPlugin } from "./engineManifest";
 
-const CLOUD_ENGINE_URL = "wss://dataengine.worldwideview.dev/stream";
+const CLOUD_ENGINE_URL = "wss://dataenginev2.worldwideview.dev/stream";
 
 const RAW_ENGINE_URL =
   process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL || CLOUD_ENGINE_URL;

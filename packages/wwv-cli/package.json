@@ -1,15 +1,24 @@
 {
   "name": "@worldwideview/wwv-cli",
-  "version": "1.0.0",
-  "type": "commonjs",
+  "version": "1.0.1",
+  "type": "module",
+  "description": "WorldWideView CLI",
+  "main": "dist/index.js",
   "bin": {
-    "wwv": "./dist/index.js"
+    "wwv": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
-    "commander": "^11.1.0",
-    "chalk": "^4.1.2",
-    "vite": "^5.0.0",
-    "archiver": "^7.0.1",
-    "ws": "^8.16.0"
+    "commander": "^12.1.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.0.0"
   }
 }

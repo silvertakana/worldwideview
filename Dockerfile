@@ -78,7 +78,6 @@ COPY --from=builder /app/prod/node_modules ./node_modules
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/scripts/https-proxy.mjs ./scripts/https-proxy.mjs
-COPY --from=builder /app/scripts/migrate-legacy.mjs ./scripts/migrate-legacy.mjs
 
 # Entrypoint: migrate DB on first run, then start server
 COPY docker-entrypoint.sh ./docker-entrypoint.sh

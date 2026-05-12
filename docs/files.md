@@ -21,7 +21,7 @@ The system is highly modularized to separate React UI rendering from heavy Cesiu
 ## Build System
 - `package.json` - Root monorepo configuration with `pnpm` workspace bindings.
 - `next.config.ts` - Next.js compiler settings, security headers, and standalone output configuration.
-- `docker-compose.yml` - Defines the orchestration of the frontend, Redis cache, and the generic data engine runner (`wwv-data-engine`) loaded with local seeders.
+- `docker-compose.yml` - Defines the orchestration of the frontend, Redis cache, and the DataEngineV2 runner (`wwv-data-engine-v2`) loaded with local seeders.
 
 ## Configuration
 - `prisma/schema.prisma` - PostgreSQL database schema for storing user settings and installed plugin manifests.

@@ -53,21 +53,44 @@ Your workspace is now ready!
 
 ---
 
-## Step 2: Creating the Data Engine Seeder (Backend)
+## Step 2: Scaffold the Plugin and Backend Seeder
 
 The ISS moves incredibly fast. If our frontend tries to ask for its location every second, it will lag. Instead, we use the **Bring Your Own Backend (BYOB)** pattern. We will write a "Seeder" script in the Data Engine that fetches the ISS location and instantly broadcasts it to the frontend via WebSockets.
 
-### 2.1 Create the Seeder Directory and File
+We will use the workspace CLI tool to generate a blank plugin template and its associated backend seeder in one go. In your terminal, navigate to your main `worldwideview` folder and run:
 
-Navigate to your `worldwideview` repository. Inside the `local-seeders` folder, create a new folder named `community/iss`. Inside that folder, create a file named `seeder.mjs`:
-`c:\dev\worldwideview\local-seeders\community\iss\seeder.mjs`
+```bash
+node packages/wwv-cli/dist/index.js create --local
+```
+
+The CLI will launch an interactive survey. Answer as follows:
+1. **Unique ID**: `iss`
+2. **Display Name**: `ISS Live Tracker`
+3. **Description**: `Real-time International Space Station tracking.`
+4. **Category**: `Space`
+5. **Data Architecture**: `Real-Time WebSockets (Generates backend seeder)`
+6. **Globe Rendering**: `2D Billboard`
+7. **Community Sharing**: `Yes, public community seeder`
+
+This automatically creates:
+- Your frontend plugin at `local-plugins/wwv-plugin-iss`
+- Your backend seeder at `local-seeders/community/iss`
+
+Now install the dependencies to finalize the setup:
+```bash
+pnpm install
+```
 
 > [!NOTE]
-> **Dependency Management:** You do *not* need to create a `package.json` or manually install standard dependencies (like `axios`) for your seeder. The `wwv-data-engine` runner dynamically resolves these via the pnpm workspace, keeping your seeder lightweight.
+> **Dependency Management:** You do *not* need to create a `package.json` or manually install standard dependencies (like `axios`) for your backend seeder. The `wwv-data-engine-v2` runner dynamically resolves these via the pnpm workspace, keeping your seeder lightweight.
 
-### 2.2 Write the Polling Logic
+---
 
-Open `seeder.mjs` in your text editor and paste the following code. The Data Engine Runner will dynamically discover this script and execute its `fetch(ctx)` function based on the interval you define.
+## Step 3: Write the Polling Logic (Backend Seeder)
+
+Open the newly generated seeder file in your text editor: `local-seeders/community/iss/seeder.mjs`.
+
+The Data Engine Runner will dynamically discover this script and execute its `fetch(ctx)` function based on the interval you define. Replace its contents with this code:
 
 ```javascript
 // seeder.mjs
@@ -116,11 +139,11 @@ export default {
 
 ---
 
-## Step 3: Testing the Data Engine
+## Step 4: Testing the Data Engine
 
-Before we build the frontend, let's prove that our backend is actually fetching the ISS data.
+Before we modify the frontend, let's prove that our backend is actually fetching the ISS data.
 
-### 3.1 Start the Engine
+### 4.1 Start the Engine
 
 In your terminal, navigate to the `worldwideview` folder and start the entire stack using Docker Compose:
 ```bash
@@ -130,24 +153,13 @@ Wait for the Data Engine Docker container to start. You should see `[ISS] Poll O
 
 ---
 
-## Step 4: Creating the WorldWideView Plugin (Frontend)
+## Step 5: Write the Plugin Logic (Frontend)
 
-Now we will build the visual part of the plugin that connects to our backend stream and draws the ISS on the 3D globe.
+Now we will finalize the visual part of the plugin that connects to our backend stream and draws the ISS on the 3D globe.
 
-### 4.1 Scaffold the Plugin
+### 5.1 Update the Plugin Code
 
-In your terminal, navigate to your main `worldwideview` folder. We will use the workspace CLI tool to generate a blank plugin template in the local sandboxes folder. Run:
-
-```bash
-node packages/wwv-cli/dist/index.js create wwv-plugin-iss --local
-pnpm install
-```
-
-This creates your plugin at `local-plugins/wwv-plugin-iss` and automatically registers it with the workspace.
-
-### 4.2 Write the Plugin Logic
-
-Open `c:\dev\worldwideview\local-plugins\wwv-plugin-iss\src\index.ts` in your text editor. Replace everything in the file with this code:
+Open `local-plugins/wwv-plugin-iss/src/index.ts` in your text editor. The CLI generated a boilerplate for you, but we want to customize the rendering with a 3D model. Replace everything in the file with this code:
 
 ```typescript
 import type { WorldPlugin, GeoEntity, PluginContext, LayerConfig, CesiumEntityOptions } from "@worldwideview/wwv-plugin-sdk";
@@ -201,18 +213,18 @@ export class IssPlugin implements WorldPlugin {
 
 ---
 
-## Step 5: Connecting and Testing Everything
+## Step 6: Connecting and Testing Everything
 
 Now we will link your new plugin to your local WorldWideView application to see it in action.
 
-### 5.1 Develop Your Plugin
+### 6.1 Develop Your Plugin
 
 Because your plugin is located in `local-plugins/wwv-plugin-iss`, it is automatically detected by the workspace. 
 You do not need to link it manually.
 
-Since you already started the whole stack (`pnpm dev:all`) in Step 3, the `dev:plugins` watcher is already running in the background. It will automatically build your frontend plugin code whenever you save changes.
+Since you already started the whole stack (`pnpm dev:all`) in Step 4, the `dev:plugins` watcher is already running in the background. It will automatically build your frontend plugin code whenever you save changes.
 
-### 5.2 View the ISS
+### 6.2 View the ISS
 
 1. Open your web browser and go to `http://localhost:3000`.
 2. Click the **Layers** icon on the left sidebar.
@@ -227,11 +239,11 @@ Since you already started the whole stack (`pnpm dev:all`) in Step 3, the `dev:p
 
 ---
 
-## Step 6: Publishing Your Plugin
+## Step 7: Publishing Your Plugin
 
 You've built it, now share it with the world! 
 
-### 6.1 Update package.json
+### 7.1 Update package.json
 
 Open `c:\dev\worldwideview\local-plugins\wwv-plugin-iss\package.json`. You must add a `"worldwideview"` metadata block so the marketplace knows how to read your plugin. Ensure your file looks like this:
 
@@ -251,15 +263,16 @@ Open `c:\dev\worldwideview\local-plugins\wwv-plugin-iss\package.json`. You must 
 }
 ```
 
-### 6.2 Publish to NPM
+### 7.2 Publish to NPM
 
-In your plugin terminal, log in to NPM and publish your package:
+In your plugin terminal, log in to NPM and publish your package using the WWV CLI:
 ```bash
 npm login
-npm publish --access public
+node ../../packages/wwv-cli/dist/index.js publish
 ```
+*(Or `npx wwv publish` if installed globally)*
 
-### 6.3 Submit to the Marketplace
+### 7.3 Submit to the Marketplace
 
 1. Go to the official marketplace at `https://marketplace.worldwideview.dev/submit`.
 2. Type in your package name (`wwv-plugin-iss`) and click submit.

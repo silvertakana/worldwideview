@@ -17,7 +17,7 @@
 [![CesiumJS](https://img.shields.io/badge/Cesium-JS-4272D0)](https://cesium.com/)
 [![TypeScript Strict](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Multi--Stage-2496ED?logo=docker)](https://www.docker.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: Elastic 2.0](https://img.shields.io/badge/License-Elastic_2.0-blue.svg)](LICENSE)
 [![Discord](https://img.shields.io/discord/1481088998750294139?color=7289da&label=discord&logo=discord)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
 
@@ -160,14 +160,14 @@ We welcome community contributions! Please review our coding standards and PR pr
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Elastic License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Documentation Index
 
 Explore our comprehensive documentation suite for detailed engineering insights:
 
 - **[Project Overview](docs/project-overview.md)**: High-level value proposition and technology stack.
-- **[Architecture](docs/architecture.md)**: DataBus event stream and Zustand state management.
+- **[Architecture](docs/ARCHITECTURE.md)**: DataBus event stream and Zustand state management.
 - **[Build System](docs/build-system.md)**: Monorepo structure, Next.js standalone output, and Docker builds.
 - **[Development](docs/development.md)**: Coding conventions and common implementation patterns.
 - **[Testing](docs/testing.md)**: Vitest setup and coverage targets.

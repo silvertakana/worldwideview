@@ -7,7 +7,7 @@ description: Use when creating a new plugin, adding a new data source, or debugg
 
 ## Overview
 
-A WorldWideView plugin is a self-contained data source that renders geospatial entities on a 3D Cesium globe. Every plugin implements the `WorldPlugin` interface from the SDK and connects to a **data engine** (Fastify + Redis) that streams live data over WebSocket.
+A WorldWideView plugin is a self-contained data source that renders geospatial entities on a 3D Cesium globe. Every plugin implements the `WorldPlugin` interface from the SDK and connects to the **V2 Data Engine** (Fastify + Redis) that streams live data over WebSocket.
 
 **Core principle:** Plugins are code bundles. The engine pushes data. The frontend renders it. There is no REST polling between frontend and engine — only WebSocket streaming.
 
@@ -54,7 +54,7 @@ digraph plugin_type {
 | Sandbox plugin | `local-plugins/wwv-plugin-<name>/` | Local development workspace for new plugins |
 | Plugin class | `packages/wwv-plugin-<name>/src/index.ts` | Implements `WorldPlugin` interface |
 | Package metadata | `packages/wwv-plugin-<name>/package.json` | `worldwideview` block with id, type, format, category |
-| Engine seeder | `wwv-data-engine/src/seeders/<name>.ts` | Fetches external data → Redis → WS broadcast |
+| Engine seeder | `wwv-seeders/src/seeders/<name>.ts` | Fetches external data → Redis → WS broadcast |
 | Build config | `next.config.ts` → `transpilePackages` | Required for monorepo packages |
 | TS alias | `tsconfig.json` → `paths` | Required for monorepo packages |
 | Registration | `src/core/plugins/PluginRegistry.ts` | Register plugin at boot |
@@ -72,9 +72,8 @@ digraph plugin_type {
 The standard way to develop a new plugin is using the **Local Sandbox** (`local-plugins/` directory). This keeps experimental code out of the main monorepo packages until it is ready for production.
 
 1. **Scaffold**: Run `node packages/wwv-cli/dist/index.js create <name> --local` from the project root. This generates a boilerplate plugin in `local-plugins/wwv-plugin-<name>`.
-2. **Develop**: Run `pnpm dev`. The built-in file watcher (`pnpm dev:plugins`) automatically rebuilds and syncs your local plugin to `public/plugins-local/` whenever you save a file.
-3. **Promote**: When stable, run `node packages/wwv-cli/dist/index.js link <name>`. This promotes the plugin to the `packages/` directory and cleans up the sandbox artifacts.
-4. **Install**: Run `pnpm install` from the root to update workspace symlinks.
+2. **Develop**: Run `pnpm dev`. The built-in file watcher (`pnpm dev:plugins`) automatically rebuilds and syncs your local plugin to `public/plugins-local/` whenever you save a file for instant hot-reloading.
+3. **Publish (Optional)**: When stable, you can use `node packages/wwv-cli/dist/index.js publish <name>` to publish the plugin to NPM. There is no need to 'link' plugins to the core monorepo manually, as the local sandbox runs natively inside the workspace.
 
 ### 1.1 Implement the Interface
 
@@ -230,9 +229,9 @@ await pluginManager.registerPlugin(plugin);
 **C. Dynamic import (runtime):**
 For user-imported GeoJSON layers, call `pluginManager.loadFromManifest(manifest)` directly.
 
-### 1.6 Build Configuration (Promoted Monorepo Packages Only)
+### 1.6 Build Configuration (Core Monorepo Packages Only)
 
-Once a plugin is promoted from the local sandbox via the `link` command, it becomes a formal monorepo package. You must manually add it to the build pipeline:
+If you decide to manually move a plugin from the local sandbox into the core `packages/` directory, you must manually add it to the build pipeline:
 
 Add to `next.config.ts`:
 
@@ -257,7 +256,7 @@ Run `pnpm install` from project root after creating the package.
 
 ## Part 2: Data Engine Seeder
 
-The data engine is a **content-agnostic runner** (`wwv-data-engine` public, deployed via Docker). It runs Fastify on port 5000 with Redis caching and WebSocket streaming. Seeders are volume-mounted from `local-seeders/` (dev) or downloaded from GitHub Releases (production).
+The data engine is a **content-agnostic Host Environment runner** (`wwv-data-engine`, deployed via Docker). It runs Fastify on port 5000 with Redis caching and WebSocket streaming. Seeders are volume-mounted from `local-seeders/` (dev) or dynamically downloaded and linked via pnpm workspaces from GitHub Releases (`wwv-seeders` and `wwv-seeders-private`) in production.
 
 > [!IMPORTANT]
 > If you are **migrating** an existing plugin from `packages/` to `local-plugins/`, use the `migrate-legacy-plugin` skill instead. It covers both frontend routing fixes AND backend seeder build fixes as two independent concerns.
@@ -373,9 +372,12 @@ interface SeederDefinition {
 }
 ```
 
-### 2.4 Auto-Discovery
+### 2.4 Auto-Discovery & Dependencies
 
-`src/seeders/index.ts` dynamically `require()`s every `.ts`/`.js` file in the seeders directory (except `index.ts` and test files). **You do not need to manually import your seeder** — just create the file and call `registerSeeder()` at module scope.
+The V2 engine dynamically `import()`s every compiled `.mjs` file in the extracted seeder workspaces. **You do not need to manually import your seeder** — just create the file and call `registerSeeder()` at module scope.
+
+> [!IMPORTANT]
+> **V2 Engine Dependencies:** Seeders run in the unified V2 host environment which provides common packages (`zod`, `ws`, `undici`, etc.). **You MUST NOT bundle these dependencies** in your seeder's `dist` folder. Leave them externalized in your build config.
 
 ### 2.5 SQLite History (Optional)
 
@@ -416,7 +418,7 @@ db.exec(`
 
 **Engine → Client:**
 ```json
-{ "type": "welcome", "engine": "wwv-data-engine", "plugins": ["earthquakes", "wildfires", ...] }
+{ "type": "welcome", "engine": "wwv-data-engine-v2", "plugins": ["earthquakes", "wildfires", ...] }
 { "type": "data", "pluginId": "earthquakes", "payload": { "items": [...], "totalCount": 42 } }
 ```
 
@@ -430,7 +432,7 @@ On subscribe, the engine immediately pushes the latest cached Redis snapshot —
 2. Plugin's `getServerConfig().streamUrl` (code override)
 3. Plugin's `PluginManifest.dataSource.streamUrl` (manifest override)
 4. `NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL` env var
-5. Fallback: `wss://dataengine.worldwideview.dev/stream` (cloud)
+5. Fallback: `wss://dataenginev2.worldwideview.dev/stream` (cloud)
 
 ### 3.3 Full Data Flow
 
@@ -490,10 +492,110 @@ Place GeoJSON in `data/data.json`. The compiler auto-generates a `WorldPlugin` c
 
 ---
 
+## Part 5: Example - Simple ISS Tracker Plugin
+
+Here is a minimal, complete example of a live ISS Tracker plugin utilizing both the frontend SDK and the V2 Engine.
+
+### 1. Frontend Plugin (`local-plugins/wwv-plugin-iss/src/index.ts`)
+
+```typescript
+import type {
+  WorldPlugin, PluginContext, GeoEntity,
+  CesiumEntityOptions, TimeRange, LayerConfig, PluginCategory
+} from "@worldwideview/wwv-plugin-sdk";
+import { Satellite } from "lucide-react";
+import pkg from "../package.json";
+
+export default class IssPlugin implements WorldPlugin {
+  id = "iss";
+  name = "ISS Tracker";
+  description = "Real-time International Space Station tracking";
+  icon = Satellite;
+  category: PluginCategory = "space";
+  version = pkg.version;
+
+  async initialize(ctx: PluginContext): Promise<void> {}
+
+  destroy(): void {}
+
+  async fetch(timeRange: TimeRange): Promise<GeoEntity[]> {
+    return []; // WS-only plugin
+  }
+
+  getPollingInterval(): number {
+    return 0; // WS-only
+  }
+
+  getLayerConfig(): LayerConfig {
+    return {
+      color: "#ffffff",
+      clusterEnabled: false,
+      maxEntities: 1,
+    };
+  }
+
+  renderEntity(entity: GeoEntity): CesiumEntityOptions {
+    return {
+      type: "point",
+      color: "#ffffff",
+      size: 10,
+      outlineColor: "#3b82f6",
+      outlineWidth: 2,
+    };
+  }
+}
+```
+
+### 2. Backend Init Seeder (`wwv-seeders/src/seeders/iss.ts`)
+
+```typescript
+import { setLiveSnapshot } from "../redis";
+import { registerSeeder } from "../scheduler";
+
+function startIssSeeder() {
+  console.log("[ISS] Starting live tracker...");
+
+  async function poll() {
+    try {
+      const res = await fetch("https://api.wheretheiss.at/v1/satellites/25544");
+      const data = await res.json();
+
+      const item = {
+        id: "iss",
+        lat: data.latitude,
+        lon: data.longitude,
+        alt: data.altitude * 1000, // Convert km to meters
+        name: "International Space Station",
+        speed: data.velocity,
+      };
+
+      await setLiveSnapshot("iss", {
+        source: "iss",
+        fetchedAt: new Date().toISOString(),
+        items: [item],
+        totalCount: 1,
+      }, 10);
+    } catch (err) {
+      console.error("[ISS] Fetch failed", err);
+    }
+  }
+
+  poll(); // Initial fetch
+  setInterval(poll, 5000); // Poll every 5 seconds
+}
+
+registerSeeder({
+  name: "iss",
+  init: startIssSeeder,
+});
+```
+
+---
+
 ## Common Mistakes
 
 ### "Sandbox Plugin Breaking Next.js Build"
-1. **Premature Configuration** — Modifying `next.config.ts` (`transpilePackages`) or `tsconfig.json` (`paths`) while a plugin is still in `local-plugins/`. The `local-plugins` sandbox relies on dynamic hot-loading in the browser via `pnpm dev:plugins`. Do **not** touch monorepo configs until the plugin is formally promoted using `wwv link <name>`.
+1. **Premature Configuration** — Modifying `next.config.ts` (`transpilePackages`) or `tsconfig.json` (`paths`) while a plugin is still in `local-plugins/`. The `local-plugins` sandbox relies on dynamic hot-loading in the browser via `pnpm dev:plugins`. Do **not** touch monorepo configs for local plugins.
 2. **Manual Registration** — Manually adding a sandbox plugin to `AppShell.tsx`. Let the local hot-loading manifest handle sandbox plugins dynamically.
 
 ### "Missing Boilerplate / Errors in package.json"
@@ -530,8 +632,8 @@ Categories are **lowercase**: `"aviation"` not `"Aviation"`, `"natural-disaster"
 
 ## End-to-End Checklist
 
-- [ ] **Development:** Scaffolded via `wwv create <name> --local` and developed in `local-plugins/`
-- [ ] **Promotion:** Promoted to monorepo via `wwv link <name>` when stable
+- [ ] **Development:** Scaffolded via `node packages/wwv-cli/dist/index.js create <name> --local` and developed in `local-plugins/`
+- [ ] **Publishing:** Published to NPM via `node packages/wwv-cli/dist/index.js publish <name>` (if making public)
 - [ ] **Frontend:** Plugin class implements `WorldPlugin` with correct `id`
 - [ ] **Frontend:** `package.json` has `worldwideview` block with matching `id`
 - [ ] **Frontend:** Version imported from `package.json` (never hardcoded)
@@ -539,7 +641,7 @@ Categories are **lowercase**: `"aviation"` not `"Aviation"`, `"natural-disaster"
 - [ ] **Frontend:** Added path alias in `tsconfig.json`
 - [ ] **Frontend:** Registered via `pluginRegistry` + `pluginManager` in `AppShell.tsx`
 - [ ] **Frontend:** `renderEntity()` doesn't mix point/billboard properties
-- [ ] **Engine:** Seeder file in `src/seeders/<name>.ts`
+- [ ] **Engine:** Seeder file in `wwv-seeders/src/seeders/<name>.ts` (or private repo)
 - [ ] **Engine:** `registerSeeder({ name })` matches frontend plugin `id`
 - [ ] **Engine:** Calls `setLiveSnapshot()` with correct plugin ID key
 - [ ] **Engine:** Data shape is an object with `items` array (or plugin implements `mapWebsocketPayload`)
