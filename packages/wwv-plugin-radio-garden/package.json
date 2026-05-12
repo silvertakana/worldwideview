@@ -1,0 +1,48 @@
+{
+    "name": "wwv-plugin-radio-garden",
+    "version": "0.1.0",
+    "description": "Listen to local radio anywhere — drag the globe over a city and a station from there starts playing. Built on Radio Garden's place index (~12,500 places worldwide).",
+    "type": "module",
+    "main": "./dist/index.mjs",
+    "module": "./dist/index.mjs",
+    "exports": {
+        ".": "./dist/index.mjs"
+    },
+    "files": [
+        "dist",
+        "backend",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "vite build"
+    },
+    "peerDependencies": {
+        "@worldwideview/wwv-plugin-sdk": "workspace:*",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
+    },
+    "dependencies": {
+        "lucide-react": "^0.460.0"
+    },
+    "devDependencies": {
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "typescript": "^5.5.0",
+        "vite": "^8.0.11"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "worldwideview": {
+        "id": "radio-garden",
+        "name": "Radio Garden",
+        "category": "custom",
+        "icon": "Radio",
+        "type": "data-layer",
+        "capabilities": ["data:own", "ui:audio"],
+        "dev_entry": "src/index.ts",
+        "backend": {
+            "entry": "backend/server.mjs"
+        }
+    }
+}
