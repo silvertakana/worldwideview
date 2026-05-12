@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import externalGlobals from "rollup-plugin-external-globals";
 
 /**
  * Library build for the marketplace-distributable plugin bundle.
@@ -13,7 +14,7 @@ import { defineConfig } from "vite";
  * eventually exposes it as a global we can move it to externals.
  */
 
-const HOST_EXTERNALS = {
+const HOST_EXTERNALS: Record<string, string> = {
     react: "globalThis.__WWV_HOST__.React",
     "react-dom": "globalThis.__WWV_HOST__.ReactDOM",
     "react/jsx-runtime": "globalThis.__WWV_HOST__.jsxRuntime",
@@ -22,7 +23,7 @@ const HOST_EXTERNALS = {
     resium: "globalThis.__WWV_HOST__.Resium",
 };
 
-export default defineConfig(async () => ({
+export default defineConfig({
     build: {
         lib: {
             entry: "src/index.ts",
@@ -36,11 +37,9 @@ export default defineConfig(async () => ({
             output: {
                 globals: HOST_EXTERNALS,
             },
-            plugins: [
-                (await import("rollup-plugin-external-globals")).default(HOST_EXTERNALS),
-            ],
+            plugins: [externalGlobals(HOST_EXTERNALS)],
         },
         minify: false,
         sourcemap: true,
     },
-}));
+});

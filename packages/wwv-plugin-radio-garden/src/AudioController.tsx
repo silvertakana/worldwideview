@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { ComponentType } from "react";
+import type { ComponentType, ReactElement } from "react";
 import { createPortal } from "react-dom";
 import { Radio, Volume2, VolumeX } from "lucide-react";
 
@@ -120,7 +120,7 @@ interface AudioControllerProps {
     placesRef: { current: Place[] };
 }
 
-function AudioControllerImpl({ viewer, enabled, placesRef }: AudioControllerProps): JSX.Element | null {
+function AudioControllerImpl({ viewer, enabled, placesRef }: AudioControllerProps): ReactElement | null {
     const initialPrefs = loadPrefs();
     const [volume, setVolume] = useState<number>(initialPrefs.volume);
     const [muted, setMuted] = useState<boolean>(initialPrefs.muted);
