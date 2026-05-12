@@ -58,7 +58,7 @@
     "@testing-library/react": "^16.3.2",
     "@types/bcryptjs": "^3.0.0",
     "@types/cesium": "^1.70.4",
-    "@types/node": "^20",
+    "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
