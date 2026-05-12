@@ -63,7 +63,7 @@
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^5.1.4",
-    "@vitest/coverage-v8": "4.1.5",
+    "@vitest/coverage-v8": "4.1.6",
     "concurrently": "^9.2.1",
     "copy-webpack-plugin": "^14.0.0",
     "jsdom": "^28.1.0",
@@ -71,7 +71,7 @@
     "tsx": "^4.21.0",
     "typescript": "^5",
     "vite": "^8.0.11",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   },
   "pnpm": {
     "overrides": {
