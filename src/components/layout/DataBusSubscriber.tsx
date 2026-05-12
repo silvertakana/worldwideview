@@ -44,10 +44,15 @@ export function DataBusSubscriber() {
         });
 
         const unsubToggle = dataBus.on("layerToggled", ({ pluginId, enabled }) => {
+            const t0 = performance.now();
+            console.debug(`[DataBusSubscriber] layerToggled event received for ${pluginId}, enabled: ${enabled}`);
             const engineUrl = resolveEngineUrl(pluginId);
+            console.debug(`[DataBusSubscriber] Resolved engine URL for ${pluginId} to ${engineUrl}. Took ${(performance.now() - t0).toFixed(2)}ms`);
             if (enabled) {
+                console.debug(`[DataBusSubscriber] Calling wsClient.subscribe(${pluginId}, ${engineUrl})`);
                 wsClient.subscribe(pluginId, engineUrl);
             } else {
+                console.debug(`[DataBusSubscriber] Calling wsClient.unsubscribe(${pluginId}, ${engineUrl})`);
                 wsClient.unsubscribe(pluginId, engineUrl);
             }
         });

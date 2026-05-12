@@ -2,7 +2,7 @@
 // @refresh reset
 
 import React, { useEffect, useRef, useMemo } from "react";
-import { Ion, Entity as CesiumEntity, Transforms, Matrix4, Cartesian3, HeadingPitchRoll, Math as CesiumMath } from "cesium";
+import { Ion, buildModuleUrl, Entity as CesiumEntity, Transforms, Matrix4, Cartesian3, HeadingPitchRoll, Math as CesiumMath } from "cesium";
 import { Viewer } from "resium";
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
@@ -35,8 +35,11 @@ import { useTrailRendering } from "./hooks/useTrailRendering";
 import { useViewerInitialization } from "./hooks/useViewerInitialization";
 import { usePersistentDataSync } from "./hooks/usePersistentDataSync";
 
-if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN) {
-    Ion.defaultAccessToken = process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN;
+if (typeof window !== "undefined") {
+    (window as any).CESIUM_BASE_URL = '/cesium/';
+    if (process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN) {
+        Ion.defaultAccessToken = process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN;
+    }
 }
 
 export default function GlobeView() {
@@ -236,7 +239,7 @@ export default function GlobeView() {
                 console.error(`[GlobeView] Synchronous error initializing plugin component ${managed.plugin.id}:`, err);
             }
         });
-        console.log(`[GlobeView] Recomputing PluginGlobeComponents. Count: ${components.length}`);
+        // console.log(`[GlobeView] Recomputing PluginGlobeComponents. Count: ${components.length}`);
         return components;
     }, [layers, viewerReady]);
 

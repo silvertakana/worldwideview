@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["@prisma/client", "prisma"],
-  transpilePackages: ["@worldwideview/wwv-plugin-sdk", "resium", "react-player", "satellite.js"],
+  transpilePackages: ["@worldwideview/wwv-plugin-sdk", "resium", "react-player", "satellite.js", "@worldwideview/wwv-plugin-fortiguard", "@worldwideview/wwv-plugin-nz-traffic-cameras"],
   allowedDevOrigins: process.env.ALLOWED_DEV_ORIGIN ? [process.env.ALLOWED_DEV_ORIGIN] : undefined,
   experimental: {
     memoryBasedWorkersCount: true,
@@ -35,8 +35,8 @@ const nextConfig: NextConfig = {
               "connect-src 'self' http: https: ws: wss:",
               // HLS video streams from arbitrary camera sources
               "media-src 'self' blob: http: https:",
-              // Embeddable video platforms for camera iframes
-              "frame-src 'self' *.youtube.com *.youtube-nocookie.com *.twitch.tv *.vimeo.com *.webcamera.pl *.ivideon.com *.rtsp.me *.bnu.tv https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://ep2.adtrafficquality.google https://*.google.com",
+              // Embeddable video platforms for camera iframes — needs to support arbitrary domains
+              "frame-src 'self' http: https: blob:",
               "worker-src 'self' blob:",
               "frame-ancestors 'none'",
             ].join("; "),

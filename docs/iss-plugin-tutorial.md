@@ -23,29 +23,20 @@ Ensure you have the following installed on your machine:
    npm install -g pnpm
    ```
 
-### 1.2 Clone the Repositories
+### 1.2 Clone the Repository
 
-You need both the frontend application and the backend data engine. Open your terminal and navigate to the folder where you want to store your code (e.g., `C:\dev`).
+You only need the main WorldWideView application. The data engine backend will run automatically via Docker. Open your terminal and navigate to the folder where you want to store your code (e.g., `C:\dev`).
 
-Run these commands to download the code:
+Run this command to download the code:
 ```bash
 git clone https://github.com/silvertakana/worldwideview.git
-git clone https://github.com/silvertakana/wwv-data-engine.git
 ```
 
 ### 1.3 Install Dependencies
 
-Next, we need to install the libraries that these projects depend on.
-
-First, install dependencies for the Data Engine:
+Next, install dependencies for the main WorldWideView application:
 ```bash
-cd wwv-data-engine
-pnpm install
-```
-
-Second, install dependencies for the main WorldWideView application:
-```bash
-cd ../worldwideview
+cd worldwideview
 pnpm install
 ```
 
@@ -66,62 +57,61 @@ Your workspace is now ready!
 
 The ISS moves incredibly fast. If our frontend tries to ask for its location every second, it will lag. Instead, we use the **Bring Your Own Backend (BYOB)** pattern. We will write a "Seeder" script in the Data Engine that fetches the ISS location and instantly broadcasts it to the frontend via WebSockets.
 
-### 2.1 Create the Seeder File
+### 2.1 Let's build a dedicated Seeder to poll the Open Notify ISS API. Note that seeders are organized into `community` or `private` tiers to prevent collisions.
 
-Navigate to your data engine repository and create a new file named `iss.ts` in the `src/seeders` folder:
-`c:\dev\wwv-data-engine\src\seeders\iss.ts`
+1. **Create the Seeder Folder:** Under your WorldWideView repository root, create `local-seeders/community/wwv-iss-tracker/`. Inside that folder, create a file named `seeder.mjs`:
+`c:\dev\worldwideview\local-seeders\community\wwv-iss-tracker\seeder.mjs`
+
+> [!NOTE]
+> **Dependency Management:** You do *not* need to create a `package.json` or manually install standard dependencies (like `axios`) for your seeder. The `wwv-data-engine-v2` runner dynamically resolves these via the pnpm workspace, keeping your seeder lightweight.
 
 ### 2.2 Write the Polling Logic
 
-Open `iss.ts` in your text editor and paste the following code. This script reaches out to the free WhereTheISS.at API every 5 seconds and saves the data to the engine's memory (Redis).
+Open `seeder.mjs` in your text editor and paste the following code. The Data Engine Runner will dynamically discover this script and execute its `fetch(ctx)` function based on the interval you define.
 
-```typescript
-import { setLiveSnapshot } from '../core/redis';
-import axios from 'axios';
-
+```javascript
+// seeder.mjs
 const WTIA_URL = 'https://api.wheretheiss.at/v1/satellites/25544';
-const POLLING_INTERVAL = 5000; // 5 seconds
 
-async function pollISS() {
-  try {
-    // 1. Fetch data from the API
-    const response = await axios.get(WTIA_URL);
-    const data = response.data;
-
-    // 2. Format the data into a GeoEntity object
-    const stateObj = {
-      id: 25544,
-      name: "International Space Station",
-      latitude: data.latitude,
-      longitude: data.longitude,
-      altitude: data.altitude * 1000, // Convert kilometers to meters
-      velocity: data.velocity,
-      visibility: data.visibility,
-      footprint: data.footprint
-    };
-
-    // 3. Save to Redis under the 'iss' namespace for 60 seconds
-    await setLiveSnapshot('iss', { "25544": stateObj }, 60);
-    console.log(`[ISS] Poll OK: updated position to ${data.latitude}, ${data.longitude}`);
+export default {
+  // Required: the unique namespace used by your plugin
+  id: "iss",
+  
+  // Define polling interval inside the seeder
+  intervalMs: 5000, 
+  
+  // The Data Engine will call this function every intervalMs
+  async fetch(ctx) {
+    const { axios, logger } = ctx;
     
-  } catch (error) {
-    console.error(`[ISS] Polling error:`, error.message);
-  } finally {
-    // 4. Repeat the process after 5 seconds
-    setTimeout(pollISS, POLLING_INTERVAL);
+    try {
+      // 1. Fetch data from the API
+      const response = await axios.get(WTIA_URL);
+      const data = response.data;
+      
+      // 2. Format the data into a GeoEntity array
+      const entities = [{
+        id: "25544",
+        name: "International Space Station",
+        latitude: data.latitude,
+        longitude: data.longitude,
+        altitude: data.altitude * 1000, // Convert kilometers to meters
+        velocity: data.velocity,
+        visibility: data.visibility,
+        footprint: data.footprint
+      }];
+      
+      logger.info(`[ISS] Poll OK: updated position to ${data.latitude}, ${data.longitude}`);
+      
+      // 3. Return the array of entities, the engine runner will broadcast it over WebSockets
+      return entities;
+      
+    } catch (error) {
+      logger.error(`[ISS] Polling error: ${error.message}`);
+      return [];
+    }
   }
-}
-
-// Start the loop
-pollISS();
-```
-
-### 2.3 Register the Seeder
-
-The engine needs to know your seeder exists. Open `c:\dev\wwv-data-engine\src\seeders\index.ts` and add this line at the bottom:
-
-```typescript
-import './iss';
+};
 ```
 
 ---
@@ -132,38 +122,11 @@ Before we build the frontend, let's prove that our backend is actually fetching 
 
 ### 3.1 Start the Engine
 
-In your terminal, navigate to the `wwv-data-engine` folder and start the backend:
+In your terminal, navigate to the `worldwideview` folder and start the entire stack using Docker Compose:
 ```bash
-pnpm dev:backends
+pnpm dev:all
 ```
-You should see `[ISS] Poll OK: updated position` appearing in your console every 5 seconds. Leave this terminal running.
-
-### 3.2 Write a Quick Test Script
-
-Open a *new* terminal window. Let's write a tiny script to peek into the engine's memory. Create a file called `test_iss.mjs` in the `wwv-data-engine` folder:
-
-```javascript
-// test_iss.mjs
-import Redis from 'ioredis';
-const redis = new Redis();
-
-async function verify() {
-  const data = await redis.get('data:iss:live');
-  if (data) {
-    console.log("Success! We found the ISS:", JSON.parse(data));
-  } else {
-    console.log("No data found yet.");
-  }
-  process.exit(0);
-}
-verify();
-```
-
-Run the script:
-```bash
-node test_iss.mjs
-```
-If you see a large block of data containing coordinates and altitude, your backend is working perfectly!
+Wait for the Data Engine Docker container to start. You should see `[ISS] Poll OK: updated position` appearing in the terminal logs every 5 seconds. Leave this terminal running.
 
 ---
 
@@ -173,22 +136,18 @@ Now we will build the visual part of the plugin that connects to our backend str
 
 ### 4.1 Scaffold the Plugin
 
-In your terminal, navigate back to your main `c:\dev` folder. We will use the official CLI tool to generate a blank plugin template. Run:
+In your terminal, navigate to your main `worldwideview` folder. We will use the workspace CLI tool to generate a blank plugin template in the local sandboxes folder. Run:
 
 ```bash
-npx @worldwideview/create-plugin@latest wwv-plugin-iss
+node packages/wwv-cli/dist/index.js create wwv-plugin-iss --local
+pnpm install
 ```
-When prompted, name the folder `wwv-plugin-iss`.
 
-Move into your new plugin folder and install its dependencies:
-```bash
-cd wwv-plugin-iss
-npm install
-```
+This creates your plugin at `local-plugins/wwv-plugin-iss` and automatically registers it with the workspace.
 
 ### 4.2 Write the Plugin Logic
 
-Open `c:\dev\wwv-plugin-iss\src\index.ts` in your text editor. Replace everything in the file with this code:
+Open `c:\dev\worldwideview\local-plugins\wwv-plugin-iss\src\index.ts` in your text editor. Replace everything in the file with this code:
 
 ```typescript
 import type { WorldPlugin, GeoEntity, PluginContext, LayerConfig, CesiumEntityOptions } from "@worldwideview/wwv-plugin-sdk";
@@ -246,33 +205,14 @@ export class IssPlugin implements WorldPlugin {
 
 Now we will link your new plugin to your local WorldWideView application to see it in action.
 
-### 5.1 Link the Plugin
+### 5.1 Develop Your Plugin
 
-In your `wwv-plugin-iss` terminal, tell the CLI where your main WorldWideView folder is:
-```bash
-npx wwv config set wwv-path C:\dev\worldwideview
-```
+Because your plugin is located in `local-plugins/wwv-plugin-iss`, it is automatically detected by the workspace. 
+You do not need to link it manually.
 
-Now, link the plugin. This creates a shortcut so WorldWideView can see your code:
-```bash
-npm run link
-```
+Since you already started the whole stack (`pnpm dev:all`) in Step 3, the `dev:plugins` watcher is already running in the background. It will automatically build your frontend plugin code whenever you save changes.
 
-Start the plugin watcher. This will automatically update your plugin if you make any changes to the code:
-```bash
-npm run dev
-```
-Leave this terminal running.
-
-### 5.2 Start WorldWideView
-
-Open a third, final terminal window. Navigate to your main `worldwideview` folder and start the frontend application:
-```bash
-cd C:\dev\worldwideview
-pnpm dev
-```
-
-### 5.3 View the ISS
+### 5.2 View the ISS
 
 1. Open your web browser and go to `http://localhost:3000`.
 2. Click the **Layers** icon on the left sidebar.
@@ -281,9 +221,9 @@ pnpm dev
 
 > [!TIP]
 > **Troubleshooting missing points:**
-> - Ensure your Data Engine terminal (`pnpm dev:backends`) is still running.
+> - Ensure your `pnpm dev:all` terminal is still running without errors.
 > - Press `F12` in your browser to open Developer Tools. Check the `Console` tab for any red errors.
-> - Ensure the `id` in your plugin (`"iss"`) exactly matches the name you used in the backend `setLiveSnapshot('iss', ...)`.
+> - Ensure the `id` in your plugin (`"iss"`) exactly matches the `id` defined in `seeder.mjs`.
 
 ---
 
@@ -293,7 +233,7 @@ You've built it, now share it with the world!
 
 ### 6.1 Update package.json
 
-Open `c:\dev\wwv-plugin-iss\package.json`. You must add a `"worldwideview"` metadata block so the marketplace knows how to read your plugin. Ensure your file looks like this:
+Open `c:\dev\worldwideview\local-plugins\wwv-plugin-iss\package.json`. You must add a `"worldwideview"` metadata block so the marketplace knows how to read your plugin. Ensure your file looks like this:
 
 ```json
 {

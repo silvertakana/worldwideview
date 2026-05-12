@@ -14,6 +14,7 @@ Development on WorldWideView prioritizes modularity, high performance, and stric
 - **Global Styles:** Located at `src/app/globals.css`.
 - **Component Styles:** Use CSS Modules (`.module.css`) or co-locate `.css` files directly next to their components.
 - **HUD Animations:** Specialized interface animations are stored in `src/styles/hud-animations.css`.
+- **Color Theming & Design Tokens:** Defined in `src/styles/theme-tokens.css` via CSS variables (e.g., `[data-theme='black']`).
 
 ### Import Aliases
 - Application core: `@/*` → `./src/*`
@@ -62,6 +63,9 @@ const toggleLayer = useStore((state) => state.layers.toggle);
 ### Debugging & Temporary Scripts
 Whenever generating temporary debugging scripts, testing REST endpoints via `.mjs`, or dumping traces/JSON outputs, **save these exclusively inside `/local-scripts/`**. 
 - *Reference:* The root directory is strictly for production configuration files.
+
+### Local Plugin & Seeder Testing
+When developing a custom seeder for a plugin, place the seeder directory inside `local-seeders/community/` or `local-seeders/private/`. The local `wwv-data-engine-v2` Docker container automatically mounts this folder and discovers scripts on startup, providing a seamless sandbox.
 
 ### Scaffold a New Component
 1. Create a new directory under `src/components/{category}/MyComponent`.

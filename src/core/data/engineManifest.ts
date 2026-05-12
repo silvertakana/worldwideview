@@ -5,7 +5,10 @@
 let localManifest: string[] | null = null;
 let manifestFetched = false;
 
-const LOCAL_ENGINE_BASE = "http://localhost:5001";
+function getLocalEngineBase() {
+    if (typeof window === "undefined") return "http://localhost:5000";
+    return `${window.location.protocol}//${window.location.hostname}:5000`;
+}
 
 /**
  * Fetch the list of available seeders from a local engine.
@@ -17,9 +20,10 @@ export async function fetchLocalEngineManifest(): Promise<string[] | null> {
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2000);
+    // 500ms is more than enough for a localhost connection.
+    const timeout = setTimeout(() => controller.abort(), 500);
 
-    const res = await fetch(`${LOCAL_ENGINE_BASE}/manifest`, {
+    const res = await fetch(`${getLocalEngineBase()}/manifest`, {
       signal: controller.signal,
     });
     clearTimeout(timeout);
@@ -35,6 +39,9 @@ export async function fetchLocalEngineManifest(): Promise<string[] | null> {
     return localManifest;
   } catch {
     console.log("[EngineManifest] No local engine detected, using cloud.");
+    // We intentionally leave manifestFetched = true here.
+    // This caches the failure so we don't incur this timeout penalty 
+    // every single time a plugin is toggled.
     return null;
   }
 }

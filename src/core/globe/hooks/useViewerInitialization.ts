@@ -42,6 +42,11 @@ export function useViewerInitialization(sceneSettings: any) {
 
         // Initialize collections so renderers can start immediately
         initPrimitiveCollections(viewer);
+
+        viewer.scene.renderError.addEventListener((scene, error) => {
+            console.error("[Cesium Render Error] Render loop crashed! Exception:");
+            console.error(error);
+        });
         
         // Initial Camera Position (Sync)
         viewer.camera.setView({ destination: Cartesian3.fromDegrees(0, 20, 10000000) });

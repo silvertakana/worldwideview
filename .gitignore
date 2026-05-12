@@ -18,7 +18,9 @@ node_modules/
 /out/
 
 # agents
-/.agents/
+/.agents/plans
+/.agents/context
+/.agents/research/
 
 # claude code IDE config
 /.claude/
@@ -82,6 +84,11 @@ packages/*/dist/
 /local-scripts/
 /public/plugins-local/
 
+# Local plugin development (gitignored workspace)
+local-plugins/*
+!local-plugins/.gitkeep
+!local-plugins/README.md
+
 # git worktrees
 /.worktrees/
 
@@ -95,3 +102,19 @@ packages/wwv-data-engine/
 /public/cesium/
 build_output*.log
 build_output*.txt
+
+# Seeder repositories
+/local-seeders/
+/.local-seeders-dist/
+
+# WorldwideView Ecosystem Repositories (Development Structure)
+# The following ignores represent the different repositories related to the entire setup found in C:\dev
+/worldwideview-marketplace/
+/worldwideview-plugins/
+/worldwideview-web/
+/wwv-data-engine/
+/wwv-data-engine-public/
+/wwv-seeders/
+/wwv-seeders-private/
+/wwv-test/
+worldwideview.code-workspace

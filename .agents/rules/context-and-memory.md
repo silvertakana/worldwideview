@@ -10,7 +10,7 @@ This specification ensures that any agent maintains persistent, accurate project
 ## 2. Synchronization Target
 The agent MUST orient itself by immediately reading:
 1. `c:\dev\worldwideview\AGENTS.md` (The root index of all technical stack details)
-2. `c:\dev\worldwideview\.agents\context\01-platform-overview.md` (The high-level platform goals)
+2. `c:\dev\worldwideview\.agents\rules\platform-architecture.md` (The high-level platform goals)
 
 If deep technical rules are required for a specific domain (e.g., UI state, Map Rendering, Monorepo management), the agent MUST consult the relevant file in `c:\dev\worldwideview\.agents\rules\`.
 

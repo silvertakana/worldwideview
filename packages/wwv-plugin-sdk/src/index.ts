@@ -177,7 +177,15 @@ export interface ServerPluginConfig {
 // Provided by the host app when initializing each plugin.
 // All plugins (built-in and 3rd party) receive the same context.
 export interface PluginContext {
+    /** 
+     * @deprecated Use `getEngineUrl()` instead. This property is statically resolved at registration time.
+     */
     apiBaseUrl: string;
+    /** 
+     * Dynamically resolves the HTTP base URL for the data engine.
+     * Evaluates local overrides, manifests, and fallbacks at the moment it is called.
+     */
+    getEngineUrl: () => string;
     /** 
      * Key-value map of generic environment variables.
      * The engine surfaces any variable starting with NEXT_PUBLIC_WWV_PLUGIN_
@@ -270,4 +278,3 @@ export type DataBusEvents = {
 };
 
 export * from "./viteGlobals";
-export { wwvStaticCompiler } from "./vite/wwvStaticCompiler";

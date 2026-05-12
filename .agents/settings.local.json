@@ -1,0 +1,17 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Read(src/**)",
+      "Bash(npm test)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Write(config.json)"
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "prefersReducedMotion": false
+}

@@ -13,7 +13,7 @@ Strict rules for operating within the `pnpm` monorepo workspace environment stru
 
 - The Next.js frontend is located at root `.`.
 - Individual standalone plugins are located at `packages/wwv-plugin-[name]`.
-- For heavy plugin processing, microservice backends are located at `packages/wwv-plugin-[name]/backend`.
+- For heavy plugin processing, data engine seeders are located at `local-seeders/community/[name]` or `local-seeders/private/[name]`.
 
 ## Critical Workspace Rule
 
@@ -23,7 +23,7 @@ Strict rules for operating within the `pnpm` monorepo workspace environment stru
 
 ## Start/Exec Flow
 
-Running `pnpm start:backends` from the project root employs `concurrently` to spin up Fastify services attached to specific plugins containing `/backend` folders. 
+Running `pnpm dev:all` from the project root employs `docker-compose` to spin up the data engine runner and your local seeders alongside the Next.js frontend. 
 
 ## Next.js Monorepo Exceptions
 

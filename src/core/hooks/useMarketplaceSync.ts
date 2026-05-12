@@ -105,7 +105,7 @@ export function useMarketplaceSync(hostReady: boolean) {
         try {
             const res = await fetch("/api/marketplace/load");
             const json = await res.json();
-            console.log(`[MarketplaceSync] Received raw JSON from /api/marketplace/load:`, JSON.stringify(json, null, 2));
+            console.debug(`[MarketplaceSync] Received marketplace manifest json`);
 
             if (!res.ok) {
                 throw new Error(json.error || `Failed to fetch marketplace configuration (Status ${res.status})`);

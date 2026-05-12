@@ -20,4 +20,12 @@ export const DEFAULT_PLUGIN_IDS = [
     "conflict-zones",
     "volcanoes",
     "airports",
+    "international-sanctions",
+    "gps-jamming",
+    "fortiguard",
+    "nz-traffic-cameras",
+    "air-defense",
+    "civil-unrest",
+    "conflict-events",
+    "cyber-attacks",
 ] as const;

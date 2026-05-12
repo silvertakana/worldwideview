@@ -28,7 +28,7 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.wwvStaticCompiler = exports.DEFAULT_ICON_SIZE = void 0;
+exports.DEFAULT_ICON_SIZE = void 0;
 exports.createSvgIconUrl = createSvgIconUrl;
 const react_1 = require("react");
 const server_1 = require("react-dom/server");
@@ -61,5 +61,3 @@ function createSvgIconUrl(Icon, opts = {}) {
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(wrappedSvg)}`;
 }
 __exportStar(require("./viteGlobals"), exports);
-var wwvStaticCompiler_1 = require("./vite/wwvStaticCompiler");
-Object.defineProperty(exports, "wwvStaticCompiler", { enumerable: true, get: function () { return wwvStaticCompiler_1.wwvStaticCompiler; } });

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Play, Square, Loader2, AlertCircle, ExternalLink, Maximize2 } from "lucide-react";
 import { useStore } from "@/core/state/store";
 import { HlsPlayer } from "./HlsPlayer";
-import { isHlsUrl, isKnownVideoPlatform, getYouTubeEmbedUrl, getStreamErrorMessage, getProxiedStreamUrl } from "./streamUtils";
+import { isHlsUrl, isKnownVideoPlatform, getYouTubeEmbedUrl, getStreamErrorMessage, getProxiedStreamUrl, getProxiedIframeUrl } from "./streamUtils";
 import { PannableView } from "@/components/common/PannableView";
 
 interface CameraStreamProps {
@@ -111,9 +111,19 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
 
         // Embeddable platforms (YouTube, Twitch, etc.)
         if (isIframe || isKnownVideoPlatform(activeStreamUrl)) {
+            let embedUrl = getYouTubeEmbedUrl(activeStreamUrl);
+            
+            // For random third-party iframe providers, proxy their HTML to bypass X-Frame-Options/CSP restrictions.
+            // We exclude major platforms (YouTube, Twitch, Vimeo) because they officially support embedding
+            // and their complex players might break if HTML is proxied.
+            if (!embedUrl.includes("youtube.com") && !embedUrl.includes("youtu.be") && 
+                !embedUrl.includes("twitch.tv") && !embedUrl.includes("vimeo.com")) {
+                embedUrl = getProxiedIframeUrl(embedUrl);
+            }
+
             return (
                 <iframe
-                    src={getYouTubeEmbedUrl(activeStreamUrl)}
+                    src={embedUrl}
                     style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
                     onLoad={() => setIsLoading(false)}
                     onError={() => {

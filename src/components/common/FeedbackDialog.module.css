@@ -14,11 +14,9 @@
 .dialog {
     width: 100%;
     max-width: 600px;
-    background: var(--bg-glass);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
+    background: var(--bg-primary);
     border: 1px solid var(--border-medium);
-    box-shadow: var(--glass-shadow), 0 0 0 1px var(--border-subtle);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border-subtle);
     border-radius: var(--radius-lg);
     display: flex;
     flex-direction: column;
@@ -129,14 +127,14 @@
 .input,
 .textarea {
     width: 100%;
-    background: var(--bg-glass);
-    border: 1px solid var(--glass-border-inner);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
     padding: var(--space-md);
     color: var(--text-primary);
     font-family: var(--font-ui);
     font-size: 14px;
-    box-shadow: var(--glass-shadow-inner);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
     transition: all var(--duration-normal) var(--ease-spring);
 }
 
@@ -149,8 +147,8 @@
 .textarea:focus {
     outline: none;
     border-color: var(--accent-cyan);
-    background: var(--bg-glass-hover);
-    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.2), var(--glass-shadow-inner);
+    background: var(--bg-tertiary);
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .input::placeholder,

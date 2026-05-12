@@ -51,7 +51,9 @@ export async function injectHostGlobals(): Promise<void> {
         CameraStream,
     };
 
-    // REST Engine URL
+    // REST Engine URL (Fallback)
+    // Note: Local Docker-based engine interception (localhost:5000) happens dynamically inside
+    // resolveEngineUrl.ts during plugin routing. These variables act as global fallbacks.
     const envDataEngine = process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL;
     if (envDataEngine) {
         (globalThis as any).__WWV_ENGINE_URL__ = envDataEngine;

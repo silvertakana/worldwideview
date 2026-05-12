@@ -38,10 +38,11 @@ class WebSocketClient {
       return;
     }
 
+    const wsStart = performance.now();
     engine.ws = new WebSocket(engineUrl);
 
     engine.ws.onopen = () => {
-      console.log(`[WSClient] Connected to ${engineUrl}`);
+      console.debug(`[WSClient] 🟢 Connected to ${engineUrl}. WS Handshake took ${(performance.now() - wsStart).toFixed(2)}ms`);
       // Resubscribe to all active plugins on this engine
       for (const pluginId of engine.subscriptions) {
         this.send(engine, { action: "subscribe", pluginId });
@@ -50,11 +51,13 @@ class WebSocketClient {
 
     engine.ws.onmessage = (event) => {
       try {
+        const msgTime = performance.now();
+        console.debug(`[WSClient] 📥 Received raw message at +${(msgTime - wsStart).toFixed(2)}ms from start:`, event.data.substring(0, 150) + (event.data.length > 150 ? '...' : ''));
         const data = JSON.parse(event.data);
 
         // Handle welcome message (informational, no action needed)
         if (data.type === "welcome") {
-          console.log(`[WSClient] Engine ${engineUrl} serves: ${data.plugins?.join(", ")}`);
+          console.debug(`[WSClient] 👋 Engine ${engineUrl} serves: ${data.plugins?.join(", ")}`);
           return;
         }
 
@@ -98,6 +101,8 @@ class WebSocketClient {
       }));
     }
 
+    console.debug(`[WSClient] 🔄 Dispatching ${finalEntities.length} entities for ${data.pluginId} to DataBus`);
+
     dataBus.emit("dataUpdated", {
       pluginId: data.pluginId!,
       entities: finalEntities,
@@ -111,6 +116,7 @@ class WebSocketClient {
   }
 
   public subscribe(pluginId: string, engineUrl: string) {
+    console.debug(`[WSClient] 📡 Subscribing to ${pluginId} at ${engineUrl}`);
     const engine = this.getOrCreateEngine(engineUrl);
 
     // Cancel any pending cleanup
@@ -143,6 +149,24 @@ class WebSocketClient {
       }, CLEANUP_GRACE_MS);
     }
   }
+
+  public printConnections() {
+    const table: any[] = [];
+    this.engines.forEach((engine, url) => {
+      table.push({
+        'Engine URL': url,
+        'Status': engine.ws ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][engine.ws.readyState] || 'UNKNOWN' : 'DISCONNECTED',
+        'Plugins Subscribed': Array.from(engine.subscriptions).join(", ") || "(None)",
+      });
+    });
+    console.groupCollapsed("[WSClient] Active Engine Connections Matrix");
+    console.table(table);
+    console.groupEnd();
+  }
 }
 
 export const wsClient = new WebSocketClient();
+
+if (typeof window !== "undefined") {
+  (window as any).wwvDebugConnections = () => wsClient.printConnections();
+}

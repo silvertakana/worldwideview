@@ -14,39 +14,29 @@ Before you start, ensure you have:
 
 ## 2. Scaffold Your Plugin
 
-WorldWideView plugins are built as standard NPM packages. They are entirely decoupled from the core application, allowing you to develop and publish them independently.
-
-To generate a new plugin template, use the official CLI:
+WorldWideView plugins are built as standard packages within the monorepo workspace. To generate a new plugin sandbox, use the official CLI from the root of your `worldwideview` repository:
 
 ```bash
-npx @worldwideview/create-plugin@latest my-first-plugin
-cd my-first-plugin
-npm install
+node packages/wwv-cli/dist/index.js create my-first-plugin --local
+pnpm install
 ```
 
-This creates a lightweight Vite-based project pre-configured with the `@worldwideview/wwv-plugin-sdk`.
+This creates a lightweight Vite-based project pre-configured with the `@worldwideview/wwv-plugin-sdk` inside the `local-plugins/wwv-plugin-my-first-plugin/` directory.
 
-## 3. Link Your Plugin to WorldWideView
+## 3. Develop Your Plugin
 
-To see your plugin live on the globe while you develop, you need to link it to your local WorldWideView instance.
+Because your plugin is created inside the `local-plugins/` directory, it is automatically recognized by the pnpm workspace.
 
-First, tell the CLI where your WorldWideView repository is located:
+To see your plugin live on the globe while you develop, simply start the standard development servers from the repository root:
+
 ```bash
-npx wwv config set wwv-path C:\path\to\your\worldwideview
+pnpm dev:all
 ```
 
-Next, link the plugin. This creates a symlink so your local WorldWideView instance can dynamically load your code:
-```bash
-npm run link
-```
-
-Finally, start the plugin watcher. This will automatically rebuild your plugin whenever you save a file:
-```bash
-npm run dev
-```
+The `dev:all` command automatically starts the frontend, the data engine, and the `dev:plugins` watcher. This watcher will automatically rebuild your plugin whenever you save a file in `local-plugins/`.
 
 > [!TIP]
-> **Debugging Link Issues:** If your plugin doesn't appear in the WorldWideView "Installed Plugins" list after linking, check your `package.json`. The `"worldwideview"` object block is strictly required. Ensure `id`, `name`, and `version` are populated correctly.
+> **Debugging Registration Issues:** If your plugin doesn't appear in the WorldWideView "Installed Plugins" list, check your `package.json` inside your local plugin folder. Ensure `id`, `name`, and `version` are populated correctly. Also verify that you ran `pnpm install` from the workspace root.
 
 ## 4. Explore the Code
 
@@ -123,4 +113,4 @@ export class MyFirstPlugin implements WorldPlugin {
 
 Congratulations! You've successfully built and linked your first plugin.
 
-For advanced features—like real-time WebSocket streaming, containerizing your own backend microservices, or publishing your plugin to the global Marketplace—proceed to the **[Advanced Plugin Guide](docs/plugin-advanced.md)**.
+For advanced features—like real-time WebSocket streaming, creating backend seeders using the `local-seeders` sandbox, or publishing your plugin to the global Marketplace—proceed to the **[Advanced Plugin Guide](docs/plugin-advanced.md)**.

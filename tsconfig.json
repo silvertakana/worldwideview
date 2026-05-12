@@ -28,6 +28,9 @@
       ],
       "@worldwideview/wwv-plugin-sdk": [
         "./packages/wwv-plugin-sdk/src"
+      ],
+      "@local/*": [
+        "./local-plugins/*/src"
       ]
     }
   },
@@ -43,7 +46,8 @@
     "node_modules",
     "scripts",
     "local-scripts",
-    "packages/wwv-data-engine",
+    "local-seeders",
+    "local-plugins",
     "packages/*/backend",
     "worldmonitor",
     ".worktrees"

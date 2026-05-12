@@ -35,12 +35,16 @@ export function initLogCatcher() {
             
             try {
                 // Stringify arguments safely, aggressively optimizing performance 
-                // to avoid freezing the main thread rendering loop on large objects.
                 const message = args.map(arg => {
                     if (typeof arg === "string") return arg;
-                    if (arg instanceof Error) return arg.stack || arg.message;
+                    if (arg instanceof Error) {
+                        return `${arg.name || 'Error'}: ${arg.message}\n${arg.stack || ''}`;
+                    }
                     if (typeof arg === "object" && arg !== null) {
                         try {
+                            if (arg.message || arg.stack) {
+                                return `ErrorLike: ${arg.message || ''}\n${arg.stack || ''}`;
+                            }
                             // Very shallow serialization. Do not traverse deeply.
                             const str = JSON.stringify(arg, (key, value) => {
                                 if (key !== "" && typeof value === "object" && value !== null) {

@@ -1,0 +1,15 @@
+{
+  "name": "@worldwideview/wwv-cli",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "bin": {
+    "wwv": "./dist/index.js"
+  },
+  "dependencies": {
+    "commander": "^11.1.0",
+    "chalk": "^4.1.2",
+    "vite": "^5.0.0",
+    "archiver": "^7.0.1",
+    "ws": "^8.16.0"
+  }
+}

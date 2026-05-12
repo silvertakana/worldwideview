@@ -11,6 +11,8 @@ import { pollingManager } from "@/core/data/PollingManager";
 import { cacheLayer } from "@/core/data/CacheLayer";
 import { useStore } from "@/core/state/store";
 import { trackEvent } from "@/lib/analytics";
+import { resolveEngineUrl } from "@/core/data/resolveEngineUrl";
+import { fetchLocalEngineManifest } from "@/core/data/engineManifest";
 
 interface ManagedPlugin {
     plugin: WorldPlugin;
@@ -71,8 +73,18 @@ class PluginManager {
             console.debug(`[PluginManager] Injected ${Object.keys(envVars).length} custom env vars into "${plugin.id}"`);
         }
 
+        const wsUrl = resolveEngineUrl(plugin.id);
+        const apiBaseUrl = wsUrl
+            .replace(/\/stream$/, "")
+            .replace(/^ws:\/\//, "http://")
+            .replace(/^wss:\/\//, "https://");
+
         const context: PluginContext = {
-            apiBaseUrl: "",
+            apiBaseUrl,
+            getEngineUrl: () => {
+                const ws = resolveEngineUrl(plugin.id);
+                return ws.replace(/\/stream$/, "").replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://");
+            },
             env: envVars,
             edition,
             timeRange: {
@@ -136,8 +148,17 @@ class PluginManager {
     }
 
     async enablePlugin(pluginId: string): Promise<void> {
+        const start = performance.now();
+        console.debug(`[PluginManager] enablePlugin called for ${pluginId}`);
+        // Ensure local manifest is fetched so we don't accidentally fall back to cloud if toggled too fast
+        await fetchLocalEngineManifest();
+        console.debug(`[PluginManager] Manifest fetched for ${pluginId}. Took ${(performance.now() - start).toFixed(2)}ms`);
+
         const managed = this.plugins.get(pluginId);
-        if (!managed) return;
+        if (!managed) {
+            console.error(`[PluginManager] Plugin ${pluginId} not found in managed plugins`);
+            return;
+        }
         managed.enabled = true;
 
         // Signal that data is loading
@@ -156,15 +177,21 @@ class PluginManager {
         }
 
         pollingManager.start(pluginId);
+        console.debug(`[PluginManager] Emitting layerToggled true for ${pluginId}. Total setup took ${(performance.now() - start).toFixed(2)}ms`);
         dataBus.emit("layerToggled", { pluginId, enabled: true });
     }
 
     disablePlugin(pluginId: string): void {
+        console.debug(`[PluginManager] disablePlugin called for ${pluginId}`);
         const managed = this.plugins.get(pluginId);
-        if (!managed) return;
+        if (!managed) {
+            console.error(`[PluginManager] Plugin ${pluginId} not found during disable`);
+            return;
+        }
         managed.enabled = false;
         managed.entities = [];
         pollingManager.stop(pluginId);
+        console.debug(`[PluginManager] Emitting layerToggled false for ${pluginId}`);
         dataBus.emit("layerToggled", { pluginId, enabled: false });
         dataBus.emit("dataUpdated", { pluginId, entities: [] });
     }

@@ -1,29 +1,28 @@
-name: Docker Build and Publish
+name: Docker Image CI
 
 on:
   push:
-    branches: [ "main", "feat/docker-ci" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push:
+  build-and-push-image:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -34,30 +33,30 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=sha
+            type=sha,format=short
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          # Push to GHCR only when the workflow has write access to the
-          # registry: any push event, workflow_dispatch, or PRs whose head
-          # branch lives in this repo (not a fork). Fork PRs still build —
-          # so the Dockerfile is exercised and the image is verified — but
-          # skip the push step that would 403 with
-          # "denied: installation not allowed to Write organization package".
-          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          # GHA cache writes also require write permission, so gate it on
-          # the same condition. (Reads are fine for everyone.)
-          cache-to: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && 'type=gha,mode=max' || '' }}
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_CESIUM_ION_TOKEN=${{ secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN }}
+            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+            NEXT_PUBLIC_BING_MAPS_KEY=${{ secrets.NEXT_PUBLIC_BING_MAPS_KEY }}
+            NEXT_PUBLIC_WWV_EDITION=${{ vars.NEXT_PUBLIC_WWV_EDITION || 'demo' }}
+            NEXT_PUBLIC_WS_ENGINE_URL=${{ vars.NEXT_PUBLIC_WS_ENGINE_URL }}
+            NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL=${{ vars.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL }}
+            NEXT_PUBLIC_ADSENSE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_ADSENSE_CLIENT_ID }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}

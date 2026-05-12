@@ -21,7 +21,7 @@ The system is highly modularized to separate React UI rendering from heavy Cesiu
 ## Build System
 - `package.json` - Root monorepo configuration with `pnpm` workspace bindings.
 - `next.config.ts` - Next.js compiler settings, security headers, and standalone output configuration.
-- `docker-compose.yml` - Defines the orchestration of the frontend, Redis cache, and all local plugin microservice backends (`wwv-data-engine`).
+- `docker-compose.yml` - Defines the orchestration of the frontend, Redis cache, and the DataEngineV2 runner (`wwv-data-engine-v2`) loaded with local seeders.
 
 ## Configuration
 - `prisma/schema.prisma` - PostgreSQL database schema for storing user settings and installed plugin manifests.
@@ -29,5 +29,5 @@ The system is highly modularized to separate React UI rendering from heavy Cesiu
 - `public/` - Static assets, plugin icons, and compiled Cesium workers.
 
 ## Reference
-- **Plugins Directory:** All plugins conform to the `@worldwideview/wwv-plugin-sdk` interface and are developed inside `packages/wwv-plugin-<name>/`.
-- **Microservices Directory:** Standalone Fastify backends are nested within `packages/wwv-plugin-<name>/backend/`.
+- **Plugins Directory:** All frontend plugins conform to the `@worldwideview/wwv-plugin-sdk` interface and are developed inside `packages/wwv-plugin-<name>/` or `local-plugins/<name>/`.
+- **Seeders Directory:** Backend telemetry scripts are developed in the `local-seeders/community/<name>/` or `local-seeders/private/<name>/` directories and are mounted directly into the data engine at runtime.

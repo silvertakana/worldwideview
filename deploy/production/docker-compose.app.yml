@@ -1,0 +1,44 @@
+services:
+  wwv:
+    image: ghcr.io/silvertakana/worldwideview:latest
+    pull_policy: always
+    ports:
+      - "3100:3000"
+    volumes:
+      - wwv-data:/app/data
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - "AUTH_SECRET=${AUTH_SECRET:-default_secret_for_local_dev}"
+      - "WWV_DEMO_ADMIN_SECRET=${WWV_DEMO_ADMIN_SECRET:-}"
+      - "WWV_BRIDGE_TOKEN=${WWV_BRIDGE_TOKEN:-}"
+      - "DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/worldwideview?schema=public}"
+      # Provide the explicit public or host IP of the data engine for the frontend to use
+      - "NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL=http://192.168.68.69:5002/stream"
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: worldwideview
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d worldwideview"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  wwv-data:
+  postgres-data:

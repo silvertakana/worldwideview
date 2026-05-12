@@ -238,5 +238,4 @@ export type DataBusEvents = {
     globeReady: Record<string, never>;
 };
 export * from "./viteGlobals";
-export { wwvStaticCompiler } from "./vite/wwvStaticCompiler";
 //# sourceMappingURL=index.d.ts.map

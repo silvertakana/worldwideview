@@ -43,6 +43,31 @@ services:
     profiles:
       - "${WWV_SKIP_LOCAL_DB:-}"
 
+  wwv-data-engine:
+    build: ../wwv-data-engine-public
+    ports:
+      - '5000:5000'
+    environment:
+      - PORT=5000
+      - REDIS_URL=redis://wwv-redis:6379
+      - SEEDERS_DIR=/mnt/host/c/dev/worldwideview/local-seeders
+      - SKIP_SEEDER_DOWNLOAD=true
+      - DB_PATH=/app/data/engine.db
+    depends_on:
+      wwv-redis:
+        condition: service_healthy
+    volumes:
+      - ./local-seeders:/mnt/host/c/dev/worldwideview/local-seeders
+    restart: unless-stopped
+
+  wwv-redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
 volumes:
   wwv-data:
   postgres-data:

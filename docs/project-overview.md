@@ -3,7 +3,7 @@
 
 WorldWideView is a real-time geospatial intelligence engine that visualizes live global data on an interactive 3D globe. It leverages a modern frontend stack to render high-density datasets synchronously, including aircraft, maritime vessels, conflict events, satellites, and environmental data.
 
-The core value proposition of WorldWideView is mapping diverse, decoupled intelligence streams onto a central geographic interface using a dynamically loaded plugin architecture. Data sources operate completely decoupled from the display platform, streaming observations via WebSockets for sub-second visual updates. The ecosystem consists of multiple repositories, including the main app (`worldwideview`), the plugin marketplace (`worldwideview-marketplace`), and the WebSocket push server (`wwv-data-engine`).
+The core value proposition of WorldWideView is mapping diverse, decoupled intelligence streams onto a central geographic interface using a dynamically loaded plugin architecture. Data sources operate completely decoupled from the display platform, streaming observations via WebSockets for sub-second visual updates. The ecosystem consists of multiple repositories, including the main app (`worldwideview`), the plugin marketplace (`worldwideview-marketplace`), and our default data provider runners like the `DataEngineV2` (`wwv-data-engine-v2`). Note that WorldWideView itself acts as an agnostic client, and any plugin can seamlessly point to its own independent backend WebSocket stream.
 
 ## Key Files
 - `package.json` (Lines 1-76) - Core dependencies and project metadata for the monorepo workspace.
@@ -18,7 +18,7 @@ The core value proposition of WorldWideView is mapping diverse, decoupled intell
 - **State Management:** Zustand — `src/core/state/` (slice-based store)
 - **Event Bus:** Custom typed `DataBus` — `src/core/data/DataBus.ts`
 - **Database:** PostgreSQL via Prisma 7 — `prisma/schema.prisma`
-- **Styling:** Vanilla CSS (no Tailwind) — `src/app/globals.css`
+- **Styling:** Vanilla CSS (no Tailwind) — `src/app/globals.css` and `src/styles/theme-tokens.css`
 
 ## Platform Support
 Built as a highly portable Next.js container, it supports multiple deployment profiles controlled by `NEXT_PUBLIC_WWV_EDITION` (default: `local`).
