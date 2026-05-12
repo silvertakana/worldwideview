@@ -271,10 +271,12 @@ export type DataBusEvents = {
     entitySelected: { entity: GeoEntity | null };
     layerToggled: { pluginId: string; enabled: boolean };
     timeRangeChanged: { timeRange: TimeRange };
-    cameraPreset: { presetId: string };
+    cameraPreset: { presetId: string; duration?: number };
     cameraFaceTowards: { lat: number; lon: number; alt: number };
     cameraGoTo: { lat: number; lon: number; alt: number; distance?: number; maxPitch?: number; heading?: number };
     globeReady: Record<string, never>;
+    /** Emitted when the user clicks empty space on the globe (not an entity). */
+    globeClick: { lat: number; lon: number };
 };
 
 export * from "./viteGlobals";

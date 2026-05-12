@@ -1,12 +1,13 @@
 import { useStore } from "@/core/state/store";
 import { FilterSection } from "@/components/panels/FilterPanel";
-import { Cog, FilterIcon, Info, Key, MessageSquare } from "lucide-react";
+import { Cog, FilterIcon, Info, Key, MessageSquare, Newspaper } from "lucide-react";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 import { useResizablePanel } from "@/core/hooks/useResizablePanel";
 
 import { IntelTab } from "./IntelTab";
 import { CacheTab } from "./CacheTab";
 import { OverlayTab } from "./OverlayTab";
+import { FeedsTab } from "@/components/panels/FeedsTab";
 import { sectionHeaderStyle } from "./sharedStyles";
 
 import "./index.css";
@@ -78,6 +79,14 @@ export function DataConfigPanel() {
                 >
                     <Cog size="20" style={{ margin: 5, maxHeight: "20%" }} />
                 </button>
+                <button
+                    className={`panel-tab ${activeTab === "feeds" ? "panel-tab--active" : ""}`}
+                    onClick={() => setActiveTab("feeds")}
+                    title="Texas Feeds"
+                    style={{width: "100%"}}
+                >
+                    <Newspaper size="20" style={{ margin: 5, maxHeight: "20%" }} />
+                </button>
             </div>
 
             <div style={{ flex: 1, overflowY: "auto", minHeight: 50, display: "flex", flexDirection: "column", paddingRight: "var(--space-xs)" }}>
@@ -95,6 +104,12 @@ export function DataConfigPanel() {
                     </div>
                 )}
                 {activeTab === "overlay" && <OverlayTab />}
+                {activeTab === "feeds" && (
+                    <div style={{ marginBottom: "var(--space-lg)" }}>
+                        <div style={sectionHeaderStyle}>Texas Live Feeds</div>
+                        <FeedsTab />
+                    </div>
+                )}
             </div>
 
             <button 

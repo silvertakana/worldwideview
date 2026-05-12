@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import type { Viewer as CesiumViewer } from "cesium";
-import { Cartesian3, CameraEventType, KeyboardEventModifier, createGooglePhotorealistic3DTileset, GoogleMaps } from "cesium";
+import { Cartesian3, CameraEventType, KeyboardEventModifier, createGooglePhotorealistic3DTileset, GoogleMaps, Math as CesiumMath } from "cesium";
 import { dataBus } from "@/core/data/DataBus";
 import { initPrimitiveCollections } from "../EntityRenderer";
 import { getUserApiKey } from "@/lib/userApiKeys";
@@ -48,8 +48,14 @@ export function useViewerInitialization(sceneSettings: any) {
             console.error(error);
         });
         
-        // Initial Camera Position (Sync)
-        viewer.camera.setView({ destination: Cartesian3.fromDegrees(0, 20, 10000000) });
+        viewer.camera.setView({
+            destination: Cartesian3.fromDegrees(-99.255400, 20.834976, 2092730),
+            orientation: {
+                heading: 0,
+                pitch: CesiumMath.toRadians(-60),
+                roll: 0,
+            },
+        });
 
         // Signal ready NOW so UI and Overlays (OSM Box) appear instantly
         setViewerReady(true);
@@ -60,7 +66,14 @@ export function useViewerInitialization(sceneSettings: any) {
             if (globeFired) return;
             globeFired = true;
             if (!viewer.isDestroyed()) {
-                viewer.camera.setView({ destination: Cartesian3.fromDegrees(0, 20, 60000000) });
+                viewer.camera.setView({
+                    destination: Cartesian3.fromDegrees(-99.255400, 20.834976, 2092730),
+                    orientation: {
+                        heading: 0,
+                        pitch: CesiumMath.toRadians(-60),
+                        roll: 0,
+                    },
+                });
             }
             dataBus.emit("globeReady", {} as Record<string, never>);
         };

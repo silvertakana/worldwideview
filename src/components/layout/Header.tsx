@@ -15,6 +15,7 @@ import "./timeSelect.css"
 
 const REGIONS = [
     { id: "global", label: "Global", icon: Globe },
+    { id: "texas", label: "Texas", icon: Globe },
     { id: "americas", label: "Americas", icon: Globe },
     { id: "europe", label: "Europe", icon: Globe },
     { id: "mena", label: "MENA", icon: Globe },

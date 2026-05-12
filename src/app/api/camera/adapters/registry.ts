@@ -4,6 +4,7 @@ import { gdotAdapter } from "./gdot";
 import { tflAdapter } from "./tfl";
 import { ny511Adapter } from "./ny511";
 import { wsdotAdapter } from "./wsdot";
+import { austinAdapter } from "./austin";
 
 /**
  * All registered adapters. To add a new source, add an import + push the
@@ -17,6 +18,7 @@ export const ALL_ADAPTERS: CameraAdapter[] = [
     tflAdapter,
     ny511Adapter,
     wsdotAdapter,
+    austinAdapter,
 ];
 
 const ADAPTERS_BY_ID: Map<string, CameraAdapter> = new Map(

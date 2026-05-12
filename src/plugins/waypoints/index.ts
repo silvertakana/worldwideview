@@ -1,0 +1,1 @@
+export { waypointPlugin } from "./WaypointPlugin";

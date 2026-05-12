@@ -4,10 +4,13 @@ import {
     defined,
     SceneMode,
     SceneTransforms,
+    Cartographic,
+    Math as CesiumMath,
 } from "cesium";
 import type { Viewer as CesiumViewer, Cartesian2 } from "cesium";
 import type { GeoEntity } from "@/core/plugins/PluginTypes";
 import { useStore } from "@/core/state/store";
+import { dataBus } from "@/core/data/DataBus";
 import {
     findStackByEntityId, expandStack, collapseStack, getStacks
 } from "./StackManager";
@@ -72,11 +75,22 @@ export function setupInteractionHandlers(
                     }
                 }
             } else {
-                // Clicked empty space -> clear selection and close any open stack
+                // Clicked empty space -> clear selection, close any open stack, emit globe click
                 useStore.getState().setSelectedEntity(null);
                 if (expandedStackId) {
                     collapseStack(expandedStackId);
                     expandedStackId = null;
+                }
+                const ellipsoidPos = viewer.scene.camera.pickEllipsoid(
+                    event.position as Cartesian2,
+                    viewer.scene.globe.ellipsoid,
+                );
+                if (ellipsoidPos) {
+                    const carto = Cartographic.fromCartesian(ellipsoidPos);
+                    dataBus.emit("globeClick", {
+                        lat: CesiumMath.toDegrees(carto.latitude),
+                        lon: CesiumMath.toDegrees(carto.longitude),
+                    });
                 }
             }
 

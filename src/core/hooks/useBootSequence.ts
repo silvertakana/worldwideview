@@ -43,7 +43,7 @@ export function useBootSequence() {
     const startBoot = useCallback(() => {
         // Trigger camera fly-in from deep space via existing preset system
         const t0 = setTimeout(() => {
-            dataBus.emit("cameraPreset", { presetId: "global" });
+            dataBus.emit("cameraPreset", { presetId: "texas" });
         }, DELAY.flyIn);
 
         // Phase → booting (overlay fades out)

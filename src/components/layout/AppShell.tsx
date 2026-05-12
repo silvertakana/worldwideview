@@ -32,6 +32,8 @@ import { isDemo } from "@/core/edition";
 
 import { injectHostGlobals } from "@/core/plugins/hostGlobals";
 import { initLogCatcher } from "@/lib/logCatcher";
+import { waypointPlugin } from "@/plugins/waypoints";
+import { WaypointPlacementButton } from "./WaypointPlacementButton";
 
 const GlobeView = dynamic(() => import("@/core/globe/GlobeView"), {
     ssr: false,
@@ -90,6 +92,9 @@ export function AppShell() {
 
 
             await pluginManager.init();
+
+            // Register first-party built-in plugins
+            pluginRegistry.register(waypointPlugin);
 
             for (const plugin of pluginRegistry.getAll()) {
                 await pluginManager.registerPlugin(plugin);
@@ -163,6 +168,7 @@ export function AppShell() {
             <FloatingVideoManager />
             {needsReload && <ReloadToast />}
             <ErrorToast />
+            <WaypointPlacementButton />
             <FeedbackDialog />
             {pendingUnverified.length > 0 && (
                 <UnverifiedPluginBatchDialog

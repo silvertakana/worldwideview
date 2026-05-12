@@ -21,6 +21,7 @@ model User {
   createdAt      DateTime   @default(now())
   favorites      Favorite[]
   memberships    WorkspaceMember[]
+  waypoints      Waypoint[]
 
   @@unique([tenantId, email])
   @@map("users")
@@ -83,6 +84,41 @@ model Setting {
 
   @@unique([tenantId, key])
   @@map("settings")
+}
+
+// Waypoints — user-placed map pins with an attached blog
+model Waypoint {
+  id          String         @id @default(uuid())
+  userId      String
+  tenantId    String?
+  title       String
+  description String         @default("")
+  lat         Float
+  lon         Float
+  color       String         @default("#38bdf8")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  posts       WaypointPost[]
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tenantId])
+  @@map("waypoints")
+}
+
+model WaypointPost {
+  id          String    @id @default(uuid())
+  waypointId  String
+  title       String
+  content     String    @default("")
+  publishedAt DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  waypoint    Waypoint  @relation(fields: [waypointId], references: [id], onDelete: Cascade)
+
+  @@index([waypointId])
+  @@map("waypoint_posts")
 }
 
 // NEW — Global workspace registry

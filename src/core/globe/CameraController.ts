@@ -16,6 +16,8 @@ const CAMERA_PRESETS: Record<string, { lat: number; lon: number; alt: number; he
     africa: { lat: 2, lon: 22, alt: 8000000, heading: 0, pitch: -80 },
     oceania: { lat: -25, lon: 140, alt: 7000000, heading: 0, pitch: -75 },
     arctic: { lat: 80, lon: 0, alt: 6000000, heading: 0, pitch: -85 },
+    texas: { lat: 20.834976, lon: -99.255400, alt: 2_092_730, heading: 0, pitch: -60 },
+    austin: { lat: 30.27, lon: -97.74, alt: 80_000, heading: 0, pitch: -60 },
 };
 
 /**
@@ -64,11 +66,23 @@ export function flyToPosition(
 
 /**
  * Subscribe to dataBus camera preset events and fly to them.
+ * Accepts an optional duration override (seconds).
  * Returns an unsubscribe function.
  */
 export function subscribeToCameraPresets(viewer: CesiumViewer): () => void {
-    return dataBus.on("cameraPreset", ({ presetId }) => {
+    return dataBus.on("cameraPreset", ({ presetId, duration }: { presetId: string; duration?: number }) => {
         if (!viewer || viewer.isDestroyed()) return;
-        flyToPreset(viewer, presetId);
+        const preset = CAMERA_PRESETS[presetId];
+        if (!preset) return;
+        viewer.camera.flyTo({
+            destination: Cartesian3.fromDegrees(preset.lon, preset.lat, preset.alt),
+            orientation: {
+                heading: CesiumMath.toRadians(preset.heading),
+                pitch: CesiumMath.toRadians(preset.pitch),
+                roll: 0,
+            },
+            duration: duration ?? 3.0,
+            easingFunction: EasingFunction.QUINTIC_IN_OUT,
+        });
     });
 }

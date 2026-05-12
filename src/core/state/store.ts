@@ -8,11 +8,13 @@ import { createDataSlice, type DataSlice } from "./dataSlice";
 import { createConfigSlice, type ConfigSlice } from "./configSlice";
 import { createFavoritesSlice, type FavoritesSlice } from "./favoritesSlice";
 import { createGeoJsonSlice, type GeoJsonSlice } from "./geojsonSlice";
+import { createWaypointSlice, type WaypointSlice } from "./waypointSlice";
 
 // Re-export slice types for convenience
 export type { MapConfig, DataConfig } from "./configSlice";
 export type { LayerState } from "./layersSlice";
 export type { ImportedLayer } from "./geojsonSlice";
+export type { WaypointData } from "./waypointSlice";
 
 
 
@@ -25,7 +27,8 @@ export type AppStore = GlobeSlice &
     DataSlice &
     ConfigSlice &
     FavoritesSlice &
-    GeoJsonSlice;
+    GeoJsonSlice &
+    WaypointSlice;
 
 export const useStore = create<AppStore>((...args) => ({
     ...createGlobeSlice(...args),
@@ -37,5 +40,6 @@ export const useStore = create<AppStore>((...args) => ({
     ...createConfigSlice(...args),
     ...createFavoritesSlice(...args),
     ...createGeoJsonSlice(...args),
+    ...createWaypointSlice(...args),
 }));
 

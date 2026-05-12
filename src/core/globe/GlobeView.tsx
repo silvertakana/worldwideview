@@ -34,6 +34,7 @@ import { useSatelliteFrustum } from "./hooks/useSatelliteFrustum";
 import { useTrailRendering } from "./hooks/useTrailRendering";
 import { useViewerInitialization } from "./hooks/useViewerInitialization";
 import { usePersistentDataSync } from "./hooks/usePersistentDataSync";
+import { useRegionOutline } from "./hooks/useRegionOutline";
 
 if (typeof window !== "undefined") {
     (window as any).CESIUM_BASE_URL = '/cesium/';
@@ -119,6 +120,7 @@ export default function GlobeView() {
     const cameraLayerEnabled = layers["camera"]?.enabled ?? false;
     const cameraEntities = entitiesByPlugin["camera"] || [];
     useFrustumRendering(viewerRef.current, viewerReady, cameraEntities, cameraLayerEnabled);
+    useRegionOutline(viewerRef.current, viewerReady);
 
     useEffect(() => {
         if (!viewerRef.current || viewerRef.current.isDestroyed()) return;
