@@ -38,7 +38,7 @@
     "hls.js": "^1.6.16",
     "insecam-api": "^0.0.3",
     "jose": "^6.2.3",
-    "lucide-react": "^0.576.0",
+    "lucide-react": "^1.14.0",
     "next": "16.2.6",
     "next-auth": "^5.0.0-beta.30",
     "pg": "^8.20.0",
