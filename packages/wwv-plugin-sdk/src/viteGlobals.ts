@@ -1,15 +1,26 @@
+/**
+ * @file viteGlobals.ts
+ * @description Build-time utility for externalizing shared dependencies.
+ * Provides a Vite plugin that maps core libraries (React, Cesium, Zustand) 
+ * to the host application's global context, ensuring singleton stability 
+ * for dynamic plugin bundles.
+ * @module @worldwideview/wwv-plugin-sdk
+ */
 
 interface GlobalsMap {
     [moduleId: string]: string;
 }
 
 /**
- * A Vite/Rollup plugin that resolves shared dependencies to the 
- * `globalThis.__WWV_HOST__` object injected by the core WWV engine.
+ * @function wwvPluginGlobals
+ * @description Creates a Vite/Rollup plugin that resolves shared dependencies to 
+ * the `globalThis.__WWV_HOST__` object.
  * 
- * This ensures that dynamically loaded CDN plugins inherit the exact 
- * React, Zustand, and Cesium instances of the host application,
- * eliminating "Invalid Hook Call" and "useCallback" context mismatches.
+ * This ensures that dynamically loaded plugins inherit the exact library 
+ * instances of the host application, preventing version mismatches and 
+ * context errors.
+ * 
+ * @returns {any} A Vite plugin object.
  */
 export function wwvPluginGlobals(): any {
     const HOST_MAPPINGS: GlobalsMap = {

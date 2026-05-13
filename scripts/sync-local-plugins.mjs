@@ -1,6 +1,11 @@
-// scripts/sync-local-plugins.mjs
-// Scans local-plugins/ for valid wwv-manifest.json files,
-// builds each with Vite, and copies output to public/plugins-local/.
+/**
+ * @file sync-local-plugins.mjs
+ * @description Local plugin synchronization and build utility.
+ * Scans `local-plugins/`, compiles bundles using Vite, and hydrates the 
+ * `public/plugins-local/` directory for the Next.js dev server.
+ * @module scripts
+ */
+
 import fs from "fs";
 import path from "path";
 import { build } from "vite";
@@ -21,6 +26,12 @@ const EXTERNAL_GLOBALS = {
     "resium": "globalThis.__WWV_HOST__.Resium",
 };
 
+/**
+ * @function discoverLocalPlugins
+ * @description Finds all directories in `local-plugins/` that contain a valid 
+ * `package.json` with a `worldwideview` manifest block.
+ * @returns {Array<{dir: string, manifest: any, pluginDir: string}>}
+ */
 export function discoverLocalPlugins() {
     if (!fs.existsSync(LOCAL_PLUGINS_DIR)) return [];
 
@@ -43,6 +54,11 @@ export function discoverLocalPlugins() {
         });
 }
 
+/**
+ * @function buildPlugin
+ * @description Invokes the Vite build engine to compile a plugin's source 
+ * into a single ES module, externalizing shared host dependencies.
+ */
 export async function buildPlugin({ dir, manifest, pluginDir }) {
     const devEntry = manifest.dev_entry || "src/index.ts";
     let entryFile = path.join(pluginDir, devEntry);

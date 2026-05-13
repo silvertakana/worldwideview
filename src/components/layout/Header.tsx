@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * @file Header.tsx
+ * @description Primary application header providing branding, search, region presets, 
+ * theme selection, and system-wide controls.
+ * @module src/components/layout
+ */
+
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
@@ -33,6 +40,17 @@ const THEMES = [
 
 const TIME_WINDOWS = ["1h", "6h", "24h", "48h", "7d"] as const;
 
+/**
+ * @component Header
+ * @description The main navigation and control bar of the application.
+ * Handles responsive layout between mobile and desktop, including time windows,
+ * theme selection, and region-based camera presets.
+ * 
+ * @example
+ * ```tsx
+ * <Header />
+ * ```
+ */
 export function Header() {
     const isMobile = useIsMobile();
     const timeWindow = useStore((s) => s.timeWindow);

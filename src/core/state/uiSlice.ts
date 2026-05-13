@@ -1,56 +1,113 @@
+/**
+ * @file uiSlice.ts
+ * @description State slice managing the application's user interface, including themes, 
+ * sidebars, panels, entity selection, and floating data streams.
+ */
+
 import type { StateCreator } from "zustand";
 import type { AppStore } from "./store";
 import type { GeoEntity } from "@/core/plugins/PluginTypes";
 
 // ─── UI Slice ────────────────────────────────────────────────
+/**
+ * Represents a floating window container for external data streams (e.g., video feeds, telemetry iframes).
+ */
 export interface FloatingStream {
+    /** Unique identifier for the stream window. */
     id: string;
+    /** The source URL for the stream content. */
     streamUrl: string;
+    /** Whether to render the content inside an iframe. */
     isIframe: boolean;
+    /** Human-readable label for the window header. */
     label: string;
+    /** Screen coordinates of the window's top-left corner. */
     position: { x: number; y: number };
+    /** Dimensions of the floating window. */
     size: { width: number; height: number };
+    /** Whether the window is currently collapsed to its header. */
     isMinimized?: boolean;
+    /** Hint for content rendering optimization. */
     type?: "video" | "image";
 }
 
+/**
+ * Zustand state slice for managing HUD visibility and UI interactions.
+ */
 export interface UISlice {
+    /** The active visual theme. */
     theme: "dark" | "light" | "legacy" | "black";
+    /** Visibility of the left navigation/plugin sidebar. */
     leftSidebarOpen: boolean;
+    /** Visibility of the right details/intel sidebar. */
     rightSidebarOpen: boolean;
+    /** Visibility of the main configuration/settings panel. */
     configPanelOpen: boolean;
+    /** Visibility of the global filtering panel. */
     filterPanelOpen: boolean;
+    /** The currently clicked/selected entity for details view. */
     selectedEntity: GeoEntity | null;
+    /** The entity currently under the mouse cursor. */
     hoveredEntity: GeoEntity | null;
+    /** Screen coordinates of the current hover target for tooltips. */
     hoveredScreenPosition: { x: number; y: number } | null;
+    /** The ID of an entity the camera is currently following or focused on. */
     lockedEntityId: string | null;
+    /** List of active floating stream windows. */
     floatingStreams: FloatingStream[];
+    /** The active sub-tab within the configuration panel. */
     activeConfigTab: "intel" | "filters" | "cache" | "overlay" | "apikeys";
+    /** The ID of a layer currently being highlighted/flashed in the UI. */
     highlightLayerId: string | null;
+    /** Active panel in mobile view layout. */
     openMobilePanel: "left" | "right" | null;
+    /** Whether to show a notification glow on the mobile right panel button. */
     mobileRightPanelGlow: boolean;
+    /** Cycles through available UI themes. */
     toggleTheme: () => void;
+    /** Directly sets a specific UI theme. */
     setTheme: (theme: "dark" | "light" | "legacy" | "black") => void;
+    /** Toggles the left sidebar state. */
     toggleLeftSidebar: () => void;
+    /** Toggles the right sidebar state. */
     toggleRightSidebar: () => void;
+    /** Toggles the central config panel state. */
     toggleConfigPanel: () => void;
+    /** Toggles the filter panel state. */
     toggleFilterPanel: () => void;
+    /** Visibility of the user feedback submission dialog. */
     feedbackDialogOpen: boolean;
+    /** Sets the feedback dialog visibility. */
     setFeedbackDialogOpen: (open: boolean) => void;
+    /** Selects an entity and opens relevant panels for details display. */
     setSelectedEntity: (entity: GeoEntity | null) => void;
+    /** Updates the currently hovered entity and its screen position. */
     setHoveredEntity: (entity: GeoEntity | null, screenPos?: { x: number; y: number } | null) => void;
+    /** Sets the ID of the entity to lock the camera onto. */
     setLockedEntityId: (id: string | null) => void;
+    /** Spawns a new floating stream window. */
     addFloatingStream: (stream: Omit<FloatingStream, "position" | "size">) => void;
+    /** Closes a floating stream window by ID. */
     removeFloatingStream: (id: string) => void;
+    /** Updates properties (position, size, state) of an existing stream window. */
     updateFloatingStream: (id: string, updates: Partial<FloatingStream>) => void;
+    /** Switches between configuration tabs. */
     setActiveConfigTab: (tab: "intel" | "filters" | "cache" | "overlay" | "apikeys") => void;
+    /** Triggers a visual highlight on a specific layer in the layer list. */
     setHighlightLayerId: (id: string | null) => void;
+    /** Explicitly sets the configuration panel visibility. */
     setConfigPanelOpen: (open: boolean) => void;
+    /** Controls which panel is visible in responsive/mobile layouts. */
     setOpenMobilePanel: (panel: "left" | "right" | null) => void;
+    /** The current message displayed in the global error toast, if any. */
     errorToastMessage: string | null;
+    /** Triggers a global error notification toast. */
     showErrorToast: (message: string) => void;
+    /** Dismisses the active error toast. */
     clearErrorToast: () => void;
+    /** Visibility of the temporal timeline controller. */
     timelineOpen: boolean;
+    /** Sets the timeline visibility. */
     setTimelineOpen: (open: boolean) => void;
 }
 

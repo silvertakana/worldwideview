@@ -1,22 +1,41 @@
-// ─── Plugin Manifest Validation ──────────────────────────────
-// Validates a plugin manifest. All plugins are now bundles.
+/**
+ * @file validateManifest.ts
+ * @description Validates PluginManifest objects against the required schema and security constraints.
+ */
 
 import type { PluginManifest } from "./PluginManifest";
 
+/**
+ * Result of a manifest validation operation.
+ * Used by the loader to prevent malformed or insecure plugins from entering the runtime.
+ */
 export interface ValidationResult {
+    /** True if the manifest satisfies all structural and security requirements. */
     valid: boolean;
+    /** List of human-readable descriptions for each validation failure. */
     errors: string[];
 }
 
 const VALID_TYPES = ["data-layer", "extension"] as const;
 const VALID_TRUSTS = ["built-in", "verified", "unverified"] as const;
 
+/**
+ * Validates a plugin manifest for structural integrity and security compliance.
+ * This is the primary security gate for the WorldWideView plugin ecosystem. 
+ * It ensures that all required fields are present and, crucially, enforces 
+ * an 'Entry URL Allowlist' to prevent Remote Code Execution (RCE) from 
+ * untrusted domains. All external bundles must originate from approved 
+ * CDNs or official WorldWideView infrastructure.
+ * 
+ * @param manifest - The manifest object to validate (potentially partial during parsing).
+ * @returns A ValidationResult indicating success or a list of identified security/structural risks.
+ */
 export function validateManifest(
     manifest: Partial<PluginManifest>,
 ): ValidationResult {
     const errors: string[] = [];
 
-    // Default type for older manifests missing the field
+    // Default type for older manifests missing the field to ensure backward compatibility
     if (manifest && !manifest.type) {
         manifest.type = "data-layer";
     }
@@ -35,7 +54,7 @@ export function validateManifest(
         errors.push("capabilities must be a non-empty array");
     }
 
-    // Entry is required — all plugins are bundles now
+    // Entry point validation - critical for preventing RCE
     if (!manifest.entry?.trim()) {
         errors.push("Missing required field: entry");
     } else {
@@ -50,7 +69,7 @@ export function validateManifest(
         }
     }
 
-    // Extension plugins require extends
+    // Extension plugins require a target to extend
     if (manifest.type === "extension") {
         if (!Array.isArray(manifest.extends) || manifest.extends.length === 0) {
             errors.push("Extension plugins require a non-empty extends array");

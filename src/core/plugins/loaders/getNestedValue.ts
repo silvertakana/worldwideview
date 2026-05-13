@@ -1,6 +1,15 @@
 /**
+ * @file getNestedValue.ts
+ * @description Utility for resolving deeply nested properties using dot-path notation.
+ */
+
+/**
  * Resolves a dot-path (with optional bracket notation) on an object.
- *
+ * 
+ * @param obj - The source object to traverse.
+ * @param path - The dot-notation path (e.g., "a.b[1].c").
+ * @returns The value at the specified path, or undefined if not found.
+ * 
  * @example
  * getNestedValue({ a: { b: [10, 20] } }, "a.b[1]") // → 20
  * getNestedValue({ x: 1 }, "y.z")                   // → undefined

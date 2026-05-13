@@ -1,3 +1,10 @@
+/**
+ * @file DynamicPropertiesRender.tsx
+ * @description Heuristic-based property renderer that automatically detects 
+ * content types (images, URLs, long text) from raw entity properties.
+ * @module src/components/panels/properties
+ */
+
 import React from 'react';
 import { GeoEntity } from '@worldwideview/wwv-plugin-sdk';
 import { ImageProperty } from './ImageProperty';
@@ -5,6 +12,12 @@ import { UrlProperty } from './UrlProperty';
 import { LongTextProperty } from './LongTextProperty';
 import { IntelPropertyRow } from './IntelPropertyRow';
 
+/**
+ * @interface DynamicPropertiesRenderProps
+ * @description Properties for the DynamicPropertiesRender component.
+ * @property {GeoEntity} entity - The entity whose properties should be rendered.
+ * @property {string} [classNamePrefix] - CSS class prefix for styling (defaults to "intel-panel").
+ */
 interface DynamicPropertiesRenderProps {
     entity: GeoEntity;
     classNamePrefix?: string;

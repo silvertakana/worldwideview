@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * @file EntityInfoCard.tsx
+ * @description Floating tooltip card that follows the mouse cursor to display
+ * quick intel for the currently hovered map entity.
+ * @module src/components/panels
+ */
+
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { PluginIcon } from "@/components/common/PluginIcon";
@@ -19,6 +26,12 @@ const SEVERITY_LABELS: Record<number, string> = {
     5: "Critical", 4: "High", 3: "Elevated", 2: "Watchlist",
 };
 
+/**
+ * @component EntityInfoCard
+ * @description A screen-space overlay that provides real-time entity snapshots.
+ * It dynamically adjusts its screen position to remain visible and switches
+ * content based on the hovered entity's plugin-specific properties.
+ */
 export function EntityInfoCard() {
     const hoveredEntity = useStore((s) => s.hoveredEntity);
     const screenPos = useStore((s) => s.hoveredScreenPosition);

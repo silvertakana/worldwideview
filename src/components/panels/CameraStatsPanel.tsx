@@ -1,8 +1,18 @@
-"use client";
+/**
+ * @file CameraStatsPanel.tsx
+ * @description Head-up display (HUD) overlay providing real-time camera position, 
+ * orientation, and performance metrics (FPS).
+ * @module src/components/panels
+ */
 
 import React, { useState } from "react";
 import { useStore } from "@/core/state/store";
 
+/**
+ * @component CameraStatsPanel
+ * @description A minimal HUD component that displays latitude, longitude, 
+ * altitude, heading, pitch, roll, and FPS. Can be collapsed by the user.
+ */
 export default function CameraStatsPanel() {
     const [collapsed, setCollapsed] = useState(false);
 

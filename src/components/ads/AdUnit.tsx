@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * @file AdUnit.tsx
+ * @description Standardized Google AdSense wrapper component. 
+ * Handles client-side script pushing and provides a development-mode mock UI.
+ * @module src/components/ads
+ */
+
 import { useEffect, useRef } from "react";
 
 interface AdUnitProps {
@@ -9,6 +16,16 @@ interface AdUnitProps {
     className?: string;
 }
 
+/**
+ * @component AdUnit
+ * @description Renders a Google AdSense advertisement unit.
+ * 
+ * @param {AdUnitProps} props - Component properties.
+ * @param {string} props.adSlot - The AdSense slot ID.
+ * @param {string} [props.adFormat="auto"] - The AdSense format (auto, rectangle, etc).
+ * @param {React.CSSProperties} [props.style] - Optional inline styles for the container.
+ * @param {string} [props.className] - Optional CSS class for the container.
+ */
 export function AdUnit({ adSlot, adFormat = "auto", style, className }: AdUnitProps) {
     const insRef = useRef<HTMLModElement>(null);
     const pushed = useRef(false);

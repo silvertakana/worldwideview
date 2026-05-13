@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 /**
- * setup.mjs — One-command local setup
- *
- * Generates a .env.local file from .env.example
- * and auto-fills AUTH_SECRET with a secure random value.
- *
- * Usage: npm run setup
+ * @file setup.mjs
+ * @description One-command local setup utility.
+ * Generates a .env file from .env.example and auto-fills sensitive 
+ * secrets (like AUTH_SECRET) with secure random values.
+ * @module scripts
  */
 
 import { existsSync, readFileSync, writeFileSync } from "fs";

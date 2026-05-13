@@ -1,15 +1,25 @@
 /**
- * Utility functions for stream URL detection and error messaging.
+ * @file streamUtils.ts
+ * @description specialized utilities for detecting, transforming, and 
+ * proxying video streams to ensure cross-origin compatibility and 
+ * playback stability.
+ * @module src/components/video
  */
 
-/** Returns true if the URL points to an HLS manifest (.m3u8). */
+/** 
+ * Returns true if the URL points to an HLS manifest (.m3u8). 
+ * @param {string} url - The URL to check.
+ */
 export function isHlsUrl(url: string): boolean {
     if (!url) return false;
     const lower = url.toLowerCase();
     return lower.endsWith(".m3u8") || lower.includes(".m3u8?");
 }
 
-/** Returns true if the URL belongs to a known embeddable video platform. */
+/** 
+ * Returns true if the URL belongs to a known embeddable video platform. 
+ * @param {string} url - The URL to check.
+ */
 export function isKnownVideoPlatform(url: string): boolean {
     if (!url) return false;
     const lower = url.toLowerCase();
@@ -29,7 +39,10 @@ export function isKnownVideoPlatform(url: string): boolean {
     );
 }
 
-/** Convert a YouTube watch / short URL into an embeddable URL with autoplay. */
+/** 
+ * Convert a YouTube watch / short URL into an embeddable URL with autoplay. 
+ * @param {string} url - The raw YouTube URL.
+ */
 export function getYouTubeEmbedUrl(url: string): string {
     if (!url) return url;
     if (
@@ -65,6 +78,7 @@ export function getYouTubeEmbedUrl(url: string): string {
 /**
  * Proxy stream URLs through our server-side proxy to avoid mixed-content blocks
  * and bypass restrictive CORS policies from camera providers.
+ * @param {string} url - The raw stream URL.
  */
 export function getProxiedStreamUrl(url: string): string {
     if (!url) return url;
@@ -76,13 +90,17 @@ export function getProxiedStreamUrl(url: string): string {
 /**
  * Proxy iframe HTML to inject <base> tags and strip X-Frame-Options / CSP headers
  * that prevent embedding.
+ * @param {string} url - The iframe source URL.
  */
 export function getProxiedIframeUrl(url: string): string {
     if (!url) return url;
     return `/api/camera/proxy/iframe?url=${encodeURIComponent(url)}`;
 }
 
-/** Return a user-friendly error message for a failed stream URL. */
+/** 
+ * Return a user-friendly error message for a failed stream URL. 
+ * @param {string} streamUrl - The URL that failed.
+ */
 export function getStreamErrorMessage(streamUrl: string): string {
     if (
         streamUrl.startsWith("http://") &&

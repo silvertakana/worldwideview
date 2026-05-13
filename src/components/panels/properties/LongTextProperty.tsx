@@ -1,6 +1,20 @@
+/**
+ * @file LongTextProperty.tsx
+ * @description Specialized property renderer for long text blocks (descriptions, summaries).
+ * Uses a column layout and handles overflow/scrolling for large amounts of text.
+ * @module src/components/panels/properties
+ */
+
 import React from 'react';
 import { IntelPropertyRow } from './IntelPropertyRow';
 
+/**
+ * @interface LongTextPropertyProps
+ * @description Properties for the LongTextProperty component.
+ * @property {string} label - The display label for the text block.
+ * @property {string} text - The long text content to display.
+ * @property {string} [classNamePrefix] - CSS class prefix for styling (defaults to "intel-panel").
+ */
 interface LongTextPropertyProps {
     label: string;
     text: string;

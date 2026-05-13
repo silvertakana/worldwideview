@@ -1,6 +1,8 @@
-// ─── Installed Plugins Loader ────────────────────────────────
-// Scans data/plugins/ at startup for previously installed plugin manifests.
-// Validates each and registers with PluginManager.
+/**
+ * @file InstalledPluginsLoader.ts
+ * @description Scans the database for previously installed marketplace plugins, 
+ * parses their stored manifests, and registers them with the PluginManager.
+ */
 
 import type { PluginManifest } from "@/core/plugins/PluginManifest";
 import { validateManifest } from "@/core/plugins/validateManifest";
@@ -8,9 +10,13 @@ import { pluginManager } from "@/core/plugins/PluginManager";
 import { prisma } from "@/lib/db";
 
 /**
- * Load all marketplace-installed plugins from the database.
- * Reads InstalledPlugin records | parses stored config as manifest | registers each.
- * Errors are logged but never thrown — invalid plugins are skipped.
+ * Loads all marketplace-installed plugins from the persistent database store.
+ * This is a critical bootstrap phase for the "Local" and "Cloud" editions, 
+ * ensuring that user-installed layers are restored across server restarts 
+ * and browser refreshes. It handles the full hydration cycle: DB fetch -> 
+ * manifest parse -> validation -> PluginManager registration.
+ * 
+ * @returns A promise resolving to the number of successfully hydrated plugins.
  */
 export async function loadInstalledPlugins(): Promise<number> {
     let loaded = 0;
@@ -53,10 +59,20 @@ export async function loadInstalledPlugins(): Promise<number> {
     return loaded;
 }
 
-/** Parse the stored config JSON as a PluginManifest. */
+/**
+ * Sanitizes and parses a stored configuration string into a PluginManifest.
+ * This acts as an adapter layer, ensuring that legacy database records or 
+ * records missing explicit IDs are coerced into the correct runtime manifest 
+ * format before being passed to the validation engine.
+ * 
+ * @param pluginId - The unique ID of the plugin from the database record key.
+ * @param config - The stringified JSON configuration blob stored in the database.
+ * @returns The parsed and coerced PluginManifest, or null if the JSON is malformed.
+ */
 function parseConfig(pluginId: string, config: string): PluginManifest | null {
     try {
         const parsed = JSON.parse(config);
+        // Ensure the ID from the DB record is reflected in the manifest if missing
         if (!parsed.id) parsed.id = pluginId;
         return parsed as PluginManifest;
     } catch {

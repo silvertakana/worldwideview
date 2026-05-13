@@ -1,3 +1,11 @@
+/**
+ * @file ImageryPicker.tsx
+ * @module Panels/Settings
+ * @description Interactive selector for switching base map providers (Imagery Layers)
+ * and scene viewing modes (2D, 2.5D, 3D).
+ * @version 1.0.0
+ */
+
 "use client";
 
 import React from "react";
@@ -7,6 +15,11 @@ import { Globe, Grid2X2, Layout, Layers } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { GraphicsSettings } from "./GraphicsSettings";
 
+/**
+ * @component ImageryPicker
+ * @description Renders a grid of imagery providers and view mode toggles.
+ * Handles fallback states when premium imagery providers fail due to API key issues.
+ */
 export function ImageryPicker() {
     const baseLayerId = useStore((s) => s.mapConfig.baseLayerId);
     const fallbackLayerId = useStore((s) => s.mapConfig.fallbackLayerId);

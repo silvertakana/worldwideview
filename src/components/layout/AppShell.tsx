@@ -1,3 +1,11 @@
+/**
+ * @file AppShell.tsx
+ * @description The root layout and orchestration component for WorldWideView.
+ * Responsible for platform initialization, plugin registration, global state hydration, 
+ * and managing the transition from boot sequence to interactive state.
+ * @module src/components/layout
+ */
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -37,6 +45,17 @@ const GlobeView = dynamic(() => import("@/core/globe/GlobeView"), {
     ssr: false,
 });
 
+/**
+ * @component AppShell
+ * @description The primary application wrapper. 
+ * 
+ * Orchestrates the following:
+ * 1. Theme hydration from localStorage.
+ * 2. Injection of host globals for dynamic ES module plugins.
+ * 3. Loading of marketplace and built-in plugins.
+ * 4. Synchronization with the Cesium globe lifecycle.
+ * 5. Managing the "Boot" animation sequence and HUD entry.
+ */
 export function AppShell() {
     const initLayer = useStore((s) => s.initLayer);
     const boot = useBootSequence();

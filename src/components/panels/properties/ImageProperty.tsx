@@ -1,7 +1,23 @@
+/**
+ * @file ImageProperty.tsx
+ * @description Specialized property renderer for image URLs. 
+ * Supports inline preview and popout to a floating window.
+ * @module src/components/panels/properties
+ */
+
 import React from 'react';
 import { Maximize2 } from 'lucide-react';
 import { useStore } from '../../../core/state/store';
 
+/**
+ * @interface ImagePropertyProps
+ * @description Properties for the ImageProperty component.
+ * @property {string} label - The display name for the image.
+ * @property {string} imageUrl - The URL of the image to display.
+ * @property {string} entityId - The ID of the parent entity.
+ * @property {string} [entityLabel] - The display label of the parent entity.
+ * @property {string} [classNamePrefix] - CSS class prefix for styling (defaults to "intel-panel").
+ */
 interface ImagePropertyProps {
     label: string;
     imageUrl: string;

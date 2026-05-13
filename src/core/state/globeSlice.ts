@@ -1,16 +1,33 @@
+/**
+ * @file globeSlice.ts
+ * @description State slice managing the 3D camera position, orientation, and globe-level rendering metrics.
+ */
+
 import type { StateCreator } from "zustand";
 import type { AppStore } from "./store";
 
 // ─── Globe Slice ─────────────────────────────────────────────
+/**
+ * Zustand state slice for the 3D globe camera and viewport state.
+ */
 export interface GlobeSlice {
+    /** Current camera latitude in degrees. */
     cameraLat: number;
+    /** Current camera longitude in degrees. */
     cameraLon: number;
+    /** Current camera altitude in meters above the ellipsoid. */
     cameraAlt: number;
+    /** Current camera heading (yaw) in degrees. */
     cameraHeading: number;
+    /** Current camera pitch in degrees. */
     cameraPitch: number;
+    /** Current camera roll in degrees. */
     cameraRoll: number;
+    /** Whether a programmatic camera transition (flyTo) is currently active. */
     isAnimating: boolean;
+    /** Current rendering performance in frames per second. */
     fps: number;
+    /** Updates the full camera transform (position and orientation). */
     setCameraPosition: (
         lat: number,
         lon: number,
@@ -19,7 +36,9 @@ export interface GlobeSlice {
         pitch?: number,
         roll?: number
     ) => void;
+    /** Sets the current animation state of the camera. */
     setAnimating: (val: boolean) => void;
+    /** Updates the current FPS metric. */
     setFps: (fps: number) => void;
 }
 

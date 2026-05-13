@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * @file PluginsTab.tsx
+ * @description Advanced management interface for the plugin ecosystem.
+ * Handles discovery, installation, updates, and lifecycle management of 
+ * both built-in and marketplace plugins.
+ * @module src/components/panels
+ */
+
 import { useState, useEffect, useCallback } from "react";
 import { Trash2, ExternalLink, RefreshCw, Download, PowerOff, Power } from "lucide-react";
 import { ShieldCheck, ShieldAlert, Shield } from "lucide-react";
@@ -97,6 +105,12 @@ function getName(record: PluginRecord): string {
 
 // ─── PluginsTab ─────────────────────────────────────────────
 
+/**
+ * @component PluginsTab
+ * @description The marketplace and plugin management view.
+ * Facilitates asynchronous plugin operations (install/uninstall/update) 
+ * and verifies integrity via trust badges.
+ */
 export function PluginsTab() {
     const [plugins, setPlugins] = useState<PluginRecord[]>([]);
     const [removing, setRemoving] = useState<string | null>(null);

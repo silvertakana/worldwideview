@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * @file ReloadToast.tsx
+ * @description Life-cycle notification for runtime updates.
+ * Prompts the user for a manual refresh when dynamic changes (like 
+ * plugin installs) require a fresh application state.
+ * @module src/components/ui
+ */
+
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import styles from "./ReloadToast.module.css";
@@ -9,9 +17,12 @@ interface ReloadToastProps {
 }
 
 /**
- * Floating toast prompting user to reload after plugin changes.
- * Dismissible, with a Reload button that triggers a full page refresh.
- * Rendered via portal to escape panel boundaries and z-index contexts.
+ * @component ReloadToast
+ * @description Floating toast prompting user to reload after plugin changes.
+ * Rendered via React Portal to ensure visibility above all UI layers.
+ * 
+ * @param {ReloadToastProps} props - Component properties.
+ * @param {string} [props.message] - Custom message to display.
  */
 export default function ReloadToast({ message }: ReloadToastProps) {
     const [dismissed, setDismissed] = useState(false);

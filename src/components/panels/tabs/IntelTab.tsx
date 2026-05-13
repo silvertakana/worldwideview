@@ -1,3 +1,10 @@
+/**
+ * @file IntelTab.tsx
+ * @description Tab panel for displaying the "Intelligence" report for a selected entity.
+ * Provides real-time positional data, plugin-specific properties, and camera action controls.
+ * @module src/components/panels/tabs
+ */
+
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { PluginIcon } from "@/components/common/PluginIcon";
@@ -17,6 +24,12 @@ const sectionHeaderStyle: React.CSSProperties = {
     paddingBottom: "var(--space-xs)"
 };
 
+/**
+ * @component IntelTab
+ * @description Renders the intelligence dossier for the currently selected map entity.
+ * Includes geographic coordinates, detailed properties, and action buttons for 
+ * camera manipulation (Face, Go To, Lock).
+ */
 export function IntelTab() {
     const selectedEntity = useStore((s) => s.selectedEntity);
     const lockedEntityId = useStore((s) => s.lockedEntityId);

@@ -1,3 +1,10 @@
+/**
+ * @file OverlayConfigTab.tsx
+ * @description Configuration panel for managing layer-specific settings, 
+ * experimental features, and global polling intervals.
+ * @module src/components/panels/tabs
+ */
+
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 
@@ -41,6 +48,11 @@ const checkboxStyle: React.CSSProperties = {
     accentColor: "var(--accent-cyan)",
 };
 
+/**
+ * @component OverlayConfigTab
+ * @description Provides a granular interface for adjusting technical parameters 
+ * of active plugins, including polling frequencies and experimental data loading features.
+ */
 export function OverlayConfigTab() {
     const dataConfig = useStore((s) => s.dataConfig);
     const updateDataConfig = useStore((s) => s.updateDataConfig);

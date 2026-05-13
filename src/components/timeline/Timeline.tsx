@@ -1,9 +1,23 @@
 "use client";
 
+/**
+ * @file Timeline.tsx
+ * @description Application-wide temporal navigation controller.
+ * Manages live/playback mode switching, time scrubbing, and 
+ * historical data availability visualization.
+ * @module src/components/timeline
+ */
+
 import React, { useState, useEffect } from "react";
 import { useStore } from "@/core/state/store";
 import { isHistoryEnabled as default_isHistoryEnabled, isDemo, DEMO_ADMIN_ROLE } from "@/core/edition";
 
+/**
+ * @component Timeline
+ * @description A horizontal navigation bar for controlling application time.
+ * Features include playback speed controls, real-time mode toggles, 
+ * and a scrubbable track with data availability highlights.
+ */
 export function Timeline() {
     const currentTime = useStore((s) => s.currentTime);
     const isPlaying = useStore((s) => s.isPlaying);

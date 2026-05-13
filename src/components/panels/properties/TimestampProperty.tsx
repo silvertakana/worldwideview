@@ -1,6 +1,19 @@
+/**
+ * @file TimestampProperty.tsx
+ * @description Specialized property renderer for date/time values.
+ * Allows users to toggle between local time and UTC.
+ * @module src/components/panels/properties
+ */
+
 import React, { useState } from 'react';
 import { IntelPropertyRow } from './IntelPropertyRow';
 
+/**
+ * @interface TimestampPropertyProps
+ * @description Properties for the TimestampProperty component.
+ * @property {string | number | Date} timestamp - The raw timestamp to display.
+ * @property {string} [classNamePrefix] - CSS class prefix for styling (defaults to "intel-panel").
+ */
 interface TimestampPropertyProps {
     timestamp: string | number | Date;
     classNamePrefix?: string;

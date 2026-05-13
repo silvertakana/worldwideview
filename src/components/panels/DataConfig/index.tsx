@@ -1,3 +1,11 @@
+/**
+ * @file index.tsx
+ * @module Panels/DataConfig
+ * @description Orchestration component for the right-side configuration panel.
+ * Manages resizable sidebar state and tab switching between Intel, Filters, and Overlay settings.
+ * @version 1.0.0
+ */
+
 import { useStore } from "@/core/state/store";
 import { FilterSection } from "@/components/panels/FilterPanel";
 import { Cog, FilterIcon, Info, Key, MessageSquare } from "lucide-react";
@@ -11,6 +19,11 @@ import { sectionHeaderStyle } from "./sharedStyles";
 
 import "./index.css";
 
+/**
+ * @component DataConfigPanel
+ * @description Renders the right-hand resizable sidebar containing contextual information 
+ * and configuration tools.
+ */
 export function DataConfigPanel() {
     const isMobile = useIsMobile();
     const { width, startResizing } = useResizablePanel(320, 260, 800, 'right');

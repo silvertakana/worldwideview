@@ -1,3 +1,10 @@
+/**
+ * @file DataBusSubscriber.tsx
+ * @description Headless component that bridges the DataBus event system with the Zustand store.
+ * Handles automatic WebSocket subscription/unsubscription when layers are toggled.
+ * @module src/components/layout
+ */
+
 "use client";
 
 import { useEffect } from "react";
@@ -9,8 +16,9 @@ import { resolveEngineUrl } from "@/core/data/resolveEngineUrl";
 import { fetchLocalEngineManifest } from "@/core/data/engineManifest";
 
 /**
- * Subscribes to DataBus events and syncs state.
- * Renders nothing — purely a side-effect component.
+ * @component DataBusSubscriber
+ * @description Orchestrates side-effects between the event-driven DataBus and the React state store.
+ * This component renders no UI; it strictly manages the data pipeline lifecycle.
  */
 export function DataBusSubscriber() {
     const setPollingInterval = useStore((s) => s.setPollingInterval);

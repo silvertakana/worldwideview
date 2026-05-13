@@ -1,20 +1,46 @@
+/**
+ * @file FloatingWindow.tsx
+ * @description A draggable and resizable modal window container.
+ * Supports mouse and touch interactions, boundary constraints, and persistence callbacks.
+ * @module src/components/common
+ */
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { X } from "lucide-react";
 
+/**
+ * Props for the FloatingWindow component.
+ */
 interface FloatingWindowProps {
+    /** Unique identifier for the window instance. */
     id: string;
+    /** Title text displayed in the header bar. */
     title: string;
+    /** Inner content to be rendered within the window body. */
     children: React.ReactNode;
+    /** Initial screen coordinates for the window. */
     initialPosition?: { x: number; y: number };
+    /** Initial dimensions for the window. */
     initialSize?: { width: number; height: number };
+    /** Callback triggered when the close button is clicked. */
     onClose: () => void;
+    /** Callback triggered when the window is moved or resized. */
     onUpdate?: (updates: { position?: { x: number; y: number }; size?: { width: number; height: number } }) => void;
+    /** Minimum allowed width during resize. Defaults to 300. */
     minWidth?: number;
+    /** Minimum allowed height during resize. Defaults to 200. */
     minHeight?: number;
 }
 
+/**
+ * @component FloatingWindow
+ * @description A floating, interactive container used for data streams and secondary tools.
+ * Implements a custom drag-and-resize engine compatible with both desktop and mobile.
+ * 
+ * @param {FloatingWindowProps} props - Component properties.
+ */
 export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     id,
     title,

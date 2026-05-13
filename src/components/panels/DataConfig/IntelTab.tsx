@@ -1,3 +1,11 @@
+/**
+ * @file IntelTab.tsx
+ * @module Panels/DataConfig
+ * @description Advanced intelligence dossier component for the right sidebar.
+ * Includes interactive legends, color overrides, and plugin-specific sidebar integrations.
+ * @version 1.1.0
+ */
+
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { PluginIcon } from "@/components/common/PluginIcon";
@@ -9,6 +17,11 @@ import { DynamicPropertiesRender } from "../properties/DynamicPropertiesRender";
 import { useRef, useEffect } from "react";
 import { PluginErrorBoundary } from "@/components/common/PluginErrorBoundary";
 
+/**
+ * @component LegendItem
+ * @description Renders a single entry in the map legend, allowing for color customization 
+ * and visibility filtering based on categorical data.
+ */
 function LegendItem({
     label, 
     color, 
@@ -159,6 +172,12 @@ function LegendItem({
     );
 }
 
+/**
+ * @component IntelTab
+ * @description The primary data visualization tab for the right sidebar.
+ * Displays selected entity metadata or contextual layer information (Legend, Plugin Sidebar) 
+ * when no entity is selected.
+ */
 export function IntelTab() {
     const selectedEntity = useStore((s) => s.selectedEntity);
     const lockedEntityId = useStore((s) => s.lockedEntityId);

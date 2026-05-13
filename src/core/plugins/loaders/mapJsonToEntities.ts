@@ -1,10 +1,24 @@
+/**
+ * @file mapJsonToEntities.ts
+ * @description Logic for transforming arbitrary JSON API responses into the standardized `GeoEntity` format 
+ * using declarative field mappings.
+ */
+
 import type { GeoEntity } from "../PluginTypes";
 import type { FieldMapping } from "../PluginManifest";
 import { getNestedValue } from "./getNestedValue";
 
 /**
- * Maps a plain JSON response to GeoEntity[].
- * Uses dot-path field mapping to extract each field from each item.
+ * Maps a plain JSON response to an array of `GeoEntity` objects.
+ * 
+ * Uses dot-path field mapping to extract core geospatial fields (lat, lon, id, etc.)
+ * from each item in the data set.
+ * 
+ * @param data - The raw JSON response data.
+ * @param mapping - The field mapping configuration from the plugin manifest.
+ * @param pluginId - The ID of the plugin performing the mapping.
+ * @param arrayPath - Optional dot-path to the array within the JSON response.
+ * @returns An array of successfully mapped GeoEntities.
  */
 export function mapJsonToEntities(
     data: unknown,

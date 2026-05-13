@@ -1,6 +1,10 @@
-// ─── WorldWideView Plugin SDK ─────────────────────────────────
-// The public API for building WorldWideView plugins.
-// Import from "@worldwideview/wwv-plugin-sdk" in your plugin.
+/**
+ * @file index.ts
+ * @description Core SDK for WorldWideView plugin development.
+ * Defines the foundational types, interfaces, and utilities required 
+ * to build data seeders, visualizers, and UI extensions.
+ * @module @worldwideview/wwv-plugin-sdk
+ */
 
 import type { ComponentType } from "react";
 import { createElement } from "react";
@@ -86,17 +90,30 @@ export interface TimeRange {
 
 export type TimeWindow = "1h" | "6h" | "24h" | "48h" | "7d";
 
-// ─── Geo Entities ────────────────────────────────────────────
+/**
+ * @interface GeoEntity
+ * @description The primary data primitive representing a geospatial object.
+ */
 export interface GeoEntity {
+    /** Globally unique identifier for this specific entity instance. */
     id: string;
+    /** The ID of the plugin that owns this entity. */
     pluginId: string;
+    /** WGS84 Latitude. */
     latitude: number;
+    /** WGS84 Longitude. */
     longitude: number;
+    /** Altitude in meters above ellipsoid (optional). */
     altitude?: number;
+    /** Heading/Rotation in degrees (optional). */
     heading?: number;
+    /** Speed in knots or meters/sec depending on domain (optional). */
     speed?: number;
+    /** The moment this data was captured. */
     timestamp: Date;
+    /** Short display string for labels. */
     label?: string;
+    /** Arbitrary metadata associated with the entity. */
     properties: Record<string, unknown>;
 }
 
@@ -225,7 +242,11 @@ export type FilterValue =
     | { type: "range"; min: number; max: number }
     | { type: "boolean"; value: boolean };
 
-// ─── World Plugin Interface ──────────────────────────────────
+/**
+ * @interface WorldPlugin
+ * @description The core lifecycle interface for all WorldWideView extensions.
+ * Every plugin (built-in or marketplace) must implement this interface.
+ */
 export interface WorldPlugin {
     id: string;
     name: string;

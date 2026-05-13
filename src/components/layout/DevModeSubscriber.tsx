@@ -1,9 +1,22 @@
+/**
+ * @file DevModeSubscriber.tsx
+ * @description Development-only component that connects to the `wwv-cli` dev server.
+ * Enables hot-reloading of local plugins during development.
+ */
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { useStore } from "@/core/state/store";
 
+/**
+ * Headless component that listens for plugin updates over a local WebSocket.
+ * Only active in `development` environments. Allows for real-time plugin 
+ * addition and reloading without full page refreshes.
+ * 
+ * @returns null
+ */
 export function DevModeSubscriber() {
     const [connected, setConnected] = useState(false);
     const initLayer = useStore((s) => s.initLayer);

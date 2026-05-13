@@ -1,13 +1,24 @@
 /**
- * Discord brand icon as a React SVG component.
- * Matches the lucide-react icon API (size, className props).
+ * @file DiscordIcon.tsx
+ * @description SVG component for the Discord brand identity.
  */
 
+/**
+ * Props for the DiscordIcon component.
+ */
 interface DiscordIconProps {
+    /** Dimension (width and height) in pixels. Defaults to 18. */
     size?: number;
+    /** Optional CSS class names for styling. */
     className?: string;
 }
 
+/**
+ * Renders the Discord logo as an SVG.
+ * 
+ * @param props - Component properties.
+ * @returns React component rendering the Discord icon.
+ */
 export function DiscordIcon({ size = 18, className }: DiscordIconProps) {
     return (
         <svg

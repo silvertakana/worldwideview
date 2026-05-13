@@ -1,44 +1,83 @@
+/**
+ * @file configSlice.ts
+ * @description State slice managing application-wide settings, data engine configuration, 
+ * and map rendering parameters.
+ */
+
 import type { StateCreator } from "zustand";
 import type { AppStore } from "./store";
 
 // ─── Data Configuration ──────────────────────────────────────
+/**
+ * Configuration settings related to data fetching, caching, and tiers.
+ */
 export interface DataConfig {
+    /** Map of plugin IDs to their custom polling intervals (ms). */
     pollingIntervals: Record<string, number>;
+    /** Whether local caching of plugin data is enabled. */
     cacheEnabled: boolean;
+    /** Maximum age of cached data in milliseconds. */
     cacheMaxAge: number;
+    /** Number of simultaneous fetch requests allowed. */
     maxConcurrentRequests: number;
+    /** Number of times to retry failed requests. */
     retryAttempts: number;
+    /** Feature flags for experimental system behaviors. */
     experimentalFeatures: {
         predictiveLoading: boolean;
         realtimeStreaming: boolean;
         clusteringEnabled: boolean;
         showTimelineHighlight: boolean;
     };
+    /** Generic storage for plugin-specific settings. */
     pluginSettings: Record<string, any>;
+    /** Cryptographic license key for paid tiers. */
     licenseKey: string | null;
+    /** The active subscription tier of the user. */
     activeTier: "free" | "pro" | "team" | "enterprise";
 }
 
 export type AntiAliasingMode = "none" | "fxaa" | "msaa2x" | "msaa4x" | "msaa8x";
 
+/**
+ * Settings related to the 3D globe rendering and visual fidelity.
+ */
 export interface MapConfig {
+    /** Show the FPS counter in the HUD. */
     showFps: boolean;
+    /** Scaling factor for screen resolution (0.1 to 2.0). */
     resolutionScale: number;
+    /** Selected anti-aliasing algorithm. */
     antiAliasing: AntiAliasingMode;
+    /** Threshold for detail level in 3D tiles (higher = faster, lower = prettier). */
     maxScreenSpaceError: number;
+    /** Whether dynamic shadows are enabled. */
     shadowsEnabled: boolean;
+    /** Whether lighting from the sun/moon is enabled. */
     enableLighting: boolean;
+    /** ID of the active base map layer. */
     baseLayerId: string;
+    /** Optional fallback layer if base layer fails to load. */
     fallbackLayerId: string | null;
-    sceneMode: 1 | 2 | 3; // 1: Columbus View, 2: 2D, 3: 3D
+    /** The active scene mode (2D, 2.5D, or 3D). */
+    sceneMode: 1 | 2 | 3;
 }
 
+/**
+ * Zustand state slice for application configuration.
+ */
 export interface ConfigSlice {
+    /** Active data and engine settings. */
     dataConfig: DataConfig;
+    /** Active map rendering settings. */
     mapConfig: MapConfig;
+    /** Updates one or more data configuration fields. */
     updateDataConfig: (config: Partial<DataConfig>) => void;
+    /** Updates one or more map rendering fields and persists layer choice to localStorage. */
     updateMapConfig: (config: Partial<MapConfig>) => void;
+    /** Overrides the default polling interval for a specific plugin. */
     setPollingInterval: (pluginId: string, intervalMs: number) => void;
+    /** Updates internal settings stored for a specific plugin. */
     updatePluginSettings: (pluginId: string, settings: any) => void;
 }
 

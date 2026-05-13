@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * @file LayerPanel.tsx
+ * @description Primary left-sidebar panel for managing data sources, imagery, 
+ * favorites, and plugin installations.
+ * @module src/components/panels
+ */
+
 import { useState } from "react";
 import { CircuitBoard, Download, DownloadCloud, Globe2, Puzzle, Search, Star } from "lucide-react";
 
@@ -18,6 +25,12 @@ import { trackEvent } from "@/lib/analytics";
 
 import "./LayerPanel.css"
 
+/**
+ * @component LayerPanel
+ * @description The main sidebar orchestration component for data navigation.
+ * Manages tabs for layers, imagery, favorites, geojson imports, and plugins.
+ * Handles the recursive search and categorization of active plugins.
+ */
 export function LayerPanel() {
     const isMobile = useIsMobile();
     const { width, startResizing } = useResizablePanel(280, 260, 800, 'left');

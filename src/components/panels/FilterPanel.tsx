@@ -1,29 +1,23 @@
-"use client";
+/**
+ * @file FilterPanel.tsx
+ * @description UI components for managing dynamic data filters across all active plugins.
+ * Supports text search, value selection, range sliders, and boolean toggles.
+ * @module src/components/panels
+ */
 
 import { useState } from "react";
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
-import { TextFilter, SelectFilter, RangeFilter, BooleanFilter } from "./FilterControls";
+import { TextFilter, SelectFilter, RangeFilter, BooleanFilter, FilterControl } from "./FilterControls";
 import { PluginIcon } from "@/components/common/PluginIcon";
 import type { FilterDefinition, FilterValue } from "@/core/plugins/PluginTypes";
 import { trackEvent } from "@/lib/analytics";
 
-function FilterControl({ def, value, onChange }: {
-    def: FilterDefinition;
-    value: FilterValue | undefined;
-    onChange: (v: FilterValue) => void;
-}) {
-    const props = { definition: def, value, onChange };
-    switch (def.type) {
-        case "text": return <TextFilter {...props} />;
-        case "select": return <SelectFilter {...props} />;
-        case "range": return <RangeFilter {...props} />;
-        case "boolean": return <BooleanFilter {...props} />;
-        default: return null;
-    }
-}
-
-/** Embeddable filter section — designed to be placed inside DataConfigPanel */
+/**
+ * @component FilterSection
+ * @description An embeddable list of filter controls, grouped by plugin.
+ * Only displays filters for plugins that are currently enabled in the LayerPanel.
+ */
 export function FilterSection() {
     const layers = useStore((s) => s.layers);
     const filters = useStore((s) => s.filters);

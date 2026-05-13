@@ -1,3 +1,11 @@
+/**
+ * @file GraphicsSettings.tsx
+ * @module Panels/Settings
+ * @description UI panel for managing CesiumJS engine performance and visual quality settings,
+ * including resolution scaling, anti-aliasing, and lighting toggles.
+ * @version 1.0.0
+ */
+
 "use client";
 
 import React, { useEffect } from "react";
@@ -5,6 +13,10 @@ import { useStore } from "@/core/state/store";
 import { trackEvent } from "@/lib/analytics";
 import "./graphics-settings.css";
 
+/**
+ * @constant DEFAULT_GRAPHICS
+ * @description Fallback values for the graphics configuration.
+ */
 const DEFAULT_GRAPHICS = {
     resolutionScale: 1.0,
     enableFxaa: false,
@@ -32,6 +44,11 @@ const AA_OPTIONS = [
     { label: "MSAA 8× (Ultra)", value: "msaa8x" },
 ];
 
+/**
+ * @component GraphicsSettings
+ * @description Provides a granular interface for adjusting 3D engine performance.
+ * Persists settings to browser cookies for session stability.
+ */
 export function GraphicsSettings() {
     const mapConfig = useStore((s) => s.mapConfig);
     const update = useStore((s) => s.updateMapConfig);

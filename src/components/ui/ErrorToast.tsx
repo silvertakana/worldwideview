@@ -1,10 +1,23 @@
 "use client";
 
+/**
+ * @file ErrorToast.tsx
+ * @description Global error notification component.
+ * Displays critical system errors or validation failures in a 
+ * non-blocking overlay with auto-dismiss functionality.
+ * @module src/components/ui
+ */
+
 import { useEffect } from "react";
 import { useStore } from "@/core/state/store";
 import { AlertTriangle, X } from "lucide-react";
 import styles from "./ErrorToast.module.css";
 
+/**
+ * @component ErrorToast
+ * @description Renders a dismissible error message anchored to the viewport.
+ * Automatically clears after a timeout via the Zustand global store.
+ */
 export default function ErrorToast() {
     const errorToastMessage = useStore((state) => state.errorToastMessage);
     const clearErrorToast = useStore((state) => state.clearErrorToast);

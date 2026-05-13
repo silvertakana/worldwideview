@@ -1,3 +1,8 @@
+/**
+ * @file mapGeoJsonToEntities.ts
+ * @description Logic for transforming GeoJSON responses into the standardized `GeoEntity` format.
+ */
+
 import type { GeoEntity } from "../PluginTypes";
 import type { FieldMapping } from "../PluginManifest";
 import { getNestedValue } from "./getNestedValue";
@@ -9,8 +14,12 @@ interface GeoJsonFeature {
 }
 
 /**
- * Maps a GeoJSON response to GeoEntity[].
- * Expects `data.features` to be an array of GeoJSON Feature objects.
+ * Maps a GeoJSON response (FeatureCollection or individual Feature) to an array of `GeoEntity` objects.
+ * 
+ * @param data - The raw GeoJSON response.
+ * @param mapping - The field mapping configuration for non-geometry fields.
+ * @param pluginId - The ID of the plugin performing the mapping.
+ * @returns An array of mapped GeoEntities.
  */
 export function mapGeoJsonToEntities(
     data: unknown,

@@ -1,8 +1,21 @@
+/**
+ * @file boot-db.mjs
+ * @description Database bootstrapping utility.
+ * Automates the startup of the local PostgreSQL container via Docker Compose 
+ * and ensures the environment is ready for Prisma migrations.
+ * @module scripts
+ */
+
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
 // Load environment variables manually since dotenv might not be installed globally
+/**
+ * @function loadEnv
+ * @description Manually parses a .env file into process.env to avoid 
+ * external dependencies like 'dotenv' during early boot.
+ */
 const loadEnv = (file) => {
   try {
     if (fs.existsSync(file)) {

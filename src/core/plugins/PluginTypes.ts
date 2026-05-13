@@ -1,5 +1,8 @@
-// ─── Re-export all types from the WorldWideView Plugin SDK ───
-// This keeps all existing app imports working without changes.
+/**
+ * Re-exports core types from the WorldWideView Plugin SDK.
+ * This file serves as a local proxy for the SDK types to maintain backward compatibility
+ * for the application's imports while keeping the SDK as the single source of truth.
+ */
 // Source of truth for types is now @worldwideview/wwv-plugin-sdk.
 export type {
     PluginCategory,
