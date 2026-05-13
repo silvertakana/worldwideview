@@ -249,6 +249,63 @@ async function fetchRss(
     }
 }
 
+// ─── Local News / RSS ────────────────────────────────────────
+
+const NEWS_SOURCES: { url: string; source: string }[] = [
+    // Austin
+    { url: "https://www.texastribune.org/feeds/all/",                              source: "Texas Tribune" },
+    { url: "https://www.kxan.com/feed/",                                           source: "KXAN" },
+    { url: "https://www.kvue.com/feeds/syndication/rss/news",                      source: "KVUE" },
+    { url: "https://austinmonitor.com/feed/",                                      source: "Austin Monitor" },
+    { url: "https://www.austinchronicle.com/feed/",                                source: "Austin Chronicle" },
+    // Houston
+    { url: "https://www.chron.com/rss/feed/Local-Houston-News-620.php",            source: "Houston Chronicle" },
+    { url: "https://www.khou.com/feeds/syndication/rss/news",                      source: "KHOU" },
+    { url: "https://www.houstonpress.com/rss.xml",                                 source: "Houston Press" },
+    // Dallas / Fort Worth
+    { url: "https://www.dallasobserver.com/rss.xml",                               source: "Dallas Observer" },
+    { url: "https://www.wfaa.com/feeds/syndication/rss/news",                      source: "WFAA" },
+    { url: "https://www.star-telegram.com/news/local/rss/",                        source: "Fort Worth Star-Telegram" },
+    // San Antonio
+    { url: "https://www.expressnews.com/local/rss/",                               source: "San Antonio Express-News" },
+    { url: "https://www.ksat.com/feeds/syndication/rss/news",                      source: "KSAT" },
+    { url: "https://sanantonioreport.org/feed/",                                   source: "San Antonio Report" },
+    // El Paso
+    { url: "https://elpasomatters.org/feed/",                                      source: "El Paso Matters" },
+    { url: "https://www.ktsm.com/feed/",                                           source: "KTSM" },
+    // Tyler / East Texas
+    { url: "https://tylerpaper.com/feed/",                                         source: "Tyler Morning Telegraph" },
+    { url: "https://www.ketknbc.com/feed/",                                        source: "KETK" },
+    // Temple / Waco
+    { url: "https://www.tdtnews.com/feed/",                                        source: "Temple Daily Telegram" },
+    { url: "https://wacotrib.com/feed/",                                           source: "Waco Tribune-Herald" },
+    { url: "https://www.kwtx.com/feed/",                                           source: "KWTX" },
+    // Bastrop
+    { url: "https://www.bastropadvertiser.com/feed/",                              source: "Bastrop Advertiser" },
+    // Brownsville / RGV / Starbase
+    { url: "https://www.brownsvilleherald.com/feed/",                              source: "Brownsville Herald" },
+    { url: "https://myrgvnews.com/feed/",                                          source: "MyRGV" },
+    { url: "https://www.valleycentral.com/feed/",                                  source: "ValleyCentral" },
+    { url: "https://riograndeguardian.com/feed/",                                  source: "Rio Grande Guardian" },
+    // Other TX metros
+    { url: "https://www.caller.com/arcio/rss/",                                    source: "Corpus Christi Caller-Times" },
+    { url: "https://www.kcbd.com/feed/",                                           source: "KCBD" },
+    { url: "https://www.lubbockonline.com/arcio/rss/",                             source: "Lubbock Avalanche-Journal" },
+    { url: "https://www.amarillo.com/arcio/rss/",                                  source: "Amarillo Globe-News" },
+    { url: "https://www.reporternews.com/arcio/rss/",                              source: "Abilene Reporter-News" },
+    { url: "https://www.kbtx.com/feed/",                                           source: "KBTX" },
+    { url: "https://www.news-journal.com/feed/",                                   source: "Longview News-Journal" },
+    { url: "https://www.mrt.com/arcio/rss/",                                       source: "Midland Reporter-Telegram" },
+];
+
+async function fetchLocalNews(): Promise<FeedItem[]> {
+    const jobs = NEWS_SOURCES.map(({ url, source }) =>
+        fetchRss(url, source, "news", 8).catch(() => [] as FeedItem[])
+    );
+    const results = await Promise.all(jobs);
+    return results.flat();
+}
+
 // ─── Route ───────────────────────────────────────────────────
 
 const ALL_CATEGORIES = new Set<string>([
@@ -272,6 +329,7 @@ export async function GET(req: NextRequest) {
     if (wants("transportation")) jobs.push(fetchAustinTraffic().catch(() => []));
     if (wants("energy")) jobs.push(fetchErcot());
     if (wants("gas")) jobs.push(fetchEiaGas());
+    if (wants("news")) jobs.push(fetchLocalNews());
 
     const results = await Promise.all(jobs);
     const items = results

@@ -1,34 +1,34 @@
 /* ─── Design Tokens ───────────────────────────────────────── */
 :root {
-  /* Palette — Dark Gray / Black & White (Default) */
-  --bg-primary: #171717;
-  --bg-secondary: #262626;
-  --bg-tertiary: #404040;
-  --bg-glass: rgba(38, 38, 38, 0.85);
-  --bg-glass-hover: rgba(64, 64, 64, 0.85);
-  --bg-glass-active: rgba(82, 82, 82, 0.9);
+  /* Palette — NERV Operations Console */
+  --bg-primary: #000000;
+  --bg-secondary: #080807;
+  --bg-tertiary: #111110;
+  --bg-glass: rgba(8, 8, 7, 0.94);
+  --bg-glass-hover: rgba(17, 17, 16, 0.96);
+  --bg-glass-active: rgba(28, 28, 26, 0.98);
 
-  --border-subtle: rgba(255, 255, 255, 0.15);
-  --border-medium: rgba(255, 255, 255, 0.25);
-  --border-bright: rgba(255, 255, 255, 0.4);
-  --border-glow: rgba(255, 255, 255, 0.2);
+  --border-subtle: rgba(200, 200, 192, 0.07);
+  --border-medium: rgba(200, 200, 192, 0.14);
+  --border-bright: rgba(255, 152, 48, 0.5);
+  --border-glow: rgba(255, 152, 48, 0.2);
 
-  --text-primary: #ffffff;
-  --text-secondary: #e5e5e5;
-  --text-muted: #a3a3a3;
-  --text-accent: #ffffff;
+  --text-primary: #D8D8D0;
+  --text-secondary: #AAAAAA;
+  --text-muted: #888880;
+  --text-accent: #FF9830;
 
-  --accent-cyan: #ffffff;
-  --accent-rgb: 255, 255, 255;
-  --accent-teal: #e5e5e5;
-  --accent-blue: #ffffff;
-  --accent-purple: #a3a3a3;
-  --accent-amber: #f59e0b;
-  --accent-red: #ef4444;
-  --accent-green: #22c55e;
+  --accent-cyan: #FF9830;
+  --accent-rgb: 255, 152, 48;
+  --accent-teal: #20F0FF;
+  --accent-blue: #20F0FF;
+  --accent-purple: #888880;
+  --accent-amber: #FF9830;
+  --accent-red: #FF3030;
+  --accent-green: #50FF50;
 
-  --glow-cyan: 0 0 24px rgba(255, 255, 255, 0.15);
-  --glow-blue: 0 0 24px rgba(255, 255, 255, 0.1);
+  --glow-cyan: 0 0 8px rgba(255, 152, 48, 0.45), 0 0 20px rgba(255, 152, 48, 0.15);
+  --glow-blue: 0 0 8px rgba(32, 240, 255, 0.35), 0 0 16px rgba(32, 240, 255, 0.1);
 }
 
 [data-theme='black'] {
@@ -114,7 +114,9 @@
 :root {
 
   /* Typography */
-  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-ui: 'JetBrains Mono', 'Cascadia Mono', 'Consolas', monospace;
+  --font-title: 'Noto Serif Display', 'Times New Roman', serif;
+  --font-stamp: 'Saira Extra Condensed', 'Impact', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   /* Spacing (4/8dp rhythm) */
@@ -145,6 +147,10 @@
   --glass-border: 1px solid var(--border-subtle);
   --glass-border-inner: inset 0 1px 1px rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='light'], [data-theme='legacy'], [data-theme='black'] {
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 [data-theme='light'] {

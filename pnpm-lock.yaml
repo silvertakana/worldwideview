@@ -17,6 +17,18 @@ importers:
       '@auth/supabase-adapter':
         specifier: ^1.11.2
         version: 1.11.2(@supabase/supabase-js@2.105.4)
+      '@fontsource/inter':
+        specifier: ^5.2.8
+        version: 5.2.8
+      '@fontsource/jetbrains-mono':
+        specifier: ^5.2.8
+        version: 5.2.8
+      '@fontsource/noto-serif-display':
+        specifier: ^5.2.9
+        version: 5.2.9
+      '@fontsource/saira-extra-condensed':
+        specifier: ^5.2.7
+        version: 5.2.7
       '@prisma/adapter-pg':
         specifier: ^7.8.0
         version: 7.8.0
@@ -985,6 +997,18 @@ packages:
     resolution: {integrity: sha512-3TASCATfw+ctICSb4ymrv7iCm0qJ0N9CarB+CZ7zIJ7KqNbwI5JjyDL1/sxoC0ccTO1Zyd1iQ+oqncPg5FJXaA==}
     peerDependencies:
       '@opentelemetry/api': ^1.9.0
+
+  '@fontsource/inter@5.2.8':
+    resolution: {integrity: sha512-P6r5WnJoKiNVV+zvW2xM13gNdFhAEpQ9dQJHt3naLvfg+LkF2ldgSLiF4T41lf1SQCM9QmkqPTn4TH568IRagg==}
+
+  '@fontsource/jetbrains-mono@5.2.8':
+    resolution: {integrity: sha512-6w8/SG4kqvIMu7xd7wt6x3idn1Qux3p9N62s6G3rfldOUYHpWcc2FKrqf+Vo44jRvqWj2oAtTHrZXEP23oSKwQ==}
+
+  '@fontsource/noto-serif-display@5.2.9':
+    resolution: {integrity: sha512-4fv1funwSCBuYInBUrnjoW5FLcx9zr+yg3tKgHL+9o7wdwizT3dD7gbm1EnBROdXSnQlIJwITlNI44syfJay9w==}
+
+  '@fontsource/saira-extra-condensed@5.2.7':
+    resolution: {integrity: sha512-+NPPLodBkh2OQl8IUwRIxMoZ+cFGatMhfi/XNegsa8GuQkKurbmI3wrQn9N31kyiKi1yNQGPfx02+oyorsQr9w==}
 
   '@hono/node-server@1.19.11':
     resolution: {integrity: sha512-dr8/3zEaB+p0D2n/IUrlPF1HZm586qgJNXK1a9fhg/PzdtkK7Ksd5l312tJX2yBuALqDYBlG20QEbayqPyxn+g==}
@@ -4212,7 +4236,7 @@ packages:
 
   uuid@3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
-    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+    deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
     hasBin: true
 
   valibot@1.2.0:
@@ -4937,6 +4961,14 @@ snapshots:
       minimatch: 10.2.5
     transitivePeerDependencies:
       - supports-color
+
+  '@fontsource/inter@5.2.8': {}
+
+  '@fontsource/jetbrains-mono@5.2.8': {}
+
+  '@fontsource/noto-serif-display@5.2.9': {}
+
+  '@fontsource/saira-extra-condensed@5.2.7': {}
 
   '@hono/node-server@1.19.11(hono@4.12.18)':
     dependencies:

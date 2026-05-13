@@ -24,6 +24,10 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
     "@auth/supabase-adapter": "^1.11.2",
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/noto-serif-display": "^5.2.9",
+    "@fontsource/saira-extra-condensed": "^5.2.7",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@prisma/client-runtime-utils": "7.8.0",

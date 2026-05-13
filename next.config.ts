@@ -27,8 +27,8 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               // CesiumJS requires unsafe-eval (worker compilation) and unsafe-inline (styles)
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://unpkg.com https://cdn.jsdelivr.net https://analytics.worldwideview.dev https://va.vercel-scripts.com https://pagead2.googlesyndication.com https://adservice.google.com https://www.googletagservices.com https://ep2.adtrafficquality.google https://static.cloudflareinsights.com",
-              "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
-              "font-src 'self' fonts.gstatic.com",
+              "style-src 'self' 'unsafe-inline'",
+              "font-src 'self'",
               // Camera streams load images/MJPEG from arbitrary IPs worldwide — http: https: required
               "img-src 'self' data: blob: http: https:",
               // Camera HLS streams and external data fetches need arbitrary origins

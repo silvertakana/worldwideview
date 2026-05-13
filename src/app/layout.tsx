@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
+import "@/styles/fontsource-imports";
 import "./globals.css";
 import "@/styles/hud-animations.css";
 
@@ -12,7 +13,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "WorldWideView | Geospatial Intelligence",
+  title: "BIRD'S NEST",
   description: "Next-generation, open-source geospatial intelligence platform.",
 };
 
