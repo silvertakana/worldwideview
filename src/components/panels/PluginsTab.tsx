@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Trash2, ExternalLink, RefreshCw, Download } from "lucide-react";
+import { Trash2, ExternalLink, RefreshCw, Download, PowerOff, Power } from "lucide-react";
 import { ShieldCheck, ShieldAlert, Shield } from "lucide-react";
 import { PluginIcon } from "@/components/common/PluginIcon";
 import { pluginManager } from "@/core/plugins/PluginManager";
@@ -16,6 +16,7 @@ interface PluginRecord {
     version: string;
     config: string;
     installedAt: string;
+    enabled?: boolean;
 }
 
 // ─── Trust Badge ────────────────────────────────────────────
@@ -110,7 +111,24 @@ export function PluginsTab() {
             const res = await fetch("/api/marketplace/status");
             if (!res.ok) return;
             const data = await res.json();
-            setPlugins(data.plugins ?? []);
+            const dbPlugins: PluginRecord[] = data.plugins ?? [];
+            const dbPluginMap = new Map(dbPlugins.map(p => [p.pluginId, p]));
+
+            // Add built-in and local plugins that don't have a DB record yet (enabled by default)
+            const allManaged = pluginManager.getAllPlugins();
+            for (const managed of allManaged) {
+                if (!dbPluginMap.has(managed.plugin.id)) {
+                    dbPlugins.push({
+                        pluginId: managed.plugin.id,
+                        version: "built-in",
+                        config: "{}",
+                        installedAt: new Date().toISOString(),
+                        enabled: true
+                    });
+                }
+            }
+
+            setPlugins(dbPlugins);
             if (typeof data.canManagePlugins === "boolean") {
                 setCanInstall(data.canManagePlugins);
             }
@@ -134,6 +152,36 @@ export function PluginsTab() {
                 body: JSON.stringify({ pluginId }),
             });
             trackEvent("plugin-uninstall", { plugin: pluginId });
+            setNeedsReload(true);
+        } catch {
+            setRemoving(null);
+        }
+    };
+
+    const handleDisable = async (pluginId: string) => {
+        setRemoving(pluginId);
+        try {
+            await fetch("/api/marketplace/disable", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pluginId }),
+            });
+            trackEvent("plugin-disable", { plugin: pluginId });
+            setNeedsReload(true);
+        } catch {
+            setRemoving(null);
+        }
+    };
+
+    const handleEnable = async (pluginId: string) => {
+        setRemoving(pluginId);
+        try {
+            await fetch("/api/marketplace/enable", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pluginId }),
+            });
+            trackEvent("plugin-enable", { plugin: pluginId });
             setNeedsReload(true);
         } catch {
             setRemoving(null);
@@ -261,7 +309,7 @@ export function PluginsTab() {
                 </div>
             )}
             <div className="plugins-tab__list">
-                {plugins.map((record) => (
+                {plugins.filter(p => p.enabled !== false).map((record) => (
                     <div key={record.pluginId} className="plugin-item">
                         <span className="plugin-item__icon">
                             <PluginIcon icon={getIcon(record)} size={18} />
@@ -292,19 +340,79 @@ export function PluginsTab() {
                                         Update (v{updates[record.pluginId]})
                                     </button>
                                 ) : (
-                                    <button
-                                        className="plugin-item__uninstall"
-                                        onClick={() => handleUninstall(record.pluginId)}
-                                        disabled={removing === record.pluginId || updating === record.pluginId}
-                                        title={`Uninstall ${record.pluginId}`}
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
+                                    <>
+                                        <button
+                                            className="plugin-item__disable"
+                                            onClick={() => handleDisable(record.pluginId)}
+                                            disabled={removing === record.pluginId || updating === record.pluginId}
+                                            title={`Disable ${record.pluginId}`}
+                                        >
+                                            <PowerOff size={14} />
+                                        </button>
+                                        {record.version !== "built-in" && (
+                                            <button
+                                                className="plugin-item__uninstall"
+                                                onClick={() => handleUninstall(record.pluginId)}
+                                                disabled={removing === record.pluginId || updating === record.pluginId}
+                                                title={`Uninstall ${record.pluginId}`}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         )}
                     </div>
                 ))}
+                
+                {plugins.filter(p => p.enabled === false).length > 0 && (
+                    <>
+                        <div className="plugins-tab__section-title">Disabled</div>
+                        {plugins.filter(p => p.enabled === false).map((record) => (
+                            <div key={record.pluginId} className="plugin-item plugin-item--disabled">
+                                <span className="plugin-item__icon">
+                                    <PluginIcon icon={getIcon(record)} size={18} />
+                                </span>
+                                <div className="plugin-item__info">
+                                    <div className="plugin-item__header">
+                                        <span className="plugin-item__name">
+                                            {getName(record)}
+                                        </span>
+                                        <span className="plugin-item__version">
+                                            v{record.version}
+                                        </span>
+                                    </div>
+                                    <div className="plugin-item__meta">
+                                        <TrustBadge trust={getTrust(record)} />
+                                    </div>
+                                </div>
+                                {canInstall && (
+                                    <div className="plugin-item__actions">
+                                        <button
+                                            className="plugin-item__enable"
+                                            onClick={() => handleEnable(record.pluginId)}
+                                            disabled={removing === record.pluginId || updating === record.pluginId}
+                                            title={`Enable ${record.pluginId}`}
+                                        >
+                                            <Power size={14} />
+                                        </button>
+                                        {record.version !== "built-in" && (
+                                            <button
+                                                className="plugin-item__uninstall"
+                                                onClick={() => handleUninstall(record.pluginId)}
+                                                disabled={removing === record.pluginId || updating === record.pluginId}
+                                                title={`Uninstall ${record.pluginId}`}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </>
+                )}
             </div>
             
             {canInstall && (

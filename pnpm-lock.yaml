@@ -359,12 +359,6 @@ importers:
         specifier: ^1.4.10
         version: 1.5.0(react@19.2.6)
 
-  local-plugins/wwv-plugin-iss:
-    dependencies:
-      '@worldwideview/wwv-plugin-sdk':
-        specifier: workspace:*
-        version: link:../../packages/wwv-plugin-sdk
-
   local-plugins/wwv-plugin-maritime:
     dependencies:
       '@worldwideview/wwv-plugin-sdk':
@@ -401,12 +395,6 @@ importers:
       vitest:
         specifier: ^1.0.0
         version: 1.6.1(@types/node@20.19.41)(jsdom@28.1.0)(lightningcss@1.32.0)(terser@5.47.1)
-
-  local-plugins/wwv-plugin-test-plugin:
-    dependencies:
-      '@worldwideview/wwv-plugin-sdk':
-        specifier: workspace:*
-        version: link:../../packages/wwv-plugin-sdk
 
   local-plugins/wwv-plugin-wildfire:
     dependencies:

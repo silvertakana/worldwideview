@@ -51,7 +51,6 @@ html, body {
   border-radius: var(--radius-lg);
   transition: all var(--duration-fast) var(--ease-smooth);
   backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
 }
 
 /* ─── Page Root (flex row: app + optional ad strip) ───────── */
@@ -227,7 +226,12 @@ html, body {
   flex-direction: column;
   overflow: hidden;
   transition: transform var(--duration-slow) var(--ease-smooth),
-              opacity var(--duration-slow) var(--ease-smooth);
+              opacity var(--duration-slow) var(--ease-smooth),
+              bottom var(--duration-slow) var(--ease-smooth);
+}
+
+.timeline-closed .sidebar {
+  bottom: var(--space-lg);
 }
 
 .sidebar--left {
@@ -1861,7 +1865,7 @@ body.is-resizing-sidebar .sidebar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--surface-glass);
+  background: rgba(10, 10, 10, 0.5);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   cursor: pointer;
@@ -1870,9 +1874,17 @@ body.is-resizing-sidebar .sidebar {
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
+[data-theme='light'] .timeline-toggle-btn {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme='light'] .timeline-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.65);
+}
+
 .timeline-toggle-btn:hover {
   color: var(--text-primary);
-  background: var(--surface-glass-hover);
+  background: rgba(20, 20, 20, 0.65);
   transform: scale(1.05);
   box-shadow: 0 6px 16px rgba(0,0,0,0.3);
 }

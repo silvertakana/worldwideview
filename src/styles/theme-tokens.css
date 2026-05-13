@@ -29,6 +29,14 @@
 
   --glow-cyan: 0 0 24px rgba(255, 255, 255, 0.15);
   --glow-blue: 0 0 24px rgba(255, 255, 255, 0.1);
+
+  --discord-color: #8b9cf4;
+  --discord-color-hover: #ffffff;
+  --discord-bg: rgba(88, 101, 242, 0.2);
+  --discord-bg-hover: rgba(88, 101, 242, 0.35);
+  --discord-border: rgba(88, 101, 242, 0.5);
+  --discord-border-hover: rgba(88, 101, 242, 0.8);
+  --discord-glow: rgba(88, 101, 242, 0.3);
 }
 
 [data-theme='black'] {

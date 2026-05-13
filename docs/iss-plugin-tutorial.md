@@ -60,7 +60,7 @@ The ISS moves incredibly fast. If our frontend tries to ask for its location eve
 We will use the workspace CLI tool to generate a blank plugin template and its associated backend seeder in one go. In your terminal, navigate to your main `worldwideview` folder and run:
 
 ```bash
-node packages/wwv-cli/dist/index.js create --local
+node packages/wwv-cli/dist/index.js create
 ```
 
 The CLI will launch an interactive survey. Answer as follows:
@@ -265,12 +265,12 @@ Open `c:\dev\worldwideview\local-plugins\wwv-plugin-iss\package.json`. You must 
 
 ### 7.2 Publish to NPM
 
-In your plugin terminal, log in to NPM and publish your package using the WWV CLI:
+Log in to NPM and publish your package using the WWV CLI from the project root (you can also use the `--org` flag to publish under your own NPM organization):
 ```bash
 npm login
-node ../../packages/wwv-cli/dist/index.js publish
+node packages/wwv-cli/dist/index.js publish iss [--org <your-org>]
 ```
-*(Or `npx wwv publish` if installed globally)*
+*(Or `npx wwv publish iss [--org <your-org>]` if installed globally)*
 
 ### 7.3 Submit to the Marketplace
 

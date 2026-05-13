@@ -25,7 +25,6 @@ const loadEnv = (file) => {
 };
 
 loadEnv('.env');
-loadEnv('.env.local');
 
 const skipLocalDb = process.env.WWV_SKIP_LOCAL_DB === 'true' || process.env.WWV_SKIP_LOCAL_DB === '1';
 
@@ -46,19 +45,14 @@ try {
     process.exit(0);
   }
 
-  // Start the db service using docker compose
+  // Start the db service and wait for it to be healthy
   console.log('📦 Starting PostgreSQL via Docker Compose...');
-  execSync('docker compose up -d db', { stdio: 'inherit' });
-  
-  // Wait a few seconds for postgres to be ready
-  console.log('⏳ Waiting for PostgreSQL to be ready...');
-  
-  // Simple sleep since we can't easily rely on pg_isready without pg client
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 3000);
-  
+  execSync('docker compose up -d --wait db', { stdio: 'inherit' });
+
   console.log('✅ Local PostgreSQL database is ready!');
-  
+
 } catch (error) {
   console.error('❌ Failed to start local database:', error.message);
+  console.log('💡 Ensure that docker is running and try again');
   console.log('💡 You may need to start it manually or set WWV_SKIP_LOCAL_DB=true to use an external database.');
 }

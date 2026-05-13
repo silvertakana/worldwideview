@@ -73,7 +73,7 @@ export async function buildPlugin({ dir, manifest, pluginDir }) {
                     external: Object.keys(EXTERNAL_GLOBALS),
                     output: {
                         globals: EXTERNAL_GLOBALS,
-                        inlineDynamicImports: true,
+                        codeSplitting: false,
                         banner: '"use client";',
                     },
                     plugins: [(await import("rollup-plugin-external-globals")).default(EXTERNAL_GLOBALS)],

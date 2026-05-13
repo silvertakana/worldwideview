@@ -13,7 +13,7 @@ services:
       - "AUTH_SECRET=${AUTH_SECRET:-default_secret_for_local_dev}"
       - "WWV_DEMO_ADMIN_SECRET=${WWV_DEMO_ADMIN_SECRET:-}"
       - "WWV_BRIDGE_TOKEN=${WWV_BRIDGE_TOKEN:-}"
-      - "DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/worldwideview?schema=public}"
+      - "DATABASE_URL=postgresql://postgres:postgres@db:5432/worldwideview?schema=public"
     depends_on:
       db:
         condition: service_healthy
@@ -57,7 +57,8 @@ services:
       wwv-redis:
         condition: service_healthy
     volumes:
-      - ./local-seeders:/mnt/host/c/dev/worldwideview/local-seeders
+      - ../wwv-seeders:/mnt/host/c/dev/worldwideview/local-seeders/community
+      - ../wwv-seeders-private:/mnt/host/c/dev/worldwideview/local-seeders/private
     restart: unless-stopped
 
   wwv-redis:

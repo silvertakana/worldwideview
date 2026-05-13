@@ -1,24 +1,20 @@
-// Prisma schema — PostgreSQL for all environments.
-// Local dev: use `npx prisma dev` for a zero-install local PGLite instance.
-// Cloud/Production: set DATABASE_URL to your Supabase/Postgres connection string.
-
-datasource db {
-  provider = "postgresql"
-}
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
+datasource db {
+  provider = "postgresql"
+}
+
 model User {
-  id             String     @id @default(uuid())
+  id             String            @id @default(uuid())
   tenantId       String?
   email          String
   name           String
   hashedPassword String
-  role           String     @default("user")
-  createdAt      DateTime   @default(now())
+  role           String            @default("user")
+  createdAt      DateTime          @default(now())
   favorites      Favorite[]
   memberships    WorkspaceMember[]
 
@@ -34,32 +30,12 @@ model Favorite {
   label      String
   pluginName String
   lastSeen   DateTime @default(now())
-
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, entityId])
   @@map("favorites")
 }
-
-// DISABLED — aviation history feature is currently turned off.
-// Uncomment to re-enable.
-//
-// model AviationHistory {
-//   id        Int      @id @default(autoincrement())
-//   icao24    String
-//   callsign  String?
-//   timestamp DateTime
-//   latitude  Float
-//   longitude Float
-//   altitude  Float?
-//   speed     Float?
-//   heading   Float?
-//
-//   @@unique([timestamp, icao24])
-//   @@index([timestamp])
-//   @@map("aviation_history")
-// }
 
 model InstalledPlugin {
   id          String   @id @default(uuid())
@@ -85,30 +61,27 @@ model Setting {
   @@map("settings")
 }
 
-// NEW — Global workspace registry
 model Workspace {
-  id                   String             @id @default(uuid())
+  id                   String            @id @default(uuid())
   name                 String
-  subdomain            String             @unique
-  status               String             @default("trialing")
-  plan                 String             @default("basic")
+  subdomain            String            @unique
+  status               String            @default("trialing")
+  plan                 String            @default("basic")
   stripeCustomerId     String?
   stripeSubscriptionId String?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
   members              WorkspaceMember[]
 
   @@map("workspaces")
 }
 
-// NEW — Links global users to workspaces with roles
 model WorkspaceMember {
   id          String    @id @default(uuid())
   userId      String
   workspaceId String
   role        String    @default("member")
   joinedAt    DateTime  @default(now())
-
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
