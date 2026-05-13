@@ -4,6 +4,7 @@ import { gdotAdapter } from "./gdot";
 import { tflAdapter } from "./tfl";
 import { ny511Adapter } from "./ny511";
 import { wsdotAdapter } from "./wsdot";
+import { austinAdapter } from "./austin";
 import { ncdotAdapter } from "./ncdot";
 import { osmSurveillanceAdapter } from "./osm-surveillance";
 
