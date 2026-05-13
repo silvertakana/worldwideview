@@ -17,5 +17,12 @@ export default defineConfig({
             'src/app/**/*.{test,spec}.{js,ts,jsx,tsx}',
             'packages/**/*.{test,spec}.{js,ts,jsx,tsx}',
         ],
+        coverage: {
+            thresholds: {
+                branches: 80,
+                functions: 80,
+                statements: 80,
+            }
+        }
     },
 });
