@@ -33,6 +33,8 @@ import { injectHostGlobals } from "@/core/plugins/hostGlobals";
 import { initLogCatcher } from "@/lib/logCatcher";
 import { waypointPlugin } from "@/plugins/waypoints";
 import { localNewsPlugin } from "@/plugins/local-news/LocalNewsPlugin";
+import { crimePlugin } from "@/plugins/public-safety/CrimePlugin";
+import { trafficPlugin } from "@/plugins/public-safety/TrafficPlugin";
 import { WaypointPlacementButton } from "./WaypointPlacementButton";
 
 const GlobeView = dynamic(() => import("@/core/globe/GlobeView"), {
@@ -96,6 +98,8 @@ export function AppShell() {
             // Register first-party built-in plugins
             pluginRegistry.register(waypointPlugin);
             pluginRegistry.register(localNewsPlugin);
+            pluginRegistry.register(crimePlugin);
+            pluginRegistry.register(trafficPlugin);
 
             for (const plugin of pluginRegistry.getAll()) {
                 await pluginManager.registerPlugin(plugin);

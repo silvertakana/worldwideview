@@ -73,9 +73,9 @@ export function LayerItem({
             className={`layer-item ${isSelected ? "layer-item--selected" : ""}`} 
             onClick={onSelect}
         >
-            <span className="layer-item__icon">
+            {/* <span className="layer-item__icon">
                 <PluginIcon icon={plugin.icon} size={18} />
-            </span>
+            </span> */}
 
             <div className="layer-item__info">
                 <div className="layer-item__header">

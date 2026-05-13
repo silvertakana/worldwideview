@@ -30,5 +30,6 @@ export function PluginIcon({ icon, size = 18, color }: PluginIconProps) {
         return <IconComponent size={size} color={color} />;
     }
 
-    return <FallbackIcon size={size} />;
+    // return <FallbackIcon size={size} />;
+    return null;
 }

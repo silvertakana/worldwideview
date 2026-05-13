@@ -13,7 +13,6 @@ import { FavoritesTab } from "./FavoritesTab";
 import { ImportPanel } from "@/plugins/geojson/ImportPanel";
 import { PluginsTab } from "./PluginsTab";
 import "@/plugins/geojson/geojson-importer.css";
-import { DiscordIcon } from "@/components/common/DiscordIcon";
 import { trackEvent } from "@/lib/analytics";
 
 import "./LayerPanel.css"
