@@ -2,6 +2,7 @@
 // This keeps all existing app imports working without changes.
 // Source of truth for types is now @worldwideview/wwv-plugin-sdk.
 export type {
+    PluginLegendItem,
     PluginCategory,
     TimeRange,
     TimeWindow,

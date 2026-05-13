@@ -82,7 +82,7 @@ export function DataConfigPanel() {
                 <button
                     className={`panel-tab ${activeTab === "feeds" ? "panel-tab--active" : ""}`}
                     onClick={() => setActiveTab("feeds")}
-                    title="Texas Feeds"
+                    title="Feeds & CVE Intel"
                     style={{width: "100%"}}
                 >
                     <Newspaper size="20" style={{ margin: 5, maxHeight: "20%" }} />
@@ -106,7 +106,7 @@ export function DataConfigPanel() {
                 {activeTab === "overlay" && <OverlayTab />}
                 {activeTab === "feeds" && (
                     <div style={{ marginBottom: "var(--space-lg)" }}>
-                        <div style={sectionHeaderStyle}>Texas Live Feeds</div>
+                        <div style={sectionHeaderStyle}>Live Feeds & CVE Intel</div>
                         <FeedsTab />
                     </div>
                 )}

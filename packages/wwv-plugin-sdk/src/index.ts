@@ -219,6 +219,14 @@ export interface FilterDefinition {
     range?: FilterRangeConfig;
 }
 
+export interface PluginLegendItem {
+    label: string;
+    color: string;
+    iconUrl?: string;
+    filterId?: string;
+    filterValue?: string;
+}
+
 export type FilterValue =
     | { type: "text"; value: string }
     | { type: "select"; values: string[] }
@@ -250,7 +258,7 @@ export interface WorldPlugin {
     getSelectionBehavior?(entity: GeoEntity): SelectionBehavior | null;
     getServerConfig?(): ServerPluginConfig;
     getFilterDefinitions?(): FilterDefinition[];
-    getLegend?(): { label: string; color: string; filterId?: string; filterValue?: string }[];
+    getLegend?(): PluginLegendItem[];
     getSidebarComponent?(): ComponentType<{ plugin?: any } | any>;
     getDetailComponent?(): ComponentType<{ entity: GeoEntity }>;
     getSettingsComponent?(): ComponentType<{ pluginId: string }>;

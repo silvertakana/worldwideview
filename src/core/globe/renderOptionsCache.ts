@@ -33,9 +33,13 @@ export function getCachedRenderOptions(
     plugin: WorldPlugin,
     entity: GeoEntity
 ): CesiumEntityOptions {
+    const heatKey =
+        typeof entity.properties?.cveHeat === 'number'
+            ? `:cve:${entity.properties.cveHeat.toFixed(4)}`
+            : '';
     const key = entity.speed
         ? `${entity.id}:${entity.heading ?? 0}:${entity.altitude ?? 0}`
-        : entity.id;
+        : `${entity.id}${heatKey}`;
 
     const hit = cache.get(key);
     if (hit) return hit;

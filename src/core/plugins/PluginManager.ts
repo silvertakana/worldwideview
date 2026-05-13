@@ -255,6 +255,12 @@ class PluginManager {
             console.warn(`[PluginManager] Overriding plugin ID from internal '${plugin.id}' to manifest ID '${manifest.id}'`);
             plugin.id = manifest.id;
         }
+        if (manifest.name?.trim()) {
+            plugin.name = manifest.name.trim();
+        }
+        if (manifest.description?.trim()) {
+            plugin.description = manifest.description.trim();
+        }
         this.loadedManifests.set(manifest.id, manifest);
         await this.registerPlugin(plugin);
     }

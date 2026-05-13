@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 
-// Server-side cache: keyed by normalised input, 1-hour TTL
 const cache = new Map<string, { data: unknown; expiresAt: number }>();
-const TTL_MS = 60 * 60 * 1000; // 1 hour
+const TTL_MS = 60 * 60 * 1000;
+
+const AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
+const FIELD_MASK =
+    "suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.structuredFormat,suggestions.placePrediction.types";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -12,7 +15,6 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Input is required" }, { status: 400 });
     }
 
-    // Use user-provided key if present in header AND looks valid, otherwise fall back to .env
     const userKey = request.headers.get("X-User-Google-Key");
     const isValidUserKey = userKey && userKey.length >= 20;
     const apiKey = isValidUserKey ? userKey : process.env.GOOGLE_MAPS_API_KEY;
@@ -21,7 +23,6 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
     }
 
-    // Separate cache entries for user-provided keys vs default
     const cachePrefix = userKey ? `user:${userKey.slice(0, 8)}:` : "";
     const cacheKey = `${cachePrefix}${input.toLowerCase().trim()}`;
     const cached = cache.get(cacheKey);
@@ -30,26 +31,52 @@ export async function GET(request: Request) {
     }
 
     try {
-        // No type restriction — returns addresses, establishments, landmarks, regions, etc.
-        const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-            input
-        )}&key=${apiKey}`;
+        const response = await fetch(AUTOCOMPLETE_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Goog-Api-Key": apiKey,
+                "X-Goog-FieldMask": FIELD_MASK,
+            },
+            body: JSON.stringify({ input }),
+        });
 
-        const response = await fetch(url);
-        const data = await response.json();
+        const data = (await response.json()) as {
+            suggestions?: Array<{
+                placePrediction?: {
+                    placeId?: string;
+                    text?: { text?: string };
+                    structuredFormat?: {
+                        mainText?: { text?: string };
+                        secondaryText?: { text?: string };
+                    };
+                    types?: string[];
+                };
+            }>;
+            error?: { code?: number; message?: string; status?: string };
+        };
 
-        if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-            console.error("Google Places API Error:", data);
+        if (!response.ok || data.error) {
+            console.error("Google Places API (New) Error:", response.status, data);
             return NextResponse.json({ error: "Failed to fetch predictions" }, { status: 500 });
         }
 
-        const predictions = data.predictions.map((p: any) => ({
-            description: p.description,
-            placeId: p.place_id,
-            mainText: p.structured_formatting?.main_text || p.description,
-            secondaryText: p.structured_formatting?.secondary_text || "",
-            types: p.types,
-        }));
+        const predictions =
+            data.suggestions
+                ?.map((s) => s.placePrediction)
+                .filter((p): p is NonNullable<typeof p> => Boolean(p?.placeId))
+                .map((p) => {
+                    const fullText = p.text?.text ?? "";
+                    const mainText = p.structuredFormat?.mainText?.text ?? fullText;
+                    const secondaryText = p.structuredFormat?.secondaryText?.text ?? "";
+                    return {
+                        description: fullText,
+                        placeId: p.placeId as string,
+                        mainText,
+                        secondaryText,
+                        types: p.types ?? [],
+                    };
+                }) ?? [];
 
         const result = { predictions };
         cache.set(cacheKey, { data: result, expiresAt: Date.now() + TTL_MS });

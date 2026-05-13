@@ -5,7 +5,6 @@ import { Header } from "./Header";
 import { LayerPanel } from "@/components/panels/LayerPanel";
 import { EntityInfoCard } from "@/components/panels/EntityInfoCard";
 import { DataConfigPanel } from "@/components/panels/DataConfig";
-import CameraStatsPanel from "@/components/panels/CameraStatsPanel";
 import { Timeline } from "@/components/timeline/Timeline";
 import { TimelineSync } from "@/core/globe/TimelineSync";
 import { pluginManager } from "@/core/plugins/PluginManager";
@@ -164,7 +163,6 @@ export function AppShell() {
             <PanelToggleArrows />
             <LayerPanel />
             <DataConfigPanel />
-            {!isMobile && <CameraStatsPanel />}
             <EntityInfoCard />
             <Timeline />
             <FloatingVideoManager />

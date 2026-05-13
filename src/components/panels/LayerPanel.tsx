@@ -176,7 +176,7 @@ export function LayerPanel() {
 
             {activeTab === "layers" && (
                 <div className="layers-tab-content">
-                    <div style={{ padding: "0 var(--space-md) var(--space-md) var(--space-md)" }}>
+                    <div style={{ padding: "0 var(--space-lg) var(--space-md) var(--space-lg)" }}>
                         <div style={{
                             display: "flex",
                             alignItems: "center",
@@ -214,7 +214,7 @@ export function LayerPanel() {
                                         textTransform: "uppercase",
                                         color: "var(--text-muted)",
                                         marginBottom: "var(--space-sm)",
-                                        paddingLeft: "var(--space-md)",
+                                        paddingLeft: "var(--space-lg)",
                                     }}
                                 >
                                     {categoryLabels[category] || category}

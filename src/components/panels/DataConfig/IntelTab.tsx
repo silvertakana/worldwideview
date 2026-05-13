@@ -8,6 +8,7 @@ import { TimestampProperty } from "../properties/TimestampProperty";
 import { DynamicPropertiesRender } from "../properties/DynamicPropertiesRender";
 import { useRef, useEffect } from "react";
 import { PluginErrorBoundary } from "@/components/common/PluginErrorBoundary";
+import { TechEcosystemIntelCves } from "./TechEcosystemIntelCves";
 
 function LegendItem({
     label, 
@@ -19,7 +20,9 @@ function LegendItem({
     isActive = true, 
     toggleFilter = () => {},
     isDefault = false,
-    customLayerColor = null
+    customLayerColor = null,
+    iconUrl,
+    legendReadOnly = false,
 }: { 
     label: string, 
     color: string, 
@@ -30,7 +33,9 @@ function LegendItem({
     isActive?: boolean,
     toggleFilter?: () => void,
     isDefault?: boolean,
-    customLayerColor?: string | null
+    customLayerColor?: string | null,
+    iconUrl?: string,
+    legendReadOnly?: boolean,
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
     const displayColor = isDefault 
@@ -52,23 +57,26 @@ function LegendItem({
                 background: "rgba(255,255,255,0.03)", 
                 padding: "var(--space-sm) var(--space-md)", 
                 borderRadius: "var(--radius-md)",
-                cursor: "pointer",
+                cursor: legendReadOnly ? "default" : "pointer",
                 opacity: isActive ? 1 : 0.4,
                 transition: "all var(--duration-fast)",
                 border: "1px solid rgba(255,255,255,0.05)",
                 position: "relative",
                 overflow: "hidden"
             }}
-            onClick={() => inputRef.current?.click()}
+            onClick={() => { if (!legendReadOnly) inputRef.current?.click(); }}
             onMouseEnter={(e) => {
+                if (legendReadOnly) return;
                 e.currentTarget.style.background = "rgba(255,255,255,0.06)";
                 e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
             }}
             onMouseLeave={(e) => {
+                if (legendReadOnly) return;
                 e.currentTarget.style.background = "rgba(255,255,255,0.03)";
                 e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
             }}
         >
+            {!legendReadOnly && (
             <input
                 ref={inputRef}
                 type="color"
@@ -84,6 +92,7 @@ function LegendItem({
                 }}
                 style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
             />
+            )}
 
             <div style={{
                 position: "absolute",
@@ -95,6 +104,9 @@ function LegendItem({
                 boxShadow: `0 0 10px ${displayColor}88`
             }} />
 
+            {iconUrl ? (
+                <img src={iconUrl} alt="" width={22} height={22} style={{ flexShrink: 0, borderRadius: "var(--radius-sm)" }} />
+            ) : (
             <div style={{
                 width: 16,
                 height: 16,
@@ -104,10 +116,13 @@ function LegendItem({
                 boxShadow: `0 0 8px ${displayColor}44`,
                 flexShrink: 0
             }} />
+            )}
             
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1px" }}>
                 <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>{label}</span>
-                <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.02em" }}>{displayColor.toUpperCase()}</span>
+                <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.02em" }}>
+                    {legendReadOnly && iconUrl ? "Map symbol" : displayColor.toUpperCase()}
+                </span>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)" }}>
@@ -128,7 +143,7 @@ function LegendItem({
                         <Filter size={14} />
                     </button>
                 )}
-                {hasOverride && (
+                {hasOverride && !legendReadOnly && (
                     <button 
                         onClick={(e) => { 
                             e.stopPropagation(); 
@@ -181,6 +196,7 @@ export function IntelTab() {
                 const defaultColor = layerConfig?.color || "var(--accent-cyan)";
                 const legend = layerPlugin.plugin.getLegend?.();
                 const pluginId = layerPlugin.plugin.id;
+                const symbolLegend = legend?.some((item) => item.iconUrl);
                 const settings = pluginSettings[pluginId] || {};
                 const colorOverrides = settings.colorOverrides || {};
 
@@ -206,7 +222,11 @@ export function IntelTab() {
 
                         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
                             <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                                {legend && legend.length > 1 ? "Data Point Colors" : "Data Point Color"}
+                                {symbolLegend
+                                    ? "Facility symbols"
+                                    : legend && legend.length > 1
+                                        ? "Data Point Colors"
+                                        : "Data Point Color"}
                             </span>
                             
                             {legend && legend.length > 0 ? (
@@ -254,6 +274,8 @@ export function IntelTab() {
                                                 isFilterable={isFilterable}
                                                 isActive={isActive}
                                                 toggleFilter={toggleFilter}
+                                                iconUrl={item.iconUrl}
+                                                legendReadOnly={Boolean(item.iconUrl)}
                                             />
                                         );
                                     })}
@@ -269,6 +291,7 @@ export function IntelTab() {
                                 />
                             )}
                         </div>
+                        <TechEcosystemIntelCves />
                     </div>
                 );
             }
@@ -287,7 +310,7 @@ export function IntelTab() {
 
     const displayProps = Object.entries(selectedEntity.properties).filter(
         ([key]) =>
-            !["id", "pluginId"].includes(key) &&
+            !["id", "pluginId", "cveHeat"].includes(key) &&
             selectedEntity.properties[key] !== null &&
             selectedEntity.properties[key] !== undefined
     );
@@ -356,6 +379,7 @@ export function IntelTab() {
                     <DynamicPropertiesRender entity={selectedEntity} />
                 )}
             </div>
+            <TechEcosystemIntelCves />
             <div className="intel-panel__actions">
                 <button
                     className="intel-panel__action-btn"

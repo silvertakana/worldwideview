@@ -42,8 +42,6 @@
 .app-shell:not(.boot-done) .header,
 .app-shell:not(.boot-done) .sidebar,
 .app-shell:not(.boot-done) .timeline,
-.app-shell:not(.boot-done) .panel-toggle-btn,
-.app-shell:not(.boot-done) .camera-stats,
 .app-shell:not(.boot-done) .entity-info-card,
 .app-shell:not(.boot-done) .floating-video-manager {
     opacity: 0;
@@ -119,14 +117,9 @@
     animation: hudSlideUpFade 500ms var(--ease-smooth) both;
 }
 
-/* Camera stats uses translateX(-50%) for centering — must compose */
 @keyframes hudCameraStatsIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-
-.app-shell.boot-controls .entity-info-card {
-    animation: hudSlideUpFade 500ms var(--ease-smooth) both;
+    from { opacity: 0; transform: translate(-50%, -8px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
 .app-shell.boot-controls .floating-video-manager {

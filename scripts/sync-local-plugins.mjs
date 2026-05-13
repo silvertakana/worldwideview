@@ -37,7 +37,10 @@ export function discoverLocalPlugins() {
             const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
             const manifest = pkg.worldwideview;
             manifest.version = pkg.version;
-            manifest.name = pkg.name;
+            manifest.name =
+                typeof manifest.name === "string" && manifest.name.trim()
+                    ? manifest.name.trim()
+                    : pkg.name;
             manifest.description = pkg.description;
             return { dir, manifest, pluginDir: path.join(LOCAL_PLUGINS_DIR, dir) };
         });

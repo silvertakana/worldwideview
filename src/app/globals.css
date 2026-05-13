@@ -26,6 +26,10 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  --app-header-height: 44px;
+}
+
 /* ─── Scrollbars ──────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
@@ -223,11 +227,22 @@ html, body {
   min-height: 0;
 }
 
+.sidebar--left:not(.sidebar--mobile) .layers-tab-content__list {
+  margin-left: calc(-1 * var(--space-lg));
+  margin-right: calc(-1 * var(--space-lg));
+}
+
+.sidebar--left:not(.sidebar--mobile) .layers-tab-content__list .layer-item {
+  border-radius: 0;
+  padding-left: var(--space-lg);
+  padding-right: var(--space-lg);
+}
+
 
 /* ─── Sidebar ─────────────────────────────────────────────── */
 .sidebar {
   position: fixed;
-  top: 44px;
+  top: var(--app-header-height, 44px);
   bottom: 120px;
   width: 280px;
   z-index: 50;
@@ -266,6 +281,12 @@ html, body {
   text-transform: uppercase;
   color: var(--text-accent);
   margin-bottom: var(--space-sm);
+}
+
+.sidebar.glass-panel {
+  background: var(--bg-secondary);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* ─── Panel Tabs ──────────────────────────────────────────── */
@@ -1167,9 +1188,9 @@ html, body {
   justify-content: center;
   width: 32px; /* Thinner tabs */
   height: 80px; /* Taller tabs for easier grabbing */
-  background: var(--bg-glass);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  background: var(--bg-secondary);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: var(--glass-border);
   color: var(--text-muted);
   cursor: pointer;
@@ -1203,7 +1224,7 @@ body.is-resizing-sidebar .sidebar {
 }
 
 .panel-toggle-btn:hover {
-  background: var(--bg-glass-active);
+  background: var(--bg-tertiary);
   color: var(--text-primary);
   border-color: var(--accent-cyan);
 }
@@ -1213,27 +1234,22 @@ body.is-resizing-sidebar .sidebar {
   left: 0;
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
   border-left: none;
-  /* When closed, hide mostly off-screen, poke out 12px */
-  transform: translate(-20px, -50%); 
+  transform: translate(-10px, -50%); 
 }
 
 .panel-toggle-btn--left:hover {
-  /* Reveal fully on hover when closed */
   transform: translate(0, -50%);
   box-shadow: var(--glow-cyan);
 }
 
 .panel-toggle-btn--left.panel-toggle-btn--open {
-  /* Attach to the right edge of the left panel */
-  left: calc(var(--left-sidebar-width, 280px) + var(--space-lg)); 
+  left: var(--left-sidebar-width, 280px);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   border-left: none;
-  /* Stay slightly hidden under the panel to look attached, poke out 24px */
-  transform: translate(-8px, -50%); 
+  transform: translate(0, -50%); 
 }
 .panel-toggle-btn--left.panel-toggle-btn--open:hover {
-  /* Glow but don't move when already open */
-  transform: translate(-4px, -50%); 
+  transform: translate(0, -50%); 
 }
 
 /* RIGHT ARROW */
@@ -1241,28 +1257,23 @@ body.is-resizing-sidebar .sidebar {
   right: var(--ad-strip-inset, 0px);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   border-right: none;
-  /* When closed, hide mostly off-screen, poke out 12px */
-  transform: translate(20px, -50%); 
+  transform: translate(10px, -50%); 
 }
 
 .panel-toggle-btn--right:hover {
-   /* Reveal fully on hover when closed */
   transform: translate(0, -50%);
   box-shadow: var(--glow-cyan);
 }
 
 .panel-toggle-btn--right.panel-toggle-btn--open {
-  /* Attach to the left edge of the right panel */
-  right: calc(var(--right-sidebar-width, 320px) + var(--space-lg) + var(--ad-strip-inset, 0px));
+  right: calc(var(--right-sidebar-width, 320px) + var(--ad-strip-inset, 0px));
   border-radius: var(--radius-sm) 0 0 var(--radius-sm);
   border-right: none;
-  /* Stay slightly hidden under the panel to look attached, poke out 24px */
-  transform: translate(8px, -50%);
+  transform: translate(0, -50%);
 }
 
 .panel-toggle-btn--right.panel-toggle-btn--open:hover {
-   /* Glow but don't move when already open */
-   transform: translate(4px, -50%);
+   transform: translate(0, -50%);
 }
 
 @keyframes toggle-btn-glow {
@@ -1766,52 +1777,50 @@ body.is-resizing-sidebar .sidebar {
 /* ─── Camera Stats Panel ─────────────────────────────────── */
 .camera-stats {
   position: fixed;
-  /* Header is at top: var(--space-lg) [16px] and is 52px tall (total 68px). We tuck this 12px underneath the header so its top edge is hidden behind it */
-  top: calc(var(--space-lg) + 40px);
+  top: calc(var(--app-header-height, 44px) + var(--space-xs));
   left: calc(50% - (var(--ad-strip-inset, 0px) / 2));
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: var(--space-lg);
-  /* Add extra padding top so the content clears the header's overlap */
-  padding: 16px var(--space-xl) var(--space-md);
-  background: var(--bg-glass);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  padding: var(--space-sm) var(--space-lg);
+  max-width: min(96vw, calc(100vw - var(--ad-strip-inset, 0px) - var(--space-md) * 2));
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: var(--bg-primary);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: var(--glass-border);
-  border-top: none;
-  /* Round only bottom to form a continuous shape downwards from the header */
-  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  border-radius: var(--radius-xl);
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-secondary);
-  z-index: 90; /* Less than header (100) */
+  z-index: 95;
   pointer-events: auto;
   user-select: none;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
   cursor: pointer;
   transition: all var(--duration-normal) var(--ease-bounce);
 }
 
 .camera-stats:hover {
-  background: var(--bg-glass-hover);
+  background: var(--bg-secondary);
   border-color: var(--accent-cyan);
-  box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.15);
+  box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.2);
   color: var(--text-primary);
-  /* Slight peek on hover to invite interaction */
   transform: translateX(-50%) translateY(2px);
 }
 
 .camera-stats--collapsed {
-  /* When collapsed, we can reduce horizontal padding to make it a small tab, but keep the top gap the same */
-  padding: 16px var(--space-lg) var(--space-sm);
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
   gap: var(--space-sm);
 }
 
 .camera-stats--collapsed:hover {
-  transform: translateX(-50%) translateY(4px);
-  background: var(--bg-glass-hover);
+  transform: translateX(-50%) translateY(3px);
+  background: var(--bg-secondary);
 }
 
 .camera-stats__collapsed-label {
@@ -1824,7 +1833,6 @@ body.is-resizing-sidebar .sidebar {
   letter-spacing: 0.1em;
   color: var(--text-muted);
   text-transform: uppercase;
-  margin-top: 4px; /* Push it down a bit past the header overlap */
 }
 
 .camera-stats:hover .camera-stats__collapsed-label {

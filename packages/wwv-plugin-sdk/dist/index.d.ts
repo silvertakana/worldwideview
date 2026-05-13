@@ -150,6 +150,13 @@ export interface FilterDefinition {
     options?: FilterSelectOption[];
     range?: FilterRangeConfig;
 }
+export interface PluginLegendItem {
+    label: string;
+    color: string;
+    iconUrl?: string;
+    filterId?: string;
+    filterValue?: string;
+}
 export type FilterValue = {
     type: "text";
     value: string;
@@ -183,12 +190,7 @@ export interface WorldPlugin {
     getSelectionBehavior?(entity: GeoEntity): SelectionBehavior | null;
     getServerConfig?(): ServerPluginConfig;
     getFilterDefinitions?(): FilterDefinition[];
-    getLegend?(): {
-        label: string;
-        color: string;
-        filterId?: string;
-        filterValue?: string;
-    }[];
+    getLegend?(): PluginLegendItem[];
     getSidebarComponent?(): ComponentType<{
         plugin?: any;
     } | any>;
@@ -229,6 +231,7 @@ export type DataBusEvents = {
     };
     cameraPreset: {
         presetId: string;
+        duration?: number;
     };
     cameraFaceTowards: {
         lat: number;
@@ -244,6 +247,11 @@ export type DataBusEvents = {
         heading?: number;
     };
     globeReady: Record<string, never>;
+    /** Emitted when the user clicks empty space on the globe (not an entity). */
+    globeClick: {
+        lat: number;
+        lon: number;
+    };
 };
 export * from "./viteGlobals";
 //# sourceMappingURL=index.d.ts.map

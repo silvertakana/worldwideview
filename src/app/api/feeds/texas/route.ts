@@ -27,10 +27,16 @@ export interface FeedItem {
     url: string;
     publishedAt: string;
     source: string;
-    category: "weather" | "crime" | "transportation" | "energy" | "gas" | "news";
+    category: "weather" | "crime" | "transportation" | "energy" | "gas" | "news" | "cve";
     summary?: string;
     geo?: { lat: number; lon: number };
     severity?: "info" | "warning" | "critical";
+    // CVE-specific fields (only populated when category === "cve")
+    cveId?: string;
+    cvssScore?: number;
+    affectedTech?: string[];
+    impactedSites?: string[];
+    impactedSiteIds?: string[];
 }
 
 // ─── Weather / NWS ───────────────────────────────────────────
@@ -231,8 +237,11 @@ async function fetchRss(
             const desc =
                 $(el).find("description, summary, content").first().text().slice(0, 200);
             if (!title) return;
+            const idTail = Buffer.from(`${link}\n${title}\n${pubDate}`)
+                .toString("base64url")
+                .slice(0, 36);
             items.push({
-                id: `rss-${sourceName}-${Buffer.from(link).toString("base64").slice(0, 16)}`,
+                id: `rss-${sourceName}-${items.length}-${idTail}`,
                 title,
                 url: link,
                 publishedAt: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),

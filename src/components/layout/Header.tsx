@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { pluginManager } from "@/core/plugins/PluginManager";
@@ -9,6 +9,7 @@ import { trackEvent } from "@/lib/analytics";
 import { isDemo, DEMO_ADMIN_ROLE } from "@/core/edition";
 
 import { SearchBar } from "./SearchBar";
+import CameraStatsPanel from "@/components/panels/CameraStatsPanel";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 import { ApiKeysTab } from "./ApiKeysTab";
 import "./timeSelect.css"
@@ -42,6 +43,7 @@ export function Header() {
     const setTheme = useStore((s) => s.setTheme);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const desktopHeaderRef = useRef<HTMLElement>(null);
     const [isDemoAdmin, setIsDemoAdmin] = useState(false);
     const [showApiKeys, setShowApiKeys] = useState(false);
 
@@ -76,6 +78,28 @@ export function Header() {
         el.addEventListener("wheel", handleWheel, { passive: false });
         return () => el.removeEventListener("wheel", handleWheel);
     }, []);
+
+    useLayoutEffect(() => {
+        if (isMobile) {
+            document.documentElement.style.removeProperty("--app-header-height");
+            return;
+        }
+        const el = desktopHeaderRef.current;
+        if (!el) return;
+        const sync = () => {
+            document.documentElement.style.setProperty(
+                "--app-header-height",
+                `${Math.ceil(el.getBoundingClientRect().height)}px`,
+            );
+        };
+        sync();
+        const ro = new ResizeObserver(sync);
+        ro.observe(el);
+        return () => {
+            ro.disconnect();
+            document.documentElement.style.removeProperty("--app-header-height");
+        };
+    }, [isMobile]);
 
     // Mobile: compact header with persistent centered search
     if (isMobile) {
@@ -166,7 +190,7 @@ export function Header() {
     // Desktop: full header
     return (
         <>
-        <header className="header glass-panel">
+        <header ref={desktopHeaderRef} className="header glass-panel">
             <div className="header__brand">
                 <a href="https://worldwideview.dev/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -283,6 +307,7 @@ export function Header() {
                 </div>
             </div>
         </header>
+            <CameraStatsPanel />
         {timeOpen && (
           <div className="dropdown-menu" style={{ top: timePos.top, right: timePos.right - 2 }}>
             {TIME_WINDOWS.map((tw) => (
