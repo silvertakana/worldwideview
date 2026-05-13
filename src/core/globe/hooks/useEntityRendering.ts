@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Viewer as CesiumViewer } from "cesium";
 import { Cartographic, Cartesian3 } from "cesium";
 import type { GeoEntity, CesiumEntityOptions } from "@/core/plugins/PluginTypes";
-import { renderEntities, renderEntitiesChunked, AnimatableItem } from "../EntityRenderer";
+import { renderEntities, renderEntitiesChunked, AnimatableItem, getCollections } from "../EntityRenderer";
 import { createUpdateLoop } from "../AnimationLoop";
 import { rebuildStacks, calculateGridSizeDegrees } from "../StackManager";
 
@@ -146,7 +146,7 @@ export function useEntityRendering(
                 viewer.clock.onTick.removeEventListener(updatePositions);
                 viewer.scene.preUpdate.removeEventListener(handlePreUpdateClustering);
                 // Synchronously flush all labels to prevent stale labels persisting
-                const labels = (viewer as any)?._wwvLabels;
+                const { labels } = getCollections(viewer);
                 if (labels) {
                     for (const item of animatablesMapRef.current.values()) {
                         if (item.labelPrimitive && !item.labelPrimitive.isDestroyed?.()) {

@@ -30,12 +30,50 @@ ARG NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL
 ARG NEXT_PUBLIC_ADSENSE_CLIENT_ID
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_WWV_AGENT_BUS_ENABLED
+ARG NEXT_PUBLIC_WWV_BUILD_ID
+ARG NEXT_PUBLIC_WWV_BUILD_AT
 
 # Run our pregenerate schema swap script and then generate Prisma client
 RUN NEXT_PUBLIC_WWV_EDITION=$NEXT_PUBLIC_WWV_EDITION pnpm run generate
 
 # Database migrations run at container startup via docker-entrypoint.sh
 # DATABASE_URL must be set to a PostgreSQL connection string
+
+# Stamp the build with a millisecond-precision id + iso timestamp. If the
+# operator hasn't passed NEXT_PUBLIC_WWV_BUILD_ID via build args, generate
+# one here so /api/build and the client console.log both carry a unique
+# value per `docker build`.
+RUN if [ -z "$NEXT_PUBLIC_WWV_BUILD_ID" ]; then \
+        NEXT_PUBLIC_WWV_BUILD_ID="$(date +%s%3N 2>/dev/null || node -e 'process.stdout.write(String(Date.now()))')" ; \
+    fi && \
+    if [ -z "$NEXT_PUBLIC_WWV_BUILD_AT" ]; then \
+        NEXT_PUBLIC_WWV_BUILD_AT="$(node -e 'process.stdout.write(new Date().toISOString())')" ; \
+    fi && \
+    echo "$NEXT_PUBLIC_WWV_BUILD_ID" > /app/.build-id && \
+    echo "$NEXT_PUBLIC_WWV_BUILD_AT" > /app/.build-at
+
+# Write .env.production.local so Next.js sees every NEXT_PUBLIC_* var
+# whose ARG was passed in. Docker doesn't reliably promote ARGs into the
+# build process's environment for `next build` to inline references with
+# Webpack's DefinePlugin — `process.env.NEXT_PUBLIC_X` either gets the
+# inlined literal value (when set) or stays as a runtime polyfill access
+# that resolves to undefined in the browser. Writing the file is the
+# documented Next.js path and behaves the same on every host.
+RUN set +e ; { \
+        echo "NEXT_PUBLIC_WWV_BUILD_ID=$(cat /app/.build-id)" ; \
+        echo "NEXT_PUBLIC_WWV_BUILD_AT=$(cat /app/.build-at)" ; \
+        if [ -n "$NEXT_PUBLIC_WWV_EDITION" ]; then echo "NEXT_PUBLIC_WWV_EDITION=$NEXT_PUBLIC_WWV_EDITION" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_WWV_AGENT_BUS_ENABLED" ]; then echo "NEXT_PUBLIC_WWV_AGENT_BUS_ENABLED=$NEXT_PUBLIC_WWV_AGENT_BUS_ENABLED" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_CESIUM_ION_TOKEN" ]; then echo "NEXT_PUBLIC_CESIUM_ION_TOKEN=$NEXT_PUBLIC_CESIUM_ION_TOKEN" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" ]; then echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_BING_MAPS_KEY" ]; then echo "NEXT_PUBLIC_BING_MAPS_KEY=$NEXT_PUBLIC_BING_MAPS_KEY" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_WS_ENGINE_URL" ]; then echo "NEXT_PUBLIC_WS_ENGINE_URL=$NEXT_PUBLIC_WS_ENGINE_URL" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL" ]; then echo "NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL=$NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_ADSENSE_CLIENT_ID" ]; then echo "NEXT_PUBLIC_ADSENSE_CLIENT_ID=$NEXT_PUBLIC_ADSENSE_CLIENT_ID" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_SUPABASE_URL" ]; then echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" ; fi ; \
+    } > /app/.env.production.local
 
 # Run Next.js build with Webpack cache mounted
 RUN --mount=type=cache,target=/app/.next/cache NODE_OPTIONS="--max_old_space_size=3072" pnpm run build
@@ -78,6 +116,10 @@ COPY --from=builder /app/prod/node_modules ./node_modules
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/scripts/https-proxy.mjs ./scripts/https-proxy.mjs
+
+# Build stamp — read by /api/build at runtime.
+COPY --from=builder /app/.build-id ./.build-id
+COPY --from=builder /app/.build-at ./.build-at
 
 # Entrypoint: migrate DB on first run, then start server
 COPY docker-entrypoint.sh ./docker-entrypoint.sh

@@ -1,8 +1,21 @@
+/**
+ * @file boot-db.mjs
+ * @description Database bootstrapping utility.
+ * Automates the startup of the local PostgreSQL container via Docker Compose 
+ * and ensures the environment is ready for Prisma migrations.
+ * @module scripts
+ */
+
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
 // Load environment variables manually since dotenv might not be installed globally
+/**
+ * @function loadEnv
+ * @description Manually parses a .env file into process.env to avoid 
+ * external dependencies like 'dotenv' during early boot.
+ */
 const loadEnv = (file) => {
   try {
     if (fs.existsSync(file)) {
@@ -25,7 +38,6 @@ const loadEnv = (file) => {
 };
 
 loadEnv('.env');
-loadEnv('.env.local');
 
 const skipLocalDb = process.env.WWV_SKIP_LOCAL_DB === 'true' || process.env.WWV_SKIP_LOCAL_DB === '1';
 
@@ -46,19 +58,14 @@ try {
     process.exit(0);
   }
 
-  // Start the db service using docker compose
+  // Start the db service and wait for it to be healthy
   console.log('📦 Starting PostgreSQL via Docker Compose...');
-  execSync('docker compose up -d db', { stdio: 'inherit' });
-  
-  // Wait a few seconds for postgres to be ready
-  console.log('⏳ Waiting for PostgreSQL to be ready...');
-  
-  // Simple sleep since we can't easily rely on pg_isready without pg client
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 3000);
-  
+  execSync('docker compose up -d --wait db', { stdio: 'inherit' });
+
   console.log('✅ Local PostgreSQL database is ready!');
-  
+
 } catch (error) {
   console.error('❌ Failed to start local database:', error.message);
+  console.log('💡 Ensure that docker is running and try again');
   console.log('💡 You may need to start it manually or set WWV_SKIP_LOCAL_DB=true to use an external database.');
 }

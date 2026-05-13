@@ -5,7 +5,7 @@ import prompts from 'prompts';
 
 export const createCommand = new Command('create')
   .description('Interactively scaffold a new WorldWideView plugin')
-  .option('-l, --local', 'Create inside local-plugins instead of packages')
+  .option('-c, --core', 'Create inside packages instead of local-plugins (for core contributors)')
   .action(async (options) => {
     const response = await prompts([
       {
@@ -74,7 +74,7 @@ export const createCommand = new Command('create')
 
     const { pluginId, displayName, description, category, architecture, seederTier, renderStyle } = response;
 
-    const targetBaseDir = options.local ? 'local-plugins' : 'packages';
+    const targetBaseDir = options.core ? 'packages' : 'local-plugins';
     const pluginDir = path.join(process.cwd(), targetBaseDir, `wwv-plugin-${pluginId}`);
 
     if (fs.existsSync(pluginDir)) {
@@ -103,7 +103,14 @@ export const createCommand = new Command('create')
   "name": "@worldwideview/wwv-plugin-${pluginId}",
   "version": "1.0.0",
   "description": "${description}",
-  "main": "index.ts",
+  "main": "dist/frontend.mjs",
+  "module": "dist/frontend.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/frontend.mjs",
+      "require": "./dist/frontend.mjs"
+    }
+  },
   "scripts": {
     "build": "tsc"
   },
@@ -116,7 +123,9 @@ export const createCommand = new Command('create')
     "description": "${description}",
     "icon": "${defaultIcon}",
     "category": "${category}",${streamUrlField}
-    "author": "Your Name"
+    "author": "Your Name",
+    "dev_entry": "src/index.ts",
+    "format": "bundle"
   }
 }
 `;
@@ -180,7 +189,8 @@ ${fetchBoilerplate}
 `;
 
     fs.writeFileSync(path.join(pluginDir, 'package.json'), packageJsonContent);
-    fs.writeFileSync(path.join(pluginDir, 'index.ts'), indexTsContent);
+    fs.mkdirSync(path.join(pluginDir, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(pluginDir, 'src', 'index.ts'), indexTsContent);
 
     console.log(`\n✅ Successfully created plugin frontend at ${pluginDir}`);
 

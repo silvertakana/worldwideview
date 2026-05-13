@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * @file DemoAdStrip.tsx
+ * @description specialized sidebar for the demo edition that hosts AdSense 
+ * units and a small banner explaining the monetization model.
+ * @module src/components/ads
+ */
+
 import React, { useState, useEffect } from "react";
 import { isDemo } from "@/core/edition";
 import { dataBus } from "@/core/data/DataBus";
@@ -17,6 +24,11 @@ const AD_STRIP_WIDTH = 160;
 /** Toggle to temporarily disable ads in the demo edition. */
 const ENABLE_ADS = false;
 
+/**
+ * @component DemoAdStrip
+ * @description Renders a vertical ad column on the right side of the screen.
+ * Automatically injects layout offsets into the page root to prevent HUD overlap.
+ */
 export function DemoAdStrip() {
     const [showMessage, setShowMessage] = useState(false);
     const [bannerDismissed, setBannerDismissed] = useState(false);

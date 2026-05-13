@@ -1,7 +1,19 @@
+/**
+ * @file FavoritesTab.tsx
+ * @description Tab panel for managing user-saved "favorite" map entities.
+ * Categorizes favorites into accessible (layer enabled) and inaccessible (layer disabled).
+ * @module src/components/panels
+ */
+
 import { useStore } from "@/core/state/store";
 import { Trash2 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 
+/**
+ * @component FavoritesTab
+ * @description Displays a list of entities the user has starred.
+ * Provides quick selection and removal capabilities.
+ */
 export function FavoritesTab() {
     const favorites = useStore((s) => s.favorites);
     const removeFavorite = useStore((s) => s.removeFavorite);

@@ -1,7 +1,7 @@
 import { Cartesian3, Color, Ellipsoid } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
 import { useStore } from "@/core/state/store";
-import { createLabel, removeLabel, type AnimatableItem } from "./EntityRenderer";
+import { createLabel, removeLabel, getCollections, type AnimatableItem } from "./EntityRenderer";
 import { tickStackAnimation } from "./stackAnimation";
 import { updateModelTransform } from "./ModelManager";
 import { isAnyStackExpanded, isEntityInExpandedStack, getEntityTargetPosition, isEntityClustered, getStackStateVersion } from "./StackManager";
@@ -10,6 +10,13 @@ import {
     extrapolatePosition,
     applyHighlight,
 } from "./animationHelpers";
+
+declare global {
+    interface Window {
+        /** Animation-loop frame counter. Exposed for external plugin throttling. */
+        _wwvFrameCount?: number;
+    }
+}
 
 const R_WGS84_MIN = 6356752.0;
 const R2 = R_WGS84_MIN * R_WGS84_MIN;
@@ -107,14 +114,13 @@ export function createUpdateLoop(
         }
 
         const animatables = animatablesRef.current;
-        const labelsCollection = (viewer as any)._wwvLabels;
+        const { labels: labelsCollection, billboards } = getCollections(viewer);
 
         // Always run stack animation tick so that ghost hubs can be cleaned up
         // even if the user toggles all layers off!
-        const billboards = (viewer as any)._wwvBillboards;
         let isAnimatingStack = false;
         if (billboards) {
-            isAnimatingStack = tickStackAnimation(labelsCollection, billboards);
+            isAnimatingStack = tickStackAnimation(labelsCollection ?? null, billboards);
         }
 
         if (animatables.length === 0) {
@@ -128,7 +134,7 @@ export function createUpdateLoop(
 
         const Dh = Math.sqrt(camDistSqr - R2);
         const frame = frameCount++;
-        (window as any)._wwvFrameCount = frame; // Expose globally for throttling
+        window._wwvFrameCount = frame;
         const isStaticCullFrame = frame % STATIC_HORIZON_INTERVAL === 0;
         const selectedId = state.selectedEntity?.id ?? null;
         const hoveredId = hoveredEntityIdRef.current;

@@ -1,3 +1,10 @@
+/**
+ * @file CacheLimitsTab.tsx
+ * @module Panels/Tabs
+ * @description Configuration interface for managing frontend data caching and request throttling.
+ * @version 1.0.0
+ */
+
 import { useStore } from "@/core/state/store";
 
 const sectionHeaderStyle: React.CSSProperties = {
@@ -40,6 +47,11 @@ const checkboxStyle: React.CSSProperties = {
     accentColor: "var(--accent-cyan)",
 };
 
+/**
+ * @component CacheLimitsTab
+ * @description Provides a management interface for the data engine's caching strategy,
+ * including TTL settings and concurrent request limits to prevent network congestion.
+ */
 export function CacheLimitsTab() {
     const dataConfig = useStore((s) => s.dataConfig);
     const updateDataConfig = useStore((s) => s.updateDataConfig);

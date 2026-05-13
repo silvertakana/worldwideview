@@ -4,7 +4,8 @@ import { gdotAdapter } from "./gdot";
 import { tflAdapter } from "./tfl";
 import { ny511Adapter } from "./ny511";
 import { wsdotAdapter } from "./wsdot";
-import { austinAdapter } from "./austin";
+import { ncdotAdapter } from "./ncdot";
+import { osmSurveillanceAdapter } from "./osm-surveillance";
 
 /**
  * All registered adapters. To add a new source, add an import + push the
@@ -19,6 +20,8 @@ export const ALL_ADAPTERS: CameraAdapter[] = [
     ny511Adapter,
     wsdotAdapter,
     austinAdapter,
+    ncdotAdapter,
+    osmSurveillanceAdapter,
 ];
 
 const ADAPTERS_BY_ID: Map<string, CameraAdapter> = new Map(
@@ -85,6 +88,15 @@ export function getAdapterMetadata(): CameraAdapterMeta[] {
  * way, the cache entry's `error` field is set so `/api/camera/list` can
  * report unhealthy adapters.
  */
+/**
+ * Per-adapter cold-fetch timeout. If an upstream API hangs, the aggregator
+ * `Promise.allSettled` waits for the slowest one — so a single dead source
+ * holds up every other adapter's data from reaching the client. With this
+ * cap a stuck source becomes a fast error, and the cache fallback path
+ * keeps serving stale data without blocking the response.
+ */
+const ADAPTER_FETCH_TIMEOUT_MS = 4_000;
+
 export async function fetchAdapter(adapter: CameraAdapter): Promise<CameraFeature[]> {
     if (!isKeyAvailable(adapter)) {
         return [];
@@ -92,11 +104,23 @@ export async function fetchAdapter(adapter: CameraAdapter): Promise<CameraFeatur
     const now = Date.now();
     const ttl = adapter.cacheTtlMs ?? DEFAULT_TTL_MS;
     const c = cache.get(adapter.id);
-    if (c && now < c.expiry && !c.error) {
+    // Serve from cache for the retry window even if the last attempt errored —
+    // otherwise every aggregated request re-fires a doomed upstream call and
+    // pays the timeout penalty each time. The error stays on the cache entry
+    // so /api/camera/list can still report the adapter as unhealthy.
+    if (c && now < c.expiry) {
         return c.data;
     }
     try {
-        const data = await adapter.fetch();
+        const data = await Promise.race([
+            adapter.fetch(),
+            new Promise<CameraFeature[]>((_resolve, reject) =>
+                setTimeout(
+                    () => reject(new Error(`Adapter ${adapter.id} timed out after ${ADAPTER_FETCH_TIMEOUT_MS}ms`)),
+                    ADAPTER_FETCH_TIMEOUT_MS,
+                ),
+            ),
+        ]);
         cache.set(adapter.id, {
             data,
             expiry: now + ttl,

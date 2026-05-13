@@ -1,9 +1,20 @@
+/**
+ * @file PannableView.tsx
+ * @description A high-performance 2D navigation container providing panning and 
+ * pinch-zoom capabilities for inner content.
+ * @module src/components/common
+ */
+
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
 import { RotateCcw } from "lucide-react";
 
+/**
+ * Props for the PannableView component.
+ */
 interface PannableViewProps {
+    /** The content to be rendered within the pannable and zoomable area. */
     children: React.ReactNode;
 }
 
@@ -11,6 +22,13 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 8;
 const ZOOM_STEP = 0.15;
 
+/**
+ * @component PannableView
+ * @description Wraps content in a 2D viewport that supports infinite panning and multi-touch zoom.
+ * Ideal for secondary maps, floor plans, or large interactive diagrams.
+ * 
+ * @param {PannableViewProps} props - Component properties.
+ */
 export const PannableView: React.FC<PannableViewProps> = ({ children }) => {
     const [zoom, setZoom] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });

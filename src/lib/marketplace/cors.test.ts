@@ -10,6 +10,11 @@ function fakeRequest(origin?: string): Request {
 
 describe("CORS utility", () => {
     describe("corsHeaders", () => {
+        it("returns empty object if no origin is provided", () => {
+            const headers = corsHeaders(fakeRequest(""));
+            expect(headers).toEqual({});
+        });
+
         it("returns allowed origin for localhost:3001", () => {
             const headers = corsHeaders(fakeRequest("http://localhost:3001"));
             expect(headers["Access-Control-Allow-Origin"]).toBe("http://localhost:3001");

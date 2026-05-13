@@ -73,7 +73,7 @@ The standard way to develop a new plugin is using the **Local Sandbox** (`local-
 
 1. **Scaffold**: Run `node packages/wwv-cli/dist/index.js create <name> --local` from the project root. This generates a boilerplate plugin in `local-plugins/wwv-plugin-<name>`.
 2. **Develop**: Run `pnpm dev`. The built-in file watcher (`pnpm dev:plugins`) automatically rebuilds and syncs your local plugin to `public/plugins-local/` whenever you save a file for instant hot-reloading.
-3. **Publish (Optional)**: When stable, you can use `node packages/wwv-cli/dist/index.js publish <name>` to publish the plugin to NPM. There is no need to 'link' plugins to the core monorepo manually, as the local sandbox runs natively inside the workspace.
+3. **Publish (Optional)**: When stable, you can use `node packages/wwv-cli/dist/index.js publish <name>` from the project root to publish the plugin to NPM (use the `--org <your-org>` flag to publish under your own NPM organization instead of `@worldwideview`). There is no need to 'link' plugins to the core monorepo manually, as the local sandbox runs natively inside the workspace.
 
 ### 1.1 Implement the Interface
 
@@ -632,8 +632,8 @@ Categories are **lowercase**: `"aviation"` not `"Aviation"`, `"natural-disaster"
 
 ## End-to-End Checklist
 
-- [ ] **Development:** Scaffolded via `node packages/wwv-cli/dist/index.js create <name> --local` and developed in `local-plugins/`
-- [ ] **Publishing:** Published to NPM via `node packages/wwv-cli/dist/index.js publish <name>` (if making public)
+- [ ] **Development:** Scaffolded via `node packages/wwv-cli/dist/index.js create` and developed in `local-plugins/`
+- [ ] **Publishing:** Published to NPM via `node packages/wwv-cli/dist/index.js publish <name> [--org <your-org>]` (if making public)
 - [ ] **Frontend:** Plugin class implements `WorldPlugin` with correct `id`
 - [ ] **Frontend:** `package.json` has `worldwideview` block with matching `id`
 - [ ] **Frontend:** Version imported from `package.json` (never hardcoded)

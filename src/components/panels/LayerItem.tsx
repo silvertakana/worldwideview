@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * @file LayerItem.tsx
+ * @description Individual layer item component used within the LayerPanel.
+ * Displays plugin metadata, status indicators, and toggle controls.
+ * @module src/components/panels
+ */
+
 import { ShieldAlert } from "lucide-react";
 import { PluginIcon } from "@/components/common/PluginIcon";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -47,6 +54,17 @@ function TrustIcon({ trust }: { trust: TrustTier }) {
 
 // ─── LayerItem Component ────────────────────────────────────
 
+/**
+ * @interface LayerItemProps
+ * @description Properties for the LayerItem component.
+ * @property {WorldPlugin} plugin - The plugin instance to represent.
+ * @property {boolean} isEnabled - Whether the layer is currently active on the globe.
+ * @property {boolean} isLoading - Whether the layer is currently fetching data.
+ * @property {number} entityCount - The number of entities currently rendered for this layer.
+ * @property {boolean} [isSelected] - Whether this layer is focused in the config panel.
+ * @property {function} onToggle - Callback to toggle the layer's enabled state.
+ * @property {function} [onSelect] - Callback to focus the layer in the config panel.
+ */
 interface LayerItemProps {
     plugin: WorldPlugin;
     isEnabled: boolean;
@@ -57,6 +75,10 @@ interface LayerItemProps {
     onSelect?: () => void;
 }
 
+/**
+ * @component LayerItem
+ * @description A list item representing a single data layer with status feedback.
+ */
 export function LayerItem({
     plugin,
     isEnabled,

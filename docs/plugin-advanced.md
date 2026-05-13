@@ -75,12 +75,12 @@ renderEntity(entity: GeoEntity): CesiumEntityOptions {
 To distribute your plugin globally:
 
 1. **Publish to NPM:**
-   In your plugin terminal, log in to NPM and publish your package using the WWV CLI:
+   Log in to NPM and publish your package using the WWV CLI from the project root (you can also use the `--org` flag to publish under your own NPM organization):
    ```bash
    npm login
-   node ../../packages/wwv-cli/dist/index.js publish
+   node packages/wwv-cli/dist/index.js publish <plugin-name> [--org <your-org>]
    ```
-   *(Or `npx wwv publish` if installed globally)*
+   *(Or `npx wwv publish <plugin-name> [--org <your-org>]` if installed globally)*
 2. **Submit:** Navigate to `https://marketplace.worldwideview.dev/submit`.
 3. **Register:** Enter your NPM package name. The marketplace automatically scrapes your `package.json` for the required `"worldwideview"` object block (containing your `id`, `icon`, and `category`).
 4. **Review:** Once approved, your plugin's ES Module bundle will be served via CDN to all WorldWideView instances worldwide.

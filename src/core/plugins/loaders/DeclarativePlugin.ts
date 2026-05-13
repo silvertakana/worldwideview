@@ -1,3 +1,9 @@
+/**
+ * @file DeclarativePlugin.ts
+ * @description Generic WorldPlugin implementation for declarative (JSON-only) plugins.
+ * Note: This runtime is legacy and primarily used as a fallback for simple data layers.
+ */
+
 import type {
     WorldPlugin,
     GeoEntity,
@@ -13,8 +19,7 @@ import { mapGeoJsonToEntities } from "./mapGeoJsonToEntities";
 import { mapJsonToEntities } from "./mapJsonToEntities";
 
 /**
- * Generic WorldPlugin implementation for declarative (JSON-only) plugins.
- * Reads a PluginManifest to know where to fetch, how to parse, and how to render.
+ * A generic plugin implementation that derives its logic from a JSON manifest.
  */
 export class DeclarativePlugin implements WorldPlugin {
     readonly id: string;
@@ -35,14 +40,29 @@ export class DeclarativePlugin implements WorldPlugin {
         this.version = manifest.version;
     }
 
+    /**
+     * Initializes the plugin with the provided context.
+     * 
+     * @param ctx - The host context provided by the manager.
+     * @returns A promise that resolves when initialization is complete.
+     */
     async initialize(ctx: PluginContext): Promise<void> {
         this.context = ctx;
     }
 
+    /**
+     * Cleans up internal state and stops all active processes.
+     */
     destroy(): void {
         this.context = null;
     }
 
+    /**
+     * Fetches fresh data from the remote data source defined in the manifest.
+     * 
+     * @param _timeRange - The current globe time range (unused in this implementation).
+     * @returns A promise resolving to an array of GeoEntities.
+     */
     async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
         const ds = this.manifest.dataSource;
         if (!ds) return [];
@@ -66,10 +86,20 @@ export class DeclarativePlugin implements WorldPlugin {
         }
     }
 
+    /**
+     * Retrieves the polling interval from the manifest configuration.
+     * 
+     * @returns The poll interval in milliseconds (defaults to 30s).
+     */
     getPollingInterval(): number {
         return this.manifest.dataSource?.pollInterval ?? 30_000;
     }
 
+    /**
+     * Returns the visual configuration for the map layer.
+     * 
+     * @returns The LayerConfig object.
+     */
     getLayerConfig(): LayerConfig {
         const r = this.manifest.rendering;
         return {
@@ -80,6 +110,12 @@ export class DeclarativePlugin implements WorldPlugin {
         };
     }
 
+    /**
+     * Determines how a single GeoEntity should be represented on the Cesium globe.
+     * 
+     * @param entity - The entity to render.
+     * @returns The Cesium-specific rendering options.
+     */
     renderEntity(entity: GeoEntity): CesiumEntityOptions {
         const r = this.manifest.rendering;
         const type = r?.entityType === "billboard" ? "billboard" : "point";

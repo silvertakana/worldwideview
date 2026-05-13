@@ -23,3 +23,5 @@ artifacts/
 performance/
 tmp/
 *.geojson
+**/.pnpm-store
+local-seeders*

@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 /**
- * setup.mjs — One-command local setup
- *
- * Generates a .env.local file from .env.example
- * and auto-fills AUTH_SECRET with a secure random value.
- *
- * Usage: npm run setup
+ * @file setup.mjs
+ * @description One-command local setup utility.
+ * Generates a .env file from .env.example and auto-fills sensitive 
+ * secrets (like AUTH_SECRET) with secure random values.
+ * @module scripts
  */
 
 import { existsSync, readFileSync, writeFileSync } from "fs";
@@ -14,10 +13,10 @@ import { resolve } from "path";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const EXAMPLE = resolve(ROOT, ".env.example");
-const TARGET = resolve(ROOT, ".env.local");
+const TARGET = resolve(ROOT, ".env");
 
 if (existsSync(TARGET)) {
-    console.log("✅ .env.local already exists — skipping setup.");
+    console.log("✅ .env already exists — skipping setup.");
     console.log("   Delete it and re-run if you want to regenerate.");
     process.exit(0);
 }
@@ -49,6 +48,6 @@ content = content
 
 writeFileSync(TARGET, content, "utf8");
 
-console.log("✅ .env.local created with a generated AUTH_SECRET.");
+console.log("✅ .env created with a generated AUTH_SECRET.");
 console.log("   Fill in any optional API keys (Cesium, Bing, OpenSky, etc.)");
 console.log("   then run: npm run dev");

@@ -1,13 +1,32 @@
+/**
+ * @file FilterControls.tsx
+ * @module Panels/Filters
+ * @description Specialized input controls for dynamic plugin data filtering, 
+ * including text search, multi-select chips, range sliders, and boolean toggles.
+ * @version 1.0.0
+ */
+
 "use client";
 
 import type { FilterDefinition, FilterValue } from "@/core/plugins/PluginTypes";
 
+/**
+ * @interface FilterControlProps
+ * @description Common properties for all individual filter control components.
+ * @property {FilterDefinition} definition - The structural metadata defining the filter's behavior.
+ * @property {FilterValue} [value] - The current state of the filter.
+ * @property {(value: FilterValue) => void} onChange - Callback triggered when the filter value changes.
+ */
 interface FilterControlProps {
     definition: FilterDefinition;
     value: FilterValue | undefined;
     onChange: (value: FilterValue) => void;
 }
 
+/**
+ * @component TextFilter
+ * @description Renders a text input field for fuzzy-matching string filtering.
+ */
 export function TextFilter({ definition, value, onChange }: FilterControlProps) {
     const textVal = value?.type === "text" ? value.value : "";
     return (
@@ -24,6 +43,10 @@ export function TextFilter({ definition, value, onChange }: FilterControlProps) 
     );
 }
 
+/**
+ * @component SelectFilter
+ * @description Renders a collection of toggleable chips for multi-select filtering.
+ */
 export function SelectFilter({ definition, value, onChange }: FilterControlProps) {
     const selected = value?.type === "select" ? value.values : [];
     const options = definition.options || [];
@@ -53,6 +76,10 @@ export function SelectFilter({ definition, value, onChange }: FilterControlProps
     );
 }
 
+/**
+ * @component RangeFilter
+ * @description Renders a dual-handle range slider for numerical interval filtering.
+ */
 export function RangeFilter({ definition, value, onChange }: FilterControlProps) {
     const range = definition.range;
     if (!range) return null;
@@ -105,6 +132,10 @@ export function RangeFilter({ definition, value, onChange }: FilterControlProps)
     );
 }
 
+/**
+ * @component BooleanFilter
+ * @description Renders a simple toggle button for binary (Yes/No) filtering.
+ */
 export function BooleanFilter({ definition, value, onChange }: FilterControlProps) {
     const boolVal = value?.type === "boolean" ? value.value : false;
     const isActive = value !== undefined;
@@ -131,4 +162,28 @@ export function BooleanFilter({ definition, value, onChange }: FilterControlProp
             </button>
         </div>
     );
+}
+
+/**
+ * @component FilterControl
+ * @description Master dispatcher that dynamically selects the correct UI control 
+ * based on the provided FilterDefinition type.
+ */
+export function FilterControl({ def, value, onChange }: { 
+    def: FilterDefinition; 
+    value: FilterValue | undefined; 
+    onChange: (v: FilterValue) => void 
+}) {
+    switch (def.type) {
+        case "text":
+            return <TextFilter definition={def} value={value} onChange={onChange} />;
+        case "select":
+            return <SelectFilter definition={def} value={value} onChange={onChange} />;
+        case "range":
+            return <RangeFilter definition={def} value={value} onChange={onChange} />;
+        case "boolean":
+            return <BooleanFilter definition={def} value={value} onChange={onChange} />;
+        default:
+            return null;
+    }
 }

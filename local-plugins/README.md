@@ -6,7 +6,7 @@ This directory is a **pnpm workspace** for developing plugins locally without co
 
 ```bash
 # Scaffold a new plugin
-pnpm wwv create my-plugin --local
+node packages/wwv-cli/dist/index.js create
 
 # Start dev server (auto-discovers local plugins)
 pnpm dev
@@ -20,12 +20,10 @@ pnpm dev
 4. The marketplace load API auto-discovers them in dev mode
 5. Everything in this directory is gitignored
 
-## Promoting to a Package
+## Publishing to NPM
 
-When your plugin is ready to share:
+When your plugin is ready to share, you can publish it directly to NPM from the root directory:
 
 ```bash
-pnpm wwv link my-plugin
+node packages/wwv-cli/dist/index.js publish <plugin-name> [--org <your-org>]
 ```
-
-This moves it to `packages/` and adds it to version control.

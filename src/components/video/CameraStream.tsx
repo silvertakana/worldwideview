@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * @file CameraStream.tsx
+ * @description Robust multi-format video streaming component.
+ * Supports HLS, MJPEG, YouTube/Twitch iframes, and static image fallback 
+ * with automatic proxying and temporal cache-busting.
+ * @module src/components/video
+ */
+
 import React, { useState, useEffect } from "react";
 import { Play, Square, Loader2, AlertCircle, ExternalLink, Maximize2 } from "lucide-react";
 import { useStore } from "@/core/state/store";
@@ -7,15 +15,30 @@ import { HlsPlayer } from "./HlsPlayer";
 import { isHlsUrl, isKnownVideoPlatform, getYouTubeEmbedUrl, getStreamErrorMessage, getProxiedStreamUrl, getProxiedIframeUrl } from "./streamUtils";
 import { PannableView } from "@/components/common/PannableView";
 
-interface CameraStreamProps {
+/**
+ * Properties for the CameraStream component.
+ */
+export interface CameraStreamProps {
+    /** The URL of the video stream or static source. */
     streamUrl: string;
+    /** Optional static image to display before playback starts. */
     previewUrl?: string;
+    /** Whether to force iframe rendering for the source. */
     isIframe?: boolean;
+    /** Human-readable label for the stream, shown in tooltips. */
     label?: string;
+    /** Optional CSS class name for styling the container. */
     className?: string;
+    /** Unique identifier for the stream instance. */
     id?: string;
 }
 
+/**
+ * @component CameraStream
+ * @description A high-performance video player for live sensor data.
+ * 
+ * @param props - Component properties.
+ */
 export const CameraStream: React.FC<CameraStreamProps> = ({
     streamUrl, previewUrl, isIframe = false, label, className = "", id,
 }) => {

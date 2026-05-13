@@ -1,0 +1,53 @@
+name: Mutation Testing
+
+# Mutation testing is expensive (10–30 min per full run, even with
+# `coverageAnalysis: "perTest"`), so we don't gate every PR on it.
+# Instead it runs weekly so we catch drift in test quality, and on
+# demand via workflow_dispatch when someone wants to validate a
+# specific change.
+on:
+  schedule:
+    # 03:00 UTC Monday = 10 PM US Eastern Sunday night.
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stryker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for Stryker's incremental mode.
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm exec prisma generate
+
+      - name: Run Stryker
+        run: pnpm exec stryker run
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stryker-report
+          path: reports/mutation/
+          retention-days: 30

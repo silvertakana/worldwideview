@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { RateLimiter, getClientIp } from "./rateLimit";
+import fc from "fast-check";
 
 describe("RateLimiter", () => {
     let limiter: RateLimiter;
@@ -60,6 +61,20 @@ describe("RateLimiter", () => {
             }, 60);
         });
     });
+
+    it("cleans up expired entries", () => {
+        const localLimiter = new RateLimiter({ windowMs: 100, maxRequests: 5 });
+        localLimiter.check("ip-cleanup");
+        
+        // Force the store resetAt to be in the past
+        const entry = (localLimiter as any).store.get("ip-cleanup");
+        entry.resetAt = Date.now() - 1000;
+        
+        (localLimiter as any).cleanup();
+        
+        expect((localLimiter as any).store.has("ip-cleanup")).toBe(false);
+        localLimiter.destroy();
+    });
 });
 
 describe("getClientIp", () => {
@@ -80,5 +95,34 @@ describe("getClientIp", () => {
     it("returns 'unknown' when no IP headers present", () => {
         const req = new Request("http://localhost");
         expect(getClientIp(req)).toBe("unknown");
+    });
+
+    it("property test: x-forwarded-for always returns the first IP in a list", () => {
+        fc.assert(
+            fc.property(
+                fc.array(fc.ipV4(), { minLength: 1, maxLength: 10 }),
+                (ips) => {
+                    const headerValue = ips.join(", ");
+                    const req = new Request("http://localhost", {
+                        headers: { "x-forwarded-for": headerValue },
+                    });
+                    expect(getClientIp(req)).toBe(ips[0]);
+                }
+            )
+        );
+    });
+
+    it("property test: x-real-ip is used when x-forwarded-for is absent", () => {
+        fc.assert(
+            fc.property(
+                fc.ipV4(),
+                (ip) => {
+                    const req = new Request("http://localhost", {
+                        headers: { "x-real-ip": ip },
+                    });
+                    expect(getClientIp(req)).toBe(ip);
+                }
+            )
+        );
     });
 });

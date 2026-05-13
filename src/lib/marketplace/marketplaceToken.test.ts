@@ -97,4 +97,25 @@ describe("marketplaceToken", () => {
             await expect(verifyMarketplaceToken(noSub)).rejects.toThrow("subject");
         });
     });
+
+    describe("revokeMarketplaceToken", () => {
+        it("revokes a token and rejects it on verify", async () => {
+            const { revokeMarketplaceToken } = await import("./marketplaceToken");
+            const token = await issueMarketplaceToken(TEST_USER_ID);
+            const payload = await verifyMarketplaceToken(token);
+            
+            expect(payload.jti).toBeDefined();
+            
+            // Revoke it
+            revokeMarketplaceToken(payload.jti!);
+            
+            // Now it should throw
+            await expect(verifyMarketplaceToken(token)).rejects.toThrow("revoked");
+        });
+
+        it("does nothing when passed an empty jti", async () => {
+            const { revokeMarketplaceToken } = await import("./marketplaceToken");
+            expect(() => revokeMarketplaceToken("")).not.toThrow();
+        });
+    });
 });

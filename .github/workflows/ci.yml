@@ -1,10 +1,29 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
+  # Non-blocking dependency audit. Surfaces high / critical vulnerabilities
+  # in the CI output without failing the build. Flip `continue-on-error` to
+  # `false` once the current transitive vulns (see #97) are resolved.
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --audit-level high
+
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
@@ -18,6 +37,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: npx prisma generate
       - run: pnpm exec tsc --noEmit
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
 
   test:
     name: Unit Tests

@@ -1,5 +1,20 @@
+/**
+ * @file IntelPropertyRow.tsx
+ * @description Base layout component for displaying key-value property rows 
+ * within entity information panels.
+ * @module src/components/panels/properties
+ */
+
 import React from 'react';
 
+/**
+ * @interface IntelPropertyRowProps
+ * @description Properties for the IntelPropertyRow component.
+ * @property {string} label - The label for the property (the "key").
+ * @property {boolean} [isColumn] - If true, renders the value below the label instead of beside it.
+ * @property {string} [classNamePrefix] - CSS class prefix for styling (defaults to "intel-panel").
+ * @property {React.ReactNode} children - The value content to display.
+ */
 interface IntelPropertyRowProps {
     label: string;
     isColumn?: boolean;

@@ -1,11 +1,26 @@
 "use client";
 
+/**
+ * @file SearchBar.tsx
+ * @description Integrated search component providing geocoding, entity lookup, 
+ * and history functionality with a high-performance dropdown interface.
+ * @module src/components/layout
+ */
+
 import { useState, useEffect, useRef } from "react";
 import { Search, MapPin } from "lucide-react";
 import { useSearch } from "./useSearch";
 import type { SearchResult, SearchSection } from "./useSearch";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 
+/**
+ * @function HighlightMatch
+ * @description Helper component that highlights matching query text within a string.
+ * @param {Object} props - Component properties.
+ * @param {string} props.text - The full text to display.
+ * @param {string} props.query - The search string to highlight.
+ * @returns {JSX.Element} The text with highlighted spans.
+ */
 function HighlightMatch({ text, query }: { text: string; query: string }) {
     if (!query) return <>{text}</>;
     // Trim query to handle trailing spaces safely
@@ -22,6 +37,11 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
     );
 }
 
+/**
+ * @component SearchBar
+ * @description Primary search input field that manages focus, keyboard navigation,
+ * and result dropdown visibility.
+ */
 export function SearchBar() {
     const isMobile = useIsMobile();
     const {

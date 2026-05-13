@@ -1,6 +1,9 @@
-// ─── Host Globals ────────────────────────────────────────────
-// Exposes host libraries on globalThis so dynamically loaded
-// plugins can use React without bundling their own copy.
+/**
+ * @file hostGlobals.ts
+ * @description Exposes essential host libraries (React, Cesium, SDK, etc.) on `globalThis`.
+ * This allows dynamically loaded ES module plugins to share the host's dependencies 
+ * rather than bundling their own copies, preventing version conflicts and reducing bundle size.
+ */
 
 import React from "react";
 import * as ReactDOM from "react-dom";
@@ -31,7 +34,14 @@ declare global {
     var __WWV_HOST__: WWVHostGlobals | undefined;
 }
 
-/** Inject host globals. Call once at app startup, before any plugin loads. */
+/**
+ * Injects the required libraries and configuration onto the global scope.
+ * 
+ * This must be called exactly once during the application's initial boot sequence,
+ * before any dynamic plugins are imported.
+ * 
+ * @returns A promise that resolves when all globals have been injected.
+ */
 export async function injectHostGlobals(): Promise<void> {
     if (globalThis.__WWV_HOST__) return;
 

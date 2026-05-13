@@ -1,4 +1,5 @@
 import { describe, test, expect } from "vitest";
+import fc from "fast-check";
 import { getNestedValue } from "./getNestedValue";
 
 describe("getNestedValue", () => {
@@ -44,5 +45,50 @@ describe("getNestedValue", () => {
     test("handles string values at path", () => {
         const obj = { properties: { mag: "5.2" } };
         expect(getNestedValue(obj, "properties.mag")).toBe("5.2");
+    });
+
+    describe("Property-based testing", () => {
+        test("never throws an exception regardless of object structure or path", () => {
+            fc.assert(
+                fc.property(
+                    fc.object(),
+                    fc.string(),
+                    (obj, path) => {
+                        // The core property: getNestedValue should be safe and never throw
+                        // It should either return a value or undefined
+                        try {
+                            getNestedValue(obj, path);
+                            return true;
+                        } catch (e) {
+                            return false; // Should never reach here
+                        }
+                    }
+                ),
+                { numRuns: 1000 }
+            );
+        });
+
+        test("always returns undefined for empty path if object is truthy", () => {
+            fc.assert(
+                fc.property(
+                    fc.object(),
+                    (obj) => {
+                        expect(getNestedValue(obj, "")).toBeUndefined();
+                    }
+                )
+            );
+        });
+
+        test("always returns undefined when object is null or undefined", () => {
+            fc.assert(
+                fc.property(
+                    fc.string(),
+                    (path) => {
+                        expect(getNestedValue(null, path)).toBeUndefined();
+                        expect(getNestedValue(undefined, path)).toBeUndefined();
+                    }
+                )
+            );
+        });
     });
 });

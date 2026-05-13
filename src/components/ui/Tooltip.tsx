@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * @file Tooltip.tsx
+ * @description Lightweight accessibility-focused tooltip system.
+ * Uses React Portals for overflow safety and features smart positioning 
+ * with configurable delay and hover/focus triggers.
+ * @module src/components/ui
+ */
+
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 
@@ -9,6 +17,15 @@ interface TooltipProps {
     delay?: number;
 }
 
+/**
+ * @component Tooltip
+ * @description Renders a floating content box near a target element on hover/focus.
+ * 
+ * @param {TooltipProps} props - Component properties.
+ * @param {React.ReactNode} props.children - The trigger element.
+ * @param {React.ReactNode} props.content - Content to display inside the tooltip.
+ * @param {number} [props.delay=300] - Delay in ms before showing the tooltip.
+ */
 export function Tooltip({ children, content, delay = 300 }: TooltipProps) {
     const [visible, setVisible] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });

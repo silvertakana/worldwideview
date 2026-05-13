@@ -1,3 +1,9 @@
+/**
+ * @file store.ts
+ * @description The central state management hub for WorldWideView.
+ * Combines multiple Zustand slices into a single unified store for the entire application.
+ */
+
 import { create } from "zustand";
 import { createGlobeSlice, type GlobeSlice } from "./globeSlice";
 import { createLayersSlice, type LayersSlice } from "./layersSlice";
@@ -10,7 +16,9 @@ import { createFavoritesSlice, type FavoritesSlice } from "./favoritesSlice";
 import { createGeoJsonSlice, type GeoJsonSlice } from "./geojsonSlice";
 import { createWaypointSlice, type WaypointSlice } from "./waypointSlice";
 
-// Re-export slice types for convenience
+/**
+ * Re-exporting slice types for easier access from components and utilities.
+ */
 export type { MapConfig, DataConfig } from "./configSlice";
 export type { LayerState } from "./layersSlice";
 export type { ImportedLayer } from "./geojsonSlice";
@@ -30,6 +38,12 @@ export type AppStore = GlobeSlice &
     GeoJsonSlice &
     WaypointSlice;
 
+/**
+ * The primary hook for accessing and modifying the application state.
+ * 
+ * This combined store provides access to all nine state slices:
+ * globe, layers, timeline, ui, filter, data, config, favorites, and geojson.
+ */
 export const useStore = create<AppStore>((...args) => ({
     ...createGlobeSlice(...args),
     ...createLayersSlice(...args),

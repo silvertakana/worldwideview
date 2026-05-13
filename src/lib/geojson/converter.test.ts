@@ -1,6 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { convertToGeoJson } from "./converter";
 import { detectGeoFields } from "./fieldDetector";
+import fc from "fast-check";
 
 // ── Field Detector ──────────────────────────────────────────────
 
@@ -133,5 +134,35 @@ describe("convertToGeoJson", () => {
     expect(result.features[1].properties).toEqual({
       category: "nature", active: false,
     });
+  });
+
+  test("property test: correctly converts arrays of random objects with valid auto-detected coords", () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.record({
+            lat: fc.double({ min: -90, max: 90, noNaN: true }),
+            lon: fc.double({ min: -180, max: 180, noNaN: true }),
+            randomProp: fc.string(),
+          }),
+          { minLength: 1, maxLength: 100 }
+        ),
+        (data) => {
+          const result = convertToGeoJson(data);
+          expect(result.type).toBe("FeatureCollection");
+          expect(result.features).toHaveLength(data.length);
+
+          for (let i = 0; i < data.length; i++) {
+            const f = result.features[i];
+            const row = data[i];
+            expect(f.geometry.type).toBe("Point");
+            expect(f.geometry.coordinates).toEqual([row.lon, row.lat]);
+            expect(f.properties.randomProp).toBe(row.randomProp);
+            expect(f.properties).not.toHaveProperty("lat");
+            expect(f.properties).not.toHaveProperty("lon");
+          }
+        }
+      )
+    );
   });
 });

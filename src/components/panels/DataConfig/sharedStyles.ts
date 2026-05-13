@@ -1,3 +1,10 @@
+/**
+ * @file sharedStyles.ts
+ * @module Panels/DataConfig
+ * @description Shared CSS-in-JS style objects for DataConfig sub-components.
+ * @version 1.0.0
+ */
+
 import React from "react";
 
 export const sectionHeaderStyle: React.CSSProperties = {

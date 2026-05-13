@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * @file FloatingVideoManager.tsx
+ * @description Orchestrator for multiple floating video/image feeds.
+ * Manages the lifecycle and spatial state of draggable camera windows 
+ * across the viewport.
+ * @module src/components/video
+ */
+
 import React, { useEffect, useRef } from "react";
 import { useStore } from "@/core/state/store";
 import { FloatingWindow } from "@/components/common/FloatingWindow";
@@ -7,6 +15,11 @@ import { CameraStream } from "./CameraStream";
 import { PannableView } from "@/components/common/PannableView";
 import { trackEvent } from "@/lib/analytics";
 
+/**
+ * @component FloatingVideoManager
+ * @description A controller component that renders all active floating streams.
+ * Integrates with the global store to track and update window positions/sizes.
+ */
 export const FloatingVideoManager: React.FC = () => {
     const { floatingStreams, removeFloatingStream, updateFloatingStream } = useStore();
     const trackedIds = useRef<Set<string>>(new Set());

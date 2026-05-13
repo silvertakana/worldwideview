@@ -36,6 +36,7 @@ WorldWideView is a real-time geospatial engine visualizing live global data on a
 - **Real-Time Data Pipeline**: High-frequency WebSocket updates managed by a custom `DataBus`.
 - **Advanced Entity Management**: Automatic horizon culling, chunked primitive rendering, and 3D stacking/spiderification.
 - **Marketplace Integration**: Download and sync new plugins directly from the UI.
+- **Agent Bus (opt-in)**: HTTP+SSE control surface that lets an external tool — typically an MCP server fronting an LLM — fly the globe, toggle layers, and select entities in the running browser session. Default off; see [Agent Bus docs](docs/agent-bus.md).
 
 ## Core Technologies
 
@@ -145,6 +146,7 @@ WorldWideView is distributed across several specialized repositories:
 3. **`worldwideview-plugins`**: First-party maintained plugins.
 4. **`worldwideview-marketplace`**: The web application driving the plugin directory.
 5. **`worldwideview-web`**: Marketing and landing site.
+6. **[`szski/wwv-mcp`](https://github.com/szski/wwv-mcp)**: Reference MCP server for driving the globe from an LLM agent (Claude Code, Claude Desktop, Cursor, Cline, …) via the [Agent Bus](docs/agent-bus.md). Contributor-hosted today; may move under the project org.
 
 ## Development & Workflow
 
@@ -167,11 +169,12 @@ This project is licensed under the Elastic License 2.0 - see the [LICENSE](LICEN
 Explore our comprehensive documentation suite for detailed engineering insights:
 
 - **[Project Overview](docs/project-overview.md)**: High-level value proposition and technology stack.
-- **[Architecture](docs/ARCHITECTURE.md)**: DataBus event stream and Zustand state management.
+- **[Architecture](docs/ARCHITECTURE.md)**: Plugin system, state management, data pipeline, and Cesium rendering deep-dive.
 - **[Build System](docs/build-system.md)**: Monorepo structure, Next.js standalone output, and Docker builds.
 - **[Development](docs/development.md)**: Coding conventions and common implementation patterns.
 - **[Testing](docs/testing.md)**: Vitest setup and coverage targets.
 - **[Deployment](docs/deployment.md)**: Coolify integration and persistent volumes.
+- **[Agent Bus](docs/agent-bus.md)**: Wiring an MCP server (or any external tool) to drive the running globe.
 - **[Files Catalog](docs/files.md)**: Comprehensive mapping of core source files.
 
 > [!IMPORTANT]

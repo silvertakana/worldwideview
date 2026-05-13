@@ -1,3 +1,11 @@
+/**
+ * @file ApiKeysTab.tsx
+ * @description Manages user-provided API keys and license verification.
+ * Allows users to override default keys for services like Google Maps or 
+ * proprietary data sources.
+ * @module src/components/layout
+ */
+
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Eye, EyeOff, Trash2, Key, CheckCircle, XCircle, Loader, ShieldCheck } from "lucide-react";
 import {
@@ -37,6 +45,13 @@ const toggleBtnStyle: React.CSSProperties = {
 const DEBOUNCE_MS = 800;
 const MIN_KEY_LENGTH = 20;
 
+/**
+ * @function StatusIcon
+ * @description Renders a status icon (loading, valid, invalid) for key verification.
+ * @param {Object} props - Component properties.
+ * @param {VerifyStatus} props.status - The current verification state.
+ * @returns {JSX.Element | null}
+ */
 function StatusIcon({ status }: { status: VerifyStatus }) {
     if (status === "verifying")
         return (
@@ -51,6 +66,11 @@ function StatusIcon({ status }: { status: VerifyStatus }) {
     return null;
 }
 
+/**
+ * @component ApiKeysTab
+ * @description A configuration interface for managing license keys and service API keys.
+ * Handles persistence to local storage and asynchronous verification of keys.
+ */
 export function ApiKeysTab() {
     const [keys, setKeys] = useState<Record<string, string>>(() => {
         const initial: Record<string, string> = {};

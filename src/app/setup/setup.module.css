@@ -22,7 +22,14 @@
     height: 48px;
     margin: 0 auto 1rem;
     border-radius: 0px;
-    background: rgb(var(--accent-rgb, 200, 30, 30));
+    /*
+     * Setup page is pre-auth and pre-theme — `--accent-rgb` defaults
+     * to `255, 255, 255` (white) in theme-tokens.css, which makes
+     * `rgb(255, 255, 255)` + `color: #fff` render invisible. Use an
+     * explicit brand color so the logo is visible before any theme
+     * applies.
+     */
+    background: rgb(200, 30, 30);
     color: #fff;
     font-weight: 700;
     font-size: 1.25rem;
@@ -71,7 +78,7 @@
 }
 
 .input:focus {
-    border-color: rgb(var(--accent-rgb, 200, 30, 30));
+    border-color: rgb(200, 30, 30);
 }
 
 .error {
@@ -83,7 +90,7 @@
 .button {
     margin-top: 0.75rem;
     padding: 0.7rem;
-    background: rgb(var(--accent-rgb, 200, 30, 30));
+    background: rgb(200, 30, 30);
     color: #fff;
     border: none;
     border-radius: 0px;

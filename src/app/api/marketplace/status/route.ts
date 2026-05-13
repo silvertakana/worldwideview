@@ -27,10 +27,8 @@ export async function GET(request: Request) {
         const dbPlugins = await getInstalledPlugins();
         const dbMap = new Map(dbPlugins.map((p: any) => [p.pluginId, p]));
 
-        // Collect active DB plugins (exclude disabled ones)
-        const activeDbPlugins = dbPlugins.filter((p: any) => p.enabled !== false);
-
-        const plugins = activeDbPlugins;
+        // Collect all DB plugins (enabled and disabled)
+        const plugins = dbPlugins;
 
         let canManagePlugins = !isDemo;
         if (isDemo) {

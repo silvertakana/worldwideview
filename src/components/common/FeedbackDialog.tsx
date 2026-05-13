@@ -1,3 +1,10 @@
+/**
+ * @file FeedbackDialog.tsx
+ * @description A comprehensive feedback and bug reporting interface.
+ * Supports categorization, screenshot capture via getDisplayMedia, 
+ * file uploads, and automatic diagnostic log attachment.
+ */
+
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -7,6 +14,13 @@ import { getCapturedLogs } from "@/lib/logCatcher";
 import styles from "./FeedbackDialog.module.css";
 import { trackEvent } from "@/lib/analytics";
 
+/**
+ * A modal dialog that allows users to submit bug reports, feature requests, 
+ * and general feedback. The component captures application state, diagnostic 
+ * logs, and user-provided visuals to facilitate debugging.
+ * 
+ * @returns React component for the feedback portal.
+ */
 export function FeedbackDialog() {
     const feedbackDialogOpen = useStore((s) => s.feedbackDialogOpen);
     const setFeedbackDialogOpen = useStore((s) => s.setFeedbackDialogOpen);

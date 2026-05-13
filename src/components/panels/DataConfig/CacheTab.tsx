@@ -1,6 +1,17 @@
+/**
+ * @file CacheTab.tsx
+ * @module Panels/DataConfig
+ * @description Specialized view for managing data engine caching parameters.
+ * @version 1.0.0
+ */
+
 import { useStore } from "@/core/state/store";
 import { sectionHeaderStyle, inputGroupStyle, labelStyle, inputStyle, checkboxStyle } from "./sharedStyles";
 
+/**
+ * @component CacheTab
+ * @description Provides a management interface for the data engine's caching strategy.
+ */
 export function CacheTab() {
     const dataConfig = useStore((s) => s.dataConfig);
     const updateDataConfig = useStore((s) => s.updateDataConfig);

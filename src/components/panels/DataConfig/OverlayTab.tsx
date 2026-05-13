@@ -1,9 +1,21 @@
+/**
+ * @file OverlayTab.tsx
+ * @module Panels/DataConfig
+ * @description Master configuration tab for active layers and experimental engine features.
+ * Provides per-plugin polling control and global cache/concurrency limits.
+ * @version 1.0.0
+ */
+
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { sectionHeaderStyle, inputGroupStyle, labelStyle, inputStyle, checkboxStyle } from "./sharedStyles";
 import { PluginErrorBoundary } from "@/components/common/PluginErrorBoundary";
 
-
+/**
+ * @component OverlayTab
+ * @description Renders a comprehensive settings interface for all active plugins 
+ * and experimental platform features (Predictive Loading, Clustering, etc.).
+ */
 export function OverlayTab() {
     const dataConfig = useStore((s) => s.dataConfig);
     const updateDataConfig = useStore((s) => s.updateDataConfig);

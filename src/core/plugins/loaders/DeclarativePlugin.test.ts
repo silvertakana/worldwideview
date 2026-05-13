@@ -204,4 +204,156 @@ describe("DeclarativePlugin", () => {
         expect(opts.color).toBe("#ff0000");
         expect(opts.labelText).toBe("Test");
     });
+
+    test("destroy clears context", async () => {
+        const plugin = new DeclarativePlugin(makeManifest());
+        await plugin.initialize({} as any);
+        // We can't strictly observe context, but we can verify it doesn't throw
+        expect(() => plugin.destroy()).not.toThrow();
+    });
+
+    test("fetch uses query auth if specified", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve({ features: [] }),
+        }));
+        
+        const originalEnv = process.env;
+        process.env = { ...originalEnv, API_KEY: "secret123" };
+
+        const plugin = new DeclarativePlugin(makeManifest({
+            dataSource: {
+                url: "https://api.example.com/data?type=test",
+                method: "GET",
+                pollInterval: 60000,
+                format: "geojson",
+                auth: { type: "query", key: "token", envVar: "API_KEY" }
+            }
+        }));
+
+        await plugin.fetch({ start: new Date(), end: new Date() });
+
+        expect(fetch).toHaveBeenCalledWith(
+            "https://api.example.com/data?type=test&token=secret123",
+            expect.any(Object)
+        );
+
+        process.env = originalEnv;
+    });
+
+    test("fetch does not use query auth if envVar is missing", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve({ features: [] }),
+        }));
+        
+        const originalEnv = process.env;
+        process.env = { ...originalEnv };
+        delete process.env.MISSING_KEY;
+
+        const plugin = new DeclarativePlugin(makeManifest({
+            dataSource: {
+                url: "https://api.example.com/data",
+                method: "GET",
+                pollInterval: 60000,
+                format: "geojson",
+                auth: { type: "query", key: "token", envVar: "MISSING_KEY" }
+            }
+        }));
+        
+        await plugin.fetch({ start: new Date(), end: new Date() });
+        
+        expect(fetch).toHaveBeenCalledWith(
+            "https://api.example.com/data",
+            expect.any(Object)
+        );
+        
+        process.env = originalEnv;
+    });
+
+    test("fetch uses header auth if specified", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve({ features: [] }),
+        }));
+        
+        const originalEnv = process.env;
+        process.env = { ...originalEnv, HEADER_KEY: "bearer 123" };
+
+        const plugin = new DeclarativePlugin(makeManifest({
+            dataSource: {
+                url: "https://api.example.com/data",
+                method: "GET",
+                pollInterval: 60000,
+                format: "geojson",
+                auth: { type: "header", key: "Authorization", envVar: "HEADER_KEY" }
+            }
+        }));
+        
+        await plugin.fetch({ start: new Date(), end: new Date() });
+        
+        expect(fetch).toHaveBeenCalledWith(
+            "https://api.example.com/data",
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    "Authorization": "bearer 123"
+                })
+            })
+        );
+        
+        process.env = originalEnv;
+    });
+
+    test("fetch handles request body", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve({ features: [] }),
+        }));
+
+        const plugin = new DeclarativePlugin(makeManifest({
+            dataSource: {
+                url: "https://api.example.com/data",
+                method: "POST",
+                pollInterval: 60000,
+                format: "geojson",
+                body: { query: "test" }
+            }
+        }));
+        
+        await plugin.fetch({ start: new Date(), end: new Date() });
+        
+        expect(fetch).toHaveBeenCalledWith(
+            "https://api.example.com/data",
+            expect.objectContaining({
+                method: "POST",
+                body: JSON.stringify({ query: "test" })
+            })
+        );
+    });
+
+    test("fetch returns empty if mapping is missing", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve({ features: [] }),
+        }));
+
+        const plugin = new DeclarativePlugin(makeManifest({
+            fieldMapping: undefined
+        }));
+        
+        const result = await plugin.fetch({ start: new Date(), end: new Date() });
+        expect(result).toEqual([]);
+    });
+
+    test("renderEntity returns billboard correctly", () => {
+        const plugin = new DeclarativePlugin(makeManifest({
+            rendering: {
+                entityType: "billboard",
+                icon: "/icon.png"
+            }
+        }));
+        const opts = plugin.renderEntity({} as any);
+        expect(opts.type).toBe("billboard");
+        expect(opts.iconUrl).toBe("/icon.png");
+    });
 });

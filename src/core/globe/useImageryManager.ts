@@ -6,7 +6,7 @@ import {
     Cesium3DTileset
 } from "cesium";
 import { useStore } from "@/core/state/store";
-import { createImageryProvider } from "./ImageryProviderFactory";
+import { createImageryProvider, createOsmProvider } from "./ImageryProviderFactory";
 
 export function useImageryManager(viewer: CesiumViewer | null, viewerReady: boolean) {
     const baseLayerId = useStore((s) => s.mapConfig.baseLayerId);
@@ -90,6 +90,16 @@ export function useImageryManager(viewer: CesiumViewer | null, viewerReady: bool
                     currentImageryLayerRef.current = newLayer;
                 } catch (err) {
                     console.error("[useImageryManager] Failed to load imagery:", activeLayerId, err);
+                    try {
+                        const osmProvider = createOsmProvider();
+                        const osmLayer = new ImageryLayer(osmProvider);
+                        if (viewer.isDestroyed()) return;
+                        viewer.imageryLayers.add(osmLayer, 0);
+                        currentImageryLayerRef.current = osmLayer;
+                        console.warn("[useImageryManager] Loaded OSM as fallback imagery");
+                    } catch (fallbackErr) {
+                        console.error("[useImageryManager] OSM fallback also failed:", fallbackErr);
+                    }
                 }
             }
         }

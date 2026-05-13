@@ -5,7 +5,7 @@ let dbUrl = process.env.DATABASE_URL;
 
 if (!dbUrl) {
     try {
-        const envLocalPath = path.resolve(process.cwd(), ".env.local");
+        const envLocalPath = path.resolve(process.cwd(), ".env");
         if (fs.existsSync(envLocalPath)) {
             const envContent = fs.readFileSync(envLocalPath, "utf8");
             const match = envContent.match(/^DATABASE_URL=["']?(.*?)["']?$/m);
