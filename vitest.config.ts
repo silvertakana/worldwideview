@@ -10,6 +10,12 @@ export default defineConfig({
         alias: {
             '@': path.resolve(__dirname, './src'),
         },
-        include: ['src/lib/**/*.{test,spec}.{js,ts,jsx,tsx}', 'src/core/**/*.{test,spec}.{js,ts,jsx,tsx}', 'src/plugins/**/*.{test,spec}.{js,ts,jsx,tsx}', 'packages/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+        include: [
+            'src/lib/**/*.{test,spec}.{js,ts,jsx,tsx}',
+            'src/core/**/*.{test,spec}.{js,ts,jsx,tsx}',
+            'src/plugins/**/*.{test,spec}.{js,ts,jsx,tsx}',
+            'src/app/**/*.{test,spec}.{js,ts,jsx,tsx}',
+            'packages/**/*.{test,spec}.{js,ts,jsx,tsx}',
+        ],
     },
 });
