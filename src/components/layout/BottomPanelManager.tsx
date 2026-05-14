@@ -86,7 +86,7 @@ export function BottomPanelManager() {
                         key={plugin.id}
                         className={`dock-btn glass-panel ${activeBottomPanel === plugin.id ? "active" : ""}`}
                         onClick={() => setActiveBottomPanel(activeBottomPanel === plugin.id ? null : plugin.id)}
-                        title={plugin.metadata?.name || plugin.id}
+                        title={plugin.name || plugin.id}
                     >
                         {/* Placeholder icon, a real implementation might use an icon provided by the plugin metadata */}
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
