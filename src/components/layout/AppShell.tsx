@@ -14,7 +14,7 @@ import { LayerPanel } from "@/components/panels/LayerPanel";
 import { EntityInfoCard } from "@/components/panels/EntityInfoCard";
 import { DataConfigPanel } from "@/components/panels/DataConfig";
 import CameraStatsPanel from "@/components/panels/CameraStatsPanel";
-import { Timeline } from "@/components/timeline/Timeline";
+import { BottomPanelManager } from "@/components/layout/BottomPanelManager";
 import { TimelineSync } from "@/core/globe/TimelineSync";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { pluginRegistry } from "@/core/plugins/PluginRegistry";
@@ -156,7 +156,7 @@ export function AppShell() {
             trackEvent("platform-boot", { duration });
         }
     }, [boot.phase]);
-    const timelineOpen = useStore((s) => s.timelineOpen);
+    const activeBottomPanel = useStore((s) => s.activeBottomPanel);
 
     const rootClasses = [
         "app-shell",
@@ -165,7 +165,7 @@ export function AppShell() {
         isBooting && boot.timelineReady ? "boot-timeline" : "",
         isBooting && boot.controlsReady ? "boot-controls" : "",
         !isBooting ? "boot-done" : "",
-        !timelineOpen ? "timeline-closed" : "",
+        !activeBottomPanel ? "timeline-closed" : "",
     ].filter(Boolean).join(" ");
 
     return (
@@ -188,7 +188,7 @@ export function AppShell() {
             <DataConfigPanel />
             {!isMobile && <CameraStatsPanel />}
             <EntityInfoCard />
-            <Timeline />
+            <BottomPanelManager />
             <FloatingVideoManager />
             {needsReload && <ReloadToast />}
             <ErrorToast />

@@ -61,14 +61,65 @@ if (folderName !== 'worldwideview') {
 process.env.WWV_DB_PORT = port.toString();
 console.log(`🔌 Assigned deterministic database port: ${port}`);
 
-// Rewrite DATABASE_URL in .env if it exists
+// Robust rewrite of DATABASE_URL in .env
 const envPath = path.resolve(cwd, '.env');
 if (fs.existsSync(envPath)) {
-  let envContent = fs.readFileSync(envPath, 'utf8');
-  const urlRegex = /(DATABASE_URL\s*=\s*["']?postgresql:\/\/[^:]+:[^@]+@localhost:)(\d+)(\/.*)/;
-  if (urlRegex.test(envContent)) {
-    envContent = envContent.replace(urlRegex, `$1${port}$3`);
-    fs.writeFileSync(envPath, envContent, 'utf8');
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  const lines = envContent.split(/\r?\n/);
+  
+  const targetUrl = `DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:${port}/worldwideview?schema=public"`;
+  let foundTargetActive = false;
+  let linesModified = false;
+  
+  const newLines = lines.map(line => {
+    // Check if line is an active DATABASE_URL
+    if (/^\s*DATABASE_URL\s*=/.test(line)) {
+      if (line.trim() === targetUrl) {
+        foundTargetActive = true;
+        return line;
+      } else {
+        console.warn(`⚠️  [Telemetry] Commenting out conflicting DATABASE_URL: ${line.trim()}`);
+        linesModified = true;
+        return `# ${line}`;
+      }
+    }
+    return line;
+  });
+  
+  if (!foundTargetActive) {
+    console.log(`🔌 [Telemetry] Injecting correct local DATABASE_URL for port ${port}.`);
+    newLines.push(``);
+    newLines.push(`# Dynamically injected by boot-db.mjs for worktree`);
+    newLines.push(targetUrl);
+    linesModified = true;
+  }
+  
+  if (linesModified) {
+    const newContent = newLines.join('\n');
+    
+    // File write with retries and telemetry
+    const maxRetries = 3;
+    let attempt = 0;
+    while (attempt < maxRetries) {
+      try {
+        fs.writeFileSync(envPath, newContent, 'utf8');
+        break; // Success
+      } catch (err) {
+        attempt++;
+        if (err.code === 'EBUSY' || err.code === 'EPERM' || err.message.includes('os error 32')) {
+          console.warn(`⚠️  [Telemetry] File lock encountered on .env (attempt ${attempt}/${maxRetries}). Retrying in 100ms...`);
+          if (attempt >= maxRetries) {
+            console.error('❌ Failed to write .env after multiple attempts due to file locks.');
+            throw err;
+          }
+          // Synchronous sleep since boot-db.mjs isn't currently inside an async IIFE
+          const start = Date.now();
+          while (Date.now() - start < 100) {}
+        } else {
+          throw err;
+        }
+      }
+    }
   }
 }
 

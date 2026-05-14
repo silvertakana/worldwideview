@@ -31,7 +31,8 @@ describe('uiSlice', () => {
         expect(state.selectedEntity).toBeNull();
         expect(state.floatingStreams).toEqual([]);
         expect(state.activeConfigTab).toBe('filters');
-        expect(state.timelineOpen).toBe(true);
+        expect(state.activeBottomPanel).toBeNull();
+        expect(state.bottomPanelHeight).toBe(220);
     });
 
     it('toggles simple boolean states', () => {
@@ -47,8 +48,11 @@ describe('uiSlice', () => {
         store.getState().toggleFilterPanel();
         expect(store.getState().filterPanelOpen).toBe(true);
 
-        store.getState().setTimelineOpen(false);
-        expect(store.getState().timelineOpen).toBe(false);
+        store.getState().setActiveBottomPanel('timeline');
+        expect(store.getState().activeBottomPanel).toBe('timeline');
+
+        store.getState().setBottomPanelHeight(300);
+        expect(store.getState().bottomPanelHeight).toBe(300);
 
         store.getState().setFeedbackDialogOpen(true);
         expect(store.getState().feedbackDialogOpen).toBe(true);

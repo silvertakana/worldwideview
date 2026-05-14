@@ -1,0 +1,135 @@
+.bottom-panel-system {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: none;
+    width: calc(100% - 40px);
+    max-width: 1200px;
+}
+
+.bottom-panel-dock {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    pointer-events: auto;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dock-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dock-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.dock-btn.active {
+    background: rgba(43, 115, 255, 0.2);
+    border-color: rgba(43, 115, 255, 0.5);
+    color: #4b8df8;
+    box-shadow: 0 0 15px rgba(43, 115, 255, 0.3);
+}
+
+.bottom-panel {
+    width: 100%;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    overflow: hidden;
+    position: relative;
+    /* Transition applied to height in style, but we can animate opacity/transform too */
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bottom-panel.closed {
+    opacity: 0;
+    pointer-events: none;
+    border: none;
+}
+
+.bottom-panel.open {
+    opacity: 1;
+}
+
+.bottom-panel-resize-handle {
+    height: 12px;
+    width: 100%;
+    cursor: ns-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: transparent;
+    z-index: 10;
+}
+
+.bottom-panel-resize-handle:hover .resize-grip {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.resize-grip {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    transition: background 0.2s;
+}
+
+.bottom-panel-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.bottom-panel-close-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.bottom-panel-content {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+    /* Ensure the content sits below the resize handle */
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Timeline adjustments inside the new panel */
+.timeline__content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+}

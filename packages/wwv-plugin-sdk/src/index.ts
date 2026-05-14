@@ -277,6 +277,12 @@ export interface WorldPlugin {
     getSettingsComponent?(): ComponentType<{ pluginId: string }>;
     /** Custom React component injected into the Globe view for rendering primitives/data sources (e.g. GeoJSON). */
     getGlobeComponent?(): ComponentType<{ viewer: any; enabled: boolean }>;
+    /**
+     * Returns a React component to be rendered inside the Bottom Panel when this plugin's
+     * dock button is selected. The panel is resizable and can be expanded to fullscreen.
+     * If not provided, the plugin will not appear in the bottom dock.
+     */
+    getBottomPanelComponent?(): ComponentType<{ pluginId: string }>;
     requiresConfiguration?(settings: unknown): boolean;
     /** Map raw websocket payload into GeoEntity array. Optional existingEntities is provided so plugins can merge state (e.g. historical trails). */
     mapWebsocketPayload?(payload: any, existingEntities?: GeoEntity[]): GeoEntity[];

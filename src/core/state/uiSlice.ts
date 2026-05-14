@@ -105,10 +105,17 @@ export interface UISlice {
     showErrorToast: (message: string) => void;
     /** Dismisses the active error toast. */
     clearErrorToast: () => void;
-    /** Visibility of the temporal timeline controller. */
-    timelineOpen: boolean;
-    /** Sets the timeline visibility. */
-    setTimelineOpen: (open: boolean) => void;
+    /**
+     * The ID of the currently active bottom panel, or null when the dock is shown without
+     * an active panel. The built-in timeline uses the reserved ID "timeline".
+     */
+    activeBottomPanel: string | null;
+    /** Opens a specific bottom panel by ID, or closes all panels if null is passed. */
+    setActiveBottomPanel: (id: string | null) => void;
+    /** Height of the bottom panel in pixels. Clamped between 200 and window height. */
+    bottomPanelHeight: number;
+    /** Sets the bottom panel height (used by the resize drag handle). */
+    setBottomPanelHeight: (height: number) => void;
 }
 
 export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => ({
@@ -127,7 +134,8 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => (
     openMobilePanel: null,
     mobileRightPanelGlow: false,
     feedbackDialogOpen: false,
-    timelineOpen: true,
+    activeBottomPanel: null,
+    bottomPanelHeight: 220,
     toggleTheme: () => set((state) => {
         const nextTheme = {
             "dark": "black",
@@ -207,6 +215,7 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => (
     errorToastMessage: null,
     showErrorToast: (message) => set({ errorToastMessage: message }),
     clearErrorToast: () => set({ errorToastMessage: null }),
-    setTimelineOpen: (open) => set({ timelineOpen: open }),
+    setActiveBottomPanel: (id) => set({ activeBottomPanel: id }),
+    setBottomPanelHeight: (height) => set({ bottomPanelHeight: height }),
 });
 
