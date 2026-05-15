@@ -60,7 +60,7 @@ export function discoverLocalPlugins() {
  * into a single ES module, externalizing shared host dependencies.
  */
 export async function buildPlugin({ dir, manifest, pluginDir }) {
-    const devEntry = manifest.dev_entry || "src/index.ts";
+    const devEntry = manifest.dev_entry || "index.ts";
     let entryFile = path.join(pluginDir, devEntry);
 
     // Fallback: check for .tsx
