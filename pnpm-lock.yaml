@@ -191,6 +191,12 @@ importers:
         specifier: ^4.1.6
         version: 4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.7.0)(@vitest/coverage-v8@4.1.6)(jsdom@28.1.0)(vite@8.0.12(@types/node@25.7.0)(esbuild@0.27.4)(jiti@2.7.0)(terser@5.47.1)(tsx@4.21.0))
 
+  local-plugins/wwv-plugin-bottom-panel-test:
+    dependencies:
+      '@worldwideview/wwv-plugin-sdk':
+        specifier: latest
+        version: 1.5.0(react@19.2.6)
+
   packages/wwv-cli:
     dependencies:
       commander:

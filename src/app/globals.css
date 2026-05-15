@@ -218,7 +218,7 @@ html, body {
 .sidebar {
   position: fixed;
   top: 80px; /* Reduced to ~12px gap from header */
-  bottom: 140px; /* Reduced gap from timeline */
+  bottom: var(--sidebar-bottom, 140px); /* Dynamically pushed by BottomPanelManager */
   width: 280px;
   z-index: 50;
   padding: var(--space-lg);
@@ -230,8 +230,16 @@ html, body {
               bottom var(--duration-slow) var(--ease-smooth);
 }
 
-.timeline-closed .sidebar {
-  bottom: var(--space-lg);
+body.is-dragging-bottom-panel .sidebar {
+  transition: transform var(--duration-slow) var(--ease-smooth),
+              opacity var(--duration-slow) var(--ease-smooth);
+}
+
+/* Force animation when crossing the threshold (overrides is-dragging) */
+body.sidebar-force-transition .sidebar {
+  transition: transform var(--duration-slow) var(--ease-smooth),
+              opacity var(--duration-slow) var(--ease-smooth),
+              bottom var(--duration-slow) var(--ease-smooth) !important;
 }
 
 .sidebar--left {

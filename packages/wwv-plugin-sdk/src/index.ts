@@ -282,7 +282,7 @@ export interface WorldPlugin {
      * dock button is selected. The panel is resizable and can be expanded to fullscreen.
      * If not provided, the plugin will not appear in the bottom dock.
      */
-    getBottomPanelComponent?(): ComponentType<{ pluginId: string }>;
+    getBottomPanelComponent?(): ComponentType<{ pluginId: string; enabled: boolean }>;
     requiresConfiguration?(settings: unknown): boolean;
     /** Map raw websocket payload into GeoEntity array. Optional existingEntities is provided so plugins can merge state (e.g. historical trails). */
     mapWebsocketPayload?(payload: any, existingEntities?: GeoEntity[]): GeoEntity[];

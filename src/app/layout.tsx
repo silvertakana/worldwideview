@@ -38,9 +38,9 @@ export default function RootLayout({
         )}
         {/* Load CesiumJS base styles (optional, but helps with UI widgets if used later) */}
         <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
-        <Script
+        <script
           id="theme-hydration"
-          strategy="beforeInteractive"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
               try {

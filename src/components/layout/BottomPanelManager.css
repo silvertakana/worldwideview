@@ -1,61 +1,139 @@
 .bottom-panel-system {
     position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: var(--space-lg, 20px);
+    left: var(--space-lg, 20px);
+    right: calc(var(--ad-strip-inset, 0px) + var(--space-lg, 20px));
     display: flex;
     flex-direction: column;
     align-items: center;
     z-index: 1000;
     pointer-events: none;
-    width: calc(100% - 40px);
-    max-width: 1200px;
 }
 
 .bottom-panel-dock {
     display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 0; /* Flush with panel */
     pointer-events: auto;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-normal) var(--ease-smooth), gap var(--duration-fast) var(--ease-smooth);
+    
+    /* Centered, horizontally scrollable container */
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    
+    /* Safely center items but prevent left-side clipping on overflow */
+    justify-content: safe center;
+    
+    /* Small negative gap so the slanted bases touch/overlap nicely */
+    gap: -4px;
+    padding: 0 12px;
 }
 
+.bottom-panel-dock::-webkit-scrollbar {
+    display: none; /* Safari/Chrome */
+}
+
+/* The actual button container (transparent, straight rectangle) */
 .dock-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+    height: 36px;
+    padding: 0 24px; /* Wider padding to account for slanted sides */
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.7);
+    gap: 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    isolation: isolate; /* Create new stacking context so pseudo-elements don't escape */
+    transition: color var(--duration-fast) var(--ease-smooth), padding var(--duration-fast) var(--ease-smooth);
+}
+
+/* The angled background shape using 3D perspective */
+.dock-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: -1;
+    background: var(--bg-glass);
+    backdrop-filter: blur(var(--glass-blur, 24px));
+    border: var(--glass-border);
+    border-bottom: none;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    /* Create the trapezoid slant by rotating back on the X axis */
+    transform: perspective(20px) rotateX(5deg);
+    transform-origin: bottom;
+    transition: all var(--duration-fast) var(--ease-smooth);
+    opacity: 0.6; /* More transparent when inactive */
 }
 
 .dock-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
+    color: var(--text-primary);
+}
+
+.dock-btn:hover::before {
+    background: var(--bg-glass-hover);
+    opacity: 0.85;
 }
 
 .dock-btn.active {
-    background: rgba(43, 115, 255, 0.2);
-    border-color: rgba(43, 115, 255, 0.5);
-    color: #4b8df8;
-    box-shadow: 0 0 15px rgba(43, 115, 255, 0.3);
+    color: var(--accent-cyan);
+    font-weight: 600;
+    z-index: 2; /* Bring active tab to front */
+}
+
+.dock-btn.active::before {
+    background: var(--bg-glass-active);
+    border-color: rgba(var(--accent-rgb), 0.5);
+    box-shadow: inset 0 0 40px rgba(var(--accent-rgb), 0.08), 0 -4px 15px rgba(var(--accent-rgb), 0.15); /* Tint + Glow upwards */
+    opacity: 1; /* Fully opaque (relative to the rgba alpha) when active */
+}
+
+.dock-btn-label {
+    white-space: nowrap;
+}
+
+/* ─── Floating Pills Mode (when no panel is active) ─── */
+.bottom-panel-dock.floating-pills {
+    gap: 8px; /* Give them breathing room */
+}
+
+.bottom-panel-dock.floating-pills .dock-btn {
+    padding: 0 16px; /* Less horizontal padding since it's not a trapezoid */
+}
+
+.bottom-panel-dock.floating-pills .dock-btn::before {
+    border-radius: var(--radius-full);
+    transform: none; /* Remove trapezoid slant */
+    border-bottom: var(--glass-border); /* Restore full border */
 }
 
 .bottom-panel {
     width: 100%;
-    border-radius: 12px;
+    /* border-radius: var(--radius-lg); - handled by .glass-panel */
     display: flex;
     flex-direction: column;
     pointer-events: auto;
     overflow: hidden;
     position: relative;
     /* Transition applied to height in style, but we can animate opacity/transform too */
-    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: height var(--duration-slow) var(--ease-smooth), opacity var(--duration-normal) var(--ease-smooth);
+    
+    /* Removed background override so it inherits .glass-panel perfectly */
+    margin-top: -1px; /* Overlap the 1px border so tabs sit perfectly flush */
+}
+
+/* Disable height transition during drag to prevent lag */
+body.is-dragging-bottom-panel .bottom-panel {
+    transition: opacity var(--duration-normal) var(--ease-smooth);
 }
 
 .bottom-panel.closed {
