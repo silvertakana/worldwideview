@@ -25,6 +25,7 @@ const DEFAULT_GRAPHICS = {
     shadowsEnabled: false,
     enableLighting: false,
     showFps: false,
+    showOsmBuildings: true,
 };
 
 const RESOLUTION_OPTIONS = [
@@ -55,10 +56,10 @@ export function GraphicsSettings() {
 
     // Save to cookie on change
     useEffect(() => {
-        const { resolutionScale, antiAliasing, maxScreenSpaceError, shadowsEnabled, enableLighting, showFps } = mapConfig;
-        const graphicsToSave = { resolutionScale, antiAliasing, maxScreenSpaceError, shadowsEnabled, enableLighting, showFps };
+        const { resolutionScale, antiAliasing, maxScreenSpaceError, shadowsEnabled, enableLighting, showFps, showOsmBuildings } = mapConfig;
+        const graphicsToSave = { resolutionScale, antiAliasing, maxScreenSpaceError, shadowsEnabled, enableLighting, showFps, showOsmBuildings };
         document.cookie = `wwv_graphics=${encodeURIComponent(JSON.stringify(graphicsToSave))}; path=/; max-age=31536000`; // 1 year
-    }, [mapConfig.resolutionScale, mapConfig.antiAliasing, mapConfig.maxScreenSpaceError, mapConfig.shadowsEnabled, mapConfig.enableLighting, mapConfig.showFps]);
+    }, [mapConfig.resolutionScale, mapConfig.antiAliasing, mapConfig.maxScreenSpaceError, mapConfig.shadowsEnabled, mapConfig.enableLighting, mapConfig.showFps, mapConfig.showOsmBuildings]);
 
     const toggle = (key: string, current: boolean) => {
         update({ [key]: !current });
@@ -144,6 +145,16 @@ export function GraphicsSettings() {
                     className={`gfx-toggle ${mapConfig.enableLighting ? "gfx-toggle--on" : ""}`}
                     onClick={() => toggle("enableLighting", mapConfig.enableLighting)}
                     aria-label="Toggle Globe Lighting"
+                />
+            </div>
+
+            {/* 3D Buildings */}
+            <div className="gfx-settings__row">
+                <span className="gfx-settings__label">3D Buildings</span>
+                <button
+                    className={`gfx-toggle ${mapConfig.showOsmBuildings ? "gfx-toggle--on" : ""}`}
+                    onClick={() => toggle("showOsmBuildings", mapConfig.showOsmBuildings)}
+                    aria-label="Toggle 3D Buildings"
                 />
             </div>
 

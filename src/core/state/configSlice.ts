@@ -61,6 +61,8 @@ export interface MapConfig {
     fallbackLayerId: string | null;
     /** The active scene mode (2D, 2.5D, or 3D). */
     sceneMode: 1 | 2 | 3;
+    /** Whether OSM 3D Buildings are shown on non-Google imagery layers. */
+    showOsmBuildings: boolean;
 }
 
 /**
@@ -108,6 +110,7 @@ export const createConfigSlice: StateCreator<AppStore, [], [], ConfigSlice> = (s
         baseLayerId: (typeof window !== "undefined" && window.localStorage && typeof window.localStorage.getItem === "function") ? (localStorage.getItem("wwv_map_layer") || "google-3d") : "google-3d",
         fallbackLayerId: null,
         sceneMode: 3,
+        showOsmBuildings: true,
     },
     updateDataConfig: (config) =>
         set((state) => ({

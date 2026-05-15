@@ -3,7 +3,9 @@ import {
     Viewer as CesiumViewer,
     ImageryLayer,
     SceneMode,
-    Cesium3DTileset
+    Cesium3DTileset,
+    Cesium3DTileStyle,
+    createOsmBuildingsAsync
 } from "cesium";
 import { useStore } from "@/core/state/store";
 import { createImageryProvider, createOsmProvider } from "./ImageryProviderFactory";
@@ -12,12 +14,14 @@ export function useImageryManager(viewer: CesiumViewer | null, viewerReady: bool
     const baseLayerId = useStore((s) => s.mapConfig.baseLayerId);
     const fallbackLayerId = useStore((s) => s.mapConfig.fallbackLayerId);
     const sceneMode = useStore((s) => s.mapConfig.sceneMode);
-    
+    const showOsmBuildings = useStore((s) => s.mapConfig.showOsmBuildings);
+
     // Resolve runtime truth:
     const activeLayerId = fallbackLayerId || baseLayerId;
 
     const currentImageryLayerRef = useRef<ImageryLayer | null>(null);
     const googleTilesetRef = useRef<Cesium3DTileset | null>(null);
+    const osmBuildingsRef = useRef<Cesium3DTileset | null>(null);
 
     // 1. Manage Scene Mode (2D / 3D / Columbus)
     useEffect(() => {
@@ -51,9 +55,8 @@ export function useImageryManager(viewer: CesiumViewer | null, viewerReady: bool
 
             for (let i = 0; i < primitives.length; i++) {
                 const p = primitives.get(i);
-                // Simple check for Google Tileset - usually it's the only 3DTileset 
-                // added during initialization or has custom properties
-                if (p instanceof Cesium3DTileset) {
+                // Find the Google tileset — skip any tagged as OSM buildings
+                if (p instanceof Cesium3DTileset && !(p as any)._wwvOsmBuildings) {
                     foundTileset = p;
                     break;
                 }
@@ -107,7 +110,43 @@ export function useImageryManager(viewer: CesiumViewer | null, viewerReady: bool
         updateImagery();
     }, [viewer, viewerReady, baseLayerId, fallbackLayerId]);
 
+    // 3. Manage OSM 3D Buildings (only in 3D mode, not with Google Photorealistic tiles)
+    const isGoogle3D = activeLayerId === "google-3d";
+    const is3DMode = sceneMode === 3;
+    useEffect(() => {
+        if (!viewer || !viewerReady || viewer.isDestroyed()) return;
+
+        const shouldShow = showOsmBuildings && !isGoogle3D && is3DMode;
+
+        if (shouldShow && !osmBuildingsRef.current) {
+            let cancelled = false;
+            createOsmBuildingsAsync().then((tileset) => {
+                if (cancelled || !viewer || viewer.isDestroyed()) {
+                    tileset.destroy();
+                    return;
+                }
+                (tileset as any)._wwvOsmBuildings = true;
+                tileset.maximumScreenSpaceError = 16;
+                tileset.style = new Cesium3DTileStyle({
+                    color: "color('#E0DDD5')",
+                });
+                viewer.scene.primitives.add(tileset);
+                osmBuildingsRef.current = tileset;
+            }).catch((err) => {
+                console.warn("[useImageryManager] Failed to load OSM 3D Buildings:", err);
+            });
+            return () => { cancelled = true; };
+        }
+
+        if (!shouldShow && osmBuildingsRef.current) {
+            if (!viewer.isDestroyed()) {
+                viewer.scene.primitives.remove(osmBuildingsRef.current);
+            }
+            osmBuildingsRef.current = null;
+        }
+    }, [viewer, viewerReady, isGoogle3D, is3DMode, showOsmBuildings]);
+
     return {
-        isGoogle3D: activeLayerId === "google-3d"
+        isGoogle3D
     };
 }
