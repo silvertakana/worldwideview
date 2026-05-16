@@ -1,0 +1,14 @@
+{
+  "id": "e2e-mock-bottom-panel",
+  "name": "E2E Bottom Panel Mock",
+  "version": "1.0.0",
+  "description": "A static mock plugin used for Playwright E2E tests focusing on the bottom panel.",
+  "author": "WorldWideView Automated Tests",
+  "type": "extension",
+  "format": "bundle",
+  "trust": "unverified",
+  "entry": "/e2e-fixtures/e2e-mock-bottom-panel.js",
+  "capabilities": ["ui:bottom-panel", "ui:sidebar"],
+  "extends": ["bottom-panel", "sidebar"],
+  "category": "utility"
+}

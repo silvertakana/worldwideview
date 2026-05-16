@@ -67,7 +67,7 @@ async function globalSetup(config: FullConfig) {
     // 2.5 Defensive Cleanup for Mock Plugin
     console.log(`[Setup] Cleaning up any existing mock plugins...`);
     await prisma.installedPlugin.deleteMany({
-        where: { pluginId: 'e2e-mock-plugin' }
+        where: { pluginId: { in: ['e2e-mock-plugin', 'e2e-mock-bottom-panel'] } }
     });
 
     // 3. Clean up any orphaned user and create the test user
@@ -94,6 +94,17 @@ async function globalSetup(config: FullConfig) {
         pluginId: 'e2e-mock-plugin',
         version: '1.0.0',
         config: manifestStr,
+        enabled: true
+      }
+    });
+
+    const bottomManifestPath = path.join(process.cwd(), 'public', 'e2e-fixtures', 'e2e-mock-bottom-panel-manifest.json');
+    const bottomManifestStr = fs.readFileSync(bottomManifestPath, 'utf-8');
+    await prisma.installedPlugin.create({
+      data: {
+        pluginId: 'e2e-mock-bottom-panel',
+        version: '1.0.0',
+        config: bottomManifestStr,
         enabled: true
       }
     });
