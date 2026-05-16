@@ -74,4 +74,53 @@ test.describe('Bottom Panel System', () => {
         // Verify the content is no longer visible
         await expect(mockContent).not.toBeVisible();
     });
+
+    test('verifies the bottom panel can be resized via the drag handle', async ({ page }) => {
+        const panelTab = page.locator('.dock-btn', { hasText: 'E2E Bottom Panel Mock' });
+        await expect(panelTab).toBeVisible();
+        await panelTab.click();
+
+        const bottomPanel = page.locator('.bottom-panel.open');
+        await expect(bottomPanel).toBeVisible();
+
+        // Get initial height
+        const initialBox = await bottomPanel.boundingBox();
+        expect(initialBox).not.toBeNull();
+
+        // Find the drag handle
+        const dragHandle = page.locator('[data-testid="bottom-panel-resize-handle"]');
+        await expect(dragHandle).toBeVisible();
+
+        const handleBox = await dragHandle.boundingBox();
+        expect(handleBox).not.toBeNull();
+
+        // Perform drag
+        // Move mouse to the center of the handle
+        await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + handleBox!.height / 2);
+        await page.mouse.down();
+        // Drag up by 100 pixels
+        await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y - 100);
+        await page.mouse.up();
+
+        // Check new height
+        const finalBox = await bottomPanel.boundingBox();
+        expect(finalBox).not.toBeNull();
+        expect(finalBox!.height).toBeGreaterThan(initialBox!.height + 50); // It should be taller
+
+        // Get updated handle position
+        const newHandleBox = await dragHandle.boundingBox();
+        expect(newHandleBox).not.toBeNull();
+
+        // Drag down
+        await page.mouse.move(newHandleBox!.x + newHandleBox!.width / 2, newHandleBox!.y + newHandleBox!.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(newHandleBox!.x + newHandleBox!.width / 2, newHandleBox!.y + 100);
+        await page.mouse.up();
+
+        // Check height decreased
+        const shrunkBox = await bottomPanel.boundingBox();
+        expect(shrunkBox).not.toBeNull();
+        expect(shrunkBox!.height).toBeLessThan(finalBox!.height - 50); // It should be shorter
+    });
 });
+

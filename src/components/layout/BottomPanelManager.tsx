@@ -179,6 +179,7 @@ export function BottomPanelManager() {
                     <>
                         <div 
                             className="bottom-panel-resize-handle" 
+                            data-testid="bottom-panel-resize-handle"
                             ref={resizeRef}
                             onMouseDown={() => setIsDragging(true)}
                         >
