@@ -4,25 +4,15 @@ export const revalidate = 3600;
 
 const WTIA_TLE_URL = "https://api.wheretheiss.at/v1/satellites/25544/tles/latest";
 
-interface TleApiResponse {
-    requested_timestamp: number;
-    tle_timestamp: number;
-    id: string;
-    name: string;
-    header: string;
-    line1: string;
-    line2: string;
-}
-
-function isValidTle(data: unknown): data is TleApiResponse {
-    if (typeof data !== "object" || data === null) return false;
-    const d = data as Record<string, unknown>;
+function isValidTle(data: any): boolean {
     return (
-        typeof d.line1 === "string"
-        && typeof d.line2 === "string"
-        && d.line1.length > 0
-        && d.line2.length > 0
-        && Number.isFinite(d.tle_timestamp)
+        data != null
+        && typeof data === "object"
+        && typeof data.line1 === "string"
+        && typeof data.line2 === "string"
+        && data.line1.length > 0
+        && data.line2.length > 0
+        && Number.isFinite(data.tle_timestamp)
     );
 }
 

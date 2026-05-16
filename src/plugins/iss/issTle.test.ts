@@ -79,6 +79,19 @@ describe("/api/iss/tle", () => {
         expect(json).toEqual({ error: "Invalid ISS TLE data" });
     });
 
+    it("returns 502 when upstream returns null body", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => null,
+        }));
+
+        const response = await GET();
+        const json = await response.json();
+
+        expect(response.status).toBe(502);
+        expect(json).toEqual({ error: "Invalid ISS TLE data" });
+    });
+
     it("returns 502 when fetch throws a network error", async () => {
         vi.stubGlobal("fetch", vi.fn().mockRejectedValue(
             new Error("DNS resolution failed"),

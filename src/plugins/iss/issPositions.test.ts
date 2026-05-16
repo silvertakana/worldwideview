@@ -102,14 +102,35 @@ describe("/api/iss/positions", () => {
             ok: true,
             json: async () => [
                 validPositions[0],
-                { latitude: "bad", longitude: 0, altitude: 0, timestamp: 0 },
+                { latitude: "bad", longitude: 0, altitude: 0, velocity: 0, timestamp: 0 },
+                { latitude: 10, longitude: 20, altitude: 400, velocity: NaN, timestamp: 123 },
             ],
         }));
 
-        const response = await GET(makeRequest("1778894864,1778894874"));
+        const response = await GET(makeRequest("1778894864,1778894874,1778894884"));
         const json = await response.json();
 
         expect(json.positions).toHaveLength(1);
+    });
+
+    it("returns 400 when timestamps param is empty string", async () => {
+        const response = await GET(makeRequest(""));
+        const json = await response.json();
+
+        expect(response.status).toBe(400);
+        expect(json.error).toContain("timestamps");
+    });
+
+    it("returns 502 when fetch throws a network error", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(
+            new Error("Network error"),
+        ));
+
+        const response = await GET(makeRequest("1778894864"));
+        const json = await response.json();
+
+        expect(response.status).toBe(502);
+        expect(json).toEqual({ error: "Failed to fetch ISS positions" });
     });
 
     it("returns 502 when upstream API fails", async () => {

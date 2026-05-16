@@ -5,23 +5,15 @@ export const revalidate = 60;
 const WTIA_POSITIONS_URL = "https://api.wheretheiss.at/v1/satellites/25544/positions";
 const MAX_TIMESTAMPS = 10;
 
-interface IssPosition {
-    latitude: number;
-    longitude: number;
-    altitude: number;
-    velocity: number;
-    visibility: string;
-    timestamp: number;
-}
-
-function isValidPosition(item: unknown): item is IssPosition {
-    if (typeof item !== "object" || item === null) return false;
-    const d = item as Record<string, unknown>;
+function isValidPosition(item: any): boolean {
     return (
-        Number.isFinite(d.latitude)
-        && Number.isFinite(d.longitude)
-        && Number.isFinite(d.altitude)
-        && Number.isFinite(d.timestamp)
+        item != null
+        && typeof item === "object"
+        && Number.isFinite(item.latitude)
+        && Number.isFinite(item.longitude)
+        && Number.isFinite(item.altitude)
+        && Number.isFinite(item.velocity)
+        && Number.isFinite(item.timestamp)
     );
 }
 

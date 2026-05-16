@@ -4,28 +4,15 @@ export const revalidate = 10;
 
 const WTIA_URL = "https://api.wheretheiss.at/v1/satellites/25544";
 
-interface IssApiResponse {
-    name: string;
-    id: number;
-    latitude: number;
-    longitude: number;
-    altitude: number;
-    velocity: number;
-    visibility: string;
-    footprint: number;
-    timestamp: number;
-    units: string;
-}
-
-function isValidResponse(data: unknown): data is IssApiResponse {
-    if (typeof data !== "object" || data === null) return false;
-    const d = data as Record<string, unknown>;
+function isValidResponse(data: any): boolean {
     return (
-        Number.isFinite(d.latitude)
-        && Number.isFinite(d.longitude)
-        && Number.isFinite(d.altitude)
-        && Number.isFinite(d.velocity)
-        && Number.isFinite(d.timestamp)
+        data != null
+        && typeof data === "object"
+        && Number.isFinite(data.latitude)
+        && Number.isFinite(data.longitude)
+        && Number.isFinite(data.altitude)
+        && Number.isFinite(data.velocity)
+        && Number.isFinite(data.timestamp)
     );
 }
 
