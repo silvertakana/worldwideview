@@ -38,3 +38,9 @@ E2E tests require an authenticated user to access core application features. We 
 
 > [!WARNING]  
 > If you encounter flaky tests or `ECONNREFUSED` errors during Playwright runs, check if the local Next.js dev server or the Docker engine stack is competing for ports (e.g., port 5432 or 3000). Ensure `pnpm run dev:backends` is running and stable before launching the test suite.
+
+## 6. Execution Environment & Tooling Limitations
+The development environment operates on **Windows PowerShell**. Agents MUST adhere to the following strict execution rules when running commands or interacting with the testing infrastructure:
+- **No Double Ampersands (`&&`)**: Standard Windows PowerShell (prior to v7) does not support the `&&` operator. Use the semicolon (`;`) to chain commands, or rely on `pnpm` package.json scripts which manage cross-platform execution properly.
+- **Avoid Non-existent Database CLI Commands**: Do not attempt to use raw `pg` or `psql` commands unless explicitly verified to exist in the path. Instead, use Prisma (`npx prisma studio`, `npx prisma migrate`) or Docker executions (`docker exec -it wwv-db psql ...`) for database interactions.
+- **Creating Test Plugins**: You will repeatedly need to create mock test plugins for verifying different platform features (e.g. bottom-panel resizing, new UI widgets). When doing so, you MUST review this `e2e-testing.md` file to ensure compliance with the `PluginManager` strict interface rules (implementing `getPollingInterval`, `fetch`, and `renderEntity`).

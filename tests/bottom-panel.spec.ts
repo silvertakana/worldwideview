@@ -94,33 +94,40 @@ test.describe('Bottom Panel System', () => {
         const handleBox = await dragHandle.boundingBox();
         expect(handleBox).not.toBeNull();
 
-        // Perform drag
-        // Move mouse to the center of the handle
+        // Perform drag UP
         await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + handleBox!.height / 2);
         await page.mouse.down();
-        // Drag up by 100 pixels
-        await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y - 100);
+        await page.waitForTimeout(100); // allow React to process mousedown and attach mousemove listener
+        
+        // Drag up by 100 pixels with steps to simulate smooth motion and trigger isDragging styles
+        await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y - 100, { steps: 10 });
+        await page.waitForTimeout(100); // allow resize state to update
         await page.mouse.up();
+        await page.waitForTimeout(400); // wait for CSS transition to settle since opacity/height transitions apply
 
         // Check new height
         const finalBox = await bottomPanel.boundingBox();
         expect(finalBox).not.toBeNull();
-        expect(finalBox!.height).toBeGreaterThan(initialBox!.height + 50); // It should be taller
+        expect(finalBox!.height).toBeGreaterThan(initialBox!.height + 50);
 
-        // Get updated handle position
+        // Get updated handle position for second drag
         const newHandleBox = await dragHandle.boundingBox();
         expect(newHandleBox).not.toBeNull();
 
-        // Drag down
+        // Drag DOWN
         await page.mouse.move(newHandleBox!.x + newHandleBox!.width / 2, newHandleBox!.y + newHandleBox!.height / 2);
         await page.mouse.down();
-        await page.mouse.move(newHandleBox!.x + newHandleBox!.width / 2, newHandleBox!.y + 100);
+        await page.waitForTimeout(100);
+        
+        await page.mouse.move(newHandleBox!.x + newHandleBox!.width / 2, newHandleBox!.y + 100, { steps: 10 });
+        await page.waitForTimeout(100);
         await page.mouse.up();
+        await page.waitForTimeout(400);
 
         // Check height decreased
         const shrunkBox = await bottomPanel.boundingBox();
         expect(shrunkBox).not.toBeNull();
-        expect(shrunkBox!.height).toBeLessThan(finalBox!.height - 50); // It should be shorter
+        expect(shrunkBox!.height).toBeLessThan(finalBox!.height - 50);
     });
 });
 
