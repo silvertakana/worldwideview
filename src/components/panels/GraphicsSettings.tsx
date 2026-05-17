@@ -26,7 +26,17 @@ const DEFAULT_GRAPHICS = {
     enableLighting: false,
     showFps: false,
     showOsmBuildings: true,
+    weatherOverlay: null,
 };
+
+const WEATHER_OPTIONS = [
+    { label: "Off", value: "" },
+    { label: "Clouds", value: "clouds_new" },
+    { label: "Precipitation", value: "precipitation_new" },
+    { label: "Temperature", value: "temp_new" },
+    { label: "Wind Speed", value: "wind_new" },
+    { label: "Pressure", value: "pressure_new" },
+];
 
 const RESOLUTION_OPTIONS = [
     { label: "0.5×", value: 0.5 },
@@ -57,10 +67,10 @@ export function GraphicsSettings() {
     // Save to cookie on change
      
     useEffect(() => {
-        const { resolutionScale, antiAliasing, maxScreenSpaceError, shadowsEnabled, enableLighting, showFps, showOsmBuildings } = mapConfig;
-        const graphicsToSave = { resolutionScale, antiAliasing, maxScreenSpaceError, shadowsEnabled, enableLighting, showFps, showOsmBuildings };
+        const { resolutionScale, antiAliasing, maxScreenSpaceError, shadowsEnabled, enableLighting, showFps, showOsmBuildings, weatherOverlay } = mapConfig;
+        const graphicsToSave = { resolutionScale, antiAliasing, maxScreenSpaceError, shadowsEnabled, enableLighting, showFps, showOsmBuildings, weatherOverlay };
         document.cookie = `wwv_graphics=${encodeURIComponent(JSON.stringify(graphicsToSave))}; path=/; max-age=31536000`; // 1 year
-    }, [mapConfig.resolutionScale, mapConfig.antiAliasing, mapConfig.maxScreenSpaceError, mapConfig.shadowsEnabled, mapConfig.enableLighting, mapConfig.showFps, mapConfig.showOsmBuildings]);
+    }, [mapConfig.resolutionScale, mapConfig.antiAliasing, mapConfig.maxScreenSpaceError, mapConfig.shadowsEnabled, mapConfig.enableLighting, mapConfig.showFps, mapConfig.showOsmBuildings, mapConfig.weatherOverlay]);
 
     const toggle = (key: string, current: boolean) => {
         update({ [key]: !current });
@@ -157,6 +167,24 @@ export function GraphicsSettings() {
             onClick={() => toggle("showOsmBuildings", mapConfig.showOsmBuildings)}
             aria-label="Toggle 3D Buildings"
           />
+        </div>
+
+        {/* Weather Overlay */}
+        <div className="gfx-settings__row">
+          <span className="gfx-settings__label">Weather</span>
+          <select
+            className="gfx-settings__select"
+            value={mapConfig.weatherOverlay || ""}
+            onChange={(e) => {
+                        const v = e.target.value || null;
+                        update({ weatherOverlay: v });
+                        trackEvent("graphics-setting", { key: "weatherOverlay", value: v || "off" });
+                    }}
+          >
+            {WEATHER_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+          </select>
         </div>
 
         {/* Show FPS */}
