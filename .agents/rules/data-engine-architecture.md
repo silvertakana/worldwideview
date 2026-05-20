@@ -29,3 +29,60 @@ In production, the `wwv-data-engine-v2` does NOT mount the local file system. In
 
 ## 5. Namespace Separation Rule
 To prevent collisions and `404` or `ERR_MODULE_NOT_FOUND` errors, seeders **MUST NOT** exist simultaneously in both the community (`wwv-seeders-community`) and private (`wwv-seeders-private`) repositories. Namespace overlaps will cause module resolution failures when the V2 engine attempts to load them. Private seeders have priority.
+
+## 6. Plugin ID Contract — Single Source of Truth
+
+> **See ADR-0002** (`docs/architecture/decisions/adr-0002-seeder-exported-name-as-canonical-plugin-id.md`) for full rationale and alternatives considered.
+
+**Rule:** Every seeder MUST export a `name` field that exactly matches the corresponding frontend plugin's `id` field (kebab-case).
+
+```typescript
+// ✅ Correct — seeder src/index.ts
+export default {
+  name: "gps-jamming",   // MUST equal the frontend plugin id
+  cron: "0 0 * * *",
+  fn: seedGpsJam,
+};
+
+// ❌ Wrong — do not use folder names, camelCase, or abbreviations
+export default {
+  name: "gpsjam",        // mismatch — frontend plugin is "gps-jamming"
+  ...
+};
+```
+
+**How the engine uses it:** `seeder-loader.ts` reads each seeder's exported `name` as the canonical plugin ID. This ID is used for:
+- The `/manifest` endpoint's `plugins` array (what the frontend checks for local routing)
+- WebSocket data messages (`pluginId` field)
+- Redis keys (`data:<name>:live`)
+- Scheduler logs
+
+**Folder names are organizational only.** The engine warns at startup if `toKebabCase(folderName) !== seeder.name`, but this is cosmetic — the seeder's exported `name` always wins. Folder renames are a future cleanup, not a functional requirement.
+
+**Frontend side:** `resolveEngineUrl(pluginId)` checks `localEngineHasPlugin(pluginId)` against the manifest. If the names match, the plugin routes to `ws://localhost:5000/stream`. No alias maps or translation layers are needed.
+
+## 7. WebSocket Payload Format Contract
+
+When a seeder calls `setLiveSnapshot(pluginId, payload, ttl)`, the engine broadcasts:
+```json
+{ "type": "data", "pluginId": "my-plugin", "payload": <whatever you passed> }
+```
+
+**`WsClient` payload handling rules (in order):**
+
+1. Plugin has `mapWebsocketPayload(payload, existingEntities)` → called with raw payload → must return `GeoEntity[]`
+2. No handler + payload **is** a flat `GeoEntity[]` array → used directly (timestamp normalized)
+3. No handler + payload is **any other object** → **silently dropped** with a console warning
+
+This means:
+
+| Seeder sends | Frontend needs | Notes |
+|---|---|---|
+| `[{id, latitude, longitude, ...}]` | Nothing (WsClient handles) | ✅ Simplest for basic point data |
+| `{ items: [{...}] }` | `mapWebsocketPayload` | Standard engine snapshot format |
+| `{ satellites: [{...}] }` | `mapWebsocketPayload` | Named-collection format |
+
+**Recommendation:** If the seeder and frontend plugin are developed together, use a **flat `GeoEntity[]` array** — no `mapWebsocketPayload` needed. Use named objects (e.g. `{ satellites: [...] }`) only when the seeder data has a domain-specific shape worth preserving; in that case you **must** implement `mapWebsocketPayload` on the frontend plugin.
+
+> [!CAUTION]
+> The most common silent bug: seeder sends `{ items: [...] }` (an object), frontend plugin omits `mapWebsocketPayload`. Data arrives but WsClient drops it with a console warning. The globe stays empty. Always implement `mapWebsocketPayload` for any plugin whose seeder sends an object payload.

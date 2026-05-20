@@ -29,20 +29,15 @@ A WorldWideView plugin is a self-contained data source that renders geospatial e
 
 ## Architecture Decision
 
-```dot
-digraph plugin_type {
-  rankdir=TB;
-  node [shape=diamond];
-  
-  "Does it need live\nexternal API data?" -> "Is polling\nfrequency > 30s?" [label="yes"];
-  "Does it need live\nexternal API data?" -> "Static GeoJSON\n(wwvStaticCompiler)" [label="no"];
-  "Is polling\nfrequency > 30s?" -> "Cron Seeder\n(engine)" [label="yes"];
-  "Is polling\nfrequency > 30s?" -> "Init Seeder\n(engine)" [label="no"];
-  
-  "Static GeoJSON\n(wwvStaticCompiler)" [shape=box];
-  "Cron Seeder\n(engine)" [shape=box];
-  "Init Seeder\n(engine)" [shape=box];
-}
+```
+Does it need live external API data?
+├── NO  → Static GeoJSON plugin (wwvStaticCompiler in vite.config.ts)
+│         No seeder needed. Place data in data/data.json.
+└── YES → Does it update more often than every 30s?
+          ├── NO  → Cron Seeder (engine, registerSeeder with cron string)
+          │         getPollingInterval() = 0, mapWebsocketPayload() required
+          └── YES → Init Seeder (engine, registerSeeder with init function)
+                    getPollingInterval() = 0, mapWebsocketPayload() required
 ```
 
 ---
@@ -146,7 +141,7 @@ export default class WildfiresPlugin implements WorldPlugin {
 | `getLayerConfig()` | Layer appearance (color, clustering, max entities) |
 | `renderEntity(entity)` | Per-entity Cesium rendering options |
 
-**Optional:**
+**Optional (but `mapWebsocketPayload` is REQUIRED for WS-only plugins with object payloads):**
 
 | Method | Purpose |
 |---|---|
@@ -158,7 +153,7 @@ export default class WildfiresPlugin implements WorldPlugin {
 | `getDetailComponent()` | Custom detail panel for selected entity |
 | `getSettingsComponent()` | Plugin settings UI |
 | `getGlobeComponent()` | React component injected into globe view |
-| `mapWebsocketPayload(payload, existing)` | Transform raw WS data into `GeoEntity[]` |
+| `mapWebsocketPayload(payload, existing)` | **Required if seeder payload is an object** (not a flat array). Transforms raw engine payload → `GeoEntity[]`. Without it, `WsClient` drops object payloads silently. |
 | `requiresConfiguration(settings)` | Return `true` if plugin needs setup first |
 
 ### 1.3 Package Metadata
@@ -518,12 +513,28 @@ export default class IssPlugin implements WorldPlugin {
 
   destroy(): void {}
 
-  async fetch(timeRange: TimeRange): Promise<GeoEntity[]> {
-    return []; // WS-only plugin
+  async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
+    return []; // WS-only — data arrives via mapWebsocketPayload
   }
 
   getPollingInterval(): number {
     return 0; // WS-only
+  }
+
+  // REQUIRED: seeder sends { source, fetchedAt, items: [...], totalCount } (an object).
+  // Without this, WsClient drops the payload silently — the globe stays empty.
+  mapWebsocketPayload(payload: any, _existingEntities: GeoEntity[]): GeoEntity[] {
+    const items: any[] = payload?.items ?? (Array.isArray(payload) ? payload : []);
+    return items.map((item: any): GeoEntity => ({
+      id: `iss-${item.id}`,
+      pluginId: "iss",
+      latitude: item.lat,
+      longitude: item.lon,
+      altitude: item.alt ?? 0,
+      timestamp: new Date(),
+      label: "International Space Station",
+      properties: { speed: item.speed },
+    }));
   }
 
   getLayerConfig(): LayerConfig {
@@ -644,7 +655,9 @@ Categories are **lowercase**: `"aviation"` not `"Aviation"`, `"natural-disaster"
 - [ ] **Engine:** Seeder file in `wwv-seeders/src/seeders/<name>.ts` (or private repo)
 - [ ] **Engine:** `registerSeeder({ name })` matches frontend plugin `id`
 - [ ] **Engine:** Calls `setLiveSnapshot()` with correct plugin ID key
-- [ ] **Engine:** Data shape is an object with `items` array (or plugin implements `mapWebsocketPayload`)
+- [ ] **Engine:** Seeder payload is either a flat `GeoEntity[]` array OR plugin implements `mapWebsocketPayload` (any other object is silently dropped by WsClient)
+- [ ] **Frontend (WS-only):** `getPollingInterval()` returns `0` and `fetch()` returns `[]`
+- [ ] **Frontend (WS-only):** `mapWebsocketPayload(payload, existingEntities)` implemented if seeder sends an object
 - [ ] **Engine:** SQLite table created in `db.ts` if historical data needed
 - [ ] **Verification:** `GET localhost:5000/manifest` includes the plugin ID
 - [ ] **Verification:** `GET localhost:5000/health` shows seeder last-run timestamp

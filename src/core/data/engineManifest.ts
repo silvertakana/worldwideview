@@ -8,37 +8,24 @@ let manifestFetched = false;
 /**
  * Resolve the base URL of the local data engine.
  *
- * Priority:
- *   1. `NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL` env var — if the operator
- *      pointed plugins at a specific engine URL (most common in
- *      self-host setups), use that. We strip any trailing `/stream`
- *      since the var is sometimes set to the WebSocket URL.
- *   2. `localhost:5001` — matches the port wwv-data-engine's
- *      docker-compose.yaml binds. The previous default of 5000 was
- *      always wrong: the engine has listened on 5001 since the v2
- *      refactor. Port 5000 is also famously hijacked on macOS by the
- *      AirPlay Receiver, which would return 403 to any GET regardless
- *      of whether an engine was running, so it produced misleading
- *      "no local engine" results on every macOS dev machine.
+ * Always checks localhost:5000 — the port docker-compose.yml binds for
+ * wwv-data-engine. NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL is intentionally
+ * NOT used here: that variable belongs to each plugin's own declared engine
+ * URL (production, third-party, etc.) and must not poison local detection.
+ * Mixing the two caused the production engine to be reported as "local".
  */
 function getLocalEngineBase() {
-    const envUrl = process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL;
-    if (envUrl) {
-        // Strip a trailing `/stream` if present (the var is sometimes
-        // set to the WebSocket URL); also normalize ws[s]:// to http[s]://.
-        return envUrl
-            .replace(/\/stream\/?$/, "")
-            .replace(/^ws:\/\//, "http://")
-            .replace(/^wss:\/\//, "https://")
-            .replace(/\/+$/, "");
-    }
-    if (typeof window === "undefined") return "http://localhost:5001";
-    return `${window.location.protocol}//${window.location.hostname}:5001`;
+    if (typeof window === "undefined") return "http://localhost:5000";
+    return `${window.location.protocol}//${window.location.hostname}:5000`;
 }
 
 /**
  * Fetch the list of available seeders from a local engine.
- * Returns null if no local engine is detected (timeout after 2s).
+ * Returns null if no local engine is detected (timeout after 500ms).
+ *
+ * The engine guarantees manifest IDs are already in kebab-case (the seeder's
+ * exported `name` field is the canonical plugin ID). No client-side translation
+ * is needed — what the engine reports is what the frontend uses.
  */
 export async function fetchLocalEngineManifest(): Promise<string[] | null> {
   if (manifestFetched) return localManifest;

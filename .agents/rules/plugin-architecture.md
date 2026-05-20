@@ -17,6 +17,59 @@ A valid plugin class MUST provide:
 3. `renderEntity(GeoEntity)` to determine visual style.
 4. `getPollingInterval()` (defaults fallback securely to standard store config).
 
+## Plugin Data Delivery Types
+
+Plugins receive entity data in one of three modes. Choose the right mode before writing code — mixing them causes silent data loss.
+
+| Mode | `getPollingInterval()` | `fetch()` | `mapWebsocketPayload()` | When to use |
+|---|---|---|---|---|
+| **REST-only** | `> 0` (ms) | Returns `GeoEntity[]` | Not needed | Static or slow-changing data (< every 30s). No seeder required. |
+| **WebSocket-only** | `0` | Return `[]` immediately | **Required** if seeder sends object payload | Live-streaming data from a seeder (satellites, AIS, flights) |
+| **Hybrid** | `> 0` | Returns initial snapshot | **Required** if seeder sends object payload | Needs both immediate data on load AND live updates |
+
+### WebSocket-Only Pattern (most live-data plugins)
+
+```typescript
+getPollingInterval(): number {
+    return 0; // WS-only — do NOT call REST on enable
+}
+
+async fetch(_timeRange: TimeRange): Promise<GeoEntity[]> {
+    return []; // Initial data arrives via mapWebsocketPayload within seconds
+}
+
+mapWebsocketPayload(payload: any, _existingEntities: GeoEntity[]): GeoEntity[] {
+    // Transform raw engine payload → GeoEntity[]
+    // payload shape depends on what the seeder calls setLiveSnapshot() with
+    const items = payload?.items ?? (Array.isArray(payload) ? payload : []);
+    return items.map((item: any): GeoEntity => ({
+        id: `my-plugin-${item.id}`,
+        pluginId: "my-plugin",
+        latitude: item.lat,
+        longitude: item.lon,
+        altitude: item.alt ?? 0,
+        timestamp: new Date(),
+        label: item.name,
+        properties: item,
+    }));
+}
+```
+
+> [!WARNING]
+> If `getPollingInterval()` returns `0` but the seeder sends an object payload, you **MUST** implement `mapWebsocketPayload`. Without it, `WsClient` drops the data silently. See `data-engine-architecture.md §7` for the exact rule.
+
+### `mapWebsocketPayload` Signature
+
+```typescript
+mapWebsocketPayload(payload: any, existingEntities: GeoEntity[]): GeoEntity[]
+```
+
+- `payload` — raw value from `setLiveSnapshot()` in the seeder (whatever shape the seeder stores)
+- `existingEntities` — current entities in the store for this plugin (use for incremental updates)
+- Must return a **complete replacement** `GeoEntity[]` (not a diff)
+
+---
+
 ## Plugin Architectures (Manifest Formats)
 
 Plugins are defined via `PluginManifest` and operate on an **All-Bundle** architecture.
@@ -51,6 +104,33 @@ All plugins MUST define their identity and compatibility via a `"worldwideview"`
   }
 }
 ```
+
+### `peerDependencies` Rule for npm-Published Plugins
+
+Plugins published to npm **MUST** declare the following as `peerDependencies`, not `dependencies`:
+
+```json
+{
+  "peerDependencies": {
+    "@worldwideview/wwv-plugin-sdk": "*",
+    "react": ">=19",
+    "lucide-react": "*"
+  }
+}
+```
+
+Also peer (never bundle): `react-dom`, `cesium`, `resium`, `zustand`.
+
+Bundling these causes multiple React instances in the host app, breaking hooks (`Invalid hook call` at runtime).
+
+### File Extension Rule
+
+- Files containing **JSX** (any `<Component />` syntax, `return (<div>...)`) → must use `.tsx`
+- Files with no JSX (pure TypeScript, even importing React types) → use `.ts`
+
+This is enforced by the TypeScript compiler. A `.ts` file with JSX will fail to build.
+
+---
 
 ## The Registration Pipeline
 

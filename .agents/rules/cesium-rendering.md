@@ -23,6 +23,23 @@ When creating primitive objects:
 - **Points** (`PointPrimitive`): Can use `size`, `outlineWidth`, and `outlineColor`.
 - **Billboards** (`BillboardGraphics` for SVG/Icons): Must **NOT** use `size`, `outlineWidth`, or `outlineColor`. You must use `iconScale` to resize them. Mixing point properties on billboards causes severe shader clipping.
 
+## Sizing Conventions
+
+| Entity type | Knob         | Default                            | Typical band     | Source |
+|-------------|--------------|------------------------------------|------------------|--------|
+| `point`     | `size`       | `8` desktop / `12` mobile          | 5–12             | `src/core/globe/primitiveOps.ts` (`defaultPointSize`) |
+| `billboard` | `iconScale`  | `0.7` (`DEFAULT_BILLBOARD_SCALE`)  | 0.6–0.9          | `src/core/globe/primitiveOps.ts` (`DEFAULT_BILLBOARD_SCALE`) |
+| `model`     | `modelScale` | `1.0` + `modelMinPixelSize`        | varies per asset | `src/core/globe/ModelManager.ts`, `src/core/globe/hooks/useModelRendering.ts` |
+
+> [!IMPORTANT]
+> **Cross-plugin parity rule.** If your plugin renders alongside maritime / aviation / military-aviation on the globe, **leave `iconScale` unset** (or pick a value inside 0.6–0.9). A value below 0.5 will look visibly broken next to peer plugins. A value above 1.0 will dominate the globe.
+
+> [!CAUTION]
+> **Silent-ignore footgun.** `size` is a `PointPrimitive` property. If you set `size` on a `billboard` entity it is **silently dropped** — Cesium does not error and the billboard simply renders at `DEFAULT_BILLBOARD_SCALE`. When converting a point plugin to a billboard plugin, replace `size: N` with `iconScale: ~N/16` (the canvas base is `getBaseSize() = 48px` desktop) — do not delete it and do not translate it literally as `iconScale: N/10`. This footgun has shipped at least once (see commit history on `local-plugins/wwv-plugin-satellite`).
+
+> [!NOTE]
+> **Backdrop stack.** `createSvgIconUrl` (in the SDK) already wraps the icon in a 44×44 SVG with a dark backdrop circle. `src/core/globe/iconUpscaler.ts` then redraws onto a 48px canvas with **another** backdrop circle (`DEFAULT_BG = "rgba(15, 23, 42, 0.55)"`). Pass `background: false` to `createSvgIconUrl` when you want only the host's circle. Don't add a third backdrop in your own SVG.
+
 ## Performance Culling
 
 > [!TIP]

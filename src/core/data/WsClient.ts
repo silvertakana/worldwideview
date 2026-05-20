@@ -14,6 +14,11 @@ interface EngineConnection {
 const RECONNECT_DELAY_MS = 5000;
 const CLEANUP_GRACE_MS = 30000;
 
+/** Normalizes underscore-based pluginIds to kebab-case (e.g. `my_plugin` → `my-plugin`). */
+function normalizePluginId(id: string): string {
+  return id.replace(/_/g, "-");
+}
+
 class WebSocketClient {
   private engines = new Map<string, EngineConnection>();
 
@@ -85,14 +90,15 @@ class WebSocketClient {
   }
 
   private handleDataMessage(data: WsStreamPayload) {
-    const plugin = pluginManager.getPlugin(data.pluginId!)?.plugin;
+    const pluginId = normalizePluginId(data.pluginId!);
+    const plugin = pluginManager.getPlugin(pluginId)?.plugin;
     let finalEntities = data.payload as GeoEntity[];
-    const existingEntities = useStore.getState().entitiesByPlugin[data.pluginId!] || [];
+    const existingEntities = useStore.getState().entitiesByPlugin[pluginId] || [];
 
     if (plugin && typeof (plugin as any).mapWebsocketPayload === "function") {
       finalEntities = (plugin as any).mapWebsocketPayload(data.payload, existingEntities);
     } else if (!Array.isArray(data.payload)) {
-      console.warn(`[WsClient] Payload for ${data.pluginId} is an object but no mapWebsocketPayload exists. Ignoring.`);
+      console.warn(`[WsClient] Payload for ${pluginId} is an object but no mapWebsocketPayload exists. Ignoring.`);
       return;
     } else {
       finalEntities = finalEntities.map((e) => ({
@@ -101,10 +107,10 @@ class WebSocketClient {
       }));
     }
 
-    console.debug(`[WSClient] 🔄 Dispatching ${finalEntities.length} entities for ${data.pluginId} to DataBus`);
+    console.debug(`[WSClient] 🔄 Dispatching ${finalEntities.length} entities for ${pluginId} to DataBus`);
 
     dataBus.emit("dataUpdated", {
-      pluginId: data.pluginId!,
+      pluginId,
       entities: finalEntities,
     });
   }
