@@ -1,8 +1,6 @@
-/* eslint-disable no-console */
 import { isDemo } from "@/core/edition";
 import { validateManifest } from "@/core/plugins/validateManifest";
 import { prisma } from "../db";
-import { DEFAULT_PLUGIN_IDS } from "./defaultPlugins";
 import { upsertPlugin } from "./repository";
 import { getVerifiedPluginIds } from "./registryClient";
 
@@ -10,16 +8,20 @@ const MARKETPLACE_URL = process.env.NEXT_PUBLIC_MARKETPLACE_URL
     || "https://marketplace.worldwideview.dev";
 
 /**
- * Seed default marketplace plugins on a fresh install.
+ * Seed verified marketplace plugins on a fresh install.
  *
- * Runs once per instance lifecycle — an idempotent guard
- * (`defaults_seeded` in the Setting table) prevents re-runs.
+ * The signed registry (`getVerifiedPluginIds`) is the single source of truth
+ * for which plugins land in a brand-new instance — there is no hard-coded
+ * default list. Publish a plugin to the verified registry and it auto-seeds
+ * on subsequent fresh installs.
  *
- * Like the "sample data" that ships with a new app: the seeder
- * writes records to the database on first boot, then never runs again.
+ * Runs at most once per instance lifecycle: an idempotent guard
+ * (`defaults_seeded` in the Setting table) prevents re-runs. If the registry
+ * is empty or unreachable on first attempt, the guard is NOT set — the next
+ * request retries.
  *
- * Errors are logged but never thrown — a failed seed must never
- * block the application from starting.
+ * Errors are logged but never thrown — a failed seed must never block the
+ * application from starting.
  */
 export async function seedDefaultPlugins(): Promise<void> {
     try {
@@ -45,22 +47,29 @@ export async function seedDefaultPlugins(): Promise<void> {
             return;
         }
 
+        const verified = await getVerifiedPluginIds();
+        if (verified.size === 0) {
+            // Registry unreachable / signature failed / empty — defer so the
+            // next request retries instead of locking in an empty fresh install.
+            console.warn(
+                "[DefaultPlugins] Verified registry returned empty — deferring seed, will retry next request",
+            );
+            return;
+        }
+
         console.log(
-            `[DefaultPlugins] Fresh install detected — seeding ${DEFAULT_PLUGIN_IDS.length} default plugins…`,
+            `[DefaultPlugins] Fresh install detected — seeding ${verified.size} verified plugins…`,
         );
 
-        const verified = await getVerifiedPluginIds();
         let installed = 0;
 
-        for (const pluginId of DEFAULT_PLUGIN_IDS) {
+        for (const pluginId of verified) {
             try {
                 const manifest = await fetchManifest(pluginId);
                 if (!manifest) continue;
 
-                // Server-side trust stamping
-                manifest.trust = verified.has(pluginId)
-                    ? "verified"
-                    : "unverified";
+                // Every plugin in the verified set is by definition verified.
+                manifest.trust = "verified";
 
                 // Reconstruct CDN entry for npm-distributed plugins
                 if (manifest.npmPackage) {
@@ -93,7 +102,7 @@ export async function seedDefaultPlugins(): Promise<void> {
 
         await markSeeded();
         console.log(
-            `[DefaultPlugins] Seeded ${installed}/${DEFAULT_PLUGIN_IDS.length} plugins`,
+            `[DefaultPlugins] Seeded ${installed}/${verified.size} plugins`,
         );
     } catch (err) {
         console.error("[DefaultPlugins] Seeder failed:", err);

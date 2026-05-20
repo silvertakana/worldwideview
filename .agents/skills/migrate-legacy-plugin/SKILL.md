@@ -38,7 +38,7 @@ Moves a WorldWideView plugin from the old `packages/` monorepo location (or the 
 > ```
 > Example: `node scripts/migrate-plugin.mjs gps-jamming`
 > 
-> The script will automatically copy the frontend plugin, inject peerDependencies, refactor `index.tsx` routing, fix the backend seeder's build settings and `SEEDERS_DIR` paths, and register the plugin in `defaultPlugins.ts`.
+> The script will automatically copy the frontend plugin, inject peerDependencies, refactor `index.tsx` routing, and fix the backend seeder's build settings and `SEEDERS_DIR` paths. (Fresh-install seeding no longer involves a hard-coded list — once published to npm with a valid `worldwideview` block, the plugin is registered via the signed verified registry.)
 > **You still need to run `pnpm install` and verify the builds manually as described below.**
 
 > [!IMPORTANT]

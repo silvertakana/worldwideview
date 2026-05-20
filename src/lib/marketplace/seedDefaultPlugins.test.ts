@@ -4,7 +4,6 @@ import {
 } from "vitest";
 
 import { seedDefaultPlugins } from "./seedDefaultPlugins";
-import { DEFAULT_PLUGIN_IDS } from "./defaultPlugins";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before importing the module under test
@@ -50,6 +49,9 @@ vi.stubGlobal("fetch", mockFetch);
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Fake verified registry payload used by most tests. */
+const FAKE_VERIFIED_IDS = ["aviation", "maritime", "surveillance-satellites"];
+
 function fakeManifest(id: string) {
     return {
         id,
@@ -72,10 +74,11 @@ describe("seedDefaultPlugins", () => {
         mockIsDemo = false;
         delete process.env.WWV_SKIP_DEFAULT_PLUGINS;
 
-        // Defaults: not seeded, no existing plugins, manifests valid
+        // Defaults: not seeded, no existing plugins, manifests valid,
+        // verified registry returns the fake set.
         mockFindFirst.mockResolvedValue(null);
         mockCount.mockResolvedValue(0);
-        mockGetVerifiedPluginIds.mockResolvedValue(new Set(DEFAULT_PLUGIN_IDS));
+        mockGetVerifiedPluginIds.mockResolvedValue(new Set(FAKE_VERIFIED_IDS));
         mockValidateManifest.mockReturnValue({ valid: true, errors: [] });
         mockUpsertPlugin.mockResolvedValue({});
         mockCreate.mockResolvedValue({});
@@ -90,11 +93,11 @@ describe("seedDefaultPlugins", () => {
         }));
     });
 
-    it("seeds all default plugins on a fresh install", async () => {
+    it("seeds every plugin in the verified registry on a fresh install", async () => {
         await seedDefaultPlugins();
 
-        expect(mockUpsertPlugin).toHaveBeenCalledTimes(DEFAULT_PLUGIN_IDS.length);
-        for (const id of DEFAULT_PLUGIN_IDS) {
+        expect(mockUpsertPlugin).toHaveBeenCalledTimes(FAKE_VERIFIED_IDS.length);
+        for (const id of FAKE_VERIFIED_IDS) {
             expect(mockUpsertPlugin).toHaveBeenCalledWith(
                 id,
                 "1.0.0",
@@ -117,6 +120,7 @@ describe("seedDefaultPlugins", () => {
 
         expect(mockUpsertPlugin).not.toHaveBeenCalled();
         expect(mockFetch).not.toHaveBeenCalled();
+        expect(mockGetVerifiedPluginIds).not.toHaveBeenCalled();
     });
 
     it("marks seeded without installing when plugins already exist", async () => {
@@ -133,14 +137,28 @@ describe("seedDefaultPlugins", () => {
         );
     });
 
-    it("handles marketplace API failure gracefully", async () => {
+    it("does not markSeeded when the verified registry is empty", async () => {
+        // Simulates registry outage / signature failure / no cache
+        mockGetVerifiedPluginIds.mockResolvedValue(new Set<string>());
+
+        await seedDefaultPlugins();
+
+        expect(mockUpsertPlugin).not.toHaveBeenCalled();
+        expect(mockFetch).not.toHaveBeenCalled();
+        // Critical: guard row is NOT written so the next request retries
+        expect(mockCreate).not.toHaveBeenCalled();
+        expect(mockUpdateMany).not.toHaveBeenCalled();
+    });
+
+    it("handles marketplace manifest fetch failure gracefully", async () => {
         mockFetch.mockRejectedValue(new Error("Network error"));
 
         await seedDefaultPlugins();
 
-        // Should NOT throw
+        // No upserts (every manifest fetch failed), but guard row IS written
+        // — we got a non-empty verified set, so seeding completed (with zero
+        // successes); next request shouldn't retry the whole flow.
         expect(mockUpsertPlugin).not.toHaveBeenCalled();
-        // Guard row still written (fail-safe)
         expect(mockCreate).toHaveBeenCalled();
     });
 
@@ -151,6 +169,7 @@ describe("seedDefaultPlugins", () => {
 
         expect(mockUpsertPlugin).not.toHaveBeenCalled();
         expect(mockFetch).not.toHaveBeenCalled();
+        expect(mockGetVerifiedPluginIds).not.toHaveBeenCalled();
         // Guard row written so it doesn't re-check
         expect(mockCreate).toHaveBeenCalled();
     });
@@ -162,6 +181,7 @@ describe("seedDefaultPlugins", () => {
 
         expect(mockUpsertPlugin).not.toHaveBeenCalled();
         expect(mockFetch).not.toHaveBeenCalled();
+        expect(mockGetVerifiedPluginIds).not.toHaveBeenCalled();
         expect(mockCreate).not.toHaveBeenCalled();
     });
 
@@ -177,25 +197,16 @@ describe("seedDefaultPlugins", () => {
         await seedDefaultPlugins();
 
         // One fewer than total (the first was skipped)
-        expect(mockUpsertPlugin).toHaveBeenCalledTimes(DEFAULT_PLUGIN_IDS.length - 1);
+        expect(mockUpsertPlugin).toHaveBeenCalledTimes(FAKE_VERIFIED_IDS.length - 1);
     });
 
-    it("stamps trust from the verified registry", async () => {
-        const firstId = DEFAULT_PLUGIN_IDS[0];
-        // Only the first plugin is verified
-        mockGetVerifiedPluginIds.mockResolvedValue(new Set([firstId]));
-
+    it("stamps every seeded plugin as verified", async () => {
         await seedDefaultPlugins();
 
-        // Check the first call has "verified"
-        const firstCall = mockUpsertPlugin.mock.calls[0];
-        expect(firstCall[0]).toBe(firstId);
-        const firstManifest = JSON.parse(firstCall[2]);
-        expect(firstManifest.trust).toBe("verified");
-
-        // Check a non-verified one
-        const secondCall = mockUpsertPlugin.mock.calls[1];
-        const secondManifest = JSON.parse(secondCall[2]);
-        expect(secondManifest.trust).toBe("unverified");
+        expect(mockUpsertPlugin).toHaveBeenCalledTimes(FAKE_VERIFIED_IDS.length);
+        for (const call of mockUpsertPlugin.mock.calls) {
+            const manifest = JSON.parse(call[2]);
+            expect(manifest.trust).toBe("verified");
+        }
     });
 });

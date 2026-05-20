@@ -16,6 +16,18 @@ Plugins from the marketplace use the `bundle` format and are imported at runtime
 - `pluginManager.loadFromManifest()` validates and registers these plugins.
 - Ensure any schema changes to the marketplace tables follow the `database-migrations.md` rule.
 
+## 4. Fresh-Install Seeding
+
+Fresh installs (no rows in `InstalledPlugin`) auto-seed a starter set so the globe isn't empty on day one. The source of truth is the **signed verified registry** (`marketplace.worldwideview.dev/api/registry`, loaded by `registryClient.getVerifiedPluginIds()`).
+
+- **No hard-coded plugin lists.** Publishing a plugin to the verified registry is what makes it part of the fresh-install starter set.
+- **Idempotent**: a `defaults_seeded` row in the `Setting` table prevents re-runs. If the registry is unreachable on first attempt, the guard is NOT set — the next request retries.
+- **Existing instances** with `defaults_seeded=true` are untouched. To pull in newly-verified plugins, users install via the marketplace UI.
+- **Demo edition** uses an independent path (`NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS` env var, handled in `AppShell.tsx` and `useMarketplaceSync.ts`) — not this seeder.
+
+> [!CAUTION]
+> Do not reintroduce a static `DEFAULT_PLUGIN_IDS` constant or any other hard-coded plugin list. That drifted from npm reality, caused 404s for unpublished IDs, and conflated "verified" with "auto-installed."
+
 ## Current Implementation State
 
 
