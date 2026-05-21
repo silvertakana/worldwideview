@@ -14,7 +14,8 @@ describe("GET /api/auth/ticket", () => {
     });
 
     it("returns 401 when no session exists", async () => {
-        vi.mocked(auth).mockResolvedValue(null);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        vi.mocked(auth).mockResolvedValue(null as any);
         const req = new NextRequest("http://localhost/api/auth/ticket?pluginId=aviation");
         const res = await GET(req);
         expect(res.status).toBe(401);
