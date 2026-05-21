@@ -6,6 +6,7 @@ import {
     SceneMode,
     Cesium3DTileset,
     Cesium3DTileStyle,
+    Terrain,
     createOsmBuildingsAsync
 } from "cesium";
 import { useStore } from "@/core/state/store";
@@ -22,8 +23,8 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
     const activeLayerId = fallbackLayerId || baseLayerId;
 
     const currentImageryLayerRef = useRef<ImageryLayer | null>(null);
-    // const googleTilesetRef = useRef<Cesium3DTileset | null>(null);
     const osmBuildingsRef = useRef<Cesium3DTileset | null>(null);
+    const terrainActiveRef = useRef(false);
 
     // 1. Manage Scene Mode (2D / 3D / Columbus)
     useEffect(() => {
@@ -112,9 +113,24 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
         updateImagery();
     }, [viewer, viewerReady, baseLayerId, fallbackLayerId]);
 
-    // 3. Manage OSM 3D Buildings (only in 3D mode, not with Google Photorealistic tiles)
+    // 3. Enable Cesium World Terrain for non-Google 3D mode.
+    //    depthTestAgainstTerrain is already true (useViewerInitialization) and OSM 3D
+    //    Buildings store absolute WGS84 heights including terrain elevation — both need
+    //    real terrain. Without it the globe is a smooth ellipsoid, buildings float, and
+    //    depth clipping is inaccurate. In Google 3D mode globe.show is false so the
+    //    terrain provider is irrelevant; no need to tear it down on mode switch.
     const isGoogle3D = activeLayerId === "google-3d";
     const is3DMode = sceneMode === 3;
+
+    useEffect(() => {
+        if (!viewer || !viewerReady || viewer.isDestroyed()) return;
+        if (isGoogle3D || !is3DMode || terrainActiveRef.current) return;
+
+        viewer.scene.setTerrain(Terrain.fromWorldTerrain());
+        terrainActiveRef.current = true;
+    }, [viewer, viewerReady, isGoogle3D, is3DMode]);
+
+    // 4. Manage OSM 3D Buildings (only in 3D mode, not with Google Photorealistic tiles)
     useEffect(() => {
         if (!viewer || !viewerReady || viewer.isDestroyed()) return;
 
