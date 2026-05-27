@@ -146,7 +146,7 @@ label: label || "Camera Stream",
             // For random third-party iframe providers, proxy their HTML to bypass X-Frame-Options/CSP restrictions.
             // We exclude major platforms (YouTube, Twitch, Vimeo) because they officially support embedding
             // and their complex players might break if HTML is proxied.
-            const majorPlatformHosts = ["youtube.com", "youtu.be", "twitch.tv", "vimeo.com"];
+            const majorPlatformHosts = ["youtube.com", "youtu.be", "youtube-nocookie.com", "twitch.tv", "vimeo.com"];
             let isMajorPlatformHost = false;
             try {
                 const { hostname } = new URL(embedUrl);
@@ -163,9 +163,17 @@ label: label || "Camera Stream",
                 embedUrl = getProxiedIframeUrl(embedUrl);
             }
 
+            // Proxied iframes are served from our own origin, so without sandboxing the
+            // upstream HTML could reach window.parent and exfiltrate localStorage / DOM.
+            // Omit allow-same-origin so the iframe gets a unique opaque origin; scripts
+            // still run (video players keep working) but cannot touch the host app.
+            // Major platforms (YouTube/Twitch/Vimeo) bypass the proxy and load from their
+            // own cross-origin host, where the browser's same-origin policy already isolates them.
+            const isProxiedIframe = !isMajorPlatformHost;
             return (
               <iframe
                 src={embedUrl}
+                sandbox={isProxiedIframe ? "allow-scripts allow-presentation" : undefined}
                 style={{
  position: "absolute", inset: 0, width: "100%", height: "100%", border: "none"
 }}

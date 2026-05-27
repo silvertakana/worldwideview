@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { transliterate } from "@/lib/utils/transliterate";
 
 // Server-side cache: keyed by normalised input, 1-hour TTL
 const cache = new Map<string, { data: unknown; expiresAt: number }>();
@@ -44,10 +45,10 @@ export async function GET(request: Request) {
         }
 
         const predictions = data.predictions.map((p: any) => ({
-            description: p.description,
+            description: transliterate(p.description ?? ""),
             placeId: p.place_id,
-            mainText: p.structured_formatting?.main_text || p.description,
-            secondaryText: p.structured_formatting?.secondary_text || "",
+            mainText: transliterate(p.structured_formatting?.main_text || p.description),
+            secondaryText: transliterate(p.structured_formatting?.secondary_text || ""),
             types: p.types,
         }));
 

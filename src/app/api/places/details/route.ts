@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { transliterate } from "@/lib/utils/transliterate";
 
 // Server-side cache: keyed by place_id, 24-hour TTL (place geometry is stable)
 const cache = new Map<string, { data: unknown; expiresAt: number }>();
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
         const result = {
             lat: location.lat,
             lon: location.lng,
-            name: data.result.name,
+            name: transliterate(data.result.name ?? ""),
             types: data.result.types || [],
             viewport: data.result.geometry?.viewport || null,
         };

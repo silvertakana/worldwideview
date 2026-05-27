@@ -6,6 +6,7 @@
 
 import type { GeoEntity } from "@/core/plugins/PluginTypes";
 import type { GeoJsonFeature, GeoJsonGeometry } from "@/types/geojson";
+import { transliterate } from "@/lib/utils/transliterate";
 
 /** Extract a representative [lat, lon, alt?] from any geometry. */
 function representativePoint(
@@ -50,7 +51,7 @@ export function featuresToEntities(
             longitude: point.lon,
             altitude: point.alt,
             timestamp: new Date(),
-            label: (feature.properties.name as string) ?? undefined,
+            label: feature.properties.name ? transliterate(feature.properties.name as string) : undefined,
             properties: {
                 ...feature.properties,
                 _layerId: layerId,

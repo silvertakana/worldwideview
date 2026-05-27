@@ -63,7 +63,22 @@ console.log(`🔌 Assigned deterministic database port: ${port}`);
 
 // Robust rewrite of DATABASE_URL in .env
 const envPath = path.resolve(cwd, '.env');
-if (fs.existsSync(envPath)) {
+
+// Ensure .env exists — worktrees only have .env.local, not .env.
+// Without this, the DATABASE_URL injection block below is silently skipped
+// and safe-db-push.mjs fails with "DATABASE_URL is missing".
+if (!fs.existsSync(envPath)) {
+  const examplePath = path.resolve(cwd, '.env.example');
+  if (fs.existsSync(examplePath)) {
+    fs.copyFileSync(examplePath, envPath);
+    console.log('📄 Created .env from .env.example (worktree first-run).');
+  } else {
+    fs.writeFileSync(envPath, '');
+    console.log('📄 Created empty .env (worktree first-run).');
+  }
+}
+
+{
   const envContent = fs.readFileSync(envPath, 'utf8');
   const lines = envContent.split(/\r?\n/);
   
@@ -96,7 +111,7 @@ if (fs.existsSync(envPath)) {
   
   if (linesModified) {
     const newContent = newLines.join('\n');
-    
+
     // File write with retries and telemetry
     const maxRetries = 3;
     let attempt = 0;
@@ -121,7 +136,7 @@ if (fs.existsSync(envPath)) {
       }
     }
   }
-}
+} // end DATABASE_URL injection block
 
 
 console.log('🚀 Checking local PostgreSQL database...');

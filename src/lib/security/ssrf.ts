@@ -8,10 +8,19 @@ export function isPrivateIP(ip: string): boolean {
     return false;
 }
 
+/**
+ * Validates that a URL uses a safe web protocol for server-side proxying.
+ * Both http: and https: are allowed -- the StreamProxy is a server-side bridge
+ * that fetches HTTP camera feeds and serves them over HTTPS to the browser,
+ * converting them to avoid browser mixed-content blocks. Blocking HTTP here
+ * would defeat the proxy's purpose. Real SSRF protection is provided by the
+ * private-IP check, DNS pinning, and the PROXY_HOST_ALLOWLIST below.
+ * Dangerous protocols (file://, ftp://, data://, javascript://, etc.) are rejected.
+ */
 export function validateOrigin(urlStr: string): boolean {
     try {
         const url = new URL(urlStr);
-        return url.protocol === "https:";
+        return url.protocol === "https:" || url.protocol === "http:";
     } catch {
         return false;
     }
@@ -48,7 +57,7 @@ export async function safeFetch(urlStr: string, options: FetchOptions = {}): Pro
     checkHostAllowlist(hostForCheck);
 
     if (!validateOrigin(urlStr)) {
-        throw new Error("SSRF Error: Invalid protocol. Only HTTPS is allowed.");
+        throw new Error("SSRF Error: Invalid protocol. Only HTTP and HTTPS are allowed.");
     }
 
     const url = new URL(urlStr);
