@@ -21,6 +21,7 @@ import Image from "next/image";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 import { SearchBar } from "./SearchBar";
 import { ApiKeysTab } from "./ApiKeysTab";
+import { PluginSettingsTrigger } from "./PluginSettingsPanel";
 import "./timeSelect.css";
 
 const REGIONS = [
@@ -258,6 +259,7 @@ export function Header() {
               >
                 <Key size={14} />
               </button>
+              <PluginSettingsTrigger />
               <div style={{ position: "relative", flexShrink: 0 }}>
                 <button
                   type="button"

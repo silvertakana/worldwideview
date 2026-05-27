@@ -74,8 +74,11 @@ export function LayerPanel() {
         "natural-disaster": "Natural Disasters",
         conflict: "Conflict",
         infrastructure: "Infrastructure",
+        space: "Space",
         cyber: "Cyber",
         economic: "Economic",
+        intelligence: "Intelligence",
+        military: "Military",
         custom: "Custom",
     };
 

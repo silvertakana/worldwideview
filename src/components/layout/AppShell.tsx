@@ -37,6 +37,10 @@ import { isDemo } from "@/core/edition";
 
 import { injectHostGlobals } from "@/core/plugins/hostGlobals";
 import { initLogCatcher } from "@/lib/logCatcher";
+
+// Register all 12 built-in plugins into the PluginRegistry (side-effect import).
+// This must be imported before pluginRegistry.getAll() is called below.
+import "@/plugins/builtins/index";
 import { MobileCameraStats } from "./MobileCameraStats";
 import { MobileHudBar } from "./MobileHudBar";
 import { AgentBusSubscriber } from "./AgentBusSubscriber";
