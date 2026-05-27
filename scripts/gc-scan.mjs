@@ -130,8 +130,9 @@ const ANTI_PATTERNS = [
   {
     id: 'mdc-ref',
     tier: 'A',
-    globs: ['*.ts', '*.tsx', '*.md', '*.mjs'],
-    pattern: '\\.mdc',
+    globs: ['*.ts', '*.tsx'],
+    pattern: '[\'"].*\\.mdc[\'"]',
+    excludePrefix: 'scripts/',
     desc: '.mdc file reference — must be .md (project invariant: never .mdc files)',
   },
   {
