@@ -109,7 +109,7 @@ export async function safeFetch(urlStr: string, options: FetchOptions = {}): Pro
             // For infinite streams (e.g. MJPEG), skip size accumulation — pipe directly.
             // Duration is already bounded by the AbortController timeout above.
             if (options.streaming) {
-                return new Response(response.body, {
+                return new Response(response.body as unknown as BodyInit, {
                     status: response.status,
                     headers: response.headers as unknown as HeadersInit
                 });
