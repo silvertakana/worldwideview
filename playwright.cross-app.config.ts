@@ -7,16 +7,36 @@
  * The marketplace MUST be reachable at https://marketplace.wwv.local:3002
  * (not localhost:3002) because the Supabase auth cookie is scoped to .wwv.local.
  *
+ * Loads .env.test credentials via Node fs so specs can read them from
+ * process.env without requiring a dotenv package install.
+ *
  * Usage:
  *   pnpm exec playwright test --config=playwright.cross-app.config.ts
  */
 import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __dir = path.dirname(fileURLToPath(import.meta.url));
 const WEB_DIR = path.resolve(__dir, '../worldwideview-web');
 const MARKETPLACE_DIR = path.resolve(__dir, '../worldwideview-marketplace');
+
+// Load .env.test credentials into process.env so specs can read them.
+// Uses fs directly to avoid a dotenv dependency.
+const envTestPath = path.resolve(__dir, '.env.test');
+if (fs.existsSync(envTestPath)) {
+    const lines = fs.readFileSync(envTestPath, 'utf8').split('\n');
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const eqIdx = trimmed.indexOf('=');
+        if (eqIdx === -1) continue;
+        const key = trimmed.slice(0, eqIdx).trim();
+        const val = trimmed.slice(eqIdx + 1).trim();
+        if (key && !(key in process.env)) process.env[key] = val;
+    }
+}
 
 export default defineConfig({
     timeout: 60000,
