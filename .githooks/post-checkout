@@ -2,5 +2,8 @@
 # post-checkout hook: $1=prev HEAD, $2=new HEAD, $3=1 if branch checkout, 0 if file checkout
 # Only sync .planning on branch switches, not file restores.
 if [ "$3" = "1" ]; then
-  bash "C:/dev/wwv/.claude/hooks/planning-sync.sh"
+  SYNC_SCRIPT="C:/dev/wwv/.claude/hooks/planning-sync.sh"
+  if [ -f "$SYNC_SCRIPT" ]; then
+    bash "$SYNC_SCRIPT"
+  fi
 fi
