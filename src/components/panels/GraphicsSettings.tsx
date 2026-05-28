@@ -11,6 +11,7 @@
 import React, { useEffect } from "react";
 import { useStore } from "@/core/state/store";
 import { trackEvent } from "@/lib/analytics";
+import { WEATHER_LAYERS } from "@/lib/weatherLayers";
 import "./graphics-settings.css";
 
 /**
@@ -19,24 +20,22 @@ import "./graphics-settings.css";
  */
 const DEFAULT_GRAPHICS = {
     resolutionScale: 1.0,
-    enableFxaa: false,
-    msaaSamples: 1,
+    antiAliasing: "fxaa" as const,
     maxScreenSpaceError: 16,
     shadowsEnabled: false,
     enableLighting: false,
     showFps: false,
     showOsmBuildings: true,
-    weatherOverlay: null,
+    weatherOverlay: null as string | null,
 };
 
-const WEATHER_OPTIONS = [
-    { label: "Off", value: "" },
-    { label: "Clouds", value: "clouds_new" },
-    { label: "Precipitation", value: "precipitation_new" },
-    { label: "Temperature", value: "temp_new" },
-    { label: "Wind Speed", value: "wind_new" },
-    { label: "Pressure", value: "pressure_new" },
-];
+const WEATHER_LABEL: Record<string, string> = {
+    clouds_new: "Clouds",
+    precipitation_new: "Precipitation",
+    temp_new: "Temperature",
+    wind_new: "Wind Speed",
+    pressure_new: "Pressure",
+};
 
 const RESOLUTION_OPTIONS = [
     { label: "0.5×", value: 0.5 },
@@ -86,14 +85,14 @@ export function GraphicsSettings() {
             className="gfx-settings__select"
             value={mapConfig.resolutionScale}
             onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        update({ resolutionScale: v });
-                        trackEvent("graphics-setting", { key: "resolutionScale", value: v });
-                    }}
+              const v = parseFloat(e.target.value);
+              update({ resolutionScale: v });
+              trackEvent("graphics-setting", { key: "resolutionScale", value: v });
+            }}
           >
             {RESOLUTION_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
+            ))}
           </select>
         </div>
 
@@ -104,14 +103,14 @@ export function GraphicsSettings() {
             className="gfx-settings__select"
             value={mapConfig.antiAliasing}
             onChange={(e) => {
-                        const v = e.target.value as "none" | "fxaa" | "msaa2x" | "msaa4x" | "msaa8x";
-                        update({ antiAliasing: v });
-                        trackEvent("graphics-setting", { key: "antiAliasing", value: v });
-                    }}
+              const v = e.target.value as "none" | "fxaa" | "msaa2x" | "msaa4x" | "msaa8x";
+              update({ antiAliasing: v });
+              trackEvent("graphics-setting", { key: "antiAliasing", value: v });
+            }}
           >
             {AA_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
+            ))}
           </select>
         </div>
 
@@ -127,13 +126,13 @@ export function GraphicsSettings() {
               step={1}
               value={mapConfig.maxScreenSpaceError}
               onChange={(e) => {
-                            const v = parseInt(e.target.value, 10);
-                            update({ maxScreenSpaceError: v });
-                        }}
+                const v = parseInt(e.target.value, 10);
+                update({ maxScreenSpaceError: v });
+              }}
               onPointerUp={() => trackEvent("graphics-setting", {
-                            key: "maxScreenSpaceError",
-                            value: mapConfig.maxScreenSpaceError,
-                        })}
+                key: "maxScreenSpaceError",
+                value: mapConfig.maxScreenSpaceError,
+              })}
             />
             <span className="gfx-settings__slider-value">{mapConfig.maxScreenSpaceError}</span>
           </div>
@@ -176,14 +175,15 @@ export function GraphicsSettings() {
             className="gfx-settings__select"
             value={mapConfig.weatherOverlay || ""}
             onChange={(e) => {
-                        const v = e.target.value || null;
-                        update({ weatherOverlay: v });
-                        trackEvent("graphics-setting", { key: "weatherOverlay", value: v || "off" });
-                    }}
+              const v = e.target.value || null;
+              update({ weatherOverlay: v });
+              trackEvent("graphics-setting", { key: "weatherOverlay", value: v || "off" });
+            }}
           >
-            {WEATHER_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
+            <option value="">Off</option>
+            {WEATHER_LAYERS.map((id) => (
+              <option key={id} value={id}>{WEATHER_LABEL[id] ?? id}</option>
+            ))}
           </select>
         </div>
 
@@ -202,9 +202,9 @@ export function GraphicsSettings() {
             className="btn"
             style={{ width: "100%", height: 32 }}
             onClick={() => {
-                        update({ ...DEFAULT_GRAPHICS });
-                        trackEvent("graphics-setting-reset");
-                    }}
+              update({ ...DEFAULT_GRAPHICS });
+              trackEvent("graphics-setting-reset");
+            }}
           >
             Reset to Defaults
           </button>

@@ -101,6 +101,38 @@ describe("/api/weather/tile/[z]/[x]/[y]", () => {
         expect(json.error).toBe("Invalid tile coordinates");
     });
 
+    it("returns 400 when x/y exceed max for zoom level", async () => {
+        // At zoom 0, only tile (0,0) is valid (2^0 = 1)
+        const { req, params } = makeRequest("clouds_new", "0", "1", "0");
+        const response = await GET(req, { params });
+        const json = await response.json();
+
+        expect(response.status).toBe(400);
+        expect(json.error).toBe("Invalid tile coordinates");
+    });
+
+    it("returns 400 when zoom exceeds max supported level", async () => {
+        const { req, params } = makeRequest("clouds_new", "19", "0", "0");
+        const response = await GET(req, { params });
+        const json = await response.json();
+
+        expect(response.status).toBe(400);
+        expect(json.error).toBe("Invalid tile coordinates");
+    });
+
+    it("accepts max valid tile coordinates for zoom level", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+            ok: true,
+            arrayBuffer: async () => fakePng.buffer,
+        }));
+
+        // At zoom 2, valid range is 0..3 (2^2 = 4)
+        const { req, params } = makeRequest("clouds_new", "2", "3", "3");
+        const response = await GET(req, { params });
+
+        expect(response.status).toBe(200);
+    });
+
     it("returns 503 when API key is not configured", async () => {
         vi.stubEnv("OPENWEATHERMAP_API_KEY", "");
 

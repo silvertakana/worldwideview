@@ -1,24 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { WEATHER_LAYERS, isValidWeatherLayer } from "@/lib/weatherLayers";
 
 export const revalidate = 600;
 
-const ALLOWED_LAYERS = [
-    "clouds_new",
-    "precipitation_new",
-    "pressure_new",
-    "wind_new",
-    "temp_new",
-] as const;
+const MAX_ZOOM = 18;
 
-type WeatherLayer = (typeof ALLOWED_LAYERS)[number];
-
-function isValidLayer(layer: string): layer is WeatherLayer {
-    return ALLOWED_LAYERS.includes(layer as WeatherLayer);
+function isValidTileCoord(value: string, zoom?: number): boolean {
+    const n = Number(value);
+    if (!Number.isInteger(n) || n < 0) return false;
+    if (zoom !== undefined) {
+        if (n >= Math.pow(2, zoom)) return false;
+    }
+    return true;
 }
 
-function isValidTileCoord(value: string): boolean {
+function isValidZoom(value: string): boolean {
     const n = Number(value);
-    return Number.isInteger(n) && n >= 0;
+    return Number.isInteger(n) && n >= 0 && n <= MAX_ZOOM;
 }
 
 export async function GET(
@@ -28,14 +26,22 @@ export async function GET(
     const { z, x, y } = await params;
     const layer = req.nextUrl.searchParams.get("layer");
 
-    if (!layer || !isValidLayer(layer)) {
+    if (!layer || !isValidWeatherLayer(layer)) {
         return NextResponse.json(
-            { error: `Invalid layer. Must be one of: ${ALLOWED_LAYERS.join(", ")}` },
+            { error: `Invalid layer. Must be one of: ${WEATHER_LAYERS.join(", ")}` },
             { status: 400 },
         );
     }
 
-    if (!isValidTileCoord(z) || !isValidTileCoord(x) || !isValidTileCoord(y)) {
+    if (!isValidZoom(z)) {
+        return NextResponse.json(
+            { error: "Invalid tile coordinates" },
+            { status: 400 },
+        );
+    }
+
+    const zNum = Number(z);
+    if (!isValidTileCoord(x, zNum) || !isValidTileCoord(y, zNum)) {
         return NextResponse.json(
             { error: "Invalid tile coordinates" },
             { status: 400 },
@@ -74,8 +80,7 @@ export async function GET(
                 "Cache-Control": "public, max-age=600, stale-while-revalidate=300",
             },
         });
-    } catch (error) {
-        console.error("[WeatherTile] Error:", error);
+    } catch {
         return NextResponse.json(
             { error: "Failed to fetch weather tile" },
             { status: 502 },

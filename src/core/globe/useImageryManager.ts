@@ -179,21 +179,31 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
 
         if (!weatherOverlay) return;
 
+        let cancelled = false;
+        let addedLayer: ImageryLayer | null = null;
+
         try {
             const provider = new UrlTemplateImageryProvider({
                 url: `/api/weather/tile/{z}/{x}/{y}?layer=${weatherOverlay}`,
             });
             const layer = new ImageryLayer(provider, { alpha: 0.6 });
+
+            if (cancelled || viewer.isDestroyed()) return;
+
             viewer.imageryLayers.add(layer);
+            addedLayer = layer;
             weatherLayerRef.current = layer;
         } catch (err) {
             console.warn("[useImageryManager] Failed to load weather overlay:", err);
         }
 
         return () => {
-            if (weatherLayerRef.current && !viewer.isDestroyed()) {
-                viewer.imageryLayers.remove(weatherLayerRef.current);
-                weatherLayerRef.current = null;
+            cancelled = true;
+            if (addedLayer && !viewer.isDestroyed()) {
+                viewer.imageryLayers.remove(addedLayer);
+                if (weatherLayerRef.current === addedLayer) {
+                    weatherLayerRef.current = null;
+                }
             }
         };
     }, [viewer, viewerReady, weatherOverlay]);
