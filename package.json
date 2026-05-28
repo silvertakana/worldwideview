@@ -1,6 +1,6 @@
 {
   "name": "worldwideview",
-  "version": "2.23.3",
+  "version": "2.23.4",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.4",
@@ -35,7 +35,6 @@
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.0",
     "@types/pg": "^8.20.0",
-    "@vercel/analytics": "^1.6.1",
     "@worldwideview/wwv-plugin-sdk": "workspace:*",
     "bcryptjs": "^3.0.3",
     "cesium": "^1.141.0",

@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import "@/styles/hud-animations.css";
+import { LegalFooter } from "@/components/layout/LegalFooter";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -53,7 +53,6 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         {children}
-        {process.env.VERCEL && <Analytics />}
         {process.env.NEXT_PUBLIC_WWV_ANALYTICS === "true" && (
           <Script
             src="https://analytics.worldwideview.dev/script.js"
@@ -61,6 +60,7 @@ export default function RootLayout({
             strategy="afterInteractive"
           />
         )}
+        <LegalFooter />
       </body>
     </html>
   );
