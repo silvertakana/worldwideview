@@ -2,13 +2,19 @@
 install_deps = "pnpm install"
 
 [[pre-start]]
-copy_env = """powershell -Command "if (Test-Path '../worldwideview/.env') { Copy-Item '../worldwideview/.env' '.env' -Force }""""
+copy_env = """powershell -Command "if (Test-Path '../worldwideview/.env') { Copy-Item '../worldwideview/.env' '.env' -Force }; if (Test-Path '../worldwideview/.env.local') { Copy-Item '../worldwideview/.env.local' '.env.local' -Force }""""
 
 [[pre-start]]
-copy_local_plugins = """powershell -Command "if (Test-Path '../worldwideview/local-plugins') { robocopy '../worldwideview/local-plugins' 'local-plugins' /E /XD node_modules dist .next coverage /XF '*.log' /NFL /NDL /NJH /NJS | Out-Null }""""
+copy_local_plugins = """powershell -Command "if (Test-Path '../worldwideview/local-plugins') { robocopy '../worldwideview/local-plugins' 'local-plugins' /E /XD node_modules dist .next coverage /XF '*.log' /NFL /NDL /NJH /NJS | Out-Null }; exit 0""""
 
 [[pre-start]]
-copy_local_seeders = """powershell -Command "if (Test-Path '../worldwideview/local-seeders') { robocopy '../worldwideview/local-seeders' 'local-seeders' /E /XD .pnpm-store node_modules /NFL /NDL /NJH /NJS | Out-Null }""""
+copy_local_seeders = """powershell -Command "if (Test-Path '../worldwideview/local-seeders') { robocopy '../worldwideview/local-seeders' 'local-seeders' /E /XD .pnpm-store node_modules /NFL /NDL /NJH /NJS | Out-Null }; exit 0""""
+
+[[pre-start]]
+link_planning = "powershell -File 'C:/dev/wwv/worldwideview/.agents/scripts/link-planning.ps1' '{{ worktree_path }}'"
+
+[[pre-remove]]
+unlink_planning = "powershell -File 'C:/dev/wwv/worldwideview/.agents/scripts/unlink-planning.ps1' '{{ worktree_path }}'"
 
 [[pre-remove]]
 docker_clean = "docker compose down -v"
