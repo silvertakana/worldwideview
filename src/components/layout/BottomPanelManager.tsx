@@ -48,24 +48,29 @@ export function BottomPanelManager() {
 
         document.body.classList.add("is-dragging-bottom-panel");
 
-        const handleMouseMove = (e: MouseEvent) => {
+        const handleMove = (clientY: number) => {
             // Calculate new height based on distance from bottom of window
-            const newHeight = window.innerHeight - e.clientY;
+            const newHeight = window.innerHeight - clientY;
             // Clamp between min 120px and max window height - 100px
             const clampedHeight = Math.max(120, Math.min(newHeight, window.innerHeight - 100));
             setBottomPanelHeight(clampedHeight);
         };
 
-        const handleMouseUp = () => {
-            setIsDragging(false);
-        };
+        const handleMouseMove = (e: MouseEvent) => handleMove(e.clientY);
+        const handlePointerMove = (e: PointerEvent) => handleMove(e.clientY);
+
+        const handleEnd = () => setIsDragging(false);
 
         window.addEventListener("mousemove", handleMouseMove);
-        window.addEventListener("mouseup", handleMouseUp);
-        
+        window.addEventListener("mouseup", handleEnd);
+        window.addEventListener("pointermove", handlePointerMove);
+        window.addEventListener("pointerup", handleEnd);
+
         return () => {
             window.removeEventListener("mousemove", handleMouseMove);
-            window.removeEventListener("mouseup", handleMouseUp);
+            window.removeEventListener("mouseup", handleEnd);
+            window.removeEventListener("pointermove", handlePointerMove);
+            window.removeEventListener("pointerup", handleEnd);
             document.body.classList.remove("is-dragging-bottom-panel");
         };
     }, [isDragging, setBottomPanelHeight]);
@@ -182,6 +187,7 @@ export function BottomPanelManager() {
                             data-testid="bottom-panel-resize-handle"
                             ref={resizeRef}
                             onMouseDown={() => setIsDragging(true)}
+                            onPointerDown={() => setIsDragging(true)}
                         >
                             <div className="resize-grip" />
                         </div>
