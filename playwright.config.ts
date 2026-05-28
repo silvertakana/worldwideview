@@ -20,7 +20,14 @@ export default defineConfig({
   testDir: './tests',
   // web-auth.spec.ts targets worldwideview-web (https://wwv.local:3001) — use playwright.web.config.ts
   // marketplace-from-instance.spec.ts uses playwright.marketplace.config.ts; full-flow requires marketplace repo
-  testIgnore: ['**/web-auth.spec.ts', '**/marketplace-from-instance.spec.ts'],
+  // marketplace-redirect-handshake.spec.ts and marketplace-sign-out.spec.ts require marketplace.wwv.local:3002
+  //   — use playwright.cross-app.config.ts for these cross-origin handshake tests
+  testIgnore: [
+    '**/web-auth.spec.ts',
+    '**/marketplace-from-instance.spec.ts',
+    '**/marketplace-redirect-handshake.spec.ts',
+    '**/marketplace-sign-out.spec.ts',
+  ],
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
