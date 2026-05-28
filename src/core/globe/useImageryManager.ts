@@ -170,38 +170,29 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
     // 4. Manage Weather Overlay (semi-transparent tile layer on top of base imagery)
     useEffect(() => {
         if (!viewer || !viewerReady || viewer.isDestroyed()) return;
-
-        // Remove existing weather layer
-        if (weatherLayerRef.current) {
-            viewer.imageryLayers.remove(weatherLayerRef.current);
-            weatherLayerRef.current = null;
-        }
-
         if (!weatherOverlay) return;
 
-        let cancelled = false;
-        let addedLayer: ImageryLayer | null = null;
+        let layer: ImageryLayer | null = null;
 
         try {
             const provider = new UrlTemplateImageryProvider({
                 url: `/api/weather/tile/{z}/{x}/{y}?layer=${weatherOverlay}`,
             });
-            const layer = new ImageryLayer(provider, { alpha: 0.6 });
-
-            if (cancelled || viewer.isDestroyed()) return;
-
-            viewer.imageryLayers.add(layer);
-            addedLayer = layer;
-            weatherLayerRef.current = layer;
+            layer = new ImageryLayer(provider, { alpha: 0.6 });
         } catch (err) {
             console.warn("[useImageryManager] Failed to load weather overlay:", err);
+            return;
         }
 
+        if (viewer.isDestroyed()) return;
+
+        viewer.imageryLayers.add(layer);
+        weatherLayerRef.current = layer;
+
         return () => {
-            cancelled = true;
-            if (addedLayer && !viewer.isDestroyed()) {
-                viewer.imageryLayers.remove(addedLayer);
-                if (weatherLayerRef.current === addedLayer) {
+            if (layer && !viewer.isDestroyed()) {
+                viewer.imageryLayers.remove(layer);
+                if (weatherLayerRef.current === layer) {
                     weatherLayerRef.current = null;
                 }
             }
