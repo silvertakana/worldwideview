@@ -29,6 +29,8 @@ export function validateOrigin(urlStr: string): boolean {
 interface FetchOptions extends RequestInit {
     maxSize?: number;
     timeout?: number;
+    /** Skip size accumulation for infinite streams (e.g. MJPEG). Duration is still bounded by `timeout`. */
+    streaming?: boolean;
 }
 
 function checkHostAllowlist(hostname: string): void {
@@ -104,6 +106,15 @@ export async function safeFetch(urlStr: string, options: FetchOptions = {}): Pro
         const response = await fetch(urlStr, fetchOptions);
 
         if (response.body) {
+            // For infinite streams (e.g. MJPEG), skip size accumulation — pipe directly.
+            // Duration is already bounded by the AbortController timeout above.
+            if (options.streaming) {
+                return new Response(response.body, {
+                    status: response.status,
+                    headers: response.headers as unknown as HeadersInit
+                });
+            }
+
             let totalSize = 0;
             const reader = response.body.getReader();
             const stream = new ReadableStream({

@@ -5,7 +5,8 @@
   "permissions": {
     "allow": [
       "Read(src/**)",
-      "Bash(npm test)"
+      "Bash(npm test)",
+      "Bash(node \"C:/Users/silve/.claude/hooks/claude-dir-guard.js\")"
     ],
     "deny": [
       "Read(.env)",

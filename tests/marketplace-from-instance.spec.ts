@@ -80,6 +80,77 @@ test.describe('InstanceCapture — marketplace receives from_instance', () => {
     });
 });
 
+// ─── Linked-instance API surface (anonymous, marketplace-only) ──────────────
+
+test.describe('linked-instance API — anonymous surface', () => {
+    test('GET /api/instances returns 401 when no session cookie', async ({ request }) => {
+        const res = await request.get(`${MARKETPLACE_URL}/api/instances`);
+        expect(res.status()).toBe(401);
+        const body = await res.json();
+        expect(body).toEqual({ error: 'unauthenticated' });
+    });
+
+    test('POST /api/instances/link returns 401 when anonymous (fire-and-forget safe)', async ({ request }) => {
+        const res = await request.post(`${MARKETPLACE_URL}/api/instances/link`, {
+            data: { url: WWV_ORIGIN },
+            headers: { 'content-type': 'application/json' },
+        });
+        expect(res.status()).toBe(401);
+    });
+
+    test('GET /api/install/start with no session 302s to AUTH_HOST/login?next=...', async ({ request }) => {
+        const installUrl = new URL(`${MARKETPLACE_URL}/api/install/start`);
+        installUrl.searchParams.set('pluginId', 'aviation');
+        installUrl.searchParams.set('version', '1.0.0');
+        installUrl.searchParams.set('manifest', 'eyJpZCI6ImF2aWF0aW9uIn0='); // {"id":"aviation"}
+        installUrl.searchParams.set('instanceUrl', WWV_ORIGIN);
+        installUrl.searchParams.set('redirectTo', `${MARKETPLACE_URL}/browse/aviation`);
+
+        const res = await request.get(installUrl.toString(), { maxRedirects: 0 });
+        expect(res.status()).toBe(307);
+
+        const location = res.headers().location ?? '';
+        expect(location).toMatch(/\/login\?next=/);
+        // The next param should round-trip the entire install/start URL
+        const next = new URL(location).searchParams.get('next');
+        expect(next).toContain('/api/install/start');
+        expect(next).toContain('pluginId=aviation');
+    });
+
+    test('POST /api/install/start with javascript: scheme returns 400 before auth check', async ({ request }) => {
+        // The validator runs before the auth gate, so this should 400 even anonymous
+        const installUrl = new URL(`${MARKETPLACE_URL}/api/install/start`);
+        installUrl.searchParams.set('pluginId', 'aviation');
+        installUrl.searchParams.set('version', '1.0.0');
+        installUrl.searchParams.set('manifest', 'eyJpZCI6ImF2aWF0aW9uIn0=');
+        installUrl.searchParams.set('instanceUrl', 'javascript:alert(1)');
+        installUrl.searchParams.set('redirectTo', `${MARKETPLACE_URL}/browse/aviation`);
+
+        const res = await request.get(installUrl.toString(), { maxRedirects: 0 });
+        expect(res.status()).toBe(400);
+    });
+});
+
+// ─── InstanceCapture → server-link fire-and-forget ──────────────────────────
+
+test.describe('InstanceCapture also POSTs to /api/instances/link', () => {
+    test('fires a link POST after writing localStorage', async ({ page }) => {
+        // Spy on the outgoing POST. The server will 401 (we're anonymous) and
+        // the InstanceCapture promise swallows that — we just want to confirm
+        // the request was made, not that it succeeded.
+        const linkPromise = page.waitForRequest(
+            (req) => req.url().endsWith('/api/instances/link') && req.method() === 'POST',
+            { timeout: 10000 },
+        );
+
+        await page.goto(`${MARKETPLACE_URL}/?${FROM_INSTANCE_PARAM}`);
+
+        const req = await linkPromise;
+        const body = JSON.parse(req.postData() ?? '{}');
+        expect(body).toEqual({ url: WWV_ORIGIN });
+    });
+});
+
 // ─── Full flow (worldwideview → marketplace, requires Docker + auth) ─────────
 
 test.describe('Full flow — Browse Plugins in worldwideview opens marketplace', () => {

@@ -134,7 +134,7 @@ describe("SSRF Protection Utility", () => {
 
         it("uses undici dispatcher pinned to the resolved IP and does not follow redirects", async () => {
             mockDnsLookup.mockResolvedValue({ address: PUBLIC_IP, family: 4 });
-            // safeFetch uses redirect:"manual" — this 301 must not be followed
+            // safeFetch uses redirect:"manual" -- this 301 must not be followed
             mockUndiciF.mockResolvedValueOnce(
                 new Response(null, { status: 301, headers: { Location: "https://evil-rebind.example.com" } })
             );

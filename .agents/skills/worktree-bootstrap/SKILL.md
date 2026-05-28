@@ -80,19 +80,24 @@ Each feature worktree needs a matching branch in the `.planning` repo. The `Sess
 
 ### When starting a new feature worktree
 
-After Step 1 above, run these two additional steps:
+After Step 1 above, create the matching `.planning` branch (one-time per feature):
 
 ```powershell
-# Create the matching .planning branch (one-time per feature)
 git -C C:\dev\wwv\.planning checkout -b <branch-name>
 git -C C:\dev\wwv\.planning push -u origin <branch-name>
 git -C C:\dev\wwv\.planning checkout main
-
-# Enable the post-checkout hook in the new worktree (one-time per worktree)
-git -C C:\dev\wwv\worldwideview.<branch-name> config core.hooksPath .githooks
 ```
 
+The `post-checkout` hook and `core.hooksPath` are applied automatically via `git init.templateDir` - no manual config step needed.
+
 After this, every Claude Code session opened inside `worldwideview.<branch-name>` automatically switches `.planning` to `<branch-name>`. GSD agents see only that feature's phases.
+
+Verify the sync is working after your first branch switch or session open:
+
+```powershell
+git -C C:\dev\wwv\.planning rev-parse --abbrev-ref HEAD
+# Should output: <branch-name>
+```
 
 ### When finishing a feature
 

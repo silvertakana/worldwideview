@@ -18,8 +18,8 @@ export default defineConfig({
   globalSetup: './tests/global.setup.ts',
   globalTeardown: './tests/global.teardown.ts',
   testDir: './tests',
-  // web-auth.spec.ts targets worldwideview-web (https://wwv.local:3001) — run via playwright.web.config.ts
-  // marketplace-from-instance.spec.ts requires the marketplace repo — run via playwright.marketplace.config.ts
+  // web-auth.spec.ts targets worldwideview-web (https://wwv.local:3001) — use playwright.web.config.ts
+  // marketplace-from-instance.spec.ts uses playwright.marketplace.config.ts; full-flow requires marketplace repo
   testIgnore: ['**/web-auth.spec.ts', '**/marketplace-from-instance.spec.ts'],
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -83,8 +83,8 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
     },
-    // Only start the marketplace when its repo is checked out alongside worldwideview.
-    // In CI only worldwideview is checked out — omitting this prevents spawn ENOENT on the missing cwd.
+    // Only start marketplace when the repo is checked out alongside worldwideview.
+    // In CI the marketplace dir does not exist — omitting it prevents spawn ENOENT.
     ...(hasMarketplace ? [{
       command: 'pnpm dev',
       cwd: MARKETPLACE_DIR,

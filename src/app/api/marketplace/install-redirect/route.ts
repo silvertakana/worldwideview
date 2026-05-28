@@ -63,8 +63,8 @@ export async function GET(request: NextRequest) {
             if (!supabaseUser) {
                 const origin = getRequestOrigin(request);
                 const loginUrl = new URL("/login", origin);
-                const callbackPath = request.nextUrl.pathname + request.nextUrl.search;
-                loginUrl.searchParams.set("callbackUrl", callbackPath);
+                const nextPath = request.nextUrl.pathname + request.nextUrl.search;
+                loginUrl.searchParams.set("next", nextPath);
                 return NextResponse.redirect(loginUrl);
             }
             userId = supabaseUser.id;
@@ -73,8 +73,8 @@ export async function GET(request: NextRequest) {
             if (!session?.user) {
                 const origin = getRequestOrigin(request);
                 const loginUrl = new URL("/login", origin);
-                const callbackPath = request.nextUrl.pathname + request.nextUrl.search;
-                loginUrl.searchParams.set("callbackUrl", callbackPath);
+                const nextPath = request.nextUrl.pathname + request.nextUrl.search;
+                loginUrl.searchParams.set("next", nextPath);
                 return NextResponse.redirect(loginUrl);
             }
             if (isDemo && !isDemoAdmin(session)) {

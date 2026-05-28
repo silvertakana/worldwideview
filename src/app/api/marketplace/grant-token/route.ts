@@ -55,9 +55,9 @@ export async function GET(request: NextRequest) {
             const origin = getRequestOrigin(request);
             const loginUrl = new URL("/login", origin);
 
-            // Construct a relative path for callback to ensure it redirects back to the identical host
-            const callbackPath = request.nextUrl.pathname + request.nextUrl.search;
-            loginUrl.searchParams.set("callbackUrl", callbackPath);
+            // Construct a relative path for `next` to ensure it redirects back to the identical host
+            const nextPath = request.nextUrl.pathname + request.nextUrl.search;
+            loginUrl.searchParams.set("next", nextPath);
             return NextResponse.redirect(loginUrl);
         }
 

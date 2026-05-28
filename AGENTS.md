@@ -131,6 +131,7 @@ See `.agents/context/INDEX.md` for the full navigation table. Key files:
 | `/debugging-coolify` | Troubleshoot deployed apps on Coolify via MCP/SSH | `.agents/workflows/debugging-coolify.md` |
 | `/five` | Five Whys root cause analysis | `.agents/workflows/five.md` |
 | `/stitch-to-nextjs` | Generate UI with Stitch MCP, port into Next.js | `.agents/workflows/stitch-to-nextjs.md` |
+| `/branch-cleanup` | **Post-merge teardown** — commit leftovers, delete plan file, remove worktree via worktree-manager | `.agents/skills/branch-cleanup/SKILL.md` |
 
 ---
 
@@ -153,7 +154,7 @@ See `.agents/context/INDEX.md` for the full navigation table. Key files:
 - **Commit format**: Conventional Commits (`feat:`, `fix:`, `refactor:`, `perf:`). Use `/commit` workflow.
 - **Required checks**: `pnpm test` and `pnpm build` must pass before merge.
 - **Review**: Use `/pr-review` for comprehensive multi-role review.
-- **Worktrees**: Use `git-wt switch --create <branch>` and `git-wt remove` (never `rm -rf` a worktree — orphans the PostgreSQL Docker volume).
+- **Worktrees**: Use `git-wt switch --create <branch>` and `git-wt remove` (never `rm -rf` a worktree — orphans the PostgreSQL Docker volume). After a PR merges, use `/branch-cleanup` to commit leftovers, delete the plan file, and remove the worktree in one flow.
 
 ---
 
