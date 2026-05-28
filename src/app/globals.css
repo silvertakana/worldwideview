@@ -2134,3 +2134,30 @@ body.is-dragging-bottom-panel .bottom-panel {
     gap: 12px;
     height: 100%;
 }
+
+/* ─── Legal Footer ────────────────────────────────────────── */
+.legal-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 4px var(--space-lg, 1.5rem);
+  background: rgba(9, 9, 11, 0.7);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  gap: var(--space-lg, 1.5rem);
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.legal-footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.legal-footer a:hover {
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
