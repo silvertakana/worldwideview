@@ -23,6 +23,22 @@ if (process.env.ALLOWED_DEV_ORIGIN) {
     ALLOWED_REDIRECT_HOSTS.add(process.env.ALLOWED_DEV_ORIGIN);
 }
 
+// Derive additional allowed redirect hosts from the configured marketplace URLs
+// so that custom deployment hostnames (e.g. marketplace.wwv.local) are accepted
+// without being hardcoded. A bad env value is skipped rather than crashing the module.
+for (const envUrl of [
+    process.env.NEXT_PUBLIC_MARKETPLACE_URL,
+    process.env.NEXT_PUBLIC_WWV_MARKETPLACE_URL,
+    process.env.MARKETPLACE_URL,
+]) {
+    if (!envUrl) continue;
+    try {
+        ALLOWED_REDIRECT_HOSTS.add(new URL(envUrl).hostname);
+    } catch {
+        // Ignore unparsable env values; they simply don't contribute a host.
+    }
+}
+
 function isSafeRedirect(url: string): boolean {
     try {
         const parsed = new URL(url);

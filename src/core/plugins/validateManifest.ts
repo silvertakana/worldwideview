@@ -20,6 +20,30 @@ const VALID_TYPES = ["data-layer", "extension"] as const;
 const VALID_TRUSTS = ["built-in", "verified", "unverified"] as const;
 
 /**
+ * Hostnames derived from the configured marketplace/instance URLs. A plugin
+ * bundle served from a custom deployment host (e.g. marketplace.wwv.local) must
+ * be accepted by the entry-URL allowlist below without that host being
+ * hardcoded. Computed once at module load; bad env values are skipped rather
+ * than crashing the module.
+ */
+const ENV_ALLOWED_ENTRY_HOSTS: ReadonlySet<string> = (() => {
+    const hosts = new Set<string>();
+    for (const envUrl of [
+        process.env.NEXT_PUBLIC_MARKETPLACE_URL,
+        process.env.NEXT_PUBLIC_WWV_MARKETPLACE_URL,
+        process.env.MARKETPLACE_URL,
+    ]) {
+        if (!envUrl) continue;
+        try {
+            hosts.add(new URL(envUrl).hostname);
+        } catch {
+            // Ignore unparsable env values — they simply don't contribute a host.
+        }
+    }
+    return hosts;
+})();
+
+/**
  * Validates a plugin manifest for structural integrity and security compliance.
  * This is the primary security gate for the WorldWideView plugin ecosystem.
  * It ensures that all required fields are present and, crucially, enforces
@@ -64,7 +88,20 @@ export function validateManifest(
         const isWWV = entry.includes(".worldwideview.dev");
         const isCDN = entry.startsWith("https://cdn.jsdelivr.net") || entry.startsWith("https://unpkg.com");
 
-        if (!isRelative && !isLocal && !isWWV && !isCDN) {
+        // Accept bundles served from a configured marketplace/instance host
+        // (e.g. marketplace.wwv.local) derived from env, so custom deployment
+        // hostnames work without being hardcoded.
+        let isConfiguredHost = false;
+        if (ENV_ALLOWED_ENTRY_HOSTS.size > 0) {
+            try {
+                isConfiguredHost = ENV_ALLOWED_ENTRY_HOSTS.has(new URL(entry).hostname);
+            } catch {
+                // Relative paths and other non-absolute entries aren't parseable
+                // as full URLs — they're already covered by `isRelative`.
+            }
+        }
+
+        if (!isRelative && !isLocal && !isWWV && !isCDN && !isConfiguredHost) {
             errors.push("entry URL must be a relative path, CDN, localhost, or worldwideview.dev domain");
         }
     }
