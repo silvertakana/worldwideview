@@ -23,9 +23,15 @@ async function tryMirror(urlStr: string, query: string, timeoutMs: number) {
             },
             timeout: timeoutMs,
         }, (res) => {
-            let data = "";
-            res.on("data", (chunk) => data += chunk);
+            // Collect raw Buffer chunks and decode the full body as UTF-8 once.
+            // Concatenating Buffers into a string per-chunk (`data += chunk`) decodes
+            // each chunk independently, which corrupts any multi-byte UTF-8 character
+            // (e.g. Cyrillic names) that straddles a chunk boundary — common on large
+            // Overpass responses. Buffering first keeps multi-byte sequences intact.
+            const chunks: Buffer[] = [];
+            res.on("data", (chunk: Buffer) => chunks.push(chunk));
             res.on("end", () => {
+                const data = Buffer.concat(chunks).toString("utf8");
                 resolve({
                     ok: res.statusCode && res.statusCode >= 200 && res.statusCode < 300,
                     status: res.statusCode || 500,
