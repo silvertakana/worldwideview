@@ -15,8 +15,9 @@ let manifestFetched = false;
  * Mixing the two caused the production engine to be reported as "local".
  */
 function getLocalEngineBase() {
-    if (typeof window === "undefined") return "http://localhost:5000";
-    return `${window.location.protocol}//${window.location.hostname}:5000`;
+    const port = process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT || '5000';
+    if (typeof window === "undefined") return `http://localhost:${port}`;
+    return `${window.location.protocol}//${window.location.hostname}:${port}`;
 }
 
 /**

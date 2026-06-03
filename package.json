@@ -1,6 +1,6 @@
 {
   "name": "worldwideview",
-  "version": "2.24.4",
+  "version": "2.24.5",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.4",
@@ -35,6 +35,8 @@
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.0",
     "@types/pg": "^8.20.0",
+    "@worldwideview/wwv-lib-aviation": "workspace:*",
+    "@worldwideview/wwv-lib-incidents": "workspace:*",
     "@worldwideview/wwv-plugin-sdk": "workspace:*",
     "bcryptjs": "^3.0.3",
     "cesium": "^1.141.0",
