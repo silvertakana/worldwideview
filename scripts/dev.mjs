@@ -34,6 +34,7 @@ const loadEnv = (file) => {
 };
 
 loadEnv('.env');
+loadEnv('.env.local'); // .env.local secrets take precedence and must be in process.env before workers spawn
 
 const teardownDbOnExit = process.env.WWV_TEARDOWN_DB_ON_EXIT === 'true' || process.env.WWV_TEARDOWN_DB_ON_EXIT === '1';
 

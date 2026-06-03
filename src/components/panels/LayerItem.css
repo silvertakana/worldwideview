@@ -74,6 +74,19 @@
   margin-top: 3px;
 }
 
+/* ─── Local Icon ─────────────────────────────────── */
+.layer-item__local-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.layer-item__local-icon {
+  color: var(--accent-cyan);
+  flex-shrink: 0;
+  cursor: help;
+}
+
 /* ─── Unverified Icon ────────────────────────────── */
 .layer-item__unverified-icon-wrapper {
   position: relative;

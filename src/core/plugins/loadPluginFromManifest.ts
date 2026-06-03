@@ -113,9 +113,31 @@ export async function loadPluginFromManifest(
         return await loadBundlePlugin(manifest.entry!);
     } catch (err) {
         if (err instanceof ManifestLoadError) throw err;
+        const rawMsg = err instanceof Error ? err.message : String(err);
+        // Browser throws "Failed to resolve module specifier" when the bundle imports
+        // a bare module that is not on the host pantry. Guide the developer to fix it.
+        const bareImportMatch = rawMsg.match(/Failed to resolve module specifier "([^"]+)"/);
+        if (bareImportMatch) {
+            const specifier = bareImportMatch[1];
+            console.error(
+                `[loadPluginFromManifest] ❌ BUNDLING ERROR in plugin "${manifest.id}":\n`
+                + `  Unsatisfied bare import: "${specifier}"\n`
+                + `  This module is not on the host pantry — your plugin must bundle it.\n`
+                + `  Fix: move "${specifier}" to your plugin's "dependencies" (not "peerDependencies")\n`
+                + `  and rebuild so Vite/Rollup inlines it into the bundle.\n`
+                + `  Host pantry (never bundle these — host provides them):\n`
+                + `    react, react-dom, cesium, resium, zustand,\n`
+                + `    @worldwideview/wwv-plugin-sdk, @/core/state/store,\n`
+                + `    @/core/plugins/PluginManager, @/components/video/CameraStream`,
+            );
+            throw new ManifestLoadError(
+                manifest.id,
+                `Unsatisfied bare import "${specifier}" — bundle it in dependencies, not peerDependencies. See console for the full host pantry list.`,
+            );
+        }
         throw new ManifestLoadError(
             manifest.id,
-            `Failed to load plugin: ${err instanceof Error ? err.message : String(err)}`,
+            `Failed to load plugin: ${rawMsg}`,
         );
     }
 }

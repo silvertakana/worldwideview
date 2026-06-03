@@ -11,12 +11,16 @@
 import { useState, useEffect, useCallback } from "react";
 import {
  Trash2, ExternalLink, RefreshCw, Download, PowerOff, Power,
- ShieldCheck, ShieldAlert, Shield
+ ShieldCheck, ShieldAlert, HardDrive
 } from "lucide-react";
 import { PluginIcon } from "@/components/common/PluginIcon";
+import type { ComponentType } from "react";
 import { pluginManager } from "@/core/plugins/PluginManager";
+import { useStore } from "@/core/state/store";
+import { getDisabledPluginIds, setPluginDisabled } from "@/core/plugins/pluginPreferences";
 import { trackEvent } from "@/lib/analytics";
 import { isPluginInstallEnabled } from "@/core/edition";
+import type { PluginManifest } from "@/core/plugins/PluginManifest";
 import "./PluginsTab.css";
 
 // ─── Types ──────────────────────────────────────────────────
@@ -35,9 +39,9 @@ function TrustBadge({ trust }: { trust: string }) {
     if (trust === "built-in") {
         return (
           <span className="trust-badge trust-badge--builtin">
-            <Shield size={9} />
+            <HardDrive size={9} />
             {' '}
-            Built-in
+            Local
           </span>
         );
     }
@@ -96,13 +100,9 @@ function getTrust(record: PluginRecord): string {
     }
 }
 
-function getIcon(record: PluginRecord): string {
+function getIcon(record: PluginRecord): string | ComponentType<{ size?: number; color?: string }> {
     const managed = pluginManager.getPlugin(record.pluginId);
-    if (managed) {
-        return typeof managed.plugin.icon === "string"
-            ? managed.plugin.icon
-            : "📦";
-    }
+    if (managed) return managed.plugin.icon ?? "📦";
     try {
         return JSON.parse(record.config).icon ?? "📦";
     } catch {
@@ -118,6 +118,11 @@ function getName(record: PluginRecord): string {
     } catch {
         return record.pluginId;
     }
+}
+
+function getVersion(record: PluginRecord): string {
+    if (record.version !== "built-in") return record.version;
+    return pluginManager.getManifest(record.pluginId)?.version ?? "";
 }
 
 // ─── PluginsTab ─────────────────────────────────────────────
@@ -145,7 +150,8 @@ export function PluginsTab() {
             const dbPlugins: PluginRecord[] = data.plugins ?? [];
             const dbPluginMap = new Map(dbPlugins.map((p) => [p.pluginId, p]));
 
-            // Add built-in and local plugins that don't have a DB record yet (enabled by default)
+            // Add built-in and local plugins that don't have a DB record yet
+            const disabledIds = getDisabledPluginIds();
             const allManaged = pluginManager.getAllPlugins();
             for (const managed of allManaged) {
                 if (!dbPluginMap.has(managed.plugin.id)) {
@@ -154,10 +160,15 @@ export function PluginsTab() {
                         version: "built-in",
                         config: "{}",
                         installedAt: new Date().toISOString(),
-                        enabled: true
+                        enabled: !disabledIds.has(managed.plugin.id)
                     });
                 }
             }
+
+            // Apply localStorage disabled state to all records
+            dbPlugins.forEach((p) => {
+                if (disabledIds.has(p.pluginId)) p.enabled = false;
+            });
 
             setPlugins(dbPlugins);
             if (typeof data.canManagePlugins === "boolean") {
@@ -192,32 +203,48 @@ export function PluginsTab() {
 
     const handleDisable = async (pluginId: string) => {
         setRemoving(pluginId);
-        try {
-            await fetch("/api/marketplace/disable", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ pluginId }),
-            });
-            trackEvent("plugin-disable", { plugin: pluginId });
-            setNeedsReload(true);
-        } catch {
-            setRemoving(null);
-        }
+        setPluginDisabled(pluginId, true);
+        pluginManager.disablePlugin(pluginId);
+        const state = useStore.getState();
+        state.setLayerEnabled(pluginId, false);
+        state.clearEntities(pluginId);
+        state.setEntityCount(pluginId, 0);
+        if (state.hoveredEntity?.pluginId === pluginId) state.setHoveredEntity(null, null);
+        if (state.selectedEntity?.pluginId === pluginId) state.setSelectedEntity(null);
+        setNeedsReload(true);
+        trackEvent("plugin-disable", { plugin: pluginId });
+        await loadPlugins();
+        setRemoving(null);
     };
 
     const handleEnable = async (pluginId: string) => {
         setRemoving(pluginId);
-        try {
-            await fetch("/api/marketplace/enable", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ pluginId }),
-            });
-            trackEvent("plugin-enable", { plugin: pluginId });
-            setNeedsReload(true);
-        } catch {
-            setRemoving(null);
+        setPluginDisabled(pluginId, false);
+        setNeedsReload(false);
+
+        const alreadyRegistered = pluginManager.getPlugin(pluginId);
+        if (!alreadyRegistered) {
+            // Plugin was disabled at startup — its script was never loaded.
+            // Hot-load the script so it's available; leave the layer toggle off.
+            try {
+                const res = await fetch("/api/marketplace/load");
+                if (res.ok) {
+                    const { manifests } = await res.json() as { manifests: PluginManifest[] };
+                    const manifest = manifests.find((m) => m.id === pluginId);
+                    if (manifest) {
+                        await pluginManager.loadFromManifest(manifest);
+                        useStore.getState().initLayer(pluginId, false);
+                    }
+                }
+            } catch (err) {
+                console.error("[PluginsTab] Failed to hot-load plugin:", pluginId, err);
+            }
         }
+        // Layer stays off — user controls it via the Data Layers toggle.
+
+        trackEvent("plugin-enable", { plugin: pluginId });
+        await loadPlugins();
+        setRemoving(null);
     };
 
     const handleCheckUpdates = async () => {
@@ -352,10 +379,12 @@ export function PluginsTab() {
                   <span className="plugin-item__name">
                     {getName(record)}
                   </span>
+                  {getVersion(record) && (
                   <span className="plugin-item__version">
                     v
-                    {record.version}
+                    {getVersion(record)}
                   </span>
+                  )}
                 </div>
                 <div className="plugin-item__meta">
                   <TrustBadge trust={getTrust(record)} />
@@ -415,10 +444,12 @@ export function PluginsTab() {
                       <span className="plugin-item__name">
                         {getName(record)}
                       </span>
+                      {getVersion(record) && (
                       <span className="plugin-item__version">
                         v
-                        {record.version}
+                        {getVersion(record)}
                       </span>
+                      )}
                     </div>
                     <div className="plugin-item__meta">
                       <TrustBadge trust={getTrust(record)} />

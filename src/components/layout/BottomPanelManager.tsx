@@ -15,7 +15,6 @@ export function BottomPanelManager() {
 
     const [mountedPanel, setMountedPanel] = useState<string | null>(activeBottomPanel);
 
-    const [isDragging, setIsDragging] = useState(false);
     const resizeRef = useRef<HTMLDivElement>(null);
 
     // Get all registered plugins that provide a bottom panel component
@@ -39,41 +38,27 @@ export function BottomPanelManager() {
         }
     }, [activeBottomPanel]);
 
-    // Handle mouse drag for resizing the panel
-    useEffect(() => {
-        if (!isDragging) {
-            document.body.classList.remove("is-dragging-bottom-panel");
-            return;
-        }
-
+    // Pointer-capture drag handlers — attached directly to the resize handle element.
+    // Using setPointerCapture ensures pointermove/pointerup are delivered to the
+    // element even when the pointer leaves it, which is required for webkit
+    // (without capture, webkit drops synthetic pointermove events from Playwright
+    // and from fast real-user drags that leave the element bounds).
+    const handleResizePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
         document.body.classList.add("is-dragging-bottom-panel");
+    };
 
-        const handleMove = (clientY: number) => {
-            // Calculate new height based on distance from bottom of window
-            const newHeight = window.innerHeight - clientY;
-            // Clamp between min 120px and max window height - 100px
-            const clampedHeight = Math.max(120, Math.min(newHeight, window.innerHeight - 100));
-            setBottomPanelHeight(clampedHeight);
-        };
+    const handleResizePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+        const newHeight = window.innerHeight - e.clientY;
+        const clampedHeight = Math.max(120, Math.min(newHeight, window.innerHeight - 100));
+        setBottomPanelHeight(clampedHeight);
+    };
 
-        const handleMouseMove = (e: MouseEvent) => handleMove(e.clientY);
-        const handlePointerMove = (e: PointerEvent) => handleMove(e.clientY);
-
-        const handleEnd = () => setIsDragging(false);
-
-        window.addEventListener("mousemove", handleMouseMove);
-        window.addEventListener("mouseup", handleEnd);
-        window.addEventListener("pointermove", handlePointerMove);
-        window.addEventListener("pointerup", handleEnd);
-
-        return () => {
-            window.removeEventListener("mousemove", handleMouseMove);
-            window.removeEventListener("mouseup", handleEnd);
-            window.removeEventListener("pointermove", handlePointerMove);
-            window.removeEventListener("pointerup", handleEnd);
-            document.body.classList.remove("is-dragging-bottom-panel");
-        };
-    }, [isDragging, setBottomPanelHeight]);
+    const handleResizePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+        document.body.classList.remove("is-dragging-bottom-panel");
+    };
 
     // Dynamically push sidebars up based on bottom panel height
     useEffect(() => {
@@ -182,12 +167,14 @@ export function BottomPanelManager() {
             >
                 {mountedPanel && (
                     <>
-                        <div 
-                            className="bottom-panel-resize-handle" 
+                        <div
+                            className="bottom-panel-resize-handle"
                             data-testid="bottom-panel-resize-handle"
                             ref={resizeRef}
-                            onMouseDown={() => setIsDragging(true)}
-                            onPointerDown={() => setIsDragging(true)}
+                            onPointerDown={handleResizePointerDown}
+                            onPointerMove={handleResizePointerMove}
+                            onPointerUp={handleResizePointerUp}
+                            onPointerCancel={handleResizePointerUp}
                         >
                             <div className="resize-grip" />
                         </div>

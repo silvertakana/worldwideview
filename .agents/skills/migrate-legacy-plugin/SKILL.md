@@ -129,7 +129,7 @@ Ensure the plugin's `package.json` follows the modern format:
     "capabilities": ["layer"]
   },
   "peerDependencies": {
-    "@worldwideview/wwv-plugin-sdk": "^1.4.10"
+    "@worldwideview/wwv-plugin-sdk": "workspace:*"
   },
   "scripts": {
     "build": "vite build"
@@ -141,7 +141,7 @@ Key differences from legacy:
 - `"main"` points to `dist/frontend.mjs` (not `src/index.ts`)
 - Has `"type": "module"` and `"module"` field
 - Uses `peerDependencies` (not `dependencies`) for SDK
-- Uses `"workspace:*"` only for libraries that must be linked locally (e.g., `wwv-lib-incidents`)
+- Workspace libs bundled per-plugin (e.g., `wwv-lib-incidents`, `wwv-lib-aviation`) go under `dependencies`, NOT `peerDependencies` — the host does not provide them
 
 ## Step 4: Ensure Vite Build Config
 

@@ -249,7 +249,7 @@ export function ApiKeysTab() {
         <div style={{ marginBottom: "var(--space-lg)" }}>
           <div style={sectionHeaderStyle}>
             <Key size={10} style={{ marginRight: 4, verticalAlign: "middle" }} />
-            Your API Keys
+            Service Keys
           </div>
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: "var(--space-md)" }}>
             Optional — if set, your key is used instead of the shared default.

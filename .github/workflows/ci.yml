@@ -1,10 +1,26 @@
 name: CI
 
+# CLI-only changes are covered by cli.yml; skip the full app suite for them.
+# Docs/agent-rules/issue-template changes also skip the suite.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "packages/wwv-cli/**"
+      - ".agents/**"
+      - "**/*.md"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".github/gc/**"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "packages/wwv-cli/**"
+      - ".agents/**"
+      - "**/*.md"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".github/gc/**"
 
 jobs:
   # Non-blocking dependency audit. Surfaces high / critical vulnerabilities

@@ -1,0 +1,36 @@
+name: CLI
+
+# Scoped to the plugin CLI package only. Heavy app workflows (ci.yml,
+# playwright.yml, docker-publish.yml, ...) exclude this path, so a CLI-only
+# change runs just this fast build + test instead of the full suite.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/wwv-cli/**"
+      - ".github/workflows/cli.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/wwv-cli/**"
+      - ".github/workflows/cli.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & Test CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # `build` runs tsc — this also type-checks the CLI source.
+      - run: pnpm --filter @worldwideview/wwv-cli build
+      # Integration tests spawn the built CLI and assert the scaffolded tree.
+      - run: pnpm --filter @worldwideview/wwv-cli test

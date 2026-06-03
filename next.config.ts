@@ -30,13 +30,13 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://unpkg.com https://cdn.jsdelivr.net https://analytics.worldwideview.dev https://va.vercel-scripts.com https://pagead2.googlesyndication.com https://adservice.google.com https://www.googletagservices.com https://ep2.adtrafficquality.google https://static.cloudflareinsights.com",
               "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
               "font-src 'self' fonts.gstatic.com",
-              // Camera streams load images/MJPEG from arbitrary IPs worldwide — http: https: required
+              // Camera streams load images/MJPEG from arbitrary IPs worldwide -- http: https: required
               "img-src 'self' data: blob: http: https:",
               // Camera HLS streams and external data fetches need arbitrary origins
               "connect-src 'self' http: https: ws: wss:",
               // HLS video streams from arbitrary camera sources
               "media-src 'self' blob: http: https:",
-              // Embeddable video platforms for camera iframes — needs to support arbitrary domains
+              // Embeddable video platforms for camera iframes -- needs to support arbitrary domains
               "frame-src 'self' http: https: blob:",
               "worker-src 'self' blob:",
               "frame-ancestors 'none'",
@@ -67,10 +67,10 @@ const nextConfig: NextConfig = {
             // Proxy routes serve arbitrary external HTML (YouTube embeds, camera feeds, etc.).
             // Restricting style-src/script-src here would break the proxied content since we
             // cannot predict which CDN domains it loads from. The meaningful security boundary
-            // is frame-ancestors 'self' — only our own origin can embed these proxy responses.
+            // is frame-ancestors 'self' -- only our own origin can embed these proxy responses.
             value: "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; frame-ancestors 'self'",
           },
-          // Remove the DENY override — SAMEORIGIN allows our app to frame this response
+          // Remove the DENY override -- SAMEORIGIN allows our app to frame this response
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

@@ -9,6 +9,7 @@ const config = [
             "out/**",
             "src/generated/**",
             "public/cesium/**",
+            "public/plugins-local/**",
             "packages/*/dist/**",
             ".worktrees/**",
             "local-scripts/**",

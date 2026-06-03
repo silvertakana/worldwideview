@@ -62,7 +62,10 @@ export default async function proxy(req: NextRequest) {
         return res;
     }
 
-    // Static assets, API routes, data files — always pass through
+    // Static assets, API routes, data files — always pass through.
+    // Strip any client-supplied x-tenant-subdomain on /api/* before forwarding,
+    // then re-inject only the server-resolved value (H2: tenant-header spoof prevention).
+    // A forged header must never reach the Prisma tenant extension.
     if (
         path.startsWith("/_next")
         || path.startsWith("/api")
@@ -71,6 +74,7 @@ export default async function proxy(req: NextRequest) {
         || path.includes(".")
     ) {
         const res = NextResponse.next();
+        res.headers.delete("x-tenant-subdomain");
         if (tenantSubdomain) res.headers.set("x-tenant-subdomain", tenantSubdomain);
         return res;
     }

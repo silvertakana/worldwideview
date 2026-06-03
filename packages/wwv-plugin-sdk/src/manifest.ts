@@ -64,6 +64,32 @@ export interface RenderingConfig {
 }
 
 /**
+ * @interface McpToolDeclaration
+ * @description A single MCP tool declared by a plugin.
+ * The server uses this declaration to compose tools/list and dispatch
+ * invocations to the browser. The server NEVER executes plugin tools
+ * directly (v3 frontend-relay design).
+ *
+ * INVARIANT: No `execution` field. The browser (WorldPlugin.executeMcpTool)
+ * is the sole execution site.
+ */
+export interface McpToolDeclaration {
+    /** Safe identifier. Only [a-zA-Z0-9_-] characters are allowed. */
+    name: string;
+    /** Human-readable description for MCP clients. */
+    description: string;
+    /**
+     * Minimal JSON-schema-like object describing the tool arguments.
+     * Supports: type, properties, required, enum (per validateToolArgs).
+     */
+    inputSchema: {
+        type: "object";
+        properties?: Record<string, { type: string; enum?: string[] }>;
+        required?: string[];
+    };
+}
+
+/**
  * @interface PluginManifest
  * @description The structural definition of a plugin.json file.
  */
@@ -87,4 +113,16 @@ export interface PluginManifest {
     entry?: string;
     assets?: string[];
     extends?: string[];
+    /**
+     * MCP tools this plugin declares (v3 frontend-relay design).
+     * The server reads these to compose tools/list and dispatch invocations
+     * to the browser. Execution always happens in the browser via
+     * WorldPlugin.executeMcpTool.
+     */
+    mcpTools?: McpToolDeclaration[];
+    /**
+     * Opaque capability tags for MCP clients (e.g. "point-layer", "camera-control").
+     * Must be a string array when present.
+     */
+    mcpCapabilities?: string[];
 }

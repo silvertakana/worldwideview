@@ -1,10 +1,15 @@
 name: Test Setup Scripts
 
+# CLI-only changes are covered by cli.yml; skip setup-script tests for them.
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - "packages/wwv-cli/**"
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - "packages/wwv-cli/**"
 
 permissions:
   contents: read

@@ -1,9 +1,14 @@
 /**
  * @file viteGlobals.ts
- * @description Build-time utility for externalizing shared dependencies.
- * Provides a Vite plugin that maps core libraries (React, Cesium, Zustand) 
- * to the host application's global context, ensuring singleton stability 
- * for dynamic plugin bundles.
+ * @description Build-time utility for externalizing shared host dependencies.
+ * Provides a Vite plugin that maps 10 core libraries to globalThis.__WWV_HOST__,
+ * ensuring singleton stability for dynamically loaded plugin bundles:
+ *   react, react-dom, react/jsx-runtime, cesium, resium, zustand,
+ *   @worldwideview/wwv-plugin-sdk, @/core/state/store,
+ *   @/core/plugins/PluginManager, @/components/video/CameraStream
+ *
+ * Everything else (e.g. wwv-lib-aviation, wwv-lib-incidents, recharts) must be
+ * bundled per-plugin — the host does not provide small utility libs.
  * @module @worldwideview/wwv-plugin-sdk
  */
 
@@ -29,7 +34,7 @@ export function wwvPluginGlobals(): any {
         "react/jsx-runtime": "jsxRuntime",
         "cesium": "Cesium",
         "resium": "Resium",
-        // zustand is also part of WWVHostGlobals or maybe not? Wait. I should check hostGlobals.ts!
+        // zustand is handled in resolveId separately (not in HOST_MAPPINGS) — see load() below
         "@worldwideview/wwv-plugin-sdk": "WWVPluginSDK",
         "@/core/state/store": "useStore",
         "@/core/plugins/PluginManager": "pluginManager",
@@ -94,7 +99,6 @@ export function wwvPluginGlobals(): any {
                     export const { WorldPlugin, PluginManifest, createSvgIconUrl, DEFAULT_ICON_SIZE } = SDK;
                 `;
             }
-            // If zustand is required, wait, is Zustand in host globals?
             if (originalId === "zustand") {
                 return `
                     if (!globalThis.__WWV_HOST__.zustand) {

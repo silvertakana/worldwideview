@@ -52,6 +52,38 @@ export class MyPlugin implements WorldPlugin {
 }
 ```
 
+## Property Tag Helpers
+
+Wrap entity property values with these helpers so the WorldWideView Intel panel renders them as rich UI elements instead of plain text.
+
+```ts
+import { dtProp, urlProp, imageProp, videoProp } from "@worldwideview/wwv-plugin-sdk";
+```
+
+| Helper | Wraps | Panel renders as |
+|---|---|---|
+| `dtProp(iso: string \| null)` | ISO 8601 date string | Expandable datetime row — local time collapsed, UTC + relative time expanded |
+| `urlProp(href: string \| null)` | Any URL | Clickable link with external-link icon |
+| `imageProp(src: string \| null)` | Image URL | Inline thumbnail |
+| `videoProp(href: string \| null)` | Video/stream URL | "Watch" link with play icon |
+
+All helpers are **null-safe**: passing `null`, `undefined`, or `""` returns `null`, which the panel skips cleanly.
+
+```ts
+// In your entity mapper:
+properties: {
+    last_seen:   dtProp(item.timestamp ?? null),
+    source_url:  urlProp(item.url ?? null),
+    preview:     imageProp(item.image_url ?? null),
+    live_stream: videoProp(item.stream ?? null),
+    // Plain values need no wrapper
+    name: item.name,
+    severity: item.severity,
+}
+```
+
+Values without a tag prefix fall back to plain-text rendering, so existing plugins continue to work unchanged.
+
 ## Changelog
 
 - **v1.0.3** — Added README with core interfaces and usage docs.

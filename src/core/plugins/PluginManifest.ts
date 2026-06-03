@@ -13,4 +13,5 @@ export type {
     FieldMapping,
     RenderingConfig,
     PluginManifest,
+    McpToolDeclaration,
 } from "@worldwideview/wwv-plugin-sdk";

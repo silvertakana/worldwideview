@@ -1,9 +1,32 @@
 name: Playwright Tests
+# Only run E2E tests when application code actually changes.
+# Doc/agent-rules/config-only changes skip the full 3-browser matrix.
+# Skipped workflow runs satisfy GitHub required status checks (neutral pass).
 on:
   push:
     branches: [ main, master ]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "prisma/**"
+      - "public/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "next.config.ts"
+      - "playwright.config.ts"
+      - ".github/workflows/playwright.yml"
   pull_request:
     branches: [ main, master ]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "prisma/**"
+      - "public/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "next.config.ts"
+      - "playwright.config.ts"
+      - ".github/workflows/playwright.yml"
 permissions:
   contents: read
 jobs:

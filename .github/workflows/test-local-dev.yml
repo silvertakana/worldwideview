@@ -3,62 +3,128 @@ name: Test Local Dev Environment
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "packages/wwv-cli/**"
   pull_request:
     branches: [main]
+    paths:
+      - "scripts/setup.mjs"
+      - ".env.example"
+      - "package.json"
+      - ".github/workflows/test-local-dev.yml"
+
+permissions:
+  contents: read
 
 jobs:
-  test-dev:
-    name: Test Local Dev Startup
-    runs-on: ubuntu-latest
-    env:
-      NEXT_PUBLIC_WWV_EDITION: local
-      AUTH_SECRET: ci-placeholder-secret-not-used-in-tests
-      ENCRYPTION_MASTER_KEY: ci-placeholder-key-not-used-in-tests
+  # Runs on all 3 OS — tests the actual pnpm setup command users run
+  test-setup:
+    name: pnpm setup (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v6
-      
-      - uses: pnpm/action-setup@v6
-      
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-          
-      - name: Create coolify docker network
-        # Needed because docker-compose.yml references external coolify network
-        run: docker network create coolify || true
-        
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        
-      - name: Setup environment
+
+      - name: Run pnpm setup
+        run: pnpm run setup
+
+      - name: Verify .env.local was created (not .env)
+        shell: bash
         run: |
-          cp .env.example .env
-          sed -i 's/^ENCRYPTION_MASTER_KEY=.*/ENCRYPTION_MASTER_KEY=ci-placeholder-key-not-used-in-tests/' .env
-          sed -i 's/^AUTH_SECRET=.*/AUTH_SECRET=ci-placeholder-secret-not-used-in-tests/' .env
-        
-      - name: Test predev setup
-        # Tests that Docker DB boots, port mappings work, Prisma pushes schema, and plugins sync
-        run: pnpm run predev
-        
-      - name: Test dev server startup
-        run: |
-          # Start the dev server in the background
-          pnpm run dev &
-          DEV_PID=$!
-          
-          echo "Waiting for Next.js to respond on port 3000..."
-          
-          # Wait up to 120 seconds for the dev server to return a response
-          timeout 120 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 5; done'
-          
-          # Check if the process is still running
-          if ! kill -0 $DEV_PID 2>/dev/null; then
-            echo "Dev server crashed or failed to start within timeout!"
+          if [ ! -f .env.local ]; then
+            echo "FAIL: .env.local was not created by pnpm setup"
             exit 1
           fi
-          
-          echo "Dev server started successfully!"
-          
-          # Graceful shutdown
+          echo "PASS: .env.local exists"
+
+          # Regression guard: AUTH_SECRET must NOT be in the git-tracked .env
+          if [ -f .env ] && grep -qE "^AUTH_SECRET=[a-f0-9]{10}" .env; then
+            echo "FAIL: AUTH_SECRET was written to .env (git-tracked) instead of .env.local"
+            exit 1
+          fi
+          echo "PASS: .env does not contain a generated AUTH_SECRET"
+
+      - name: Verify AUTH_SECRET generated correctly
+        shell: bash
+        run: |
+          if ! grep -qE "^AUTH_SECRET=[a-f0-9]{64}$" .env.local; then
+            echo "FAIL: AUTH_SECRET missing or wrong format in .env.local"
+            grep "AUTH_SECRET" .env.local || echo "(AUTH_SECRET line not found)"
+            exit 1
+          fi
+          echo "PASS: AUTH_SECRET is 64-char hex"
+
+      - name: Verify ENCRYPTION_MASTER_KEY generated correctly
+        shell: bash
+        run: |
+          if ! grep -qE "^ENCRYPTION_MASTER_KEY=[a-f0-9]{64}$" .env.local; then
+            echo "FAIL: ENCRYPTION_MASTER_KEY missing or wrong format in .env.local"
+            exit 1
+          fi
+          echo "PASS: ENCRYPTION_MASTER_KEY is 64-char hex"
+
+      - name: Verify idempotency (re-run must skip gracefully)
+        shell: bash
+        run: |
+          output=$(pnpm run setup 2>&1)
+          echo "$output"
+          if echo "$output" | grep -q "already exists"; then
+            echo "PASS: second run skipped gracefully"
+          else
+            echo "FAIL: re-run did not skip"
+            exit 1
+          fi
+
+  # Linux-only: full predev + dev server smoke test (requires Docker)
+  test-dev:
+    name: pnpm dev smoke test (ubuntu)
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_WWV_EDITION: local
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Create coolify docker network
+        run: docker network create coolify || true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run pnpm setup
+        run: pnpm run setup
+
+      - name: Run predev (Docker DB + Prisma + Cesium + plugins)
+        run: pnpm run predev
+
+      - name: Start dev server and wait for ready
+        run: |
+          pnpm run dev &
+          DEV_PID=$!
+          echo "Waiting for Next.js on :3000 (up to 120s)..."
+          timeout 120 bash -c 'until curl -sf http://localhost:3000 > /dev/null; do sleep 5; done'
+          if ! kill -0 $DEV_PID 2>/dev/null; then
+            echo "FAIL: dev server crashed before responding"
+            exit 1
+          fi
+          echo "PASS: dev server responded on :3000"
           kill $DEV_PID

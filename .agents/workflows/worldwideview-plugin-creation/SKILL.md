@@ -202,7 +202,40 @@ import { Plane } from "lucide-react";
 const iconUrl = createSvgIconUrl(Plane, { color: "#3b82f6" });
 ```
 
-### 1.5 Registration (3 Paths)
+### 1.5 Property Tag Helpers
+
+Use these SDK helpers to wrap property values so the Intel panel renders them richly. Without the tag prefix, the panel falls back to plain text.
+
+```ts
+import { dtProp, urlProp, imageProp, videoProp } from "@worldwideview/wwv-plugin-sdk";
+```
+
+| Helper | Tag format stored | Panel renders as |
+|---|---|---|
+| `dtProp(iso)` | `"datetime:2026-06-01T05:00:00Z"` | Expandable row: local time (collapsed), UTC + relative (expanded) |
+| `urlProp(href)` | `"url:https://..."` | Clickable link with external icon |
+| `imageProp(src)` | `"image:https://..."` | Inline thumbnail |
+| `videoProp(href)` | `"video:https://..."` | "Watch" link with play icon |
+
+All four helpers return `null` for empty, `null`, or `undefined` input — safe to call unconditionally.
+
+**Usage pattern:**
+```ts
+properties: {
+    // dates — pass ISO 8601 strings
+    updated_at: dtProp(item.updated_at ?? null),
+    // URLs
+    source_url: urlProp(item.url ?? null),
+    // images and video
+    preview: imageProp(item.image_url ?? null),
+    stream: videoProp(item.video_url ?? null),
+    // plain values — no helper needed
+    name: item.name,
+    count: item.count,
+}
+```
+
+### 1.6 Registration (3 Paths)
 
 **A. Built-in (monorepo package):**
 
@@ -224,7 +257,7 @@ await pluginManager.registerPlugin(plugin);
 **C. Dynamic import (runtime):**
 For user-imported GeoJSON layers, call `pluginManager.loadFromManifest(manifest)` directly.
 
-### 1.6 Build Configuration (Core Monorepo Packages Only)
+### 1.7 Build Configuration (Core Monorepo Packages Only)
 
 If you decide to manually move a plugin from the local sandbox into the core `packages/` directory, you must manually add it to the build pipeline:
 
@@ -652,6 +685,10 @@ Categories are **lowercase**: `"aviation"` not `"Aviation"`, `"natural-disaster"
 - [ ] **Frontend:** Added path alias in `tsconfig.json`
 - [ ] **Frontend:** Registered via `pluginRegistry` + `pluginManager` in `AppShell.tsx`
 - [ ] **Frontend:** `renderEntity()` doesn't mix point/billboard properties
+- [ ] **Frontend:** Date/time fields wrapped with `dtProp()`
+- [ ] **Frontend:** External links wrapped with `urlProp()`
+- [ ] **Frontend:** Image URLs wrapped with `imageProp()`
+- [ ] **Frontend:** Video/stream URLs wrapped with `videoProp()`
 - [ ] **Engine:** Seeder file in `wwv-seeders/src/seeders/<name>.ts` (or private repo)
 - [ ] **Engine:** `registerSeeder({ name })` matches frontend plugin `id`
 - [ ] **Engine:** Calls `setLiveSnapshot()` with correct plugin ID key

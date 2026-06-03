@@ -1,9 +1,12 @@
 /* eslint-disable no-console */
 /**
  * @file hostGlobals.ts
- * @description Exposes essential host libraries (React, Cesium, SDK, etc.) on `globalThis`.
- * This allows dynamically loaded ES module plugins to share the host's dependencies
- * rather than bundling their own copies, preventing version conflicts and reducing bundle size.
+ * @description Exposes 10 core libraries and utilities on globalThis.__WWV_HOST__:
+ * React, ReactDOM, react/jsx-runtime, Cesium, Resium, Zustand, WWVPluginSDK,
+ * useStore, pluginManager, and CameraStream. Plugins reference these instead of
+ * bundling their own copies, preventing version conflicts and reducing bundle size.
+ * Small utility libs (e.g. wwv-lib-aviation, wwv-lib-incidents) are NOT on the
+ * pantry and must be bundled per-plugin via the plugin's own dependencies.
  */
 
 import React from "react";
@@ -36,9 +39,13 @@ declare global {
 }
 
 /**
- * Injects the required libraries and configuration onto the global scope.
+ * Injects 10 core libraries onto globalThis.__WWV_HOST__:
+ * React, ReactDOM, jsxRuntime, Cesium, Resium, Zustand, WWVPluginSDK,
+ * useStore, pluginManager, and CameraStream.
+ * Also sets globalThis.__WWV_ENGINE_URL__ and globalThis.__WWV_WS_ENGINE_URL__
+ * from NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL or falls back to the cloud engine.
  *
- * This must be called exactly once during the application's initial boot sequence,
+ * Must be called exactly once during the application's initial boot sequence,
  * before any dynamic plugins are imported.
  *
  * @returns A promise that resolves when all globals have been injected.

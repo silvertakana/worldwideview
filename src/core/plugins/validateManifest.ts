@@ -19,6 +19,9 @@ export interface ValidationResult {
 const VALID_TYPES = ["data-layer", "extension"] as const;
 const VALID_TRUSTS = ["built-in", "verified", "unverified"] as const;
 
+/** Regex for a safe MCP tool name identifier: only [a-zA-Z0-9_-]. */
+const SAFE_TOOL_NAME = /^[a-zA-Z0-9_-]+$/;
+
 /**
  * Hostnames derived from the configured marketplace/instance URLs. A plugin
  * bundle served from a custom deployment host (e.g. marketplace.wwv.local) must
@@ -110,6 +113,53 @@ export function validateManifest(
     if (manifest.type === "extension") {
         if (!Array.isArray(manifest.extends) || manifest.extends.length === 0) {
             errors.push("Extension plugins require a non-empty extends array");
+        }
+    }
+
+    // MAN-03: mcpCapabilities must be string[] when present
+    if ("mcpCapabilities" in manifest && manifest.mcpCapabilities !== undefined) {
+        if (!Array.isArray(manifest.mcpCapabilities)) {
+            errors.push("mcpCapabilities must be a string array when present");
+        } else {
+            const allStrings = (manifest.mcpCapabilities as unknown[]).every(
+                (c) => typeof c === "string",
+            );
+            if (!allStrings) {
+                errors.push("mcpCapabilities must contain only strings");
+            }
+        }
+    }
+
+    // MAN-01 / MAN-02 / MAN-06 / MAN-07 / MAN-08: validate mcpTools entries
+    if ("mcpTools" in manifest && manifest.mcpTools !== undefined) {
+        if (!Array.isArray(manifest.mcpTools)) {
+            errors.push("mcpTools must be an array when present");
+        } else {
+            (manifest.mcpTools as unknown as Record<string, unknown>[]).forEach((tool, idx) => {
+                const prefix = `mcpTools[${idx}]`;
+
+                // MAN-06: name must be present
+                if (typeof tool.name !== "string" || !(tool.name as string).trim()) {
+                    errors.push(`${prefix}: mcpTools entry missing required field: name`);
+                } else {
+                    // MAN-02: name must be a safe identifier
+                    if (!SAFE_TOOL_NAME.test(tool.name as string)) {
+                        errors.push(
+                            `${prefix}: mcpTools tool name "${tool.name}" contains invalid identifier characters; only [a-zA-Z0-9_-] are allowed`,
+                        );
+                    }
+                }
+
+                // MAN-07: description must be present
+                if (typeof tool.description !== "string" || !(tool.description as string).trim()) {
+                    errors.push(`${prefix}: mcpTools entry missing required field: description`);
+                }
+
+                // MAN-08: inputSchema must be present and be an object
+                if (tool.inputSchema === undefined || tool.inputSchema === null || typeof tool.inputSchema !== "object") {
+                    errors.push(`${prefix}: mcpTools entry missing required field: inputSchema`);
+                }
+            });
         }
     }
 

@@ -1,0 +1,148 @@
+{
+  "_comment": "PORTABLE TEMPLATE. Copy to .agents/settings.json (gitignored, machine-local) and adjust if needed. Hook script paths use $CLAUDE_PROJECT_DIR so they resolve per-worktree on any machine/repo location. The bash interpreter path assumes a standard Windows Git install (C:/Program Files/Git/bin/bash.exe); if yours differs, override it in your local .agents/settings.json. The referenced gsd-* hooks are provided by the GSD install (gitignored), not this repo, so run the GSD installer first.",
+  "permissions": {
+    "allow": [
+      "Bash(cymbal *)",
+      "Bash(gsd-sdk query *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "$CLAUDE_PROJECT_DIR/.claude/hooks/gsd-check-update.js"
+            ]
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/Program Files/Git/bin/bash.exe",
+            "args": [
+              "$CLAUDE_PROJECT_DIR/.claude/hooks/gsd-session-state.sh"
+            ]
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/Program Files/Git/bin/bash.exe",
+            "args": [
+              "$CLAUDE_PROJECT_DIR/.claude/hooks/planning-sync.sh"
+            ]
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "$CLAUDE_PROJECT_DIR/.claude/hooks/gsd-context-monitor.js"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "$CLAUDE_PROJECT_DIR/.claude/hooks/gsd-read-injection-scanner.js"
+            ],
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/Program Files/Git/bin/bash.exe",
+            "args": [
+              "$CLAUDE_PROJECT_DIR/.claude/hooks/gsd-phase-boundary.sh"
+            ],
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "$CLAUDE_PROJECT_DIR/.claude/hooks/gsd-prompt-guard.js"
+            ],
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "$CLAUDE_PROJECT_DIR/.claude/hooks/gsd-read-guard.js"
+            ],
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "$CLAUDE_PROJECT_DIR/.claude/hooks/gsd-workflow-guard.js"
+            ],
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/Program Files/Git/bin/bash.exe",
+            "args": [
+              "$CLAUDE_PROJECT_DIR/.claude/hooks/gsd-validate-commit.sh"
+            ],
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "stripe@claude-plugins-official": false,
+    "frontend-design@claude-code-plugins": false
+  },
+  "worktree": {
+    "bgIsolation": "none"
+  }
+}

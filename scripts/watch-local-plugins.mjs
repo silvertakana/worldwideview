@@ -66,8 +66,9 @@ async function runSync() {
             : `${changed.slice(0, 3).join(", ")} (+${changed.length - 3} more)`;
     console.log(`\n[watch] 🔄 Change detected in: ${label}`);
     try {
-        await syncAll();
-        console.log(`[watch] ✨ Hot-reload ready`);
+        const stats = await syncAll();
+        const summary = `${stats.built} rebuilt, ${stats.cached} cached${stats.failed ? `, ${stats.failed} failed` : ""}`;
+        console.log(`[watch] ✨ Hot-reload ready (${summary})`);
     } catch (err) {
         console.error(`[watch] Sync failed:`, err);
     } finally {
@@ -82,13 +83,14 @@ async function runSync() {
 // Initial sync
 console.log(`[watch] Starting initial sync...`);
 isSyncing = true;
-syncAll().then(() => {
+syncAll().then((stats) => {
     isSyncing = false;
     if (pendingSync) {
         pendingSync = false;
         runSync("pending changes").catch(console.error);
     }
-    console.log(`[watch] Watching ${LOCAL_PLUGINS_DIR} for changes...`);
+    const summary = `${stats.built} built, ${stats.cached} cached${stats.failed ? `, ${stats.failed} failed` : ""}`;
+    console.log(`[watch] Initial sync done (${summary}). Watching ${LOCAL_PLUGINS_DIR} for changes...`);
     fs.watch(LOCAL_PLUGINS_DIR, { recursive: true }, handleFileChange);
 }).catch(err => {
     isSyncing = false;

@@ -1,52 +1,37 @@
 #!/usr/bin/env bash
-# Syncs .planning git branch to match the active worldwideview branch.
+# Per-worktree .planning isolation check (non-destructive).
 # Called by: Claude Code SessionStart hook, git post-checkout hook.
-# Convention: .planning branch name == worldwideview branch name.
-# Falls back to main if no matching .planning branch exists.
+#
+# New model (2026-05): each worktree owns a REAL, isolated .planning directory
+# (NOT a junction to the shared C:/dev/wwv/.planning). The shared root holds only
+# cross-feature docs (ROADMAP, MILESTONES, research, PROJECT, REQUIREMENTS).
+#
+# This hook NO LONGER switches .planning git branches (the old shared-repo model,
+# which could not isolate simultaneous sessions). It only WARNS when the current
+# worktree's .planning has not been isolated yet, so leftover junctions get noticed
+# and converted via worktree-bootstrap Step 5. It deliberately does NOT mutate the
+# filesystem: a SessionStart hook must not do risky junction surgery unattended.
 
-PLANNING_DIR="C:/dev/wwv/.planning"
-
-# Exit silently if .planning repo doesn't exist on this machine
-if [ ! -d "$PLANNING_DIR/.git" ]; then
-  exit 0
-fi
-
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-
-# Exit if not in a git repo or in detached HEAD state
-if [ -z "$CURRENT_BRANCH" ] || [ "$CURRENT_BRANCH" = "HEAD" ]; then
-  exit 0
-fi
-
-# Only sync if CWD is worldwideview or a worktree of it
+# Only run inside the worldwideview repo or a worktree of it.
 GIT_COMMON=$(git rev-parse --git-common-dir 2>/dev/null)
 if ! echo "$GIT_COMMON" | grep -qi "worldwideview"; then
   exit 0
 fi
 
-# Skip if .planning is already on the right branch
-PLANNING_CURRENT=$(git -C "$PLANNING_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-if [ "$PLANNING_CURRENT" = "$CURRENT_BRANCH" ]; then
+TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null)
+[ -z "$TOPLEVEL" ] && exit 0
+
+PLANNING="$TOPLEVEL/.planning"
+
+# No .planning yet: worktree-bootstrap Step 5 will create it. Stay quiet.
+[ -e "$PLANNING" ] || exit 0
+
+# Isolated worktrees have a WORKSPACE.md manifest. If present, all good.
+if [ -f "$PLANNING/WORKSPACE.md" ]; then
   exit 0
 fi
 
-# Skip if .planning has uncommitted changes (don't clobber in-progress work)
-if ! git -C "$PLANNING_DIR" diff --quiet 2>/dev/null || ! git -C "$PLANNING_DIR" diff --cached --quiet 2>/dev/null; then
-  echo "{\"continue\":true,\"suppressOutput\":false,\"message\":\"[planning-sync] Skipping: .planning has uncommitted changes\"}"
-  exit 0
-fi
-
-# Switch to matching branch, or fall back to main
-if git -C "$PLANNING_DIR" branch --list "$CURRENT_BRANCH" | grep -q .; then
-  if git -C "$PLANNING_DIR" checkout "$CURRENT_BRANCH" --quiet 2>/dev/null; then
-    echo "{\"continue\":true,\"suppressOutput\":false,\"message\":\"[planning-sync] .planning -> $CURRENT_BRANCH\"}"
-  else
-    echo "{\"continue\":true,\"suppressOutput\":false,\"message\":\"[planning-sync] WARNING: checkout of '$CURRENT_BRANCH' failed\"}"
-  fi
-else
-  if git -C "$PLANNING_DIR" checkout main --quiet 2>/dev/null; then
-    echo "{\"continue\":true,\"suppressOutput\":false,\"message\":\"[planning-sync] No branch '$CURRENT_BRANCH' in .planning; staying on main\"}"
-  else
-    echo "{\"continue\":true,\"suppressOutput\":false,\"message\":\"[planning-sync] WARNING: fallback checkout to main failed\"}"
-  fi
-fi
+# .planning exists but has no WORKSPACE.md: likely a leftover junction to the shared
+# root (or an un-bootstrapped dir). Warn only.
+echo "{\"continue\":true,\"suppressOutput\":false,\"message\":\"[planning-sync] This worktree's .planning is not isolated (no WORKSPACE.md). If it is a junction to the shared root, phases may bleed across worktrees. Isolate it via worktree-bootstrap Step 5.\"}"
+exit 0

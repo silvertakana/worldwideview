@@ -23,6 +23,24 @@ node_modules/
 /.agents/context/
 /.agents/settings.local.json
 
+# GSD tool install (vendored global tool, reinstall via the GSD installer; not committed)
+/.agents/get-shit-done/
+/.agents/commands/gsd/
+/.agents/agents/gsd-*.md
+/.agents/hooks/gsd-*
+/.agents/worktrees/
+/.agents/.gsd-profile
+/.agents/gsd-file-manifest.json
+/.agents/gsd-install-state.json
+/.agents/gsd-migration-journal/
+/.agents/scheduled_tasks.lock
+/.agents/VERSION
+/.agents/package.json
+# machine-specific (absolute hook paths); portable version TODO before open-source handoff
+/.agents/settings.json
+# stray Windows redirect artifact
+/nul
+
 # planning (private repo: github.com/silvertakana/wwv-planning)
 .planning/
 
@@ -139,3 +157,13 @@ worldwideview.code-workspace
 /playwright-report/
 /test-results/
 /playwright/.auth/
+/.playwright-mcp/
+
+# MCP client config -- contains a live API key, never commit
+.mcp.json
+
+# Root-level UAT / debug scratch artifacts
+/uat-*.png
+/step*.png
+/mcp-test-*.png
+/api-keys-response.json

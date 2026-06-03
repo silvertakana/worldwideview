@@ -9,6 +9,8 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
+import crypto from "crypto";
+import { execSync } from "child_process";
 import { build } from "vite";
 import { fileURLToPath } from "url";
 
@@ -26,6 +28,14 @@ const EXTERNAL_GLOBALS = {
     "cesium": "globalThis.__WWV_HOST__.Cesium",
     "resium": "globalThis.__WWV_HOST__.Resium",
 };
+
+// Hash of the build config — written to dist/.config-hash after each build.
+// isBuildFresh() checks this so any EXTERNAL_GLOBALS change forces a full rebuild.
+const CONFIG_HASH = crypto
+    .createHash("sha1")
+    .update(JSON.stringify(EXTERNAL_GLOBALS))
+    .digest("hex")
+    .slice(0, 12);
 
 /**
  * Synthetic host-module exports for `@/` imports that plugins use to access
@@ -204,9 +214,53 @@ function latestSourceMtime(rootDir) {
 function isBuildFresh(pluginDir) {
     const distFile = path.join(pluginDir, "dist", "frontend.mjs");
     if (!fs.existsSync(distFile)) return false;
+    // If the build config (EXTERNAL_GLOBALS) changed since this dist was built, rebuild.
+    const hashFile = path.join(pluginDir, "dist", ".config-hash");
+    if (!fs.existsSync(hashFile) || fs.readFileSync(hashFile, "utf8").trim() !== CONFIG_HASH) {
+        return false;
+    }
     const distMtime = fs.statSync(distFile).mtimeMs;
     const sourceMtime = latestSourceMtime(pluginDir);
     return distMtime >= sourceMtime;
+}
+
+/**
+ * @function ensurePluginDeps
+ * @description Installs a plugin's bundleable dependencies (regular `dependencies`,
+ * excluding `workspace:*` refs which are mocked by EXTERNAL_GLOBALS) into the
+ * plugin's own `node_modules/` so Rolldown can resolve them during the build.
+ *
+ * Uses a clean temp-dir package.json to avoid npm choking on `workspace:*`
+ * entries in the plugin's real devDependencies / peerDependencies.
+ */
+async function ensurePluginDeps(pluginDir, pkg) {
+    const bundleable = Object.entries(pkg.dependencies ?? {})
+        .filter(([, v]) => !String(v).startsWith("workspace:"));
+    if (!bundleable.length) return;
+
+    const missing = bundleable.filter(([dep]) =>
+        !fs.existsSync(path.join(pluginDir, "node_modules", dep))
+    );
+    if (!missing.length) return;
+
+    const tmpDir = path.join(os.tmpdir(), `wwv-plugin-deps-${path.basename(pluginDir)}`);
+    fs.mkdirSync(tmpDir, { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, "package.json"), JSON.stringify({
+        name: "tmp", version: "0.0.0",
+        dependencies: Object.fromEntries(bundleable),
+    }));
+
+    try {
+        execSync("npm install --no-fund --ignore-scripts --no-package-lock", {
+            cwd: tmpDir, stdio: "pipe",
+        });
+        const nmSrc = path.join(tmpDir, "node_modules");
+        const nmDest = path.join(pluginDir, "node_modules");
+        fs.mkdirSync(nmDest, { recursive: true });
+        fs.cpSync(nmSrc, nmDest, { recursive: true, force: false, errorOnExist: false });
+    } catch (err) {
+        console.warn(`[sync] ⚠ Could not auto-install deps for ${path.basename(pluginDir)}: ${err.message}`);
+    }
 }
 
 /**
@@ -222,6 +276,8 @@ export async function buildPlugin({ dir, manifest, pkg, pluginDir }) {
         return "fresh";
     }
 
+    await ensurePluginDeps(pluginDir, pkg ?? {});
+
     const entryFile = resolvePluginEntry(pluginDir, manifest, pkg ?? {});
 
     if (!entryFile) {
@@ -229,14 +285,23 @@ export async function buildPlugin({ dir, manifest, pkg, pluginDir }) {
         return false;
     }
 
+    console.log(`[sync] 🔨 Building ${manifest.id || dir}...`);
     try {
         await build({
-            root: pluginDir,
+            // Use workspace ROOT so Rolldown resolves node_modules (recharts, gridstack,
+            // etc.) from the workspace install, not the plugin's isolated directory.
+            // Entry and outDir are absolute paths so the output still lands in the
+            // plugin's own dist/ regardless of what root is set to.
+            root: ROOT,
             // Disable auto-loading the plugin's own vite.config.ts — the local
             // plugins' node_modules may be symlinked to a different repo's SDK
             // build (worktree scenario), which breaks config loading. The sync
             // script provides all necessary config inline.
             configFile: false,
+            // Do NOT copy the repo's public/ dir into each plugin's dist/. With root=ROOT,
+            // Vite would otherwise mirror the entire public/ tree (cesium, plugins-local, etc.)
+            // into every plugin outDir — ~43MB per plugin, ~1.4GB total of pure local-dev bloat.
+            publicDir: false,
             logLevel: "warn",
             plugins: [wwvHostRedirectPlugin()],
             build: {
@@ -245,16 +310,28 @@ export async function buildPlugin({ dir, manifest, pkg, pluginDir }) {
                     formats: ["es"],
                     fileName: () => "frontend.mjs",
                 },
-                outDir: "dist",
+                outDir: path.join(pluginDir, "dist"),
                 emptyOutDir: true,
                 rollupOptions: {
                     external: Object.keys(EXTERNAL_GLOBALS),
                     output: {
                         globals: EXTERNAL_GLOBALS,
-                        codeSplitting: false,
+                        inlineDynamicImports: true,
                         banner: '"use client";',
                     },
-                    plugins: [(await import("rollup-plugin-external-globals")).default(EXTERNAL_GLOBALS)],
+                    plugins: [
+                        {
+                            name: 'replace-process-env',
+                            transform(code) {
+                                if (!code.includes('process.env.NODE_ENV')) return null;
+                                return {
+                                    code: code.replace(/process\.env\.NODE_ENV/g, '"production"'),
+                                    map: null,
+                                };
+                            },
+                        },
+                        (await import("rollup-plugin-external-globals")).default(EXTERNAL_GLOBALS),
+                    ],
                     onwarn(warning, warn) {
                         if (warning.code === 'MODULE_LEVEL_DIRECTIVE' && warning.message.includes('"use client"')) {
                             return;
@@ -269,6 +346,8 @@ export async function buildPlugin({ dir, manifest, pkg, pluginDir }) {
                 sourcemap: true,
             },
         });
+        // Record config hash so future runs can detect EXTERNAL_GLOBALS changes.
+        fs.writeFileSync(path.join(pluginDir, "dist", ".config-hash"), CONFIG_HASH);
         return true;
     } catch (err) {
         console.error(`[sync] ❌ Build failed for ${dir}:`, err.message);
@@ -291,6 +370,13 @@ export function syncToPublic({ dir, manifest, pluginDir }, { quiet = false } = {
     fs.copyFileSync(distFile, path.join(targetDir, "frontend.mjs"));
     if (fs.existsSync(distMap)) {
         fs.copyFileSync(distMap, path.join(targetDir, "frontend.mjs.map"));
+    }
+    // Copy any CSS files emitted alongside the bundle (e.g. from gridstack imports)
+    const distDir = path.join(pluginDir, "dist");
+    for (const f of fs.readdirSync(distDir)) {
+        if (f.endsWith(".css")) {
+            fs.copyFileSync(path.join(distDir, f), path.join(targetDir, f));
+        }
     }
 
     // Generate plugin.json manifest for the marketplace load route
@@ -360,7 +446,7 @@ export async function syncAll() {
     if (plugins.length === 0) {
         console.log("[sync] No local plugins found.");
         cleanStale([]);
-        return;
+        return { built: 0, cached: 0, failed: 0 };
     }
 
     const concurrency = Math.max(2, Math.min(plugins.length, Math.ceil(os.cpus().length / 2)));
@@ -369,17 +455,20 @@ export async function syncAll() {
 
     let freshCount = 0;
     let builtCount = 0;
+    let failedCount = 0;
     await runWithConcurrency(plugins, concurrency, async (plugin) => {
         const result = await buildPlugin(plugin);
         if (result === "fresh") freshCount++;
         else if (result) builtCount++;
+        else failedCount++;
         if (result) syncToPublic(plugin, { quiet: result === "fresh" });
     });
 
-    console.log(`[sync] Done in ${((Date.now() - started) / 1000).toFixed(1)}s (${builtCount} built, ${freshCount} cached)`);
+    console.log(`[sync] Done in ${((Date.now() - started) / 1000).toFixed(1)}s (${builtCount} built, ${freshCount} cached${failedCount ? `, ${failedCount} failed` : ""})`);
 
     const activeIds = plugins.map(p => p.manifest.id || p.dir.replace("wwv-plugin-", ""));
     cleanStale(activeIds);
+    return { built: builtCount, cached: freshCount, failed: failedCount };
 }
 
 // Run directly: node scripts/sync-local-plugins.mjs

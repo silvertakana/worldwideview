@@ -1,10 +1,33 @@
 name: Docker Image CI
 
+# Only rebuild the image when files that affect the final container change.
+# Doc/agent-rules/test-only changes skip the expensive multi-stage build.
+# Skipped workflow runs satisfy GitHub required status checks (neutral pass).
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "prisma/**"
+      - "packages/**"
+      - "scripts/**"
+      - "Dockerfile"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "next.config.ts"
+      - ".github/workflows/docker-publish.yml"
   pull_request:
     branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "prisma/**"
+      - "packages/**"
+      - "scripts/**"
+      - "Dockerfile"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "next.config.ts"
+      - ".github/workflows/docker-publish.yml"
 
 env:
   REGISTRY: ghcr.io

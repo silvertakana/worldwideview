@@ -38,8 +38,9 @@ export function PluginIcon({ icon, size = 18, color }: PluginIconProps) {
     if (typeof icon === "string") {
         const Resolved = icons[icon as keyof typeof icons] as LucideIcon | undefined;
         if (Resolved) return <Resolved size={size} color={color} />;
-        // Treat as emoji or text fallback
-        return <span>{icon}</span>;
+        // Emoji: render as text. Unresolved ASCII icon name: render fallback so stale names don't leak as text.
+        if (/[^\x00-\x7F]/.test(icon)) return <span>{icon}</span>;
+        return <FallbackIcon size={size} />;
     }
 
     const IconComponent = icon;

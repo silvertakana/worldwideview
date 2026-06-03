@@ -13,10 +13,10 @@ import { resolve } from "path";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const EXAMPLE = resolve(ROOT, ".env.example");
-const TARGET = resolve(ROOT, ".env");
+const TARGET = resolve(ROOT, ".env.local");
 
 if (existsSync(TARGET)) {
-    console.log("✅ .env already exists — skipping setup.");
+    console.log("✅ .env.local already exists — skipping setup.");
     console.log("   Delete it and re-run if you want to regenerate.");
     process.exit(0);
 }
@@ -56,6 +56,6 @@ content = content
 
 writeFileSync(TARGET, content, "utf8");
 
-console.log("✅ .env created with generated AUTH_SECRET and ENCRYPTION_MASTER_KEY.");
+console.log("✅ .env.local created with generated AUTH_SECRET and ENCRYPTION_MASTER_KEY.");
 console.log("   Fill in any optional API keys (Cesium, Bing, OpenSky, etc.)");
-console.log("   then run: npm run dev");
+console.log("   then run: pnpm dev");

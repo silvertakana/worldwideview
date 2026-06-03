@@ -7,7 +7,7 @@
  * @module src/components/panels
  */
 
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, Wrench } from "lucide-react";
 import { PluginIcon } from "@/components/common/PluginIcon";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { pluginManager } from "@/core/plugins/PluginManager";
@@ -27,29 +27,46 @@ const CATEGORY_LABELS: Record<string, string> = {
     custom: "Custom",
 };
 
-// ─── Trust Helpers ──────────────────────────────────────────
+// ─── Source / Trust Helpers ─────────────────────────────────
 
-type TrustTier = "built-in" | "verified" | "unverified";
-
-function getTrust(pluginId: string): TrustTier {
+function isLocalPlugin(pluginId: string): boolean {
     const manifest = pluginManager.getManifest(pluginId);
-    return manifest?.trust ?? "unverified";
+    if (!manifest) return true;
+    const entry = manifest.entry ?? "";
+    return entry.startsWith("/plugins-local/") || entry.startsWith("http://localhost") || entry.startsWith("http://127.0.0.1");
 }
 
-function TrustIcon({ trust }: { trust: TrustTier }) {
-    if (trust !== "unverified") return null;
+function TrustIcon({ pluginId, pluginName }: { pluginId: string; pluginName: string }) {
+    if (isLocalPlugin(pluginId)) {
+        return (
+          <Tooltip content={`Local plugin: ${pluginName}`}>
+            <span className="layer-item__local-icon-wrapper">
+              <Wrench
+                size={11}
+                className="layer-item__local-icon"
+                aria-label="Local plugin"
+              />
+            </span>
+          </Tooltip>
+        );
+    }
 
-    return (
-      <Tooltip content="Unverified plugin, use at your own risk">
-        <span className="layer-item__unverified-icon-wrapper">
-          <ShieldAlert
-            size={12}
-            className="layer-item__unverified-icon"
-            aria-label="Unverified plugin"
-          />
-        </span>
-      </Tooltip>
-    );
+    const manifest = pluginManager.getManifest(pluginId);
+    if (manifest?.trust === "unverified") {
+        return (
+          <Tooltip content="Unverified plugin, use at your own risk">
+            <span className="layer-item__unverified-icon-wrapper">
+              <ShieldAlert
+                size={12}
+                className="layer-item__unverified-icon"
+                aria-label="Unverified plugin"
+              />
+            </span>
+          </Tooltip>
+        );
+    }
+
+    return null;
 }
 
 // ─── LayerItem Component ────────────────────────────────────
@@ -88,8 +105,6 @@ export function LayerItem({
     onToggle,
     onSelect,
 }: LayerItemProps) {
-    const trust = getTrust(plugin.id);
-
     return (
       <div
         className={`layer-item ${isSelected ? "layer-item--selected" : ""}`}
@@ -102,7 +117,7 @@ export function LayerItem({
         <div className="layer-item__info">
           <div className="layer-item__header">
             <span className="layer-item__name">{plugin.name}</span>
-            <TrustIcon trust={trust} />
+            <TrustIcon pluginId={plugin.id} pluginName={plugin.name} />
           </div>
           <div className="layer-item__desc">{plugin.description}</div>
           <div className="layer-item__footer">

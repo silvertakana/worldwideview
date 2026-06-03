@@ -24,28 +24,36 @@
 }
 
 .geojson-btn--primary {
-    background: linear-gradient(135deg, #00e5ff 0%, #00b0ff 100%);
-    color: #0a0e17;
+    background: var(--bg-glass);
+    color: var(--text-primary);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
 }
 
 .geojson-btn--primary:hover:not(:disabled) {
-    box-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+    background: var(--bg-glass-hover);
+    box-shadow: var(--glass-shadow-inner);
     transform: translateY(-1px);
+}
+
+.geojson-btn--primary:active:not(:disabled) {
+    transform: scale(0.98);
 }
 
 .geojson-btn--primary:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .geojson-btn--secondary {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--bg-glass);
     color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--glass-border-inner);
 }
 
 .geojson-btn--secondary:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.14);
+    background: var(--bg-glass-hover);
 }
 
 .geojson-btn--secondary:disabled {
@@ -87,7 +95,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--glass-border-inner);
 }
 
 .geojson-modal__header h3 {
@@ -117,7 +125,7 @@
     display: flex;
     gap: 4px;
     padding: 12px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--glass-border-inner);
 }
 
 .geojson-tab {
@@ -136,13 +144,13 @@
 }
 
 .geojson-tab:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--accent-rgb), 0.06);
     color: var(--text-primary);
 }
 
 .geojson-tab--active {
-    background: rgba(0, 229, 255, 0.12);
-    color: #00e5ff;
+    background: rgba(var(--accent-rgb), 0.12);
+    color: var(--accent-cyan);
 }
 
 /* ─── Body ────────────────────────────────────────────────── */
@@ -163,7 +171,7 @@
     justify-content: center;
     gap: 8px;
     padding: 32px 20px;
-    border: 2px dashed rgba(255, 255, 255, 0.15);
+    border: 2px dashed rgba(var(--accent-rgb), 0.2);
     border-radius: 10px;
     color: var(--text-muted);
     cursor: pointer;
@@ -173,9 +181,9 @@
 
 .geojson-dropzone:hover,
 .geojson-dropzone--active {
-    border-color: #00e5ff;
-    background: rgba(0, 229, 255, 0.04);
-    color: #00e5ff;
+    border-color: var(--accent-cyan);
+    background: rgba(var(--accent-rgb), 0.04);
+    color: var(--accent-cyan);
 }
 
 .geojson-dropzone p {
@@ -194,9 +202,9 @@
     width: 100%;
     min-height: 140px;
     padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border-inner);
     border-radius: 8px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--bg-secondary);
     color: var(--text-primary);
     font-family: "JetBrains Mono", "Fira Code", monospace;
     font-size: 12px;
@@ -206,7 +214,7 @@
 
 .geojson-textarea:focus {
     outline: none;
-    border-color: #00e5ff;
+    border-color: var(--accent-cyan);
 }
 
 /* ─── Inputs ──────────────────────────────────────────────── */
@@ -214,9 +222,9 @@
 .geojson-input {
     width: 100%;
     padding: 8px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border-inner);
     border-radius: 6px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--bg-secondary);
     color: var(--text-primary);
     font-size: 13px;
     transition: border-color 0.2s;
@@ -224,7 +232,7 @@
 
 .geojson-input:focus {
     outline: none;
-    border-color: #00e5ff;
+    border-color: var(--accent-cyan);
 }
 
 .geojson-input::placeholder {
@@ -245,7 +253,7 @@
     width: 32px;
     height: 32px;
     padding: 0;
-    border: 2px solid rgba(255, 255, 255, 0.15);
+    border: 2px solid var(--glass-border-inner);
     border-radius: 6px;
     background: none;
     cursor: pointer;
@@ -256,8 +264,8 @@
 .geojson-preview {
     padding: 10px 14px;
     border-radius: 8px;
-    background: rgba(0, 229, 255, 0.06);
-    border: 1px solid rgba(0, 229, 255, 0.15);
+    background: rgba(var(--accent-rgb), 0.06);
+    border: 1px solid rgba(var(--accent-rgb), 0.15);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -299,7 +307,7 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 12px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--glass-border-inner);
 }
 
 /* ─── Layer List ──────────────────────────────────────────── */

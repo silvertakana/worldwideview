@@ -21,6 +21,7 @@ import Image from "next/image";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 import { SearchBar } from "./SearchBar";
 import { ApiKeysTab } from "./ApiKeysTab";
+import { PersonalApiKeysSection } from "./PersonalApiKeysSection";
 import "./timeSelect.css";
 
 const REGIONS = [
@@ -433,7 +434,7 @@ export function Header() {
                                         marginBottom: "16px",
                                     }}
               >
-                <h2 style={{ margin: 0 }}>API Keys</h2>
+                <h2 style={{ margin: 0 }}>Keys &amp; Access</h2>
 
                 <button
                   type="button"
@@ -445,6 +446,12 @@ export function Header() {
               </div>
 
               <ApiKeysTab />
+              {!isDemo && (
+                <>
+                  <hr style={{ border: "none", borderTop: "1px solid var(--border-subtle)", margin: "var(--space-lg) 0" }} />
+                  <PersonalApiKeysSection />
+                </>
+              )}
             </div>
           </div>
                     )}

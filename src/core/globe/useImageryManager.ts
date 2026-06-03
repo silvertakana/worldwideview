@@ -7,6 +7,7 @@ import {
     Cesium3DTileset,
     Cesium3DTileStyle,
     Terrain,
+    UrlTemplateImageryProvider,
     createOsmBuildingsAsync
 } from "cesium";
 import { useStore } from "@/core/state/store";
@@ -18,6 +19,7 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
     const fallbackLayerId = useStore((s) => s.mapConfig.fallbackLayerId);
     const sceneMode = useStore((s) => s.mapConfig.sceneMode);
     const showOsmBuildings = useStore((s) => s.mapConfig.showOsmBuildings);
+    const weatherOverlay = useStore((s) => s.mapConfig.weatherOverlay);
 
     // Resolve runtime truth:
     const activeLayerId = fallbackLayerId || baseLayerId;
@@ -25,6 +27,7 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
     const currentImageryLayerRef = useRef<ImageryLayer | null>(null);
     const osmBuildingsRef = useRef<Cesium3DTileset | null>(null);
     const terrainActiveRef = useRef(false);
+    const weatherLayerRef = useRef<ImageryLayer | null>(null);
 
     // 1. Manage Scene Mode (2D / 3D / Columbus)
     useEffect(() => {
@@ -163,6 +166,38 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
             osmBuildingsRef.current = null;
         }
     }, [viewer, viewerReady, isGoogle3D, is3DMode, showOsmBuildings]);
+
+    // 4. Manage Weather Overlay (semi-transparent tile layer on top of base imagery)
+    useEffect(() => {
+        if (!viewer || !viewerReady || viewer.isDestroyed()) return;
+        if (!weatherOverlay) return;
+
+        let layer: ImageryLayer | null = null;
+
+        try {
+            const provider = new UrlTemplateImageryProvider({
+                url: `/api/weather/tile/{z}/{x}/{y}?layer=${weatherOverlay}`,
+            });
+            layer = new ImageryLayer(provider, { alpha: 0.6 });
+        } catch (err) {
+            console.warn("[useImageryManager] Failed to load weather overlay:", err);
+            return;
+        }
+
+        if (viewer.isDestroyed()) return;
+
+        viewer.imageryLayers.add(layer);
+        weatherLayerRef.current = layer;
+
+        return () => {
+            if (layer && !viewer.isDestroyed()) {
+                viewer.imageryLayers.remove(layer);
+                if (weatherLayerRef.current === layer) {
+                    weatherLayerRef.current = null;
+                }
+            }
+        };
+    }, [viewer, viewerReady, weatherOverlay]);
 
     return {
         isGoogle3D

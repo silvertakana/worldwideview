@@ -36,6 +36,7 @@ import { FeedbackDialog } from "@/components/common/FeedbackDialog";
 import { isDemo } from "@/core/edition";
 
 import { injectHostGlobals } from "@/core/plugins/hostGlobals";
+import { getDisabledPluginIds } from "@/core/plugins/pluginPreferences";
 import { initLogCatcher } from "@/lib/logCatcher";
 import { MobileCameraStats } from "./MobileCameraStats";
 import { MobileHudBar } from "./MobileHudBar";
@@ -88,17 +89,7 @@ export function AppShell() {
             await injectHostGlobals();
             setHostReady(true);
 
-            // Fetch disabled built-in plugins before registration
-            let disabledIds = new Set<string>();
-            try {
-                const res = await fetch("/api/marketplace/disabled-builtins");
-                if (res.ok) {
-                    const data = await res.json();
-                    disabledIds = new Set<string>(data.disabledIds ?? []);
-                }
-            } catch {
-                // Non-critical — load all built-ins if endpoint fails
-            }
+            const disabledIds = getDisabledPluginIds();
 
             // Setup demo defaults
             const demoDefaultPlugins = new Set<string>();

@@ -148,6 +148,38 @@ WorldWideView is distributed across several specialized repositories:
 5. **`worldwideview-web`**: Marketing and landing site.
 6. **[`szski/wwv-mcp`](https://github.com/szski/wwv-mcp)**: Reference MCP server for driving the globe from an LLM agent (Claude Code, Claude Desktop, Cursor, Cline, …) via the [Agent Bus](docs/agent-bus.md). Contributor-hosted today; may move under the project org.
 
+## MCP (Model Context Protocol)
+
+WorldWideView exposes a built-in MCP endpoint at `/api/mcp`. Any MCP-compatible client (Claude Desktop, Claude Code, Cursor, Cline, etc.) can connect to it directly without a separate sidecar server.
+
+### Authentication
+
+Generate an API key from the `/setup` page (Settings > API Keys). Pass it as a Bearer token in every request.
+
+### Client config
+
+Add the following block to your MCP client configuration. Replace `https://your-host` with the actual origin where WorldWideView is running (e.g. `http://localhost:3000` for local development).
+
+```json
+{
+  "mcpServers": {
+    "worldwideview": {
+      "type": "http",
+      "url": "https://your-host/api/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-api-key>"
+      }
+    }
+  }
+}
+```
+
+### Plugin tools and tools/list
+
+Plugin tools (tools contributed by loaded plugins) appear in `tools/list` only after the browser tab that is running WorldWideView has loaded the relevant plugin and published its catalog. The server snapshots the catalog at the moment each request arrives.
+
+Because the server is stateless and per-request, it cannot push `list_changed` notifications proactively. If you load a new plugin in the browser after your MCP client has already called `tools/list`, call `tools/list` again to pick up the new tools.
+
 ## Development & Workflow
 
 - **Branching & Commits:** We strictly enforce [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`). Every commit should utilize our semantic versioning `[/commit]` workflow.

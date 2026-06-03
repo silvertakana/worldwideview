@@ -11,6 +11,8 @@ import { ImageProperty } from './ImageProperty';
 import { UrlProperty } from './UrlProperty';
 import { LongTextProperty } from './LongTextProperty';
 import { IntelPropertyRow } from './IntelPropertyRow';
+import { DatetimePropertyRow } from "./DatetimePropertyRow";
+import { VideoProperty } from "./VideoProperty";
 
 /**
  * @interface DynamicPropertiesRenderProps
@@ -36,6 +38,52 @@ export function DynamicPropertiesRender({ entity, classNamePrefix = "intel-panel
         {displayProps.map(([key, value]) => {
                 const label = key.replace(/_/g, " ");
                 const stringValue = String(value);
+
+                // Tagged dispatch - explicit type prefix, checked before heuristics
+                if (typeof value === "string") {
+                    if (value.startsWith("datetime:")) {
+                        return (
+                            <DatetimePropertyRow
+                                key={key}
+                                label={label}
+                                iso={value.slice(9)}
+                                classNamePrefix={classNamePrefix}
+                            />
+                        );
+                    }
+                    if (value.startsWith("url:")) {
+                        return (
+                            <UrlProperty
+                                key={key}
+                                label={label}
+                                url={value.slice(4)}
+                                classNamePrefix={classNamePrefix}
+                            />
+                        );
+                    }
+                    if (value.startsWith("image:")) {
+                        return (
+                            <ImageProperty
+                                key={key}
+                                label={label}
+                                imageUrl={value.slice(6)}
+                                entityId={entity.id}
+                                entityLabel={entity.label ?? ""}
+                                classNamePrefix={classNamePrefix}
+                            />
+                        );
+                    }
+                    if (value.startsWith("video:")) {
+                        return (
+                            <VideoProperty
+                                key={key}
+                                label={label}
+                                href={value.slice(6)}
+                                classNamePrefix={classNamePrefix}
+                            />
+                        );
+                    }
+                }
 
                 // Identify property type
                 const isImage = typeof value === "string" && key.toLowerCase().includes("image") && /^https?:\/\//i.test(value);

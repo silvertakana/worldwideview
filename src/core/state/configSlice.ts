@@ -63,6 +63,8 @@ export interface MapConfig {
     sceneMode: 1 | 2 | 3;
     /** Whether OSM 3D Buildings are shown on non-Google imagery layers. */
     showOsmBuildings: boolean;
+    /** Active weather overlay layer ID, or null if disabled. */
+    weatherOverlay: string | null;
 }
 
 /**
@@ -111,6 +113,7 @@ export const createConfigSlice: StateCreator<AppStore, [], [], ConfigSlice> = (s
         fallbackLayerId: null,
         sceneMode: 3,
         showOsmBuildings: true,
+        weatherOverlay: null,
     },
     updateDataConfig: (config) => set((state) => ({
             dataConfig: { ...state.dataConfig, ...config },

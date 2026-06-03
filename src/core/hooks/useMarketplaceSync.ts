@@ -10,6 +10,7 @@ import {
   getApprovedUnverifiedIds,
   approveUnverifiedPlugin,
 } from "@/lib/marketplace/trustedPlugins";
+import { getDisabledPluginIds } from "@/core/plugins/pluginPreferences";
 import { isDemo } from "@/core/edition";
 
 /**
@@ -66,6 +67,7 @@ export function useMarketplaceSync(hostReady: boolean) {
 
     async function loadManifest(manifest: PluginManifest) {
         if (!manifest.id || loadedIds.current.has(manifest.id)) return;
+        if (getDisabledPluginIds().has(manifest.id)) return;
         if (pluginManager.getPlugin(manifest.id)) {
             loadedIds.current.add(manifest.id);
             return;

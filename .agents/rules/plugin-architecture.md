@@ -72,6 +72,23 @@ mapWebsocketPayload(payload: any, existingEntities: GeoEntity[]): GeoEntity[]
 - `existingEntities` — current entities in the store for this plugin (use for incremental updates)
 - Must return a **complete replacement** `GeoEntity[]` (not a diff)
 
+### Property Tag Helpers
+
+Always wrap typed property values with the SDK helpers so the Intel panel renders them richly:
+
+```ts
+import { dtProp, urlProp, imageProp, videoProp } from "@worldwideview/wwv-plugin-sdk";
+
+properties: {
+    updated: dtProp(item.updated_at ?? null),   // renders as expandable datetime row
+    source:  urlProp(item.source_url ?? null),   // renders as clickable link
+    preview: imageProp(item.image ?? null),      // renders as inline thumbnail
+    stream:  videoProp(item.video_url ?? null),  // renders as "Watch" link
+}
+```
+
+All helpers are null-safe and return `null` for empty input. Plain string/number values that don't need rich rendering need no wrapper.
+
 ---
 
 ## Plugin Architectures (Manifest Formats)
@@ -486,3 +503,96 @@ Seeders in `wwv-data-engine/src/seeders/` provide the backend data.
 - **Cron Seeder**: Uses `registerSeeder({ name: "plugin-id", cron: "..." })` and pushes to Redis via `setLiveSnapshot()`.
 - **Init Seeder**: High-frequency or persistent websockets via `init: () => void`.
 - **Constraint**: Seeder `name` MUST exactly match the frontend plugin `id`. Do not bundle workspace dependencies like `ws` or `zod` into the seeder `dist`.
+
+---
+
+## Plugin Bundle Footguns
+
+### 1. CSP blocks CDN stylesheets -- use `?inline` + `<style>` injection
+
+The host app's `style-src` policy includes `'unsafe-inline'` but does **not** include external CDN origins like `unpkg.com` or `cdn.jsdelivr.net`. Any plugin that loads CSS via a runtime `<link href="https://unpkg.com/...">` will have that stylesheet **silently blocked** by the browser -- no console error, just broken styling and broken layout (elements fall back to `position: static`).
+
+**Wrong:**
+```typescript
+// In useEffect:
+link.href = "https://unpkg.com/gridstack@11/dist/gridstack.min.css";
+document.head.appendChild(link);
+```
+
+**Correct -- bundle CSS as inline string and inject via `<style>` tag:**
+```typescript
+import gridstackCSS from "gridstack/dist/gridstack.min.css?inline";
+
+// In useEffect:
+const style = document.createElement("style");
+style.textContent = gridstackCSS;
+document.head.appendChild(style);
+```
+
+Vite's `?inline` suffix imports CSS as a plain string. The `<style>` tag is allowed by `'unsafe-inline'`. This is the only CSP-safe pattern for third-party CSS in plugin bundles.
+
+---
+
+### 2. `inlineDynamicImports: true` -- not `codeSplitting: false`
+
+`codeSplitting: false` is **not a valid Rollup option**. It is silently ignored, and Rollup will still produce code-split chunks. The host can only load a single `frontend.mjs` -- any sibling chunk (e.g. `gridstack-XXXXX.js`) will 404.
+
+**Wrong:**
+```js
+rollupOptions: {
+  output: { codeSplitting: false }  // silently ignored
+}
+```
+
+**Correct:**
+```js
+rollupOptions: {
+  output: { inlineDynamicImports: true }  // prevents all code splitting
+}
+```
+
+Both `vite.config.ts` (for manual `pnpm build`) and `scripts/sync-local-plugins.mjs` must use `inlineDynamicImports: true`.
+
+---
+
+### 3. `process.env.NODE_ENV` in CJS deps -- needs inline Rollup transform, not Vite `define`
+
+CJS dependencies like `recharts`, `prop-types`, and `react-is` reference `process.env.NODE_ENV` inside their CommonJS module body. Vite's top-level `define: { 'process.env.NODE_ENV': '"production"' }` does NOT reach inside Rollup's `__commonJSMin()` wrappers -- those run after the `define` substitution phase.
+
+**Wrong:**
+```js
+// In vite.config.ts or sync-local-plugins.mjs:
+define: { 'process.env.NODE_ENV': '"production"' }  // doesn't reach CJS wrappers
+```
+
+**Correct -- add an inline Rollup transform plugin inside `rollupOptions.plugins`:**
+```js
+rollupOptions: {
+  plugins: [
+    {
+      name: 'replace-process-env',
+      transform(code) {
+        if (!code.includes('process.env.NODE_ENV')) return null;
+        return {
+          code: code.replace(/process\.env\.NODE_ENV/g, '"production"'),
+          map: null,
+        };
+      },
+    },
+    // ... other plugins
+  ]
+}
+```
+
+This plugin runs on each module source before Rollup wraps it, so it correctly replaces `process.env.NODE_ENV` in CJS sub-dependencies.
+
+---
+
+### 4. Yahoo Finance and third-party data APIs -- CORS from the browser
+
+Yahoo Finance's chart API (`query1.finance.yahoo.com`) does **not** return `Access-Control-Allow-Origin` headers. Direct `fetch()` from a plugin bundle running in the browser will be CORS-blocked.
+
+**Architectural preference (in order):**
+1. **Best:** Have the wwv-data-engine seeder fetch the data server-side and stream it to the plugin via WebSocket -- no CORS issue.
+2. **Acceptable stopgap:** Use `corsproxy.io` relay: `fetch('https://corsproxy.io/?url=' + encodeURIComponent(apiUrl))`. This adds a third-party relay dependency.
+3. **Do not do:** Assume browser `fetch()` to third-party financial APIs will work -- most do not send CORS headers.
