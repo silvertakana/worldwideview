@@ -9,7 +9,7 @@
     "test-worktree": "node scripts/test-worktree.mjs",
     "clean": "node -e \"const fs=require('fs');fs.rmSync('.next',{recursive:true,force:true})\"",
     "dev": "node scripts/dev.mjs",
-    "dev:all": "concurrently -n \"dev,backends\" -c \"magenta,blue\" \"pnpm dev\" \"pnpm dev:backends\"",
+    "dev:all": "node scripts/dev-all.mjs",
     "dev:backends": "docker compose --profile engine up wwv-data-engine wwv-redis",
     "dev:plugins": "node scripts/watch-local-plugins.mjs",
     "predev": "node scripts/boot-db.mjs && npx dotenv-cli -c -- node scripts/safe-db-push.mjs && npx prisma generate && node scripts/copy-cesium.mjs && node scripts/sync-local-plugins.mjs",
