@@ -63,7 +63,7 @@ const { result, commands } = concurrently(
   ],
   {
     prefix: 'name',
-    killOthers: ['failure', 'success'],
+    killOthersOn: ['failure', 'success'],
   }
 );
 

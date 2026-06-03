@@ -71,6 +71,7 @@ services:
       - REDIS_URL=redis://wwv-redis:6379
       - SEEDERS_DIR=/app/seeders
       - DB_PATH=/app/data/engine.db
+      - WWV_SKIP_WS_AUTH=true
     depends_on:
       wwv-redis:
         condition: service_healthy
