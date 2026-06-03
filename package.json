@@ -1,6 +1,6 @@
 {
   "name": "worldwideview",
-  "version": "2.24.5",
+  "version": "2.25.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.4",
@@ -122,4 +122,3 @@
     "pnpm": ">=9.0.0"
   }
 }
-
