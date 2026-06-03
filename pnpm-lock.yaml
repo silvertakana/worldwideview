@@ -45,6 +45,12 @@ importers:
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
+      '@worldwideview/wwv-lib-aviation':
+        specifier: workspace:*
+        version: link:packages/wwv-lib-aviation
+      '@worldwideview/wwv-lib-incidents':
+        specifier: workspace:*
+        version: link:packages/wwv-lib-incidents
       '@worldwideview/wwv-plugin-sdk':
         specifier: workspace:*
         version: link:packages/wwv-plugin-sdk
