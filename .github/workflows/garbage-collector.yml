@@ -72,7 +72,7 @@ jobs:
             --days-comment=${{ env.DAYS_COMMENT }}
 
       - name: Upload findings artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gc-findings-${{ github.run_id }}
           path: gc-findings.json

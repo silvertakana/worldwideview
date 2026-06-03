@@ -71,7 +71,7 @@ jobs:
         NO_AT_BRIDGE: ${{ matrix.browser == 'firefox' && '1' || '0' }}
       run: pnpm test:e2e --project=${{ matrix.browser }}
       
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       if: ${{ !cancelled() }}
       with:
         name: playwright-report-${{ matrix.browser }}
