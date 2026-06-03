@@ -40,7 +40,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - uses: pnpm/action-setup@v3
+    - uses: pnpm/action-setup@v6
       with:
         version: 9.15.4
 
