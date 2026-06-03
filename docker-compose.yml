@@ -63,7 +63,7 @@ services:
       if [ -d \"$$SEEDERS_DIR/private\" ]; then cd $$SEEDERS_DIR/private && CI=true pnpm install --ignore-scripts && pnpm -r rebuild better-sqlite3 esbuild; fi &&
       cd /app && node dist/server.js"
     ports:
-      - "5000:5000"
+      - "${WWV_ENGINE_HOST_PORT:-5000}:5000"
     volumes:
       - ./local-seeders:/app/seeders
     environment:
