@@ -466,7 +466,7 @@ export async function syncAll() {
         return { built: 0, cached: 0, failed: 0 };
     }
 
-    const concurrency = Math.max(2, Math.min(plugins.length, Math.ceil(os.cpus().length / 2)));
+    const concurrency = Math.max(1, Math.min(plugins.length, 4)); // Reduced from CPUs/2 to avoid Rolldown native crash (STATUS_STACK_BUFFER_OVERRUN)
     console.log(`[sync] Found ${plugins.length} local plugin(s); building with concurrency=${concurrency}`);
     const started = Date.now();
 
