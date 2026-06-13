@@ -1,6 +1,7 @@
 services:
   wwv:
     image: ghcr.io/silvertakana/worldwideview:latest
+    pull_policy: always
     ports:
       - "3000:3000"
     volumes:
@@ -56,8 +57,6 @@ services:
       wwv-redis:
         condition: service_healthy
     restart: unless-stopped
-    profiles:
-      - engine
 
   wwv-redis:
     image: redis:7-alpine
@@ -66,8 +65,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-    profiles:
-      - engine
 
 volumes:
   wwv-data:

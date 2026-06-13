@@ -22,20 +22,20 @@ echo "📦 Downloading docker-compose.yml..."
 curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/silvertakana/worldwideview/main/self-host/docker-compose.yml
 
 # 2. Generate .env with a persistent secret
-if [ ! -f .env ]; then
-  echo "🔐 Generating new .env file with AUTH_SECRET..."
-  # Use openssl if available, otherwise use urandom
+  if [ ! -f .env ]; then
+  echo "🔐 Generating new .env file with secrets..."
   if command -v openssl &> /dev/null; then
-    SECRET=$(openssl rand -hex 32)
+    AUTH_SECRET=$(openssl rand -hex 32)
+    ENCRYPTION_KEY=$(openssl rand -hex 16)
   else
-    SECRET=$(head -c 32 /dev/urandom | xxd -p)
+    AUTH_SECRET=$(head -c 32 /dev/urandom | xxd -p -c 64)
+    ENCRYPTION_KEY=$(head -c 16 /dev/urandom | xxd -p -c 32)
   fi
   echo "📥 Downloading .env template..."
   curl -fsSL -o .env https://raw.githubusercontent.com/silvertakana/worldwideview/main/.env.example
   
-  # Replace AUTH_SECRET= with the generated secret
-  # (macOS sed requires an empty string backup extension, Linux does not. Perl is safer across platforms)
-  perl -pi -e "s/^AUTH_SECRET=.*$/AUTH_SECRET=$SECRET/" .env
+  perl -pi -e "s/^AUTH_SECRET=.*$/AUTH_SECRET=$AUTH_SECRET/" .env
+  perl -pi -e "s/^ENCRYPTION_MASTER_KEY=.*$/ENCRYPTION_MASTER_KEY=$ENCRYPTION_KEY/" .env
 else
   echo "✅ .env already exists, skipping generation."
 fi

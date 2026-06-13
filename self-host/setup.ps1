@@ -25,15 +25,20 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/silvertakana/worldwide
 
 # Generate .env
 if (-Not (Test-Path .env)) {
-    Write-Host "[*] Generating new .env file with AUTH_SECRET..."
-    $bytes = New-Object Byte[] 32
-    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
-    $secret = -join ($bytes | ForEach-Object { $_.ToString("x2") })
+    Write-Host "[*] Generating new .env file with secrets..."
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    $authBytes = New-Object Byte[] 32
+    $rng.GetBytes($authBytes)
+    $encBytes = New-Object Byte[] 16
+    $rng.GetBytes($encBytes)
+    $authSecret = -join ($authBytes | ForEach-Object { $_.ToString("x2") })
+    $encKey = -join ($encBytes | ForEach-Object { $_.ToString("x2") })
     Write-Host "[*] Downloading .env template..."
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/silvertakana/worldwideview/main/.env.example" -OutFile .env
     
     $envContent = Get-Content .env -Raw
-    $envContent = $envContent -replace "(?m)^AUTH_SECRET=.*", "AUTH_SECRET=$secret"
+    $envContent = $envContent -replace "(?m)^AUTH_SECRET=.*", "AUTH_SECRET=$authSecret"
+    $envContent = $envContent -replace "(?m)^ENCRYPTION_MASTER_KEY=.*", "ENCRYPTION_MASTER_KEY=$encKey"
     $envContent | Out-File -FilePath .env -Encoding utf8
 } else {
     Write-Host "[Success] .env already exists, skipping generation."
