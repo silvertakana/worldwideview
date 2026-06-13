@@ -1,16 +1,7 @@
 services:
   wwv:
-    build:
-      context: .
-      args:
-        - NEXT_PUBLIC_WWV_EDITION=${NEXT_PUBLIC_WWV_EDITION:-local}
-        - NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL=${NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL:-}
-        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-}
-        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
-        - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
-        - NEXT_PUBLIC_BING_MAPS_KEY=${NEXT_PUBLIC_BING_MAPS_KEY:-}
-        - NEXT_PUBLIC_CESIUM_ION_TOKEN=${NEXT_PUBLIC_CESIUM_ION_TOKEN:-}
-        - NEXT_PUBLIC_ADSENSE_CLIENT_ID=${NEXT_PUBLIC_ADSENSE_CLIENT_ID:-}
+    image: ghcr.io/silvertakana/worldwideview:demo
+    pull_policy: always
     ports:
       - "3000:3000"
     volumes:
