@@ -471,8 +471,8 @@ body.sidebar-force-transition .sidebar {
   position: relative;
   z-index: 1;
   width: 100%;
-  height: 4px;
-  border-radius: 2px;
+  height: 6px;
+  border-radius: 3px;
   background: var(--bg-tertiary);
   appearance: none;
   -webkit-appearance: none;
@@ -1922,7 +1922,7 @@ body.is-resizing-sidebar .sidebar {
 
 /* ─── Bottom Panel Manager ───────────────────────────────── */
 .bottom-panel-system {
-    position: absolute;
+    position: fixed;
     bottom: var(--space-lg, 20px);
     left: var(--space-lg, 20px);
     right: calc(var(--ad-strip-inset, 0px) + var(--space-lg, 20px));
@@ -2160,4 +2160,83 @@ body.is-dragging-bottom-panel .bottom-panel {
 .legal-footer a:hover {
   color: var(--text-secondary);
   text-decoration: underline;
+}
+
+/* ─── Tactical Theme Overrides ────────────────────────────── */
+
+[data-theme='tactical'] .glass-panel,
+[data-theme='tactical'] .sidebar,
+[data-theme='tactical'] .header,
+[data-theme='tactical'] .bottom-panel,
+[data-theme='tactical'] .entity-info-card {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+[data-theme='tactical'] .btn {
+  border-radius: 0;
+}
+
+[data-theme='tactical'] .filter-chip {
+  border-radius: 0;
+}
+
+[data-theme='tactical'] .dropdown-menu {
+  border-radius: 0;
+}
+
+[data-theme='tactical'] .status-badge {
+  border-radius: 0;
+}
+
+/* Corner bracket decorations */
+.hud-corners {
+  position: relative;
+}
+
+[data-theme='tactical'] .hud-corners::before,
+[data-theme='tactical'] .hud-corners::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--accent-amber);
+  border-style: solid;
+  pointer-events: none;
+  z-index: 1;
+}
+
+[data-theme='tactical'] .hud-corners::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+
+[data-theme='tactical'] .hud-corners::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 1px 1px 0;
+}
+
+/* Scanline overlay for globe */
+.tactical-scanlines {
+  position: relative;
+}
+
+[data-theme='tactical'] .tactical-scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  z-index: 1;
 }
