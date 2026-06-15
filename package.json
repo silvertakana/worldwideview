@@ -18,6 +18,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "test": "vitest run",
+    "test:pact": "vitest run tests/pact/",
     "test:e2e": "playwright test",
     "test:mutate": "stryker run",
     "lint": "eslint .",
@@ -67,6 +68,7 @@
   "devDependencies": {
     "@eslint/compat": "^2.1.0",
     "@eslint/eslintrc": "^3.3.5",
+    "@pact-foundation/pact": "^13.0.0",
     "@playwright/test": "^1.60.0",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",

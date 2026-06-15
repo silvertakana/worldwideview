@@ -78,6 +78,9 @@ packages/*/data/
 .DS_Store
 *.pem
 
+# Pact logs
+/logs/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

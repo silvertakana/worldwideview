@@ -18,6 +18,7 @@ export default defineConfig({
             'src/plugins/**/*.{test,spec}.{js,ts,jsx,tsx}',
             'src/app/**/*.{test,spec}.{js,ts,jsx,tsx}',
             'packages/**/*.{test,spec}.{js,ts,jsx,tsx}',
+            'tests/pact/**/*.{test,spec}.{js,ts,jsx,tsx}',
         ],
         exclude: [
             '**/node_modules/**',
