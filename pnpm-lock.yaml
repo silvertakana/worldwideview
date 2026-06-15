@@ -141,6 +141,9 @@ importers:
       '@pact-foundation/pact':
         specifier: ^13.0.0
         version: 13.2.0
+      '@pact-foundation/pact-cli':
+        specifier: ^18.1.0
+        version: 18.1.0
       '@playwright/test':
         specifier: ^1.60.0
         version: 1.60.0
@@ -1290,6 +1293,43 @@ packages:
 
   '@oxc-project/types@0.133.0':
     resolution: {integrity: sha512-KzkdCd6Uxqnf6l3HOw1xfatAlUURA0g14cvBYFyJ5SaNOQbOUvBr9PKArcPcrNIeRsBdgcUzOGrhKveVpvOIGA==}
+
+  '@pact-foundation/pact-cli-darwin-arm64@18.1.0':
+    resolution: {integrity: sha512-RBgBGOmHfdRmd0/LxxCpwGyxvCrVaqYd8tfvo/dpdntUbHolOGexqu4so6lkYEHsyv5H4KudW3cZ6mhUGT68HA==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@pact-foundation/pact-cli-darwin-x64@18.1.0':
+    resolution: {integrity: sha512-pVGziqkqPt6tVvDAkaXaAK3zeq3VZm4Hrcprue2F0IZihV4UZBkVE7oQCfnfCt/ft0xQiGKvur1Bq5laJ8Wl0A==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@pact-foundation/pact-cli-linux-arm64@18.1.0':
+    resolution: {integrity: sha512-O6E63oThAbVDRemNQa9/gb3tE+GWODA6Cd5z0QSJKT5RsABX0KcoWA8mPs6G9E4LWoQwvOZo13jOgd77Lrjusg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@pact-foundation/pact-cli-linux-x64@18.1.0':
+    resolution: {integrity: sha512-DJ3ntNVIpbhIPXgmaLtRikwZfMI3pBx98qZb3vOJqzKPPcAEuziiYnTcs3ev+dLJOvG/IxBPHfCIwNzyYaXObw==}
+    cpu: [x64]
+    os: [linux]
+
+  '@pact-foundation/pact-cli-windows-arm64@18.1.0':
+    resolution: {integrity: sha512-LetgNiLi5Q1ryfAy/FoKliB9FgGkbGr4DVgC8Zy86/rDpQLtNhOrwY2zQJTZCa1mSfZujQeoVa9J2/SgS716qQ==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@pact-foundation/pact-cli-windows-x64@18.1.0':
+    resolution: {integrity: sha512-xMfYGePO3B0a1m9feI1iFKsvCpQR9W9qLdYV0sfoooGugouFGf1fSPiwx73UCw+kozsvvlgUdiQ/hmri1HAavA==}
+    cpu: [x64]
+    os: [win32]
+
+  '@pact-foundation/pact-cli@18.1.0':
+    resolution: {integrity: sha512-lDm8BNvfma5YxB36IEmgOsQ5yO2XHRjsSKyO0R1Vh65j5Jl5rOdpVDElYYQ/ry4/tmky88oEbuOtEHkBLC8VHA==}
+    engines: {node: '>=16'}
+    cpu: [x64, arm64]
+    os: [darwin, linux, win32]
+    hasBin: true
 
   '@pact-foundation/pact-core@15.2.1':
     resolution: {integrity: sha512-IhWwc026bqffjHAVjOfVnDzmhRlr7FBVrLeg/pKjhrcIi0Z/bWahU0u3LEKKctnMkICSH4nAVTYZEg3kUNTxag==}
@@ -7079,6 +7119,33 @@ snapshots:
   '@opentelemetry/semantic-conventions@1.41.1': {}
 
   '@oxc-project/types@0.133.0': {}
+
+  '@pact-foundation/pact-cli-darwin-arm64@18.1.0':
+    optional: true
+
+  '@pact-foundation/pact-cli-darwin-x64@18.1.0':
+    optional: true
+
+  '@pact-foundation/pact-cli-linux-arm64@18.1.0':
+    optional: true
+
+  '@pact-foundation/pact-cli-linux-x64@18.1.0':
+    optional: true
+
+  '@pact-foundation/pact-cli-windows-arm64@18.1.0':
+    optional: true
+
+  '@pact-foundation/pact-cli-windows-x64@18.1.0':
+    optional: true
+
+  '@pact-foundation/pact-cli@18.1.0':
+    optionalDependencies:
+      '@pact-foundation/pact-cli-darwin-arm64': 18.1.0
+      '@pact-foundation/pact-cli-darwin-x64': 18.1.0
+      '@pact-foundation/pact-cli-linux-arm64': 18.1.0
+      '@pact-foundation/pact-cli-linux-x64': 18.1.0
+      '@pact-foundation/pact-cli-windows-arm64': 18.1.0
+      '@pact-foundation/pact-cli-windows-x64': 18.1.0
 
   '@pact-foundation/pact-core@15.2.1':
     dependencies:

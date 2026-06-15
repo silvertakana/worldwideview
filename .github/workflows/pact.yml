@@ -32,6 +32,6 @@ jobs:
 
       - name: Publish contracts to Pact Broker
         if: github.actor != 'dependabot[bot]'
-        run: npx @pact-foundation/pact-cli publish pacts/ --consumer-app-version ${{ github.sha }} --broker-base-url $PACT_BROKER_URL --broker-username silver --broker-password ${{ secrets.PACT_BROKER_PASSWORD }}
+        run: pnpm exec pact-broker publish pacts/ --consumer-app-version ${{ github.sha }} --broker-base-url $PACT_BROKER_URL --broker-username silver --broker-password ${{ secrets.PACT_BROKER_PASSWORD }}
         env:
           PACT_BROKER_URL: http://pactbroker.worldwideview.dev
