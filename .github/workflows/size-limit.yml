@@ -21,6 +21,11 @@ jobs:
           cache: pnpm
       - run: pnpm install
       - run: pnpm build
+        env:
+          NEXT_PUBLIC_WWV_EDITION: local
+          NEXT_PUBLIC_CESIUM_ION_TOKEN: ${{ secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || '' }}
       - uses: andresz1/size-limit-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
