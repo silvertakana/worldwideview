@@ -49,6 +49,7 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.PR_TAG }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.PR_TAG }}-${{ github.sha }}
