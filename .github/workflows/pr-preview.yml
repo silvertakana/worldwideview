@@ -21,60 +21,30 @@ permissions:
   packages: write
   pull-requests: write
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  PR_TAG: pr-${{ github.event.number }}
-
 jobs:
   build-preview:
+    uses: ./.github/workflows/shared-docker.yml
+    with:
+      tags: |
+        type=ref,event=pr
+        type=sha,prefix=sha-
+      build-args: |
+        NEXT_PUBLIC_WWV_EDITION=demo
+        NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS=iranwarlive,satellite,gps-jamming
+        NEXT_PUBLIC_CESIUM_ION_TOKEN=${{ secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN }}
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+        NEXT_PUBLIC_BING_MAPS_KEY=${{ secrets.NEXT_PUBLIC_BING_MAPS_KEY }}
+        NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      smoke-test-path: /api/health
+      is-preview: true
+    secrets: inherit
+
+  post-comment:
+    needs: build-preview
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push preview image
-        id: build-and-push
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.PR_TAG }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.PR_TAG }}-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            NEXT_PUBLIC_WWV_EDITION=demo
-            NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS=iranwarlive,satellite,gps-jamming
-            NEXT_PUBLIC_CESIUM_ION_TOKEN=${{ secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN }}
-            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
-            NEXT_PUBLIC_BING_MAPS_KEY=${{ secrets.NEXT_PUBLIC_BING_MAPS_KEY }}
-            NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
-      - name: Smoke test
-        run: |
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.PR_TAG }}"
-          CONTAINER_NAME="smoke-${{ github.sha }}"
-          docker run -d --name $CONTAINER_NAME -p 3000:3000 $IMAGE
-          sleep 15
-          curl -f --retry 5 --retry-delay 3 http://localhost:3000/api/health || EXIT=$?
-          docker stop $CONTAINER_NAME
-          docker rm $CONTAINER_NAME
-          exit ${EXIT:-0}
-
       - name: Find or create preview comment
         uses: peter-evans/find-comment@v4
         id: find
@@ -90,15 +60,14 @@ jobs:
           body: |
             ## PR Preview
 
-            | Image | Size |
-            |-------|------|
-            | `ghcr.io/silvertakana/worldwideview:${{ env.PR_TAG }}` | `docker pull ghcr.io/silvertakana/worldwideview:${{ env.PR_TAG }}` |
+            | Image | Pull Command |
+            |-------|-------------|
+            | `ghcr.io/silvertakana/worldwideview:pr-${{ github.event.number }}` | `docker pull ghcr.io/silvertakana/worldwideview:pr-${{ github.event.number }}` |
 
             ### Run locally
             ```bash
-            docker run -p 3000:3000 ghcr.io/silvertakana/worldwideview:${{ env.PR_TAG }}
+            docker run -p 3000:3000 ghcr.io/silvertakana/worldwideview:pr-${{ github.event.number }}
             ```
 
-            Edition: **demo**
-            Commit: `${{ github.sha }}`
+            Edition: **demo** | Commit: `${{ github.sha }}`
           edit-mode: replace
