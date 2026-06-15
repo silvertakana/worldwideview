@@ -20,6 +20,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install
+      - run: npx prisma generate
       - run: pnpm build
         env:
           NEXT_PUBLIC_WWV_EDITION: local
