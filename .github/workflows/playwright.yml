@@ -27,6 +27,11 @@ on:
       - "next.config.ts"
       - "playwright.config.ts"
       - ".github/workflows/playwright.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 jobs:

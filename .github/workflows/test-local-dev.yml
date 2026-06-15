@@ -13,6 +13,10 @@ on:
       - "package.json"
       - ".github/workflows/test-local-dev.yml"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -21,6 +25,7 @@ jobs:
   test-setup:
     name: pnpm setup (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -92,6 +97,7 @@ jobs:
   test-dev:
     name: pnpm dev smoke test (ubuntu)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       NEXT_PUBLIC_WWV_EDITION: local
     steps:
