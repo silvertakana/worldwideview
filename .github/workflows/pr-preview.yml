@@ -44,6 +44,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push preview image
+        id: build-and-push
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -61,6 +62,17 @@ jobs:
             NEXT_PUBLIC_BING_MAPS_KEY=${{ secrets.NEXT_PUBLIC_BING_MAPS_KEY }}
             NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Smoke test
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.PR_TAG }}"
+          CONTAINER_NAME="smoke-${{ github.sha }}"
+          docker run -d --name $CONTAINER_NAME -p 3000:3000 $IMAGE
+          sleep 15
+          curl -f --retry 5 --retry-delay 3 http://localhost:3000/api/health || EXIT=$?
+          docker stop $CONTAINER_NAME
+          docker rm $CONTAINER_NAME
+          exit ${EXIT:-0}
 
       - name: Find or create preview comment
         uses: peter-evans/find-comment@v4

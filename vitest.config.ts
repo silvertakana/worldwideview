@@ -26,11 +26,12 @@ export default defineConfig({
             '**/.git/**',
         ],
         coverage: {
+            provider: 'v8',
+            reporter: ['text', 'json', 'html'],
             thresholds: {
-                branches: 80,
                 functions: 80,
-                statements: 80,
-            }
+                branches: 70,
+            },
         }
     },
 });

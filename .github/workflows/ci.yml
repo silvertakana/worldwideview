@@ -90,6 +90,17 @@ jobs:
       - run: npx prisma generate
       - run: pnpm test
 
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./coverage
+          fail_ci_if_error: false
+
+      - name: Coverage report comment
+        if: github.event_name == 'pull_request'
+        uses: davelosert/vitest-coverage-report-action@v2
+
   build:
     name: Build
     runs-on: ubuntu-latest

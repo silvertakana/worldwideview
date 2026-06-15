@@ -35,14 +35,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ env.SHA_TAG }}
+
       - name: Build and push production image
+        id: build-and-push
         uses: docker/build-push-action@v7
         with:
           context: .
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHA_TAG }}
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -55,6 +63,61 @@ jobs:
             NEXT_PUBLIC_ADSENSE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_ADSENSE_CLIENT_ID }}
             NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@7c581b5b4df1a7b927b8684d5cb3f8d6bb9a5b44
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHA_TAG }}
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+      - name: Upload Trivy results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Generate SBOM
+        uses: anchore/syft-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHA_TAG }}
+          format: spdx-json
+          output: sbom.spdx.json
+
+      - name: Sign image with Cosign (keyless)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          cosign sign --yes ghcr.io/${{ github.repository }}@${{ steps.build-and-push.outputs.digest }}
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.build-and-push.outputs.digest }}
+
+      - name: Smoke test
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHA_TAG }}"
+          CONTAINER_NAME="smoke-${{ github.sha }}"
+          docker run -d --name $CONTAINER_NAME -p 3000:3000 $IMAGE
+          sleep 15
+          curl -f --retry 5 --retry-delay 3 http://localhost:3000/api/health || EXIT=$?
+          docker stop $CONTAINER_NAME
+          docker rm $CONTAINER_NAME
+          exit ${EXIT:-0}
+
+      - name: Trigger Coolify deploy
+        if: ${{ secrets.COOLIFY_API_TOKEN != '' }}
+        run: |
+          curl -s -X POST "https://coolify.serv.wwv.io/api/v1/deploy" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"force": false}'
 
   build-demo:
     runs-on: ubuntu-latest

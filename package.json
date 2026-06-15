@@ -96,6 +96,8 @@
     "jsdom": "^28.1.0",
     "rollup-plugin-external-globals": "^0.13.0",
     "supabase": "^2.106.0",
+    "@size-limit/preset-app": "^11.0.0",
+    "size-limit": "^11.0.0",
     "tree-kill": "^1.2.2",
     "tsx": "^4.22.4",
     "typescript": "^5.9.3",
@@ -125,6 +127,12 @@
       "better-sqlite3"
     ]
   },
+  "size-limit": [
+    {
+      "path": ".next/static/chunks/**",
+      "limit": "1024 KB"
+    }
+  ],
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
