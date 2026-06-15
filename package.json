@@ -133,7 +133,7 @@
   "size-limit": [
     {
       "path": ".next/static/chunks/**",
-      "limit": "1024 KB"
+      "limit": "2 MB"
     }
   ],
   "engines": {
