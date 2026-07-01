@@ -54,6 +54,7 @@ Agents MUST respect these at all times:
 ## 5. AI Meta-Directives
 
 > [!WARNING]
+> - **MUST** query Engram memory (`mem_context` + `mem_search`) at session start before acting — previous sessions may hold relevant decisions, bug fixes, deployment quirks, and architecture context.
 > - Always use `.md` extensions. Never `.mdc`. Never reference Cursor IDE rules.
 > - **MUST** bump semver in `package.json` before every commit via `/commit` workflow (`feat:` → Minor, `fix/refactor/perf:` → Patch).
 > - **MUST** explain complex concepts simply — include an everyday-life analogy.
@@ -100,6 +101,7 @@ These load automatically when you read/edit files matching their paths:
 | `.agents/rules/data-engine-architecture.md` | `packages/**`, `local-seeders/**`, `docker-compose.yml` |
 | `.agents/rules/deployment-and-testing.md` | `Dockerfile`, `docker-compose.yml`, `.github/**`, `next.config.ts` |
 | `.agents/rules/e2e-testing.md` | `tests/**`, `public/e2e-fixtures/**`, `playwright.config.ts` |
+| `.agents/rules/context-bloat-protection.md` | `*.txt`, `*.log`, `*.out`, `*.dump` |
 
 ---
 
@@ -108,7 +110,7 @@ These load automatically when you read/edit files matching their paths:
 See `.agents/context/INDEX.md` for the full navigation table. Key files:
 
 | When to read | File |
-|---|---|
+|---|---|---|
 | Product vision, business model, Edition system | `.agents/context/platform-architecture.md` |
 | Finding files, repo layout | `.agents/context/directory-structure.md` |
 | Routing fix to correct repository | `.agents/context/ecosystem-repositories.md` |
@@ -117,6 +119,13 @@ See `.agents/context/INDEX.md` for the full navigation table. Key files:
 | SSH, Coolify MCP | `.agents/context/server-management.md` |
 | Coding principles, Definition of Done | `.agents/context/coding-principles.md` |
 | `.env` variables and secrets | `.agents/context/environment-config.md` |
+| Subagents and agent routing | `.agents/context/subagents.md` |
+| GSD planning, junction policy, worktree planning | `.agents/context/gsd-planning.md` |
+| Tool selection, search strategy, workload distribution | `.agents/context/tool-selection.md` |
+| Graphify queries | `.agents/context/graphify-usage.md` |
+| Slash commands | `.agents/context/slash-commands.md` |
+| OpenCode vs Claude Code tooling differences | `.agents/context/opencode-compatibility.md` |
+| Canonical terminology across all systems | `.agents/context/terminology.md` |
 
 ---
 

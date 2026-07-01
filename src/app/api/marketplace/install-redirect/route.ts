@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { getSupabaseUser } from "@/lib/supabase/server";
 import { isCloud, isPluginInstallEnabled, isDemo, isDemoAdmin } from "@/core/edition";
 import { upsertPlugin } from "@/lib/marketplace/repository";
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
             }
             userId = supabaseUser.id;
         } else {
-            const session = await auth();
+            const session = await getServerSession();
             if (!session?.user) {
                 const origin = getRequestOrigin(request);
                 const loginUrl = new URL("/login", origin);
@@ -170,3 +170,5 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
+
+export const runtime = "nodejs";

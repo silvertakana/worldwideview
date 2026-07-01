@@ -28,8 +28,14 @@ if (!dbUrl) {
     }
 }
 
+function deriveShadowUrl(url: string | undefined): string | undefined {
+    if (!url) return url;
+    return url.replace(/\/([^/?]+)(\?|$)/, "/$1_shadow$2");
+}
+
 export default {
     datasource: {
         url: dbUrl,
+        shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL || deriveShadowUrl(dbUrl),
     },
 };

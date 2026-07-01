@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { issueMarketplaceToken } from "@/lib/marketplace/marketplaceToken";
 import type { MarketplaceSessionToken } from "@worldwideview/wwv-plugin-sdk";
 import { grantTokenLimiter } from "@/lib/rateLimiters";
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     const redirectTo = searchParams.get("redirectTo") ?? "";
 
     try {
-        const session = await auth();
+        const session = await getServerSession();
 
         if (!session?.user) {
             const origin = getRequestOrigin(request);
@@ -94,3 +94,5 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
+
+export const runtime = "nodejs";

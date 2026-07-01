@@ -165,7 +165,7 @@ export function BottomPanelManager() {
 
             {/* Active Panel Shell */}
             <div 
-                className={`bottom-panel glass-panel ${activeBottomPanel ? "open" : "closed"}`}
+                className={`bottom-panel glass-panel hud-corners ${activeBottomPanel ? "open" : "closed"}`}
                 style={{ height: activeBottomPanel ? `${bottomPanelHeight}px` : "0px" }}
             >
                 {mountedPanel && (

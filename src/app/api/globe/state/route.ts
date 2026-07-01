@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth as getSession } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { authenticateApiKey } from "@/lib/apiKeyAuth";
 import { writeGlobeState } from "@/lib/globeStateStore";
 import { mcpLimiter, getClientIp } from "@/lib/rateLimiters";
@@ -14,11 +14,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Not available in demo edition" }, { status: 403 });
     }
 
-    // R-2: browser write path authenticates via NextAuth session cookie (primary),
+    // R-2: browser write path authenticates via Better Auth session cookie (primary),
     // falling back to Bearer API key for programmatic/MCP clients.
     let userId: string | null = null;
 
-    const session = await getSession();
+    const session = await getServerSession();
     if (session?.user?.id) {
         userId = session.user.id;
     } else {
@@ -53,3 +53,5 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
 }
+
+export const runtime = "nodejs";

@@ -1,9 +1,9 @@
 import { stripe } from "@/lib/stripe/client";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 
 export async function POST(req: Request) {
-    const session = await auth();
+    const session = await getServerSession();
     if (!session?.user) return new NextResponse("Unauthorized", { status: 401 });
 
     const { priceId } = await req.json();
@@ -19,3 +19,5 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: checkoutSession.url });
 }
+
+export const runtime = "nodejs";

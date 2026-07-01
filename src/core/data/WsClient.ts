@@ -5,10 +5,14 @@ import { useStore } from "../state/store";
 import { ticketAuthEnabledForPlugin } from "../edition";
 import type { PluginTicket } from "@worldwideview/wwv-plugin-sdk";
 
-async function fetchPluginTicket(pluginId: string): Promise<PluginTicket> {
+async function fetchPluginTicket(pluginId: string): Promise<PluginTicket | null> {
   const res = await fetch(`/api/auth/ticket?pluginId=${encodeURIComponent(pluginId)}`);
   if (!res.ok) throw new Error(`[WSClient] Ticket fetch failed (${res.status}) for ${pluginId}`);
-  const data = await res.json() as { token?: string };
+  const data = await res.json() as { token?: string; noCredential?: boolean };
+  if (data.noCredential) {
+    console.debug(`[WSClient] No credential for ${pluginId} — skipping auth`);
+    return null;
+  }
   if (!data.token) throw new Error(`[WSClient] Ticket response missing token for ${pluginId}`);
   return data.token as PluginTicket;
 }
@@ -86,6 +90,15 @@ class WebSocketClient {
         engine.awaitingWelcome = true;
         fetchPluginTicket(ticketPlugin)
           .then((ticket) => {
+            if (!ticket) {
+              // No credential available (user hasn't connected to Marketplace yet).
+              // Skip auth and subscribe immediately, same as the non-auth path.
+              engine.awaitingWelcome = false;
+              for (const pluginId of engine.subscriptions) {
+                this.send(engine, { action: "subscribe", pluginId });
+              }
+              return;
+            }
             this.send(engine, { type: "auth", v: 1, token: ticket });
             // 3s timeout — if the server doesn't send welcome, close and trigger reconnect.
             engine.authTimeoutTimer = setTimeout(() => {

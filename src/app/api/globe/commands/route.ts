@@ -6,7 +6,7 @@
  * queued by the MCP agent via registerGlobeCommandTools.
  *
  * Auth (R-2 dual-auth, mirrors POST /api/globe/state):
- *   Primary:  NextAuth session cookie (browser path)
+ *   Primary:  Better Auth session cookie (browser path)
  *   Fallback: Bearer API key (MCP / programmatic path)
  *   userId comes ONLY from the resolved auth result -- never from the query string.
  *
@@ -14,7 +14,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { auth as getSession } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { authenticateApiKey } from "@/lib/apiKeyAuth";
 import { drainGlobeCommands } from "@/lib/globeCommandQueue";
 import { globeCommandsLimiter, getClientIp } from "@/lib/rateLimiters";
@@ -31,11 +31,11 @@ export async function GET(request: Request): Promise<NextResponse> {
         return NextResponse.json({ error: "Demo mode" }, { status: 403 });
     }
 
-    // R-2: NextAuth session PRIMARY, Bearer API key FALLBACK.
+    // R-2: Better Auth session PRIMARY, Bearer API key FALLBACK.
     // userId is resolved exclusively from the auth result -- never from the URL.
     let userId: string | null = null;
 
-    const session = await getSession();
+    const session = await getServerSession();
     if (session?.user?.id) {
         userId = session.user.id;
     } else {
@@ -60,3 +60,5 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ commands });
 }
+
+export const runtime = "nodejs";

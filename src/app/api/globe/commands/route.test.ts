@@ -13,16 +13,19 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { Session } from "next-auth";
+import type { BetterAuthSession } from "@/lib/ba-session";
 import { GET } from "./route";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { authenticateApiKey } from "@/lib/apiKeyAuth";
 import { drainGlobeCommands } from "@/lib/globeCommandQueue";
 
 // ---------------------------------------------------------------------------
 // Top-level mocks
-// (global setup.ts already mocks @/lib/auth returning null — we override below)
 // ---------------------------------------------------------------------------
+
+vi.mock("@/lib/ba-session", () => ({
+    getServerSession: vi.fn(),
+}));
 
 vi.mock("@/lib/apiKeyAuth", () => ({
     authenticateApiKey: vi.fn(),
@@ -42,7 +45,7 @@ vi.mock("@/lib/rateLimiters", () => ({
 // Typed mock helpers
 // ---------------------------------------------------------------------------
 
-const mockGetSession = vi.mocked(auth as unknown as () => Promise<Session | null>);
+const mockGetSession = vi.mocked(getServerSession);
 const mockAuthApiKey = vi.mocked(authenticateApiKey);
 const mockDrain = vi.mocked(drainGlobeCommands);
 
@@ -103,8 +106,8 @@ describe("GET /api/globe/commands — NextAuth session (CMD-ROUTE-02)", () => {
     beforeEach(() => {
         mockGetSession.mockResolvedValue({
             user: { id: "u1", name: "Test User", email: "test@example.com" },
-            expires: "2099-01-01",
-        } as Session);
+            session: { id: "s1", token: "tok1" },
+        } as BetterAuthSession);
         mockDrain.mockResolvedValue([
             { type: "pan", lat: 1, lon: 2, alt: 3 },
         ]);
@@ -178,8 +181,8 @@ describe("GET /api/globe/commands — userId source invariant (CMD-ROUTE-04)", (
     it("uses the session userId, not any userId in the query string", async () => {
         mockGetSession.mockResolvedValue({
             user: { id: "real-user", name: "Alice", email: "alice@example.com" },
-            expires: "2099-01-01",
-        } as Session);
+            session: { id: "s2", token: "tok2" },
+        } as BetterAuthSession);
         mockDrain.mockResolvedValue([]);
 
         // The URL includes a userId query param that should be ignored
@@ -203,8 +206,8 @@ describe("GET /api/globe/commands — sessionId from query (CMD-ROUTE-05)", () =
     it("passes the sessionId query param to drainGlobeCommands", async () => {
         mockGetSession.mockResolvedValue({
             user: { id: "u1", name: "Test", email: "t@t.com" },
-            expires: "2099-01-01",
-        } as Session);
+            session: { id: "s3", token: "tok3" },
+        } as BetterAuthSession);
         mockDrain.mockResolvedValue([]);
 
         const req = makeRequest(SESS_TAB);

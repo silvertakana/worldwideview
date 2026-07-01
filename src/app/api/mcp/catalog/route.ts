@@ -20,7 +20,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { auth as getSession } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { authenticateApiKey } from "@/lib/apiKeyAuth";
 import { publishSessionCatalog } from "@/lib/mcpSessionCatalog";
 import type { SessionCatalog } from "@/lib/mcpSessionCatalog";
@@ -54,10 +54,10 @@ export async function POST(request: Request): Promise<NextResponse> {
         );
     }
 
-    // Gate 3: Dual-auth -- NextAuth session PRIMARY, Bearer apiKey FALLBACK
+    // Gate 3: Dual-auth -- Better Auth session PRIMARY, Bearer apiKey FALLBACK
     let userId: string | null = null;
 
-    const session = await getSession();
+    const session = await getServerSession();
     if (session?.user?.id) {
         userId = session.user.id;
     } else {
@@ -172,3 +172,5 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ ok: true });
 }
+
+export const runtime = "nodejs";

@@ -38,7 +38,7 @@ export function DataConfigPanel() {
 
     return (
       <aside
-        className={`sidebar sidebar--right glass-panel ${isMobile ? "sidebar--mobile" : ""} ${(isMobile ? openMobilePanel === "right" : configPanelOpen) ? "" : "sidebar--closed"}`}
+        className={`sidebar sidebar--right glass-panel hud-corners ${isMobile ? "sidebar--mobile" : ""} ${(isMobile ? openMobilePanel === "right" : configPanelOpen) ? "" : "sidebar--closed"}`}
         style={{
  width: isMobile ? undefined : width, padding: "var(--space-xl)", zIndex: 101, borderLeft: "var(--glass-border)"
 }}

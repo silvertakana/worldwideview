@@ -21,6 +21,7 @@ import { getDisabledPluginIds, setPluginDisabled } from "@/core/plugins/pluginPr
 import { trackEvent } from "@/lib/analytics";
 import { isPluginInstallEnabled } from "@/core/edition";
 import type { PluginManifest } from "@/core/plugins/PluginManifest";
+import { MarketplaceConnect } from "./MarketplaceConnect";
 import "./PluginsTab.css";
 
 // ─── Types ──────────────────────────────────────────────────
@@ -323,9 +324,14 @@ export function PluginsTab() {
         }
     };
 
+    const connectSection = (
+        <MarketplaceConnect />
+    );
+
     if (plugins.length === 0) {
         return (
           <div className="plugins-tab">
+            {connectSection}
             <div className="plugins-tab__empty">
               <div className="plugins-tab__empty-icon">🧩</div>
               <div>No plugins installed yet</div>
@@ -337,6 +343,7 @@ export function PluginsTab() {
 
     return (
       <div className="plugins-tab">
+        {connectSection}
         {needsReload && (
         <div style={{
                     padding: "var(--space-md)",

@@ -3,7 +3,7 @@
  * @file setup.mjs
  * @description One-command local setup utility.
  * Generates a .env file from .env.example and auto-fills sensitive 
- * secrets (like AUTH_SECRET) with secure random values.
+ * secrets (like BETTER_AUTH_SECRET) with secure random values.
  * @module scripts
  */
 
@@ -30,11 +30,11 @@ const secret = randomBytes(32).toString("hex");
 const encryptionKey = randomBytes(32).toString("hex");
 let content = readFileSync(EXAMPLE, "utf8");
 
-// Fill in the AUTH_SECRET line
-if (content.includes("AUTH_SECRET=")) {
-    content = content.replace(/^AUTH_SECRET=.*$/m, `AUTH_SECRET=${secret}`);
+// Fill in the BETTER_AUTH_SECRET line
+if (content.includes("BETTER_AUTH_SECRET=")) {
+    content = content.replace(/^BETTER_AUTH_SECRET=.*$/m, `BETTER_AUTH_SECRET=${secret}`);
 } else {
-    content += `\nAUTH_SECRET=${secret}\n`;
+    content += `\nBETTER_AUTH_SECRET=${secret}\n`;
 }
 
 // Fill in the ENCRYPTION_MASTER_KEY line
@@ -48,14 +48,14 @@ if (content.includes("ENCRYPTION_MASTER_KEY=")) {
 content = content
     .split("\n")
     .map((line) => {
-        // Un-comment AUTH_SECRET if it was commented out
-        if (line.trim().startsWith("# AUTH_SECRET=")) return line.replace("# ", "");
+        // Un-comment BETTER_AUTH_SECRET if it was commented out
+        if (line.trim().startsWith("# BETTER_AUTH_SECRET=")) return line.replace("# ", "");
         return line;
     })
     .join("\n");
 
 writeFileSync(TARGET, content, "utf8");
 
-console.log("✅ .env.local created with generated AUTH_SECRET and ENCRYPTION_MASTER_KEY.");
+console.log("✅ .env.local created with generated BETTER_AUTH_SECRET and ENCRYPTION_MASTER_KEY.");
 console.log("   Fill in any optional API keys (Cesium, Bing, OpenSky, etc.)");
 console.log("   then run: pnpm dev");

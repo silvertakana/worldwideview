@@ -37,12 +37,6 @@ export const marketplaceApiLimiter = new RateLimiter({
     maxRequests: 60,
 });
 
-/** /api/auth/[...nextauth] — prevents credential brute-force. */
-export const authLimiter = new RateLimiter({
-    windowMs: 60_000,
-    maxRequests: 10,
-});
-
 // TODO: move mcpLimiter and apiKeyManagementLimiter to @upstash/ratelimit for
 // multi-replica deployments — in-process limiters are per-replica and do not
 // share state across horizontal scale-out.

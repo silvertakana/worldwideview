@@ -101,7 +101,7 @@ describe("ticketClient", () => {
             new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
         );
 
-        await expect(getTicket("aviation")).rejects.toThrow("Token exchange failed (401)");
+        await expect(getTicket("aviation")).rejects.toThrow("Token exchange rejected (401)");
     });
 
     it("throws when the Marketplace response is missing the token field", async () => {

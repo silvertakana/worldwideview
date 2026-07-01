@@ -194,7 +194,6 @@ async function fetchRouteSource(
         throw new Error(`[localSources] Rejected non-relative route path: ${sourcePath}`);
     }
 
-    // Drop NEXTAUTH_URL — it is an auth callback URL (may carry a path).
     const base = process.env.WWV_INTERNAL_BASE_URL ?? "http://localhost:3000";
     const url = new URL(sourcePath, base).toString();
 

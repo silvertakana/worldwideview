@@ -25,8 +25,8 @@ vi.mock("@/core/edition", () => ({
     isCloud: false,
 }));
 
-// AUTH_SECRET must be set so getSigningKey() does not throw in the test env
-process.env.AUTH_SECRET = "test-signing-key-for-unit-tests";
+// BETTER_AUTH_SECRET must be set so getSigningKey() does not throw in the test env
+process.env.BETTER_AUTH_SECRET = "test-signing-key-for-unit-tests";
 
 // ---------------------------------------------------------------------------
 // generateApiKey — KEY-01

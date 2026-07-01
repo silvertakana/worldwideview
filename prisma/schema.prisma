@@ -7,26 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id             String            @id @default(uuid())
-  tenantId       String?
-  email          String
-  name           String
-  hashedPassword String
-  role           String            @default("user")
-  // Bumping this invalidates all of the user's existing JWT sessions.
-  // The JWT embeds the value at sign-in; the auth jwt callback rejects any
-  // token whose value no longer matches the DB (logout-everywhere / revoke).
-  sessionVersion Int               @default(0)
-  createdAt      DateTime          @default(now())
-  favorites      Favorite[]
-  memberships    WorkspaceMember[]
-  apiKeys        UserApiKey[]
-
-  @@unique([tenantId, email])
-  @@map("users")
-}
-
 model Favorite {
   id         String   @id @default(uuid())
   tenantId   String?
@@ -37,9 +17,10 @@ model Favorite {
   lastSeen   DateTime @default(now())
   userId     String
   notes      String?
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, entityId])
+  @@index([tenantId])
   @@map("favorites")
 }
 
@@ -54,6 +35,7 @@ model InstalledPlugin {
   updatedAt   DateTime @updatedAt
 
   @@unique([tenantId, pluginId])
+  @@index([tenantId])
   @@map("installed_plugins")
 }
 
@@ -64,6 +46,7 @@ model Setting {
   value    String
 
   @@unique([tenantId, key])
+  @@index([tenantId])
   @@map("settings")
 }
 
@@ -71,10 +54,12 @@ model Workspace {
   id                   String            @id @default(uuid())
   name                 String
   subdomain            String            @unique
+  ownerId              String?
   status               String            @default("trialing")
   plan                 String            @default("basic")
   stripeCustomerId     String?
   stripeSubscriptionId String?
+  trialEndsAt          DateTime?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
   members              WorkspaceMember[]
@@ -88,7 +73,7 @@ model WorkspaceMember {
   workspaceId String
   role        String    @default("member")
   joinedAt    DateTime  @default(now())
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workspaceId])
@@ -106,6 +91,7 @@ model MarketplaceCredential {
   updatedAt  DateTime @updatedAt
 
   @@unique([tenantId])
+  @@index([tenantId])
   @@map("marketplace_credentials")
 }
 
@@ -118,7 +104,193 @@ model UserApiKey {
   name         String
   createdAt    DateTime  @default(now())
   lastUsedAt   DateTime?
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@map("user_api_keys")
+}
+
+/// Legacy NextAuth user table — migration source only. See ADR-0008 Phase 1.8. Do NOT add relations.
+model User {
+  id             String   @id @default(uuid())
+  email          String
+  name           String
+  hashedPassword String
+  role           String   @default("user")
+  sessionVersion Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@unique([email])
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------
+// Better Auth tables (lowercase @@map — coexist with NextAuth uppercase)
+// -----------------------------------------------------------------------
+
+model BetterAuthUser {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          String    @default("user")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      BetterAuthSession[]
+  accounts      BetterAuthAccount[]
+  favorites     Favorite[]
+  memberships   WorkspaceMember[]
+  apiKeys       UserApiKey[]
+
+  @@map("user")
+}
+
+model BetterAuthSession {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model BetterAuthAccount {
+  id                      String    @id @default(uuid())
+  userId                  String
+  accountId               String
+  providerId              String
+  accessToken             String?
+  refreshToken            String?
+  accessTokenExpiresAt    DateTime?
+  refreshTokenExpiresAt   DateTime?
+  scope                   String?
+  idToken                 String?
+  password                String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  user                    BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model BetterAuthVerification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// -----------------------------------------------------------------------
+// Better Auth Plugin tables (Phase 72 — all lowercase @@map)
+// -----------------------------------------------------------------------
+
+model PluginOrganization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  @@map("organization")
+}
+
+model PluginMember {
+  id             String @id @default(uuid())
+  organizationId String
+  userId         String
+  role           String
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("member")
+}
+
+model PluginInvitation {
+  id             String   @id @default(uuid())
+  organizationId String
+  email          String
+  role           String
+  status         String
+  expiresAt      DateTime
+  inviterId      String
+
+  @@index([organizationId])
+  @@map("invitation")
+}
+
+model PluginApiKey {
+  id                  String    @id @default(uuid())
+  userId              String?
+  organizationId      String?
+  name                String?
+  key                 String    @unique
+  prefix              String?
+  metadata            String?
+  expiresAt           DateTime?
+  remaining           Int?
+  refillAmount        Int?
+  refillInterval      Int?
+  rateLimitEnabled    Boolean   @default(false)
+  rateLimitTimeWindow Int?
+  rateLimitMax        Int?
+  permissions         String?
+  enabled             Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  lastUsedAt          DateTime?
+
+  @@index([userId])
+  @@index([organizationId])
+  @@map("apiKey")
+}
+
+model PluginSubscription {
+  id                   String    @id @default(uuid())
+  referenceId          String?
+  customerId           String?
+  plan                 String?
+  priceId              String?
+  status               String?
+  seats                Int?
+  trialEndsAt          DateTime?
+  cancelAtPeriodEnd    Boolean?
+  cancelAt             DateTime?
+  canceledAt           DateTime?
+  endedAt              DateTime?
+  stripeSubscriptionId String?
+  stripeCustomerId     String?
+  stripeScheduleId     String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([referenceId])
+  @@index([stripeCustomerId])
+  @@map("subscription")
+}
+
+model PluginJwks {
+  id         String    @id @default(uuid())
+  publicKey  String
+  privateKey String
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime?
+
+  @@map("jwks")
 }

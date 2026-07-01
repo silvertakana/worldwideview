@@ -77,6 +77,9 @@ describe('uiSlice', () => {
         expect(store.getState().theme).toBe('dark');
 
         store.getState().toggleTheme();
+        expect(store.getState().theme).toBe('tactical');
+
+        store.getState().toggleTheme();
         expect(store.getState().theme).toBe('black');
     });
 

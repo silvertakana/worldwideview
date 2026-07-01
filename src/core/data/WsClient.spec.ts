@@ -150,4 +150,31 @@ describe("WsClient — first-message auth", () => {
 
         fetchSpy.mockRestore();
     });
+
+    it("skips auth and subscribes immediately when ticket response returns noCredential", async () => {
+        const { ticketAuthEnabledForPlugin } = await import("../edition");
+        vi.mocked(ticketAuthEnabledForPlugin).mockReturnValue(true);
+
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            new Response(JSON.stringify({ noCredential: true }), { status: 200 })
+        );
+
+        const { wsClient } = await import("./WsClient");
+        const url = nextEngineUrl();
+
+        wsClient.subscribe("aviation", url);
+        const ws = FakeWebSocket.instances.at(-1)!;
+        ws.triggerOpen();
+        await flushPromises();
+
+        const msgs = ws.sentMessages.map((m) => JSON.parse(m));
+        // Should send subscribe directly, NOT an auth message
+        expect(msgs).toContainEqual({ action: "subscribe", pluginId: "aviation" });
+        expect(msgs.some((m: { type?: string }) => m.type === "auth")).toBe(false);
+        expect(fetchSpy).toHaveBeenCalledWith(
+            expect.stringContaining("/api/auth/ticket?pluginId=aviation")
+        );
+
+        fetchSpy.mockRestore();
+    });
 });

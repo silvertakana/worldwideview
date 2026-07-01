@@ -6,7 +6,7 @@ import { isSigningKeyValid } from "@/lib/signingKeyConfig";
 // ---------------------------------------------------------------------------
 // Signing key for HMAC-SHA256 hashing of API key secrets.
 // API_KEY_HMAC_SECRET is the preferred dedicated variable.
-// Falls back to AUTH_SECRET in local edition only, so dev works without a
+// Falls back to BETTER_AUTH_SECRET in local edition only, so dev works without a
 // separate .env entry.
 //
 // Lazy enforcement (not a bare module-level throw): Next.js evaluates module
@@ -18,22 +18,22 @@ import { isSigningKeyValid } from "@/lib/signingKeyConfig";
 
 function getSigningKey(): string {
     const dedicated = process.env.API_KEY_HMAC_SECRET;
-    const fallback = process.env.AUTH_SECRET;
+    const fallback = process.env.BETTER_AUTH_SECRET;
 
     if (edition === "cloud" || edition === "demo") {
         if (!isSigningKeyValid()) {
             throw new Error(
-                `API_KEY_HMAC_SECRET must be set and distinct from AUTH_SECRET in ${edition} edition`,
+                `API_KEY_HMAC_SECRET must be set and distinct from BETTER_AUTH_SECRET in ${edition} edition`,
             );
         }
         // isSigningKeyValid() returning true guarantees dedicated is set and
-        // distinct from AUTH_SECRET for cloud/demo editions.
+        // distinct from BETTER_AUTH_SECRET for cloud/demo editions.
         return dedicated as string;
     }
 
-    // local edition: allow AUTH_SECRET fallback for convenience
+    // local edition: allow BETTER_AUTH_SECRET fallback for convenience
     const key = dedicated ?? fallback;
-    if (!key) throw new Error("API_KEY_HMAC_SECRET (or AUTH_SECRET) must be set");
+    if (!key) throw new Error("API_KEY_HMAC_SECRET (or BETTER_AUTH_SECRET) must be set");
     return key;
 }
 

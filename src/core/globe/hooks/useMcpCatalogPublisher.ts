@@ -22,6 +22,7 @@
 import { useEffect, useRef } from "react";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { getNamespacedTools } from "@/lib/mcp/pluginTools";
+import { isDemo } from "@/core/edition";
 import type { PluginToolsEntry } from "@/lib/mcp/pluginTools";
 import type { CatalogTool } from "@/lib/mcpSessionCatalog";
 import type { FilterDefinition } from "@/core/plugins/PluginTypes";
@@ -147,7 +148,7 @@ export function useMcpCatalogPublisher(sessionId: string): void {
     const activeRef = useRef(false);
 
     useEffect(() => {
-        if (!sessionId) return;
+        if (!sessionId || isDemo) return;
 
         activeRef.current = true;
 

@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.5
-milestone_name: MCP Public-Launch Hardening
-status: complete
-last_updated: "2026-06-03T16:05:00.000Z"
-last_activity: 2026-06-03
+milestone: v1.6
+milestone_name: Cloud Launch
+status: completed
+last_updated: "2026-06-11T04:43:19.313Z"
+last_activity: "2026-06-11 — Phase 37 Plan 01 shipped: MarketplaceConnect component, callback error handling, connect-status page, encryption key validation, InstanceConfig deprecation banner"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 0
-  completed_plans: 0
-  percent: 100
+  total_phases: 1
+  completed_phases: 0
+  total_plans: 1
+  completed_plans: 1
+  percent: 0
 ---
 
 # Project State
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A single globe that shows everything happening in the world right now, extensible by anyone via plugins, and controllable by any AI agent via MCP.
-**Current focus:** v1.5 MCP Public-Launch Hardening (Phases 31-36) -- closing premortem blockers that make the MCP server unsafe or dishonest to expose to untrusted, authenticated public users.
+**Current focus:** v1.6 Cloud Launch (Phase 37+) -- PKCE-based account connection, token management, and cloud deployment wiring.
 
 ## Current Position
 
-Phase: 36 — Onboarding and Framing (complete)
-Plan: —
-Status: All 6 phases (31-36) complete and committed; milestone v1.5 done
-Last activity: 2026-06-03 — Phase 36 Onboarding and Framing shipped (ONBRD-01..03), gate green (1004 tests), v2.48.9
+Phase: 38 — E2E Smoke Test (complete)
+Plan: 01 — E2E Smoke Test
+Status: Plan 01 complete -- 1035 tests pass, build green; noCredential fallback, Playwright E2E script, smoke checklist
+Last activity: 2026-06-11 — Phase 38 Plan 01 shipped: ticket route returns noCredential, WsClient graceful fallback, Playwright E2E script, manual smoke checklist
 
 ## Completed Phases (v1.5)
 
@@ -40,7 +40,14 @@ Last activity: 2026-06-03 — Phase 36 Onboarding and Framing shipped (ONBRD-01.
 | 35 Deployment Wiring | tsc + 1004 tests + build green; security MERGE-WITH-FIXES resolved (Redis auth, AUTH_SECRET, pg loopback) | 0f860185 |
 | 36 Onboarding and Framing | tsc + 1004 tests + build green; quickstart + prerequisites + SESSION_REQUIRED_PREAMBLE on all 7 command tools | a5fade97 |
 
-## v1.5 Phase Map
+## Completed Phases (v1.6)
+
+| Phase | Result | Commit |
+|-------|--------|--------|
+| 37 Account Connection UI | 1033 tests + build green; MarketplaceConnect component, callback error handling, connect-status page | 57fd018c |
+| 38 E2E Smoke Test | 1035 tests + build green; noCredential fallback, Playwright E2E script, manual smoke checklist | b26b578f |
+
+## v1.5 Phase Map (archived)
 
 | Phase | Goal | Key requirements |
 |-------|------|-----------------|
@@ -53,9 +60,16 @@ Last activity: 2026-06-03 — Phase 36 Onboarding and Framing shipped (ONBRD-01.
 
 **Coverage:** 21/21 v1.5 requirements mapped, 0 orphaned.
 
-**Phase numbering:** v1.5 starts at Phase 31 (v1.4 ended at Phase 30).
+## v1.6 Phase Map
 
-**Locked decision:** Command/control tools keep current behavior (they require a live signed-in browser session to drive the globe); a headless/render-on-demand globe is out of scope (deferred).
+| Phase | Goal | Key requirements |
+|-------|------|-----------------|
+| 37 | Account Connection UI | Marketplace PKCE connect button, error page, encryption validation |
+| 38 | E2E Smoke Test | noCredential fallback, WsClient graceful degradation, Playwright E2E script, smoke checklist |
+
+**Phase numbering:** v1.6 starts at Phase 37 (v1.5 ended at Phase 36).
+
+**Locked decision (v1.5):** Command/control tools keep current behavior (they require a live signed-in browser session to drive the globe); a headless/render-on-demand globe is out of scope (deferred).
 
 ## v1.4 Phase Map (archived reference)
 
@@ -107,5 +121,6 @@ Items deferred at v1.5 milestone start (carried from v1.4 close on 2026-06-02):
 
 ## Operator Next Steps
 
-- Plan Phase 31 with /gsd:plan-phase 31 (Transport Resilience -- foundational error contract).
-- Phases execute in numeric order 31 → 32 → 33 → 34 → 35 → 36; dependencies allow some parallelism after Phase 31.
+- Phase 38 (E2E Smoke Test) complete -- all verification artifacts created.
+- Next: Phase 39 (Engine Dual Mode) -- prepare the data engine for dual-mode operation with marketplace auth.
+

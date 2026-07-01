@@ -3,6 +3,10 @@ import { POST } from "./route";
 import { authenticateApiKey } from "@/lib/apiKeyAuth";
 import { writeGlobeState } from "@/lib/globeStateStore";
 
+vi.mock("@/lib/ba-session", () => ({
+    getServerSession: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock("@/lib/apiKeyAuth", () => ({
     authenticateApiKey: vi.fn(),
 }));

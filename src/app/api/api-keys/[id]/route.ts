@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { prisma } from "@/lib/db";
 import { isDemo } from "@/core/edition";
 import { apiKeyManagementLimiter, getClientIp } from "@/lib/rateLimiters";
@@ -20,7 +20,7 @@ export async function DELETE(
     const limited = apiKeyManagementLimiter.check(getClientIp(request));
     if (limited) return limited;
 
-    const session = await auth();
+    const session = await getServerSession();
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -43,3 +43,5 @@ export async function DELETE(
         return NextResponse.json({ error: "Failed to revoke API key" }, { status: 500 });
     }
 }
+
+export const runtime = "nodejs";

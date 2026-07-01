@@ -104,7 +104,7 @@ export function LayerPanel() {
 
     return (
       <aside
-        className={`sidebar sidebar--left glass-panel ${isMobile ? "sidebar--mobile" : ""} ${(isMobile ? openMobilePanel === "left" : leftSidebarOpen) ? "" : "sidebar--closed"}`}
+        className={`sidebar sidebar--left glass-panel hud-corners ${isMobile ? "sidebar--mobile" : ""} ${(isMobile ? openMobilePanel === "left" : leftSidebarOpen) ? "" : "sidebar--closed"}`}
         style={{ width: isMobile ? undefined : width }}
       >
         {/* Drag Handle */}

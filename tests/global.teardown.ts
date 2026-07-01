@@ -40,7 +40,7 @@ async function globalTeardown() {
       await prisma.installedPlugin.deleteMany({
           where: { pluginId: 'e2e-mock-plugin' }
       });
-      await prisma.user.deleteMany({
+      await prisma.betterAuthUser.deleteMany({
         where: { email: TEST_USER_EMAIL },
       });
   } catch {

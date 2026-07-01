@@ -4,6 +4,7 @@ import { useStore } from "@/core/state/store";
 import { isValidGlobeCommand } from "@/core/globe/types/GlobeCommand";
 import type { GlobeCommand } from "@/core/globe/types/GlobeCommand";
 import { setLayerActive } from "@/core/plugins/layerActivation";
+import { isDemo } from "@/core/edition";
 
 function dispatchCommand(cmd: GlobeCommand): void {
     switch (cmd.type) {
@@ -99,7 +100,7 @@ function dispatchCommand(cmd: GlobeCommand): void {
 
 export function useGlobeCommandBridge(sessionId: string): void {
     useEffect(() => {
-        if (!sessionId) return;
+        if (!sessionId || isDemo) return;
 
         const es = new EventSource(
             `/api/globe/commands/stream?sessionId=${encodeURIComponent(sessionId)}`,

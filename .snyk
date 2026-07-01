@@ -1,0 +1,51 @@
+# Snyk (https://snyk.io) policy file
+# Suppresses pre-existing transitive dependency vulnerabilities
+# that are not exploitable in this project's context.
+#
+# These are all dev/build-time dependencies (vitest, pact testing, data scraping)
+# running in CI or local dev environments only.
+version: v1.25.0
+ignore:
+  # underscore — transitive via @pact-foundation/pact-core (test dependency)
+  # DoS via _.flatten/_.isEqual — not exploitable in CI/test context
+  GHSA-qpx9-hpmf-5gmw:
+    - '*':
+        reason: >-
+          Transitive test dependency via @pact-foundation/pact-core.
+          Not exploitable in CI/local test context. No production code
+          path uses underscore for arbitrary user data.
+        expires: '2026-09-27T00:00:00.000Z'
+  # form-data — transitive via insecam-api (data scraping tool)
+  # CRLF injection — not exploitable as input data is controlled
+  GHSA-hmw2-7cc7-3qxx:
+    - '*':
+        reason: >-
+          Transitive dependency via insecam-api data scraper.
+          Not exploitable — scraper controls its own request bodies.
+          insecam-api is a development tool.
+        expires: '2026-09-27T00:00:00.000Z'
+  # undici — transitive via vitest/jsdom (test framework)
+  # TLS cert bypass, WebSocket DoS, cross-origin routing via SOCKS5
+  # None exploitable — vitest runs in local/CI dev environments only
+  GHSA-vmh5-mc38-953g:
+    - '*':
+        reason: >-
+          Transitive dev dependency via vitest > jsdom > undici.
+          TLS certificate bypass via SOCKS5 proxy not exploitable —
+          no SOCKS5 proxy in test or production environments.
+        expires: '2026-09-27T00:00:00.000Z'
+  GHSA-vxpw-j846-p89q:
+    - '*':
+        reason: >-
+          Transitive dev dependency via vitest > jsdom > undici.
+          WebSocket DoS not exploitable — undici is used by jsdom
+          for HTTP parsing only, not WebSocket.
+        expires: '2026-09-27T00:00:00.000Z'
+  GHSA-hm92-r4w5-c3mj:
+    - '*':
+        reason: >-
+          Transitive dev dependency via vitest > jsdom > undici.
+          Cross-origin request routing via SOCKS5 proxy pool not
+          exploitable — no SOCKS5 proxy configured in any environment.
+        expires: '2026-09-27T00:00:00.000Z'
+patch: {}

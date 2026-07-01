@@ -62,7 +62,7 @@ export const isDemo: boolean = edition === "demo";
  * name is in play behind a TLS-terminating reverse proxy.
  */
 export function isHttpsDeployment(): boolean {
-    const authUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
+    const authUrl = process.env.BETTER_AUTH_URL ?? process.env.AUTH_URL ?? "";
     return authUrl.startsWith("https://") || process.env.NODE_ENV === "production";
 }
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { prisma } from "@/lib/db";
 import { isDemo } from "@/core/edition";
 import { generateApiKey } from "@/lib/apiKeyAuth";
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const limited = apiKeyManagementLimiter.check(getClientIp(request));
     if (limited) return limited;
 
-    const session = await auth();
+    const session = await getServerSession();
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const limited = apiKeyManagementLimiter.check(getClientIp(request));
     if (limited) return limited;
 
-    const session = await auth();
+    const session = await getServerSession();
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -113,6 +113,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to create API key" }, { status: 500 });
     }
 }
+
+export const runtime = "nodejs";
 
 // ---------------------------------------------------------------------------
 // Internal helper — M1: wraps count + create in a Serializable transaction

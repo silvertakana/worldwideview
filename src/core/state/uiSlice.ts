@@ -36,7 +36,7 @@ export interface FloatingStream {
  */
 export interface UISlice {
     /** The active visual theme. */
-    theme: "dark" | "light" | "legacy" | "black";
+    theme: "dark" | "light" | "legacy" | "black" | "tactical";
     /** Visibility of the left navigation/plugin sidebar. */
     leftSidebarOpen: boolean;
     /** Visibility of the right details/intel sidebar. */
@@ -66,7 +66,7 @@ export interface UISlice {
     /** Cycles through available UI themes. */
     toggleTheme: () => void;
     /** Directly sets a specific UI theme. */
-    setTheme: (theme: "dark" | "light" | "legacy" | "black") => void;
+    setTheme: (theme: "dark" | "light" | "legacy" | "black" | "tactical") => void;
     /** Toggles the left sidebar state. */
     toggleLeftSidebar: () => void;
     /** Toggles the right sidebar state. */
@@ -119,7 +119,7 @@ export interface UISlice {
 }
 
 export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => ({
-    theme: typeof window !== "undefined" ? ((localStorage.getItem("wwv-theme") as "dark" | "light" | "legacy" | "black") || "black") : "black",
+    theme: typeof window !== "undefined" ? ((localStorage.getItem("wwv-theme") as "dark" | "light" | "legacy" | "black" | "tactical") || "black") : "black",
     leftSidebarOpen: true,
     rightSidebarOpen: false,
     configPanelOpen: true,
@@ -138,11 +138,12 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => (
     bottomPanelHeight: 220,
     toggleTheme: () => set((state) => {
         const nextTheme = {
-            dark: "black",
+            dark: "tactical",
+            tactical: "black",
             black: "light",
             light: "legacy",
             legacy: "dark"
-        }[state.theme] as "dark" | "light" | "legacy" | "black";
+        }[state.theme] as "dark" | "light" | "legacy" | "black" | "tactical";
 
         try { localStorage.setItem("wwv-theme", nextTheme); } catch { /* ignored */ }
         document.documentElement.setAttribute('data-theme', nextTheme);

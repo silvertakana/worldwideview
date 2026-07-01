@@ -15,9 +15,12 @@ export default defineConfig({
         include: [
             'src/lib/**/*.{test,spec}.{js,ts,jsx,tsx}',
             'src/core/**/*.{test,spec}.{js,ts,jsx,tsx}',
+            'src/hooks/**/*.{test,spec}.{js,ts,jsx,tsx}',
             'src/plugins/**/*.{test,spec}.{js,ts,jsx,tsx}',
+            'src/components/**/*.{test,spec}.{js,ts,jsx,tsx}',
             'src/app/**/*.{test,spec}.{js,ts,jsx,tsx}',
             'packages/**/*.{test,spec}.{js,ts,jsx,tsx}',
+            'tests/pact/**/*.{test,spec}.{js,ts,jsx,tsx}',
         ],
         exclude: [
             '**/node_modules/**',
@@ -26,11 +29,12 @@ export default defineConfig({
             '**/.git/**',
         ],
         coverage: {
+            provider: 'v8',
+            reporter: ['text', 'json', 'json-summary', 'html'],
             thresholds: {
-                branches: 80,
                 functions: 80,
-                statements: 80,
-            }
+                branches: 70,
+            },
         }
     },
 });

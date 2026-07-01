@@ -1,0 +1,100 @@
+/* Connect Status Page */
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--space-xl);
+}
+
+.card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow);
+    padding: var(--space-2xl);
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+}
+
+.icon {
+    font-size: 48px;
+    margin-bottom: var(--space-lg);
+    display: block;
+}
+
+.title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: var(--space-sm);
+    color: var(--text-primary);
+}
+
+.message {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: var(--space-xl);
+}
+
+.actions {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: center;
+}
+
+.btnPrimary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-lg);
+    background: linear-gradient(
+        135deg,
+        rgba(var(--accent-rgb), 0.15),
+        rgba(var(--accent-rgb), 0.05)
+    );
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    border-radius: var(--radius-md);
+    color: var(--accent-cyan);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration-normal) var(--ease-spring);
+}
+
+.btnPrimary:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(var(--accent-rgb), 0.25),
+        rgba(var(--accent-rgb), 0.1)
+    );
+    border-color: rgba(var(--accent-rgb), 0.5);
+    box-shadow: var(--glass-shadow-inner);
+    transform: translateY(-2px);
+}
+
+.btnSecondary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-lg);
+    background: var(--bg-glass);
+    border: 1px solid var(--glass-border-inner);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration-normal) var(--ease-spring);
+}
+
+.btnSecondary:hover {
+    background: var(--bg-glass-hover);
+    box-shadow: var(--glass-shadow-inner);
+    transform: translateY(-2px);
+}

@@ -22,6 +22,7 @@
 
 import { useEffect, useRef } from "react";
 import { pluginManager } from "@/core/plugins/PluginManager";
+import { isDemo } from "@/core/edition";
 
 const POLL_INTERVAL_MS = 1500;
 
@@ -172,7 +173,7 @@ export function useMcpRelayBridge(sessionId: string): void {
     const inFlightRef = useRef(false);
 
     useEffect(() => {
-        if (!sessionId) return;
+        if (!sessionId || isDemo) return;
 
         activeRef.current = true;
 

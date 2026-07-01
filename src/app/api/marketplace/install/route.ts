@@ -7,7 +7,8 @@ import { marketplaceApiLimiter } from "@/lib/rateLimiters";
 import { getClientIp } from "@/lib/rateLimit";
 import { isPluginInstallEnabled, isDemo, isDemoAdmin } from "@/core/edition";
 import { getVerifiedPluginIds } from "@/lib/marketplace/registryClient";
-import { auth } from "@/lib/auth";
+
+export const runtime = "nodejs";
 
 export async function OPTIONS(request: Request) {
     return handlePreflight(request);

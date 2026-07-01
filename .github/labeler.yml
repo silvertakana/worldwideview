@@ -1,0 +1,24 @@
+area:frontend:
+  - changed-files:
+      - any-glob-to-any-file: src/**/*
+      - any-glob-to-any-file: app/**/*
+area:infra:
+  - changed-files:
+      - any-glob-to-any-file: .github/**/*
+      - any-glob-to-any-file: Dockerfile*
+      - any-glob-to-any-file: docker-compose*.yml
+area:cli:
+  - changed-files:
+      - any-glob-to-any-file: packages/wwv-cli/**/*
+area:plugins:
+  - changed-files:
+      - any-glob-to-any-file: packages/wwv-plugin-sdk/**/*
+area:deps:
+  - changed-files:
+      - any-glob-to-any-file: package.json
+      - any-glob-to-any-file: pnpm-lock.yaml
+      - any-glob-to-any-file: pnpm-workspace.yaml
+area:docs:
+  - changed-files:
+      - any-glob-to-any-file: "*.md"
+      - any-glob-to-any-file: docs/**/*

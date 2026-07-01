@@ -69,12 +69,13 @@ export function AppShell() {
  needsReload, pendingUnverified, approveSelected, denyAll
 } = useMarketplaceSync(hostReady);
     const setTheme = useStore((s) => s.setTheme);
+    const theme = useStore((s) => s.theme);
 
     // Hydrate theme on mount
     useEffect(() => {
         try {
             const storedTheme = localStorage.getItem("wwv-theme");
-            if (storedTheme === "light" || storedTheme === "dark") {
+            if (storedTheme === "light" || storedTheme === "dark" || storedTheme === "tactical") {
                 setTheme(storedTheme);
             }
         } catch { /* ignore hydration errors */ }
@@ -176,7 +177,7 @@ export function AppShell() {
         <div className={rootClasses} data-testid={!isBooting ? "app-ready" : undefined}>
             <BootOverlay visible={boot.phase === "loading"} />
 
-            <div className="app-shell__globe">
+            <div className={`app-shell__globe ${theme === "tactical" ? "tactical-scanlines" : ""}`}>
                 <GlobeView />
             </div>
 

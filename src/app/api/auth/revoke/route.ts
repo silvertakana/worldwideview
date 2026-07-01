@@ -1,34 +1,31 @@
-import { NextResponse } from "next/server";
-import { auth, signOut } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "@/lib/ba-session";
+import { auth } from "@/lib/better-auth";
 import { prisma } from "@/lib/db";
 import { isCloud } from "@/core/edition";
 
 /**
  * POST /api/auth/revoke: "sign out everywhere".
  *
- * Increments the authenticated user's `sessionVersion`, which invalidates every
- * existing JWT issued for that user: the auth `jwt` callback compares each
- * token's embedded version against the DB on its next use and rejects stale
- * ones. Also clears the caller's own session cookie.
- *
- * Requires an authenticated session. Same-origin only in practice: the session
- * cookie is `sameSite=lax`, so a cross-site POST carries no credentials.
+ * Deletes all Better Auth session records for this user, then calls
+ * `auth.api.signOut()` to invalidate the current session server-side.
+ * Requires an authenticated session.
  */
-export async function POST() {
-    const session = await auth();
+export async function POST(request: NextRequest) {
+    const session = await getServerSession();
     const userId = session?.user?.id;
     if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Cloud identities are managed by Supabase; there is no local users row to bump.
+    // Cloud identities are managed by Supabase; there are no local session rows.
     if (!isCloud) {
-        await prisma.user.update({
-            where: { id: userId },
-            data: { sessionVersion: { increment: 1 } },
-        });
+        await prisma.betterAuthSession.deleteMany({ where: { userId } });
     }
 
-    await signOut({ redirect: false });
+    // Invalidate the current session server-side using actual request headers
+    await auth.api.signOut({ headers: request.headers });
     return NextResponse.json({ ok: true });
 }
+
+export const runtime = "nodejs";

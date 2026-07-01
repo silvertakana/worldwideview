@@ -22,8 +22,7 @@ export function useViewerInitialization(sceneSettings: any) {
         viewer.scene.debugShowFramesPerSecond = sceneSettings.showFps;
         viewer.resolutionScale = sceneSettings.resolutionScale;
         viewer.scene.postProcessStages.fxaa.enabled = sceneSettings.antiAliasing === "fxaa";
-        const isFirefox = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('firefox');
-        viewer.scene.msaaSamples = (isFirefox || sceneSettings.antiAliasing === "none" || sceneSettings.antiAliasing === "fxaa") ? 1 : parseInt(sceneSettings.antiAliasing.replace("msaa", "").replace("x", ""), 10) || 1;
+        viewer.scene.msaaSamples = (sceneSettings.antiAliasing === "none" || sceneSettings.antiAliasing === "fxaa") ? 1 : parseInt(sceneSettings.antiAliasing.replace("msaa", "").replace("x", ""), 10) || 1;
         viewer.scene.globe.depthTestAgainstTerrain = true;
 
         // Configure Screen Space Camera

@@ -1,14 +1,14 @@
 import {
     describe, it, expect, vi, beforeEach
 } from "vitest";
-import type { Session } from "next-auth";
+import type { BetterAuthSession } from "@/lib/ba-session";
 import { GET, POST } from "./route";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { prisma } from "@/lib/db";
 import { generateApiKey } from "@/lib/apiKeyAuth";
 
-vi.mock("@/lib/auth", () => ({
-    auth: vi.fn(),
+vi.mock("@/lib/ba-session", () => ({
+    getServerSession: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -39,9 +39,7 @@ vi.mock("@/lib/rateLimiters", () => ({
     getClientIp: vi.fn().mockReturnValue("127.0.0.1"),
 }));
 
-// NextAuth v5 `auth` is overloaded (middleware wrapper + no-arg session getter).
-// Narrow to the session-getter signature so vi.mocked resolves the correct overload.
-const mockAuth = vi.mocked(auth as unknown as () => Promise<Session | null>);
+const mockAuth = vi.mocked(getServerSession);
 
 // Helper: make $transaction execute its callback synchronously with the mock prisma.
 // Must be called in beforeEach after vi.resetAllMocks() clears the module-level mock.
@@ -62,7 +60,7 @@ describe("GET /api/api-keys", () => {
         wireTransaction();
         mockAuth.mockResolvedValue({
             user: { id: "user-123", email: "test@example.com" },
-        } as Session);
+        } as BetterAuthSession);
     });
 
     it("returns 200 with { keys } for authenticated user (KEY-03)", async () => {
@@ -131,7 +129,7 @@ describe("POST /api/api-keys", () => {
         wireTransaction();
         mockAuth.mockResolvedValue({
             user: { id: "user-123", email: "test@example.com" },
-        } as Session);
+        } as BetterAuthSession);
     });
 
     it("returns 422 with error 'max_keys_reached' when user already has 3 keys (KEY-04)", async () => {

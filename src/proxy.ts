@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
-import { isDemo, isHttpsDeployment } from "@/core/edition";
+import { isDemo } from "@/core/edition";
+import { hasBetterAuthCookie } from "@/lib/proxy-auth";
 
 const workspaceCache = new Map<string, { status: string; expiresAt: number }>();
 const CACHE_TTL = 60_000; // 60 seconds
@@ -26,12 +26,14 @@ const STATIC_ASSET_RE = /\.(?:js|mjs|cjs|css|map|json|txt|xml|webmanifest|ico|pn
 //  - glitchtip-tunnel/build/dev: telemetry/diagnostics (dev/* is NODE_ENV-gated to 403 in prod).
 const PUBLIC_API_PREFIXES = [
     "/api/auth",
+    "/api/ba",
     "/api/internal/workspace",
     "/api/health",
     "/api/billing/webhook",
     "/api/mcp",
     "/api/globe",
     "/api/v1/entities",
+    "/api/places",
     "/api/marketplace",
     "/api/glitchtip-tunnel",
     "/api/build",
@@ -40,22 +42,6 @@ const PUBLIC_API_PREFIXES = [
 
 function isPublicApiPath(path: string): boolean {
     return PUBLIC_API_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
-}
-
-// Resolve the Auth.js session token, handling the __Secure- cookie prefix used
-// behind a TLS-terminating reverse proxy (the public URL is https but the
-// request reaching us may be plain http). Detect via X-Forwarded-Proto / AUTH_URL.
-async function getSessionToken(req: NextRequest) {
-    // Request-aware OR the deploy-wide https signal (isHttpsDeployment), so the
-    // reader agrees with the cookie writer (auth.ts) on the __Secure- prefix.
-    const isSecure = req.headers.get("x-forwarded-proto") === "https"
-        || isHttpsDeployment()
-        || req.nextUrl.protocol === "https:";
-    return getToken({
-        req,
-        secret: process.env.AUTH_SECRET,
-        secureCookie: isSecure,
-    });
 }
 
 async function resolveWorkspace(subdomain: string) {
@@ -137,8 +123,8 @@ export default async function proxy(req: NextRequest) {
             return res;
         }
 
-        const apiToken = await getSessionToken(req);
-        if (apiToken) {
+        // Auth gate: Better Auth session cookie
+        if (hasBetterAuthCookie(req)) {
             if (tenantSubdomain) res.headers.set("x-tenant-subdomain", tenantSubdomain);
             return res;
         }
@@ -190,12 +176,9 @@ export default async function proxy(req: NextRequest) {
         }
     }
 
-    // Check the Auth.js session cookie for page requests (the helper handles the
-    // __Secure- cookie prefix used behind a TLS-terminating reverse proxy).
-    const token = await getSessionToken(req);
-
-    if (token) {
-        // User is logged in, allow through
+    // Auth gate: Better Auth session cookie presence
+    if (hasBetterAuthCookie(req)) {
+        // User has a Better Auth session cookie, allow through
         const res = NextResponse.next();
         if (tenantSubdomain) res.headers.set("x-tenant-subdomain", tenantSubdomain);
         return res;

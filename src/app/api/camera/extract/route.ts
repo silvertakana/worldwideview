@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 
 export async function GET(req: NextRequest) {
-    const session = await auth();
+    const session = await getServerSession();
     if (!session?.user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -47,3 +47,5 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Failed to extract stream" }, { status: 500 });
     }
 }
+
+export const runtime = "nodejs";

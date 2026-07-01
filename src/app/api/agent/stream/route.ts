@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { agentBus } from "@/lib/agent/bus";
 
 /**
@@ -12,7 +12,7 @@ import { agentBus } from "@/lib/agent/bus";
  * Auth-gated via Auth.js session.
  */
 export async function GET() {
-    const session = await auth();
+    const session = await getServerSession();
     if (!session?.user?.id) {
         return new Response("Unauthorized", { status: 401 });
     }
@@ -67,3 +67,5 @@ export async function GET() {
         },
     });
 }
+
+export const runtime = "nodejs";

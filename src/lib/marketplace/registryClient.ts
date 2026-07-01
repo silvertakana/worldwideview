@@ -2,7 +2,7 @@
 import { createPublicKey, verify } from "crypto";
 
 /** Ed25519 public key for verifying the WWV plugin registry. */
-const REGISTRY_PUBLIC_KEY = "MCowBQYDK2VwAyEAkYDmLpCrHu1fnsu8CCdICOHg3IUGuDDkA4fpUeJANJk=";
+const REGISTRY_PUBLIC_KEY = "MCowBQYDK2VwAyEAk7T+s8Us85H4pR9pJt78pG2H17bUYqLSGi6ngbDvGo8=";
 
 /** Default marketplace registry URL (configurable via env). */
 const REGISTRY_URL = process.env.WWV_REGISTRY_URL ?? "https://marketplace.worldwideview.dev/api/registry";

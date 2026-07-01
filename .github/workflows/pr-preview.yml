@@ -1,0 +1,73 @@
+name: PR Preview
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - "src/**"
+      - "Dockerfile"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "next.config.ts"
+      - "docker-compose.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+  pull-requests: write
+
+jobs:
+  build-preview:
+    uses: ./.github/workflows/shared-docker.yml
+    with:
+      tags: |
+        type=ref,event=pr
+        type=sha,prefix=sha-
+      build-args: |
+        NEXT_PUBLIC_WWV_EDITION=demo
+        NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS=iranwarlive,satellite,gps-jamming
+        NEXT_PUBLIC_CESIUM_ION_TOKEN=${{ secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN }}
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+        NEXT_PUBLIC_BING_MAPS_KEY=${{ secrets.NEXT_PUBLIC_BING_MAPS_KEY }}
+        NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      smoke-test-path: /api/health
+      is-preview: true
+    secrets: inherit
+
+  post-comment:
+    needs: build-preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Find or create preview comment
+        uses: peter-evans/find-comment@v4
+        id: find
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: "## PR Preview"
+
+      - name: Post preview comment
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          comment-id: ${{ steps.find.outputs.comment-id }}
+          issue-number: ${{ github.event.number }}
+          body: |
+            ## PR Preview
+
+            | Image | Pull Command |
+            |-------|-------------|
+            | `ghcr.io/silvertakana/worldwideview:pr-${{ github.event.number }}` | `docker pull ghcr.io/silvertakana/worldwideview:pr-${{ github.event.number }}` |
+
+            ### Run locally
+            ```bash
+            docker run -p 3000:3000 ghcr.io/silvertakana/worldwideview:pr-${{ github.event.number }}
+            ```
+
+            Edition: **demo** | Commit: `${{ github.sha }}`
+          edit-mode: replace

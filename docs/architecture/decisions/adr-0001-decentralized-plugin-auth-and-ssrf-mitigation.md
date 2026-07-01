@@ -119,6 +119,17 @@ The Local App stores the API Key in PostgreSQL. It MUST NOT be stored in plainte
 | **Admin rotates Ed25519 key** | Zero downtime (handled via key overlap in JWKS array). |
 | **User revokes API Key** | Immediate for *new* issuances, up to 5 minutes for active streams. |
 
+### Revision (2026-06-23): Revocation Latency Is a Conscious Business Tradeoff
+
+The up-to-5-minute delay between subscription cancellation and stream termination is **not a technical limitation** — it is a deliberate business decision. The 5-minute JWT lifetime was chosen to limit token-theft impact: a stolen JWT is valid for at most 5 minutes. The tradeoff is that cancellation takes up to 5 minutes to propagate to active streams. This is accepted.
+
+Reducing revocation latency would require either:
+
+1. **Shorter JWT lifetimes** (e.g., 1 minute). This increases marketplace token-mint calls by 5x, increasing load on the marketplace and ticket client.
+2. **A push-based revocation channel** (e.g., Redis pub/sub or WebSocket notification from marketplace to all data engines). This adds significant infrastructure complexity for a marginal improvement in cancellation responsiveness.
+
+Neither tradeoff was deemed worth the cost. The 5-minute window is a balanced choice: long enough to avoid excessive token-minting churn, short enough to bound the window for stolen tokens and late cancellations.
+
 ---
 
 ## The End-to-End Auth Flow

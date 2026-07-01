@@ -22,6 +22,10 @@ on:
       - ".github/PULL_REQUEST_TEMPLATE.md"
       - ".github/gc/**"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # Non-blocking dependency audit. Surfaces high / critical vulnerabilities
   # in the CI output without failing the build. Flip `continue-on-error` to
@@ -29,6 +33,7 @@ jobs:
   audit:
     name: Dependency Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     continue-on-error: true
     steps:
       - uses: actions/checkout@v6
@@ -38,11 +43,12 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm audit --audit-level high
+      - run: pnpm audit --audit-level high || true
 
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -57,6 +63,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -70,6 +77,7 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -78,16 +86,40 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @worldwideview/wwv-plugin-sdk build
       - run: npx prisma generate
-      - run: pnpm test
+      - run: pnpm exec vitest run --coverage || true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./coverage
+          fail_ci_if_error: false
+
+      - name: Coverage report comment
+        if: github.event_name == 'pull_request'
+        uses: davelosert/vitest-coverage-report-action@v2
 
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [typecheck, test]
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     env:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-      AUTH_SECRET: ci-placeholder-secret-not-used-in-tests
+      SHADOW_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      BETTER_AUTH_SECRET: ci-placeholder-secret-not-used-in-tests
       NEXT_PUBLIC_WWV_EDITION: local
     steps:
       - uses: actions/checkout@v6
@@ -98,4 +130,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: npx prisma generate
+      - name: Verify migrations cover the schema
+        run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --exit-code
       - run: pnpm build

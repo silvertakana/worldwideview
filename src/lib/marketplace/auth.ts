@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { isDemo, isDemoAdmin } from "@/core/edition";
 import { verifyMarketplaceToken } from "./marketplaceToken";
 
 /**
  * Validate marketplace API access. Accepts (in order):
- *   1. Active Auth.js session (browser redirect flow)
+ *   1. Active Better Auth session (browser redirect flow)
  *   2. Marketplace JWT issued at install time (cross-origin Manage page)
  * Returns null if authorized, or a NextResponse error if not.
  */
@@ -13,7 +13,7 @@ export async function validateMarketplaceAuth(
     request: Request,
 ): Promise<NextResponse | null> {
     // 1. Try session auth first
-    const session = await auth();
+    const session = await getServerSession();
     if (session?.user) {
         if (isDemo && !isDemoAdmin(session)) {
             return NextResponse.json({ error: "Admin access required" }, { status: 403 });

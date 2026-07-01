@@ -15,7 +15,7 @@
 import type { PluginDataSnapshot } from "@/lib/data-query/types";
 import type { RegionOptions } from "@/lib/data-query/types";
 import type { FilterDefinition } from "@/core/plugins/PluginTypes";
-import { getAllPluginSnapshots } from "@/lib/data-query/service";
+import { getEngineUrl, getAllPluginSnapshots } from "@/lib/data-query/service";
 import { getLocalSourceIds } from "@/lib/data-query/localSources";
 import { readActiveSessions, readGlobeState } from "@/lib/globeStateStore";
 import { readSessionCatalog } from "@/lib/mcpSessionCatalog";
@@ -112,7 +112,7 @@ export interface ListStreamingPluginsResult {
  * are not blocked waiting for a slow engine.
  */
 async function probeEngineReachable(): Promise<boolean> {
-    const engineUrl = (process.env.WWV_DATA_ENGINE_URL ?? "http://localhost:5001") + "/manifest";
+    const engineUrl = getEngineUrl() + "/manifest";
     try {
         const res = await fetch(engineUrl, { signal: AbortSignal.timeout(2000) });
         return res.ok;

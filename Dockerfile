@@ -21,6 +21,7 @@ FROM deps AS builder
 # Copy full source code
 COPY . .
 # Next.js inlines NEXT_PUBLIC_* vars at build time — must be declared as ARGs
+ARG NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS
 ARG NEXT_PUBLIC_CESIUM_ION_TOKEN
 ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 ARG NEXT_PUBLIC_BING_MAPS_KEY
@@ -73,6 +74,7 @@ RUN set +e ; { \
         if [ -n "$NEXT_PUBLIC_ADSENSE_CLIENT_ID" ]; then echo "NEXT_PUBLIC_ADSENSE_CLIENT_ID=$NEXT_PUBLIC_ADSENSE_CLIENT_ID" ; fi ; \
         if [ -n "$NEXT_PUBLIC_SUPABASE_URL" ]; then echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" ; fi ; \
         if [ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS" ]; then echo "NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS=$NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS" ; fi ; \
     } > /app/.env.production.local
 
 # Run Next.js build with Webpack cache mounted
@@ -87,7 +89,7 @@ FROM node:26-alpine AS runner
 WORKDIR /app
 
 RUN apk add --no-cache openssl
-RUN npm install -g prisma@7.5.0
+RUN npm install -g prisma@7.5.0 pm2@latest
 
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
@@ -129,6 +131,6 @@ RUN chmod +x ./docker-entrypoint.sh
 EXPOSE 3000 3001
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

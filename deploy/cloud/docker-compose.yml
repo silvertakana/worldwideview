@@ -48,7 +48,8 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-dummy}
       # Required: high-entropy value distinct from API_KEY_HMAC_SECRET.
       # The app fails closed (auth broken) if this is unset.
-      AUTH_SECRET: ${AUTH_SECRET}
+      # Replaces legacy AUTH_SECRET from the NextAuth era.
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       # Redis session/cache/rate-limit store.
       # Operators using a managed Redis should set REDIS_URL=rediss://:<password>@<host>:6380 in .env.
       REDIS_URL: "redis://:${REDIS_PASSWORD}@wwv-redis:6379"

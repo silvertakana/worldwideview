@@ -77,7 +77,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      AUTH_SECRET: ci-placeholder-secret-not-used-in-tests
+      BETTER_AUTH_SECRET: ci-placeholder-secret-not-used-in-tests
       DATABASE_URL: postgresql://postgres:postgres@db:5432/worldwideview?schema=public
       NEXT_PUBLIC_WWV_EDITION: local
       NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL: http://localhost:5000

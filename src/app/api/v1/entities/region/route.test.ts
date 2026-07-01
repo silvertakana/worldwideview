@@ -4,8 +4,8 @@ import {
 import { NextRequest } from "next/server";
 import { GET } from "./route";
 
-vi.mock("@/lib/auth", () => ({
-    auth: vi.fn().mockResolvedValue(null),
+vi.mock("@/lib/ba-session", () => ({
+    getServerSession: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("@/lib/apiKeyAuth", () => ({

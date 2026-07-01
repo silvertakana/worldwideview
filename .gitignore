@@ -78,6 +78,9 @@ packages/*/data/
 .DS_Store
 *.pem
 
+# Pact logs
+/logs/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -153,10 +156,12 @@ skills-lock.json
 /wwv-test/
 worldwideview.code-workspace
 
-# Playwright
-/playwright-report/
-/test-results/
+# Playwright — organized under playwright/ subfolders
+/playwright/output/
+/playwright/report/
 /playwright/.auth/
+/test-results/
+/playwright-report/
 /.playwright-mcp/
 
 # MCP client config -- contains a live API key, never commit

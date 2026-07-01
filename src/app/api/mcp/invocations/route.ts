@@ -15,7 +15,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { auth as getSession } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { authenticateApiKey } from "@/lib/apiKeyAuth";
 import { drainToolInvocations } from "@/lib/mcpRelay";
 import { mcpInvocationsLimiter, getClientIp } from "@/lib/rateLimiters";
@@ -32,11 +32,11 @@ export async function GET(request: Request): Promise<NextResponse> {
         return NextResponse.json({ error: "MCP is not available in demo mode" }, { status: 403 });
     }
 
-    // Dual-auth: NextAuth session PRIMARY, Bearer API key FALLBACK.
+    // Dual-auth: Better Auth session PRIMARY, Bearer API key FALLBACK.
     // userId is resolved exclusively from the auth result -- never from the URL.
     let userId: string | null = null;
 
-    const session = await getSession();
+    const session = await getServerSession();
     if (session?.user?.id) {
         userId = session.user.id;
     } else {
@@ -61,3 +61,5 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ invocations });
 }
+
+export const runtime = "nodejs";

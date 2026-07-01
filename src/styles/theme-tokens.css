@@ -119,6 +119,49 @@
   --discord-glow: rgba(88, 101, 242, 0.3);
 }
 
+[data-theme='tactical'] {
+  /* Palette — Near-black with amber/orange accents (Tactical FUI) */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-tertiary: #1a1a1a;
+  --bg-glass: #111111;
+  --bg-glass-hover: #1a1a1a;
+  --bg-glass-active: #222222;
+
+  --border-subtle: #2a2a2a;
+  --border-medium: #333333;
+  --border-bright: #444444;
+  --border-glow: rgba(230, 126, 34, 0.3);
+
+  --text-primary: #d4d4d4;
+  --text-secondary: #7a7a7a;
+  --text-muted: #555555;
+  --text-accent: #e67e22;
+
+  --accent-cyan: #e67e22;
+  --accent-rgb: 230, 126, 34;
+  --accent-teal: #d4d4d4;
+  --accent-blue: #7a7a7a;
+  --accent-purple: #555555;
+  --accent-amber: #e67e22;
+  --accent-red: #e74c3c;
+  --accent-green: #27ae60;
+
+  --glow-cyan: 0 0 12px rgba(230, 126, 34, 0.2);
+  --glow-blue: 0 0 8px rgba(230, 126, 34, 0.1);
+
+  --discord-color: #e67e22;
+  --discord-color-hover: #d4d4d4;
+  --discord-bg: rgba(230, 126, 34, 0.15);
+  --discord-bg-hover: rgba(230, 126, 34, 0.25);
+  --discord-border: rgba(230, 126, 34, 0.4);
+  --discord-border-hover: rgba(230, 126, 34, 0.6);
+  --discord-glow: rgba(230, 126, 34, 0.2);
+
+  /* Monospace everywhere */
+  --font-ui: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
 :root {
 
   /* Typography */

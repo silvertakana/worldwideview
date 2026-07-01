@@ -1,6 +1,7 @@
 import type { PluginTicket } from "@worldwideview/wwv-plugin-sdk";
 import { decryptCredential } from "@/lib/auth/encryption";
 import { prisma as db } from "@/lib/db";
+import { isDemo, isCloud } from "@/core/edition";
 
 interface CacheEntry {
     ticket: PluginTicket;
@@ -26,7 +27,42 @@ function getMarketplaceUrl(): string {
     );
 }
 
+async function exchangeApiKey(apiKey: string, pluginId: string): Promise<PluginTicket> {
+    const url = `${getMarketplaceUrl()}/api/auth/exchange`;
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey, audience: ENGINE_AUDIENCE, plugin_id: pluginId }),
+    });
+
+    if (!response.ok) {
+        const body = await response.text().catch(() => "");
+        const status = response.status;
+        if (status === 401) {
+            throw new Error(
+                "[ticketClient] Token exchange rejected (401): the MARKETPLACE_API_KEY may be revoked or invalid. Generate a new key and update the env var."
+            );
+        }
+        throw new Error(`[ticketClient] Token exchange failed (${status}): ${body}`);
+    }
+
+    const data = await response.json() as { token?: string };
+    if (!data.token) {
+        throw new Error("[ticketClient] Token exchange response missing 'token' field.");
+    }
+
+    console.log("[ticketClient] Successfully exchanged credential for JWT.");
+    return data.token as PluginTicket;
+}
+
 async function fetchTicket(pluginId: string): Promise<PluginTicket> {
+    const envApiKey = process.env.MARKETPLACE_API_KEY?.trim();
+    if (envApiKey) {
+        console.log(`[ticketClient] Using MARKETPLACE_API_KEY credential (edition: ${isDemo ? "demo" : isCloud ? "cloud" : "local"})`);
+        return await exchangeApiKey(envApiKey, pluginId);
+    }
+
     const cred = await db.marketplaceCredential.findUnique({
         where: { tenantId: "local" },
     });
@@ -35,28 +71,7 @@ async function fetchTicket(pluginId: string): Promise<PluginTicket> {
     }
 
     const apiKey = await decryptCredential(cred);
-    const url = `${getMarketplaceUrl()}/api/auth/exchange`;
-
-    const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // apiKey camelCase — matches the Marketplace /api/auth/exchange destructure.
-        // audience = engine ID per ADR-001B, not pluginId.
-        // plugin_id retained for future Marketplace entitlement scoping.
-        body: JSON.stringify({ apiKey, audience: ENGINE_AUDIENCE, plugin_id: pluginId }),
-    });
-
-    if (!response.ok) {
-        const body = await response.text().catch(() => "");
-        throw new Error(`[ticketClient] Token exchange failed (${response.status}): ${body}`);
-    }
-
-    const data = await response.json() as { token?: string };
-    if (!data.token) {
-        throw new Error("[ticketClient] Token exchange response missing 'token' field.");
-    }
-
-    return data.token as PluginTicket;
+    return await exchangeApiKey(apiKey, pluginId);
 }
 
 /**

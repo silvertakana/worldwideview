@@ -21,6 +21,7 @@ export default defineConfig({
     fullyParallel: false,
     retries: 0,
     workers: 1,
+    outputDir: 'playwright/output',
     reporter: 'list',
 
     use: {

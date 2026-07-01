@@ -12,14 +12,14 @@ const EXPIRY = "4h";
 const revokedJtis = new Set<string>();
 
 function getSecret(): Uint8Array {
-    const secret = process.env.AUTH_SECRET;
-    if (!secret) throw new Error("AUTH_SECRET is not set");
+    const secret = process.env.BETTER_AUTH_SECRET;
+    if (!secret) throw new Error("BETTER_AUTH_SECRET is not set");
     return new TextEncoder().encode(secret);
 }
 
 /**
  * Issue a marketplace session JWT scoped to API access, bound to a specific user.
- * Signed with AUTH_SECRET — no database required.
+ * Signed with BETTER_AUTH_SECRET — no database required.
  * Returns a branded MarketplaceSessionToken to prevent accidental use as a WebSocket credential.
  */
 export async function issueMarketplaceToken(userId: string): Promise<MarketplaceSessionToken> {

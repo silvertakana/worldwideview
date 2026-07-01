@@ -27,6 +27,11 @@ on:
       - "next.config.ts"
       - "playwright.config.ts"
       - ".github/workflows/playwright.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 jobs:
@@ -69,6 +74,10 @@ jobs:
         # Linux CI — without this, Firefox hangs for ~20 min waiting for a bus
         # that doesn't exist on ubuntu-latest runners.
         NO_AT_BRIDGE: ${{ matrix.browser == 'firefox' && '1' || '0' }}
+        # Better Auth secret for HMAC-SHA256 session cookie signing/validation.
+        # Must match the value used by the Next.js app in the Docker Compose stack.
+        # A non-empty string of sufficient length — not sensitive in test CI.
+        BETTER_AUTH_SECRET: test-better-auth-secret-at-least-32-chars!
       run: pnpm test:e2e --project=${{ matrix.browser }}
       
     - uses: actions/upload-artifact@v7

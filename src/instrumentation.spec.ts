@@ -10,7 +10,7 @@ describe("instrumentation — register()", () => {
     beforeEach(() => {
         vi.stubEnv("NEXT_RUNTIME", "nodejs");
         vi.stubEnv("ENCRYPTION_MASTER_KEY", "test-key-64-chars-abcdef1234567890abcdef");
-        vi.stubEnv("AUTH_SECRET", "test-auth-secret");
+        vi.stubEnv("BETTER_AUTH_SECRET", "test-auth-secret");
     });
 
     afterEach(() => {
@@ -24,14 +24,14 @@ describe("instrumentation — register()", () => {
         );
     });
 
-    it("throws when AUTH_SECRET is not set", async () => {
-        vi.stubEnv("AUTH_SECRET", "");
+    it("throws when BETTER_AUTH_SECRET is not set", async () => {
+        vi.stubEnv("BETTER_AUTH_SECRET", "");
         await expect(register()).rejects.toThrow(
-            "[startup] AUTH_SECRET is not set. The server cannot start without it."
+            "[startup] BETTER_AUTH_SECRET is not set. The server cannot start without it."
         );
     });
 
-    it("resolves without throwing when both secrets are set", async () => {
+    it("resolves without throwing when BETTER_AUTH_SECRET is set", async () => {
         await expect(register()).resolves.toBeUndefined();
     });
 

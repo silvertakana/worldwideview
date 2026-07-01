@@ -96,4 +96,4 @@ if [ -f "./scripts/https-proxy.mjs" ]; then
   node ./scripts/https-proxy.mjs &
 fi
 
-exec node server.js
+exec pm2-runtime server.js -i max

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { agentBus, type AgentAction } from "@/lib/agent/bus";
 
 /**
@@ -18,7 +18,7 @@ import { agentBus, type AgentAction } from "@/lib/agent/bus";
  * inside the bus.
  */
 export async function POST(req: NextRequest) {
-    const session = await auth();
+    const session = await getServerSession();
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -55,6 +55,8 @@ function isAgentAction(v: unknown): v is AgentAction {
         || a === "layer_toggle"
         || a === "highlight_layer"
         || a === "select_entity"
-        || a === "ping"
+        ||     a === "ping"
     );
 }
+
+export const runtime = "nodejs";

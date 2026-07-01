@@ -1,6 +1,7 @@
 services:
   wwv:
     image: ghcr.io/silvertakana/worldwideview:latest
+    pull_policy: always
     ports:
       - "3000:3000"
     volumes:
@@ -10,15 +11,16 @@ services:
       - path: .env
         required: false
     environment:
-      - "AUTH_SECRET=${AUTH_SECRET:-default_secret_for_local_dev}"
+      - "BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-default_secret_for_local_dev}"
       - "WWV_DEMO_ADMIN_SECRET=${WWV_DEMO_ADMIN_SECRET:-}"
       - "WWV_BRIDGE_TOKEN=${WWV_BRIDGE_TOKEN:-}"
       - "DATABASE_URL=postgresql://postgres:postgres@db:5432/worldwideview?schema=public"
+      - "REDIS_URL=redis://wwv-redis:6379"
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -52,12 +54,11 @@ services:
       - REDIS_URL=redis://wwv-redis:6379
       - SEEDERS_DIR=/app/seeders
       - DB_PATH=/app/data/engine.db
+      - WWV_SKIP_WS_AUTH=true
     depends_on:
       wwv-redis:
         condition: service_healthy
     restart: unless-stopped
-    profiles:
-      - engine
 
   wwv-redis:
     image: redis:7-alpine
@@ -66,8 +67,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-    profiles:
-      - engine
 
 volumes:
   wwv-data:

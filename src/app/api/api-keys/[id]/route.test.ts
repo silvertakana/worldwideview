@@ -1,13 +1,13 @@
 import {
     describe, it, expect, vi, beforeEach
 } from "vitest";
-import type { Session } from "next-auth";
+import type { BetterAuthSession } from "@/lib/ba-session";
 import { DELETE } from "./route";
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { prisma } from "@/lib/db";
 
-vi.mock("@/lib/auth", () => ({
-    auth: vi.fn(),
+vi.mock("@/lib/ba-session", () => ({
+    getServerSession: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -25,9 +25,7 @@ vi.mock("@/core/edition", () => ({
     isDemo: false,
 }));
 
-// NextAuth v5 `auth` is overloaded (middleware wrapper + no-arg session getter).
-// Narrow to the session-getter signature so vi.mocked resolves the correct overload.
-const mockAuth = vi.mocked(auth as unknown as () => Promise<Session | null>);
+const mockAuth = vi.mocked(getServerSession);
 
 // ---------------------------------------------------------------------------
 // DELETE /api/api-keys/[id] — KEY-03 (revoke)
@@ -38,7 +36,7 @@ describe("DELETE /api/api-keys/[id]", () => {
         vi.resetAllMocks();
         mockAuth.mockResolvedValue({
             user: { id: "user-123", email: "test@example.com" },
-        } as Session);
+        } as BetterAuthSession);
     });
 
     it("returns 200 { success: true } when user owns the key (KEY-03)", async () => {

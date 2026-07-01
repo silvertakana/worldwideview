@@ -15,7 +15,7 @@ beforeEach(() => {
     // Restore env to a clean baseline before each test.
     process.env = { ...ORIGINAL_ENV };
     delete process.env.API_KEY_HMAC_SECRET;
-    delete process.env.AUTH_SECRET;
+    delete process.env.BETTER_AUTH_SECRET;
 });
 
 async function getCheck(): Promise<() => boolean> {
@@ -32,24 +32,24 @@ describe("isSigningKeyValid", () => {
 
     it("returns false for cloud edition when API_KEY_HMAC_SECRET is not set", async () => {
         vi.stubEnv("NEXT_PUBLIC_WWV_EDITION", "cloud");
-        process.env.AUTH_SECRET = "some-auth-secret";
+        process.env.BETTER_AUTH_SECRET = "some-auth-secret";
         delete process.env.API_KEY_HMAC_SECRET;
         const check = await getCheck();
         expect(check()).toBe(false);
     });
 
-    it("returns false for cloud edition when API_KEY_HMAC_SECRET equals AUTH_SECRET", async () => {
+    it("returns false for cloud edition when API_KEY_HMAC_SECRET equals BETTER_AUTH_SECRET", async () => {
         vi.stubEnv("NEXT_PUBLIC_WWV_EDITION", "cloud");
         process.env.API_KEY_HMAC_SECRET = "shared-secret";
-        process.env.AUTH_SECRET = "shared-secret";
+        process.env.BETTER_AUTH_SECRET = "shared-secret";
         const check = await getCheck();
         expect(check()).toBe(false);
     });
 
-    it("returns true for cloud edition when API_KEY_HMAC_SECRET is set and distinct from AUTH_SECRET", async () => {
+    it("returns true for cloud edition when API_KEY_HMAC_SECRET is set and distinct from BETTER_AUTH_SECRET", async () => {
         vi.stubEnv("NEXT_PUBLIC_WWV_EDITION", "cloud");
         process.env.API_KEY_HMAC_SECRET = "dedicated-hmac-secret-value";
-        process.env.AUTH_SECRET = "different-auth-secret-value";
+        process.env.BETTER_AUTH_SECRET = "different-auth-secret-value";
         const check = await getCheck();
         expect(check()).toBe(true);
     });

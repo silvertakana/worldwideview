@@ -1,5 +1,5 @@
 /**
- * Health probe helpers for GET /api/health.
+ * Health probe helpers for GET /api/health and GET /api/health/readiness.
  *
  * Each probe catches its own errors and resolves to a boolean.
  * A probe must never throw out to the caller.
@@ -10,9 +10,13 @@ import { redis } from "@/lib/redis";
 import { prisma } from "@/lib/db";
 import { getEngineUrl } from "@/lib/data-query/service";
 import { isSigningKeyValid } from "@/lib/signingKeyConfig";
+import { isDemo, isDemoAdminConfigured, getDemoAdminSecret } from "@/core/edition";
 
 // Shared probe timeout in milliseconds.
 const PROBE_TIMEOUT_MS = 2000;
+
+// Longer timeout for probes that may involve HTTP calls to external services.
+const READINESS_TIMEOUT_MS = 5000;
 
 // ---------------------------------------------------------------------------
 // Timeout utility
@@ -93,4 +97,82 @@ export async function probeEngine(): Promise<boolean> {
  */
 export function probeConfig(): boolean {
     return isSigningKeyValid();
+}
+
+// ---------------------------------------------------------------------------
+// Demo admin auth (readiness only)
+// ---------------------------------------------------------------------------
+
+/**
+ * On demo edition, verifies that the demo admin secret is configured and
+ * can authenticate against the admin API. On non-demo, trivially passes.
+ */
+export async function probeDemoAuth(): Promise<boolean> {
+    if (!isDemo) return true;
+
+    try {
+        const secret = getDemoAdminSecret();
+        if (!secret) return false;
+
+        const res = await withTimeout(
+            fetch("http://127.0.0.1:3000/api/health", {
+                headers: { "x-wwv-admin-secret": secret },
+                signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+            }),
+            new Response(null, { status: 503 }),
+            PROBE_TIMEOUT_MS,
+        );
+        return res.ok;
+    } catch {
+        return false;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Default plugins (readiness only)
+// ---------------------------------------------------------------------------
+
+/**
+ * Checks that the expected default plugins are installed in the database.
+ * On demo edition, verifies the plugins listed in NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS.
+ * On non-demo, checks that at least some plugins are installed.
+ */
+export async function probeDefaultPlugins(): Promise<boolean> {
+    const expectedPluginIds = isDemo
+        ? readPluginIds()
+        : null;
+
+    try {
+        const count = await withTimeout(
+            prisma.installedPlugin.count(),
+            0,
+            PROBE_TIMEOUT_MS,
+        );
+
+        if (count === 0) return false;
+
+        if (!expectedPluginIds || expectedPluginIds.length === 0) return count > 0;
+
+        const installed = await withTimeout(
+            prisma.installedPlugin.findMany({
+                where: { pluginId: { in: expectedPluginIds } },
+                select: { pluginId: true },
+            }),
+            [],
+            PROBE_TIMEOUT_MS,
+        );
+
+        const installedSet = new Set(installed.map((r) => r.pluginId));
+        return expectedPluginIds.every((id) => installedSet.has(id));
+    } catch {
+        return false;
+    }
+}
+
+function readPluginIds(): string[] {
+    const raw = process.env.NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS || "";
+    return raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
 }

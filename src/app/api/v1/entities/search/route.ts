@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth as getSession } from "@/lib/auth";
+import { getServerSession } from "@/lib/ba-session";
 import { authenticateApiKey } from "@/lib/apiKeyAuth";
 import { searchEntities } from "@/lib/data-query/service";
 import { resolveEdition } from "@/core/edition";
@@ -10,11 +10,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Demo mode" }, { status: 403 });
     }
 
-    // Dual-auth: NextAuth session cookie PRIMARY, Bearer API key FALLBACK.
+    // Dual-auth: Better Auth session cookie PRIMARY, Bearer API key FALLBACK.
     // userId is resolved exclusively from the auth result -- never from the URL.
     let userId: string | null = null;
 
-    const session = await getSession();
+    const session = await getServerSession();
     if (session?.user?.id) {
         userId = session.user.id;
     } else {
@@ -57,3 +57,5 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
+
+export const runtime = "nodejs";

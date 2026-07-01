@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { isDemo } from "@/core/edition";
-import { loginAction } from "./actions";
+import { authClient } from "@/lib/auth-client";
+import { migrateLegacyUserIfNeeded } from "@/lib/auth/migrate-legacy-user";
 import styles from "../setup/setup.module.css";
 
 /** Allow relative paths or same-origin URLs only (local edition is self-contained). */
@@ -30,27 +31,37 @@ export default function LoginForm() {
         setLoading(true);
 
         const formData = new FormData(e.currentTarget);
-        let result;
-        try {
-            result = await loginAction(formData);
-        } catch {
-            setError("Something went wrong. Please try again.");
-            setLoading(false);
-            return;
-        }
+        const email = formData.get("email") as string;
+        const password = formData.get("password") as string;
 
-        if (result.success) {
-            const target = getSafeRedirect(next);
-            if (target === "/") {
-                router.push("/");
-                router.refresh();
+        const { error: signInError } = await authClient.signIn.email({
+            email,
+            password,
+            callbackURL: getSafeRedirect(next),
+        });
+
+        if (signInError) {
+            // Try migrating legacy NextAuth user to Better Auth
+            const migrated = await migrateLegacyUserIfNeeded(email, password);
+            if (migrated) {
+                // Retry sign-in — the BetterAuthUser + account now exist
+                const { error: retryError } = await authClient.signIn.email({
+                    email,
+                    password,
+                    callbackURL: getSafeRedirect(next),
+                });
+                if (retryError) {
+                    console.error("[Login] Retry sign-in error after migration:", retryError.message);
+                    setError("Sign in failed after migration. Try again.");
+                }
+                // On retry success, Better Auth redirects
             } else {
-                window.location.href = target;
+                console.error("[Login] Sign-in error:", signInError.message);
+                setError("Sign in failed. Check your credentials and try again.");
             }
-        } else {
-            setError(result.error ?? "Login failed.");
             setLoading(false);
         }
+        // On success, Better Auth redirects to callbackURL
     }
 
     return (

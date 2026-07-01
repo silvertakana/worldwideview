@@ -62,24 +62,28 @@ describe("PKCE Flow", () => {
         });
     });
 
-    describe("Callback Route", () => {
-        it("should reject if state does not match", async () => {
+    describe("Callback Route — redirect-based error handling", () => {
+        it("should redirect with ?error=state_mismatch when state does not match", async () => {
             const req = new NextRequest("https://localhost:3000/api/marketplace/callback?state=wrong-state&code=test-code");
             req.cookies.set("__Host-pkce_state", "correct-state");
 
             const res = await callbackRoute(req);
-            expect(res.status).toBe(400);
-            expect(await res.json()).toEqual({ error: "State mismatch" });
+            expect(res.status).toBe(302);
+
+            const location = res.headers.get("Location");
+            expect(location).toContain("error=state_mismatch");
         });
 
-        it("should reject if code verifier is missing (expired)", async () => {
+        it("should redirect with ?error=missing_verifier when code verifier is missing", async () => {
             const req = new NextRequest("https://localhost:3000/api/marketplace/callback?state=correct-state&code=test-code");
             req.cookies.set("__Host-pkce_state", "correct-state");
             // code_verifier cookie is intentionally omitted
 
             const res = await callbackRoute(req);
-            expect(res.status).toBe(400);
-            expect(await res.json()).toEqual({ error: "Missing code_verifier" });
+            expect(res.status).toBe(302);
+
+            const location = res.headers.get("Location");
+            expect(location).toContain("error=missing_verifier");
         });
 
         it("should clear the state cookie after use to prevent replay", async () => {
@@ -94,13 +98,16 @@ describe("PKCE Flow", () => {
             expect(cookies).toContain("Max-Age=0");
         });
 
-        it("should perform openid-client exchange and save encrypted token", async () => {
+        it("should redirect with ?connected=true on successful exchange", async () => {
             const req = new NextRequest("https://localhost:3000/api/marketplace/callback?state=correct-state&code=test-code");
             req.cookies.set("__Host-pkce_state", "correct-state");
             req.cookies.set("__Host-pkce_verifier", "mock-verifier");
 
             const res = await callbackRoute(req);
-            expect(res.status).toBe(302); // Redirect back to marketplace or app
+            expect(res.status).toBe(302);
+
+            const location = res.headers.get("Location");
+            expect(location).toContain("connected=true");
         });
     });
 });

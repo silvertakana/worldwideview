@@ -12,7 +12,8 @@ services:
     environment:
       # Required: high-entropy value distinct from API_KEY_HMAC_SECRET.
       # The app fails closed (auth broken) if this is unset.
-      - "AUTH_SECRET=${AUTH_SECRET}"
+      # Replaces legacy AUTH_SECRET from the NextAuth era.
+      - "BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}"
       - "WWV_DEMO_ADMIN_SECRET=${WWV_DEMO_ADMIN_SECRET:-}"
       - "WWV_BRIDGE_TOKEN=${WWV_BRIDGE_TOKEN:-}"
       - "DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/worldwideview?schema=public}"

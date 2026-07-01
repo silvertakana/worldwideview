@@ -7,7 +7,7 @@ import { issueMarketplaceToken, verifyMarketplaceToken } from "./marketplaceToke
 
 // Set a test secret before importing the module
 beforeEach(() => {
-    process.env.AUTH_SECRET = "test-secret-at-least-32-chars-long!!";
+    process.env.BETTER_AUTH_SECRET = "test-secret-at-least-32-chars-long!!";
 });
 
 const TEST_USER_ID = "user-123-abc";
@@ -40,13 +40,13 @@ describe("marketplaceToken", () => {
 
         it("throws on a token signed with a different secret", async () => {
             const token = await issueMarketplaceToken(TEST_USER_ID);
-            process.env.AUTH_SECRET = "a-completely-different-secret-here!!";
+            process.env.BETTER_AUTH_SECRET = "a-completely-different-secret-here!!";
             await expect(verifyMarketplaceToken(token)).rejects.toThrow();
         });
 
         it("throws on a token with wrong scope", async () => {
             const { SignJWT } = await import("jose");
-            const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
+            const secret = new TextEncoder().encode(process.env.BETTER_AUTH_SECRET);
             const wrongScopeToken = await new SignJWT({ scope: "admin" })
                 .setProtectedHeader({ alg: "HS256" })
                 .setSubject(TEST_USER_ID)
@@ -60,7 +60,7 @@ describe("marketplaceToken", () => {
 
         it("throws on a token with wrong issuer", async () => {
             const { SignJWT } = await import("jose");
-            const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
+            const secret = new TextEncoder().encode(process.env.BETTER_AUTH_SECRET);
             const badIssuer = await new SignJWT({ scope: "marketplace" })
                 .setProtectedHeader({ alg: "HS256" })
                 .setSubject(TEST_USER_ID)
@@ -74,7 +74,7 @@ describe("marketplaceToken", () => {
 
         it("throws on a token with wrong audience", async () => {
             const { SignJWT } = await import("jose");
-            const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
+            const secret = new TextEncoder().encode(process.env.BETTER_AUTH_SECRET);
             const badAudience = await new SignJWT({ scope: "marketplace" })
                 .setProtectedHeader({ alg: "HS256" })
                 .setSubject(TEST_USER_ID)
@@ -88,7 +88,7 @@ describe("marketplaceToken", () => {
 
         it("throws on a token without a subject", async () => {
             const { SignJWT } = await import("jose");
-            const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
+            const secret = new TextEncoder().encode(process.env.BETTER_AUTH_SECRET);
             const noSub = await new SignJWT({ scope: "marketplace" })
                 .setProtectedHeader({ alg: "HS256" })
                 .setIssuer("worldwideview")

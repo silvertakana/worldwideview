@@ -20,6 +20,9 @@ on:
         required: false
         default: '180'
 
+env:
+  CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-sonnet-4-20250514' }}
+
 concurrency:
   group: garbage-collector
   cancel-in-progress: true
@@ -113,4 +116,4 @@ jobs:
             Create Tier A draft PRs and Tier B Issues per the guard rails in `.agents/rules/garbage-collection.md`.
 
             Do not scan the codebase yourself. Work only from gc-findings.json.
-          claude_args: '--model claude-haiku-4-5-20251001 --allowedTools Bash,Read,Edit,Write,Grep,Glob'
+          claude_args: '--model ${{ env.CLAUDE_MODEL }} --allowedTools Bash,Read,Edit,Write,Grep,Glob'

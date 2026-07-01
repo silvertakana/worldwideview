@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useStore } from "@/core/state/store";
 import { buildGlobeSnapshot } from "@/lib/globeState";
+import { isDemo } from "@/core/edition";
 
 const STATE_SYNC_DEBOUNCE_MS = 500;
 const STATE_SYNC_HEARTBEAT_MS = 10_000;
@@ -27,7 +28,7 @@ export function useGlobeStateSync(sessionId: string): void {
     // MCP clients calling resolveActiveSessionId don't see a null ZSET entry
     // during the window before the first store change or heartbeat fires.
     useEffect(() => {
-        if (!sessionId) return;
+        if (!sessionId || isDemo) return;
         if (initialPushDoneRef.current) return;
         initialPushDoneRef.current = true;
         void pushState(sessionId);
@@ -35,7 +36,7 @@ export function useGlobeStateSync(sessionId: string): void {
 
     useEffect(() => {
         // No-op until we have a stable session id (pre-mount or SSR)
-        if (!sessionId) return;
+        if (!sessionId || isDemo) return;
 
         const schedulePush = () => {
             if (debounceRef.current) clearTimeout(debounceRef.current);

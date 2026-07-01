@@ -41,10 +41,10 @@ async function importGenerateApiKey() {
 }
 
 // ---------------------------------------------------------------------------
-// Local edition: AUTH_SECRET fallback must still work (dev DX)
+// Local edition: BETTER_AUTH_SECRET fallback must still work (dev DX)
 // ---------------------------------------------------------------------------
 
-describe("SEC-01: local edition -- AUTH_SECRET fallback is allowed", () => {
+describe("SEC-01: local edition -- BETTER_AUTH_SECRET fallback is allowed", () => {
     beforeEach(() => {
         vi.resetModules();
         vi.doMock("@/core/edition", () => ({
@@ -55,17 +55,17 @@ describe("SEC-01: local edition -- AUTH_SECRET fallback is allowed", () => {
         }));
     });
 
-    it("succeeds when only AUTH_SECRET is set (no API_KEY_HMAC_SECRET)", async () => {
+    it("succeeds when only BETTER_AUTH_SECRET is set (no API_KEY_HMAC_SECRET)", async () => {
         delete process.env.API_KEY_HMAC_SECRET;
-        process.env.AUTH_SECRET = "some-auth-secret";
+        process.env.BETTER_AUTH_SECRET = "some-auth-secret";
 
         const generateApiKey = await importGenerateApiKey();
         expect(() => generateApiKey()).not.toThrow();
     });
 
-    it("succeeds when API_KEY_HMAC_SECRET equals AUTH_SECRET in local edition", async () => {
+    it("succeeds when API_KEY_HMAC_SECRET equals BETTER_AUTH_SECRET in local edition", async () => {
         process.env.API_KEY_HMAC_SECRET = "shared-secret";
-        process.env.AUTH_SECRET = "shared-secret";
+        process.env.BETTER_AUTH_SECRET = "shared-secret";
 
         const generateApiKey = await importGenerateApiKey();
         expect(() => generateApiKey()).not.toThrow();
@@ -73,18 +73,18 @@ describe("SEC-01: local edition -- AUTH_SECRET fallback is allowed", () => {
 
     it("throws only when neither key is set", async () => {
         delete process.env.API_KEY_HMAC_SECRET;
-        delete process.env.AUTH_SECRET;
+        delete process.env.BETTER_AUTH_SECRET;
 
         const generateApiKey = await importGenerateApiKey();
-        expect(() => generateApiKey()).toThrow("API_KEY_HMAC_SECRET (or AUTH_SECRET) must be set");
+        expect(() => generateApiKey()).toThrow("API_KEY_HMAC_SECRET (or BETTER_AUTH_SECRET) must be set");
     });
 });
 
 // ---------------------------------------------------------------------------
-// Cloud edition: dedicated key required, must differ from AUTH_SECRET
+// Cloud edition: dedicated key required, must differ from BETTER_AUTH_SECRET
 // ---------------------------------------------------------------------------
 
-describe("SEC-01: cloud edition -- API_KEY_HMAC_SECRET required and distinct", () => {
+describe("SEC-01: cloud edition -- API_KEY_HMAC_SECRET required and distinct from BETTER_AUTH_SECRET", () => {
     beforeEach(() => {
         vi.resetModules();
         vi.doMock("@/core/edition", () => ({
@@ -97,27 +97,27 @@ describe("SEC-01: cloud edition -- API_KEY_HMAC_SECRET required and distinct", (
 
     it("throws when API_KEY_HMAC_SECRET is unset", async () => {
         delete process.env.API_KEY_HMAC_SECRET;
-        process.env.AUTH_SECRET = "some-auth-secret";
+        process.env.BETTER_AUTH_SECRET = "some-auth-secret";
 
         const generateApiKey = await importGenerateApiKey();
         expect(() => generateApiKey()).toThrow(
-            "API_KEY_HMAC_SECRET must be set and distinct from AUTH_SECRET in cloud edition",
+            "API_KEY_HMAC_SECRET must be set and distinct from BETTER_AUTH_SECRET in cloud edition",
         );
     });
 
-    it("throws when API_KEY_HMAC_SECRET equals AUTH_SECRET", async () => {
+    it("throws when API_KEY_HMAC_SECRET equals BETTER_AUTH_SECRET", async () => {
         process.env.API_KEY_HMAC_SECRET = "shared-secret";
-        process.env.AUTH_SECRET = "shared-secret";
+        process.env.BETTER_AUTH_SECRET = "shared-secret";
 
         const generateApiKey = await importGenerateApiKey();
         expect(() => generateApiKey()).toThrow(
-            "API_KEY_HMAC_SECRET must be set and distinct from AUTH_SECRET in cloud edition",
+            "API_KEY_HMAC_SECRET must be set and distinct from BETTER_AUTH_SECRET in cloud edition",
         );
     });
 
-    it("succeeds when API_KEY_HMAC_SECRET is set and differs from AUTH_SECRET", async () => {
+    it("succeeds when API_KEY_HMAC_SECRET is set and differs from BETTER_AUTH_SECRET", async () => {
         process.env.API_KEY_HMAC_SECRET = "dedicated-hmac-key-cloud";
-        process.env.AUTH_SECRET = "different-auth-secret";
+        process.env.BETTER_AUTH_SECRET = "different-auth-secret";
 
         const generateApiKey = await importGenerateApiKey();
         expect(() => generateApiKey()).not.toThrow();
@@ -125,7 +125,7 @@ describe("SEC-01: cloud edition -- API_KEY_HMAC_SECRET required and distinct", (
 });
 
 // ---------------------------------------------------------------------------
-// Demo edition: same enforcement as cloud
+// Demo edition: same enforcement as cloud (must differ from BETTER_AUTH_SECRET)
 // ---------------------------------------------------------------------------
 
 describe("SEC-01: demo edition -- API_KEY_HMAC_SECRET required and distinct", () => {
@@ -141,27 +141,27 @@ describe("SEC-01: demo edition -- API_KEY_HMAC_SECRET required and distinct", ()
 
     it("throws when API_KEY_HMAC_SECRET is unset", async () => {
         delete process.env.API_KEY_HMAC_SECRET;
-        process.env.AUTH_SECRET = "some-auth-secret";
+        process.env.BETTER_AUTH_SECRET = "some-auth-secret";
 
         const generateApiKey = await importGenerateApiKey();
         expect(() => generateApiKey()).toThrow(
-            "API_KEY_HMAC_SECRET must be set and distinct from AUTH_SECRET in demo edition",
+            "API_KEY_HMAC_SECRET must be set and distinct from BETTER_AUTH_SECRET in demo edition",
         );
     });
 
-    it("throws when API_KEY_HMAC_SECRET equals AUTH_SECRET", async () => {
+    it("throws when API_KEY_HMAC_SECRET equals BETTER_AUTH_SECRET", async () => {
         process.env.API_KEY_HMAC_SECRET = "same";
-        process.env.AUTH_SECRET = "same";
+        process.env.BETTER_AUTH_SECRET = "same";
 
         const generateApiKey = await importGenerateApiKey();
         expect(() => generateApiKey()).toThrow(
-            "API_KEY_HMAC_SECRET must be set and distinct from AUTH_SECRET in demo edition",
+            "API_KEY_HMAC_SECRET must be set and distinct from BETTER_AUTH_SECRET in demo edition",
         );
     });
 
-    it("succeeds when API_KEY_HMAC_SECRET is set and differs from AUTH_SECRET", async () => {
+    it("succeeds when API_KEY_HMAC_SECRET is set and differs from BETTER_AUTH_SECRET", async () => {
         process.env.API_KEY_HMAC_SECRET = "dedicated-hmac-key-demo";
-        process.env.AUTH_SECRET = "different-auth-secret-demo";
+        process.env.BETTER_AUTH_SECRET = "different-auth-secret-demo";
 
         const generateApiKey = await importGenerateApiKey();
         expect(() => generateApiKey()).not.toThrow();

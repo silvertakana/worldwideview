@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import type { Session } from "next-auth";
+import type { BetterAuthSession } from "@/lib/ba-session";
 
 // This import will fail (RED) until Wave 1 creates the route implementation.
 import { GET } from "./route";
@@ -30,7 +30,7 @@ const {
     mockStreamCheck,
     mockGetClientIp,
 } = vi.hoisted(() => ({
-    mockGetSession: vi.fn<() => Promise<Session | null>>(),
+    mockGetSession: vi.fn<() => Promise<BetterAuthSession | null>>(),
     mockAuthApiKey: vi.fn(),
     mockDrain: vi.fn(),
     mockStreamCheck: vi.fn(),
@@ -41,8 +41,8 @@ const {
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock("@/lib/auth", () => ({
-    auth: mockGetSession,
+vi.mock("@/lib/ba-session", () => ({
+    getServerSession: mockGetSession,
 }));
 
 vi.mock("@/lib/apiKeyAuth", () => ({
@@ -204,8 +204,8 @@ describe("GET /api/globe/commands/stream -- 200 with SSE headers (SSE-05)", () =
     beforeEach(() => {
         mockGetSession.mockResolvedValue({
             user: { id: "u1", name: "Test User", email: "test@example.com" },
-            expires: "2099-01-01",
-        } as Session);
+            session: { id: "s1", token: "tok1" },
+        } as BetterAuthSession);
         mockDrain.mockResolvedValue([]);
     });
 
@@ -248,8 +248,8 @@ describe("GET /api/globe/commands/stream -- commands pushed as SSE events (SSE-0
 
         mockGetSession.mockResolvedValue({
             user: { id: "u1", name: "Test User", email: "test@example.com" },
-            expires: "2099-01-01",
-        } as Session);
+            session: { id: "s1", token: "tok1" },
+        } as BetterAuthSession);
 
         // First call returns a command; subsequent calls return empty
         mockDrain
@@ -285,8 +285,8 @@ describe("GET /api/globe/commands/stream -- keepalive comment every 15s (SSE-07)
 
         mockGetSession.mockResolvedValue({
             user: { id: "u1", name: "Test User", email: "test@example.com" },
-            expires: "2099-01-01",
-        } as Session);
+            session: { id: "s1", token: "tok1" },
+        } as BetterAuthSession);
         mockDrain.mockResolvedValue([]);
 
         const req = makeRequest(VALID_SESSION_ID);

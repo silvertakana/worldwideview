@@ -20,6 +20,9 @@ name: Publish Packages to npm
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '*.md'
+      - '.gitignore'
   workflow_dispatch:
 
 # Serialize runs so two fast-follow merges can't both pass the version-check and then
@@ -32,6 +35,7 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # id-token: write is for build-provenance attestation (not auth); scope to this job.
     permissions:
       contents: read

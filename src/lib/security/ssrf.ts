@@ -33,12 +33,17 @@ interface FetchOptions extends RequestInit {
     streaming?: boolean;
 }
 
+const warnedHosts = new Set<string>();
+
 function checkHostAllowlist(hostname: string): void {
     const raw = process.env.PROXY_HOST_ALLOWLIST ?? "";
     const allowlist = raw.trim();
 
     if (allowlist === "*") {
-        console.warn(`[SSRF] PROXY_HOST_ALLOWLIST="*" — permissive mode, host: ${hostname}. Populate the list from WARN logs then tighten.`);
+        if (!warnedHosts.has(hostname)) {
+            warnedHosts.add(hostname);
+            console.warn(`[SSRF] PROXY_HOST_ALLOWLIST="*" — permissive mode, host: ${hostname}. Populate the list from WARN logs then tighten.`);
+        }
         return;
     }
 
@@ -109,7 +114,25 @@ export async function safeFetch(urlStr: string, options: FetchOptions = {}): Pro
             // For infinite streams (e.g. MJPEG), skip size accumulation — pipe directly.
             // Duration is already bounded by the AbortController timeout above.
             if (options.streaming) {
-                return new Response(response.body as unknown as BodyInit, {
+                const reader = response.body.getReader();
+                const stream = new ReadableStream({
+                    async pull(controller) {
+                        try {
+                            const { done, value } = await reader.read();
+                            if (done) {
+                                controller.close();
+                                return;
+                            }
+                            controller.enqueue(value);
+                        } catch {
+                            controller.close();
+                        }
+                    },
+                    cancel() {
+                        reader.cancel().catch(() => {});
+                    }
+                });
+                return new Response(stream, {
                     status: response.status,
                     headers: response.headers as unknown as HeadersInit
                 });

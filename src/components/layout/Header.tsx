@@ -12,7 +12,7 @@ import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import {
- Globe, Key, Sun, Moon, Monitor
+ Globe, Key, Sun, Moon, Monitor, Crosshair, LogOut
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { isDemo, DEMO_ADMIN_ROLE } from "@/core/edition";
@@ -20,6 +20,7 @@ import { isDemo, DEMO_ADMIN_ROLE } from "@/core/edition";
 import Image from "next/image";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 import { SearchBar } from "./SearchBar";
+import { authClient } from "@/lib/auth-client";
 import { ApiKeysTab } from "./ApiKeysTab";
 import { PersonalApiKeysSection } from "./PersonalApiKeysSection";
 import "./timeSelect.css";
@@ -40,6 +41,7 @@ const THEMES = [
     { id: "black", label: "Black", icon: Moon },
     { id: "light", label: "Light", icon: Sun },
     { id: "legacy", label: "Legacy", icon: Monitor },
+    { id: "tactical", label: "Tactical", icon: Crosshair },
 ] as const;
 
 const TIME_WINDOWS = ["1h", "6h", "24h", "48h", "7d"] as const;
@@ -65,6 +67,16 @@ export function Header() {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [isDemoAdmin, setIsDemoAdmin] = useState(false);
     const [showApiKeys, setShowApiKeys] = useState(false);
+
+    const handleSignOut = async () => {
+        await authClient.signOut({
+            fetchOptions: {
+                onSuccess: () => {
+                    window.location.href = "/login";
+                },
+            },
+        });
+    };
 
     const [timeOpen, setTimeOpen] = useState(false);
     const timeRef = useRef<HTMLDivElement>(null);
@@ -154,11 +166,31 @@ export function Header() {
                     {theme === "black" && <Moon size={16} />}
                     {theme === "light" && <Sun size={16} />}
                     {theme === "legacy" && <Monitor size={16} />}
+                    {theme === "tactical" && <Crosshair size={16} />}
                     <svg width="10" height="10" viewBox="0 0 10 10" style={{ transform: themeOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease", opacity: 0.6 }}>
                       <path d="M1 3 L5 7 L9 3" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </button>
                 </div>
+                {!isDemo && (
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    title="Sign Out"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "6px",
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--text-secondary)",
+                      gap: "4px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <LogOut size={16} />
+                  </button>
+                )}
                 <div className="status-badge">
                   <span className="status-badge__dot" />
                   LIVE
@@ -285,6 +317,7 @@ export function Header() {
                   {theme === "black" && <Moon size={14} />}
                   {theme === "light" && <Sun size={14} />}
                   {theme === "legacy" && <Monitor size={14} />}
+                  {theme === "tactical" && <Crosshair size={14} />}
                   <svg width="10" height="10" viewBox="0 0 10 10" style={{ transform: themeOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease", opacity: 0.6 }}>
                     <path d="M1 3 L5 7 L9 3" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -332,6 +365,22 @@ export function Header() {
 }}
             />
             <div className="header__actions">
+              {!isDemo && (
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="btn btn--glow"
+                  title="Sign Out"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <LogOut size={14} />
+                  <span style={{ fontSize: "12px" }}>Sign Out</span>
+                </button>
+              )}
               <div className="status-badge">
                 <span className="status-badge__dot" />
                 LIVE

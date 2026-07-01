@@ -13,6 +13,10 @@ on:
       - "package.json"
       - ".github/workflows/test-local-dev.yml"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -21,6 +25,7 @@ jobs:
   test-setup:
     name: pnpm setup (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -50,22 +55,22 @@ jobs:
           fi
           echo "PASS: .env.local exists"
 
-          # Regression guard: AUTH_SECRET must NOT be in the git-tracked .env
-          if [ -f .env ] && grep -qE "^AUTH_SECRET=[a-f0-9]{10}" .env; then
-            echo "FAIL: AUTH_SECRET was written to .env (git-tracked) instead of .env.local"
+          # Regression guard: BETTER_AUTH_SECRET must NOT be in the git-tracked .env
+          if [ -f .env ] && grep -qE "^BETTER_AUTH_SECRET=[a-f0-9]{10}" .env; then
+            echo "FAIL: BETTER_AUTH_SECRET was written to .env (git-tracked) instead of .env.local"
             exit 1
           fi
-          echo "PASS: .env does not contain a generated AUTH_SECRET"
+          echo "PASS: .env does not contain a generated BETTER_AUTH_SECRET"
 
-      - name: Verify AUTH_SECRET generated correctly
+      - name: Verify BETTER_AUTH_SECRET generated correctly
         shell: bash
         run: |
-          if ! grep -qE "^AUTH_SECRET=[a-f0-9]{64}$" .env.local; then
-            echo "FAIL: AUTH_SECRET missing or wrong format in .env.local"
-            grep "AUTH_SECRET" .env.local || echo "(AUTH_SECRET line not found)"
+          if ! grep -qE "^BETTER_AUTH_SECRET=[a-f0-9]{64}$" .env.local; then
+            echo "FAIL: BETTER_AUTH_SECRET missing or wrong format in .env.local"
+            grep "BETTER_AUTH_SECRET" .env.local || echo "(BETTER_AUTH_SECRET line not found)"
             exit 1
           fi
-          echo "PASS: AUTH_SECRET is 64-char hex"
+          echo "PASS: BETTER_AUTH_SECRET is 64-char hex"
 
       - name: Verify ENCRYPTION_MASTER_KEY generated correctly
         shell: bash
@@ -92,6 +97,7 @@ jobs:
   test-dev:
     name: pnpm dev smoke test (ubuntu)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       NEXT_PUBLIC_WWV_EDITION: local
     steps:
