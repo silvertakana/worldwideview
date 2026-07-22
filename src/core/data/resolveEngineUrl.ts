@@ -1,6 +1,6 @@
 // src/core/data/resolveEngineUrl.ts
 import { pluginManager } from "@/core/plugins/PluginManager";
-import { localEngineHasPlugin } from "./engineManifest";
+import { localEngineHasPlugin, isPluginBlocklisted } from "./engineManifest";
 
 const CLOUD_ENGINE_URL = "wss://dataenginev2.worldwideview.dev/stream"; // lint-url: allow (default fallback, env-overridable on next line)
 
@@ -28,7 +28,8 @@ function getLocalWsUrl() {
  * Resolves the WebSocket engine URL for a given plugin.
  *
  * Resolution order:
- * 1. Local engine (if running at localhost:5000 and has this plugin's seeder)
+ * 1. Local engine (if running at localhost:5000 and has this plugin's seeder,
+ *    AND the plugin is not in NEXT_PUBLIC_WWV_LOCAL_ENGINE_BLOCKLIST)
  * 2. Plugin's ServerPluginConfig.streamUrl (code-based plugins)
  * 3. Plugin's PluginManifest.dataSource.streamUrl (manifest-based plugins)
  * 4. NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL env var
@@ -36,7 +37,9 @@ function getLocalWsUrl() {
  */
 export function resolveEngineUrl(pluginId: string): string {
   // 1. Local engine (split-routing) - PRIORITY #1
-  if (localEngineHasPlugin(pluginId)) {
+  // Skips blocklisted plugins so operators can bypass non-functional seeders
+  // (e.g., missing API keys) without code changes.
+  if (localEngineHasPlugin(pluginId) && !isPluginBlocklisted(pluginId)) {
     return getLocalWsUrl();
   }
 

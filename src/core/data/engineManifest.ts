@@ -66,6 +66,20 @@ export function localEngineHasPlugin(pluginId: string): boolean {
   return localManifest.includes(pluginId);
 }
 
+/**
+ * Check if a plugin is blocklisted from using the local engine.
+ *
+ * Reads NEXT_PUBLIC_WWV_LOCAL_ENGINE_BLOCKLIST — a comma-separated list of
+ * plugin IDs that should always use the cloud engine instead. This lets
+ * operators bypass seeders that are registered but non-functional (e.g.,
+ * missing API keys) without code changes.
+ */
+export function isPluginBlocklisted(pluginId: string): boolean {
+  const blocklist = process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_BLOCKLIST || "";
+  if (!blocklist) return false;
+  return blocklist.split(",").map((s) => s.trim()).includes(pluginId);
+}
+
 /** Reset the cache (for testing or reconnection). */
 export function resetManifestCache(): void {
   localManifest = null;

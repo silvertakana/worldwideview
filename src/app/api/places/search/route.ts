@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     // Use user-provided key if present in header AND looks valid, otherwise fall back to .env
     const userKey = request.headers.get("X-User-Google-Key");
     const isValidUserKey = userKey && userKey.length >= 20;
-    const apiKey = isValidUserKey ? userKey : process.env.GOOGLE_MAPS_API_KEY;
+    const apiKey = isValidUserKey ? userKey : (process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
     if (!apiKey) {
         console.error("GOOGLE_MAPS_API_KEY is not defined and no user key provided");
         return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
