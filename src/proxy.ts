@@ -14,7 +14,7 @@ const CACHE_TTL = 60_000; // 60 seconds
 // extension bypass the auth gate. This replaces the former `path.includes(".")`
 // check, which let ANY dotted path (e.g. `/secret.page`, `/globe.config`)
 // skip authentication entirely.
-const STATIC_ASSET_RE = /\.(?:js|mjs|cjs|css|map|json|txt|xml|webmanifest|ico|png|jpe?g|gif|svg|webp|avif|bmp|woff2?|ttf|otf|eot|wasm|mp4|webm|glb|gltf)$/i;
+const STATIC_ASSET_RE = /\.(?:js|mjs|cjs|css|map|json|geojson|txt|xml|webmanifest|ico|png|jpe?g|gif|svg|webp|avif|bmp|woff2?|ttf|otf|eot|wasm|mp4|webm|glb|gltf)$/i;
 
 // API routes that must stay reachable WITHOUT a logged-in session cookie.
 // Everything else under /api is deny-by-default (requires a valid session JWT).
