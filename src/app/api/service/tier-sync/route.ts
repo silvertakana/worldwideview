@@ -30,7 +30,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: `Invalid tier: ${tier}. Must be one of: ${validTiers.join(", ")}` }, { status: 400 });
   }
 
-  const validStatuses = ["active", "trialing", "past_due", "suspended"];
+  const validStatuses = ["active", "trialing", "past_due", "suspended", "canceled"];
   if (status && typeof status === "string" && !validStatuses.includes(status)) {
     return NextResponse.json({ error: `Invalid status: ${status}. Must be one of: ${validStatuses.join(", ")}` }, { status: 400 });
   }

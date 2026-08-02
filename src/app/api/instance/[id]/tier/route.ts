@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { crossServiceAuth } from "@/lib/cross-service/middleware";
-
-const TIER_RANK: Record<string, number> = {
-    free: 0,
-    beta_tester: 1,
-    early_access: 2,
-    pro: 3,
-    enterprise: 4,
-};
+import { TIER_RANK } from "@/lib/org-tier";
 
 export async function POST(
     request: Request,

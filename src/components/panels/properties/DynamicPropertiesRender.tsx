@@ -28,7 +28,7 @@ interface DynamicPropertiesRenderProps {
 export function DynamicPropertiesRender({ entity, classNamePrefix = "intel-panel" }: DynamicPropertiesRenderProps) {
     // Filter out standard non-display properties
     const displayProps = Object.entries(entity.properties).filter(
-        ([key]) => !["id", "pluginId"].includes(key)
+        ([key]) => !["id", "pluginId", "history"].includes(key)
             && entity.properties[key] !== null
             && entity.properties[key] !== undefined
     );

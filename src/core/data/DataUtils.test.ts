@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
- describe, it, expect, vi, beforeEach
+ describe, it, expect, vi, beforeEach, afterAll
 } from "vitest";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { fetchLocalEngineManifest, localEngineHasPlugin, isPluginBlocklisted, resetManifestCache } from "./engineManifest";
@@ -111,7 +111,7 @@ describe("resolveEngineUrl", () => {
 
     // No plugin config or manifest configured, so should fall to default cloud
     const url = resolveEngineUrl("plugin-local");
-    expect(url).toContain("worldwideview.dev/stream");
+    expect(url).toContain("worldwideview.dev/stream"); // lint-url: allow
     delete process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_BLOCKLIST;
   });
 
