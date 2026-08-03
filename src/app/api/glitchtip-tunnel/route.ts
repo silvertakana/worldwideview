@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// demo-gate: allow — public-by-design client-side error-reporting relay
+// (Sentry tunnel pattern). Keeps the GlitchTip DSN/secret server-side, requires
+// GLITCHTIP_* env config (500 otherwise), and mutates no DB or platform state.
 export async function POST(req: NextRequest) {
   const serverUrl = process.env.GLITCHTIP_SERVER_URL;
   const projectId = process.env.GLITCHTIP_PROJECT_ID;

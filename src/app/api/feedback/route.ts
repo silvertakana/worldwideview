@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { feedbackLimiter } from "@/lib/rateLimiters";
 import { getClientIp } from "@/lib/rateLimit";
 
+// demo-gate: allow — public-by-design anonymous feedback submission. Demo users
+// must be able to report issues; the route validates type/description/body size,
+// rate-limits (5 req/min per IP), and writes ONLY to the configured webhook —
+// no DB, no platform state mutation.
+
 const ALLOWED_TYPES = ["Bug Report", "Feature Request", "Auth and Billing", "General Feedback"] as const;
 const MAX_BODY_BYTES = 100_000;
 

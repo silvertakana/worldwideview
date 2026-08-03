@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as client from "openid-client";
+import { getServerSession } from "@/lib/ba-session";
+import { isDemo, isDemoAdmin } from "@/core/edition";
 
 export async function GET(req: NextRequest) {
+    if (isDemo) {
+        const session = await getServerSession();
+        if (!session?.user || !isDemoAdmin(session)) {
+            return NextResponse.json({ error: "Admin access required on Demo edition" }, { status: 403 });
+        }
+    }
+
     const state = client.randomState();
     const code_verifier = client.randomPKCECodeVerifier();
     const code_challenge = await client.calculatePKCECodeChallenge(code_verifier);

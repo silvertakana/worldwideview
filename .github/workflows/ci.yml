@@ -93,6 +93,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
 
+      - name: Check demo edition route gates
+        run: pnpm check:demo-gates
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest

@@ -1,6 +1,6 @@
 {
   "name": "worldwideview",
-  "version": "2.65.4",
+  "version": "2.65.5",
   "private": true,
   "license": "EL-2.0",
   "type": "module",
@@ -24,6 +24,7 @@
     "test:mutate": "stryker run",
     "lint:urls": "node scripts/lint-urls.mjs",
     "lint": "eslint . && node scripts/lint-urls.mjs",
+    "check:demo-gates": "node scripts/check-demo-gates.mjs",
     "db:reset": "npx prisma migrate reset --force",
     "db:prune": "node scripts/db-prune.mjs",
     "generate": "prisma generate"
