@@ -15,7 +15,8 @@ import {
  Globe, Key, Sun, Moon, Monitor, Crosshair, LogOut
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
-import { isDemo, DEMO_ADMIN_ROLE } from "@/core/edition";
+import { isDemo, isDemoAdmin as isDemoAdminSession } from "@/core/edition";
+import { useBetterAuth } from "@/hooks/useBetterAuth";
 
 import Image from "next/image";
 
@@ -67,7 +68,8 @@ export function Header() {
     const setTheme = useStore((s) => s.setTheme);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const [isDemoAdmin, setIsDemoAdmin] = useState(false);
+    const { data: session } = useBetterAuth();
+    const isDemoAdmin = isDemoAdminSession(session);
     const [showApiKeys, setShowApiKeys] = useState(false);
 
     const handleSignOut = async () => {
@@ -88,14 +90,6 @@ export function Header() {
     const [themeOpen, setThemeOpen] = useState(false);
     const themeButtonRef = useRef<HTMLButtonElement>(null);
     const [themePos, setThemePos] = useState({ top: 0, right: 0 });
-
-    useEffect(() => {
-        if (!isDemo) return;
-        fetch("/api/auth/session")
-            .then((r) => r.json())
-            .then((s) => setIsDemoAdmin(s?.user?.role === DEMO_ADMIN_ROLE))
-            .catch(() => {});
-    }, []);
 
     useEffect(() => {
         const el = scrollContainerRef.current;

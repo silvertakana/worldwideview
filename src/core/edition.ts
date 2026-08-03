@@ -142,8 +142,13 @@ export function ticketAuthEnabledForPlugin(pluginId: string): boolean {
  * Returns `true` when the session belongs to the demo admin user.
  * Accepts any session-like object (uses runtime narrowing to avoid
  * type conflicts with Auth.js `Session` which doesn't declare `role`).
+ *
+ * An operator with the standard `admin` role is the demo admin;
+ * `demo-admin` is kept for legacy seeded accounts.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isDemoAdmin(session: any): boolean {
-    return isDemo && session?.user?.role === DEMO_ADMIN_ROLE;
+    if (!isDemo) return false;
+    const role = session?.user?.role;
+    return role === DEMO_ADMIN_ROLE || role === "admin";
 }
