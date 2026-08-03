@@ -77,4 +77,10 @@ describe("isDemoAdmin", () => {
         const { isDemoAdmin, DEMO_ADMIN_ROLE } = await import("./edition");
         expect(isDemoAdmin({ user: { role: DEMO_ADMIN_ROLE } })).toBe(true);
     });
+
+    it("returns true on demo with the standard admin role", async () => {
+        vi.stubEnv("NEXT_PUBLIC_WWV_EDITION", "demo");
+        const { isDemoAdmin } = await import("./edition");
+        expect(isDemoAdmin({ user: { role: "admin" } })).toBe(true);
+    });
 });

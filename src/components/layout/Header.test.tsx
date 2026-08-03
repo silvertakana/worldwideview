@@ -123,3 +123,21 @@ describe("Header signout", () => {
         });
     });
 });
+
+describe("Header admin badge", () => {
+    it("renders ADMIN badge when the session user is a demo admin", async () => {
+        const mod = await import("@/core/edition");
+        const demoOriginal = mod.isDemo;
+        const adminOriginal = mod.isDemoAdmin;
+        Object.defineProperty(mod, "isDemo", { get: () => true });
+        Object.defineProperty(mod, "isDemoAdmin", { get: () => () => true });
+
+        render(<Header />);
+
+        const badges = screen.queryAllByText("ADMIN");
+        expect(badges.length).toBeGreaterThan(0);
+
+        Object.defineProperty(mod, "isDemo", { get: () => demoOriginal });
+        Object.defineProperty(mod, "isDemoAdmin", { get: () => adminOriginal });
+    });
+});
