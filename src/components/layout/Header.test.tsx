@@ -7,11 +7,19 @@ const mockSignOut = vi.fn();
 vi.mock("@/lib/auth-client", () => ({
     authClient: {
         signOut: (...args: unknown[]) => mockSignOut(...args),
+        useSession: () => ({
+            data: null,
+            isPending: false,
+            isRefetching: false,
+            error: null,
+            refetch: vi.fn(),
+        }),
     },
 }));
 
 vi.mock("@/core/edition", () => ({
     isDemo: false,
+    isDemoAdmin: () => false,
     DEMO_ADMIN_ROLE: "admin",
 }));
 
