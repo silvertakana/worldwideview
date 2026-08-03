@@ -14,7 +14,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/db";
-import { isLocal } from "@/core/edition";
+import { isLocal, isDemo } from "@/core/edition";
 import { organization, admin, jwt } from "better-auth/plugins";
 import { oneTimeToken } from "better-auth/plugins/one-time-token";
 import { apiKey } from "@better-auth/api-key";
@@ -90,6 +90,8 @@ export const auth = betterAuth({
     }),
     emailAndPassword: {
         enabled: true,
+        // Demo is public read-only; no self-registration (issue #400).
+        disableSignUp: isDemo,
         // Validate password strength at sign-up and password reset.
         // Rejects passwords scoring below MIN_PASSWORD_SCORE (2).
         passwordValidator: async (password: string) => {
@@ -109,6 +111,7 @@ export const auth = betterAuth({
                 type: "string",
                 required: true,
                 defaultValue: "user",
+                input: false, // never accept a client-supplied role (privilege-escalation guard)
             },
         },
     },
