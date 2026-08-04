@@ -1,0 +1,50 @@
+name: OpenCode Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+    paths-ignore:
+      - '*.md'
+      - '.gitignore'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  opencode-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Run OpenCode Code Review
+        uses: anomalyco/opencode/github@v1.17.13
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: deepseek/deepseek-v4-flash
+          use_github_token: true
+          share: false
+          prompt: |
+            You are a code reviewer for the WorldWideView repository (${{ github.repository }}).
+            The current PR is #${{ github.event.pull_request.number }} and its changes are checked out in the workspace.
+
+            Review the changed files for:
+            - Bugs and edge cases
+            - Security issues
+            - Code quality and maintainability
+            - Adherence to project conventions (see AGENTS.md and CLAUDE.md in the repo root)
+
+            Post your review as a PR review comment:
+              gh pr review ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --comment --body "<your findings>"

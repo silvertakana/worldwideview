@@ -113,7 +113,7 @@ jobs:
             Include the run ID (${{ github.run_id }}) and timestamp at the top.
 
             ## If DRY_RUN is "false":
-            Execute the full sweep procedure described in `.claude/agents/garbage-collector.md`.
+            Execute the full sweep procedure described in `.agents/agents/garbage-collector.md`.
             Create Tier A draft PRs and Tier B Issues per the guard rails in `.agents/rules/garbage-collection.md`.
 
             Do not scan the codebase yourself. Work only from gc-findings.json.
