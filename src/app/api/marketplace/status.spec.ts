@@ -14,6 +14,10 @@ vi.mock("@/lib/ba-session", () => ({
     getServerSession: vi.fn().mockResolvedValue(null),
 }));
 
+vi.mock("@/lib/marketplace/repository", () => ({
+    getInstalledPlugins: vi.fn().mockResolvedValue([]),
+}));
+
 // Pin the demo edition so canManagePlugins actually depends on the session.
 // On local/cloud the route's `!isDemo` short-circuit makes it always true,
 // which would never exercise the session branch.
@@ -38,6 +42,7 @@ describe("Marketplace Status Route", () => {
 
         expect(data).toEqual({
             connected: false,
+            plugins: [],
             canManagePlugins: false,
             encryptionMasterKeyConfigured: true,
         });
