@@ -20,9 +20,6 @@ on:
         required: false
         default: '180'
 
-env:
-  CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-sonnet-4-20250514' }}
-
 concurrency:
   group: garbage-collector
   cancel-in-progress: true
@@ -82,10 +79,14 @@ jobs:
           retention-days: 30
 
       - name: Run Garbage Collector agent
-        uses: anthropics/claude-code-action@v1
+        uses: anomalyco/opencode/github@v1.17.13
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          show_full_output: true
+          model: deepseek/deepseek-v4-flash
+          use_github_token: true
+          share: false
           prompt: |
             You are the WorldWideView Garbage Collector agent running headless in GitHub Actions.
 
@@ -116,4 +117,3 @@ jobs:
             Create Tier A draft PRs and Tier B Issues per the guard rails in `.agents/rules/garbage-collection.md`.
 
             Do not scan the codebase yourself. Work only from gc-findings.json.
-          claude_args: '--model ${{ env.CLAUDE_MODEL }} --allowedTools Bash,Read,Edit,Write,Grep,Glob'
