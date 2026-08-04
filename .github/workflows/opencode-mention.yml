@@ -13,13 +13,27 @@ on:
 jobs:
   opencode:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      (github.event_name == 'issue_comment' &&
+        (contains(github.event.comment.body, '@claude') || contains(github.event.comment.body, '@opencode')) &&
+        contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.comment.author_association) &&
+        github.event.comment.user.login != 'github-actions[bot]') ||
+      (github.event_name == 'pull_request_review_comment' &&
+        (contains(github.event.comment.body, '@claude') || contains(github.event.comment.body, '@opencode')) &&
+        contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.comment.author_association) &&
+        github.event.comment.user.login != 'github-actions[bot]') ||
+      (github.event_name == 'pull_request_review' &&
+        (contains(github.event.review.body, '@claude') || contains(github.event.review.body, '@opencode')) &&
+        contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.sender.author_association) &&
+        github.event.review.user.login != 'github-actions[bot]') ||
+      (github.event_name == 'issues' &&
+        ((contains(github.event.issue.body, '@claude') || contains(github.event.issue.body, '@opencode')) ||
+         (contains(github.event.issue.title, '@claude') || contains(github.event.issue.title, '@opencode'))) &&
+        contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.sender.author_association) &&
+        github.event.sender.login != 'github-actions[bot]')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
+      actions: read
       contents: read
       pull-requests: write
       issues: write
@@ -37,12 +51,20 @@ jobs:
             const pr = context.payload.pull_request;
             const number = issue?.number || pr?.number || '';
             const repo = context.repo.owner + '/' + context.repo.repo;
+            const issueSection = (issue && !commentBody) ? [
+              '## Issue',
+              'Title: ' + (issue.title || '(no title)'),
+              '',
+              issue.body || '(no body)'
+            ] : [];
             core.setOutput('prompt', [
               'Repository: ' + repo,
               number ? ('Conversation: issue/PR #' + number) : '',
               '',
               '## Triggering message',
               commentBody || '(no message body)',
+              '',
+              ...issueSection,
               '',
               '## Instruction',
               'Respond to the mention above by posting a helpful comment on ' +

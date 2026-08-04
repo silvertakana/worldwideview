@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Garbage Collector (GC) is a daily Haiku-model agent that keeps the codebase clean. It detects stale TODOs, deprecated patterns, and architectural drift, then either applies a small mechanical fix (Tier A → draft PR) or files a report for human decision (Tier B → GitHub Issue). The GC **never makes architectural decisions** and **never auto-merges** anything.
+The Garbage Collector (GC) is a daily DeepSeek V4 Flash agent that keeps the codebase clean. It detects stale TODOs, deprecated patterns, and architectural drift, then either applies a small mechanical fix (Tier A → draft PR) or files a report for human decision (Tier B → GitHub Issue). The GC **never makes architectural decisions** and **never auto-merges** anything.
 
 ## Two-tier output model
 
@@ -16,7 +16,7 @@ When unsure of the tier, escalate to Tier B. Never attempt a refactor that requi
 ## How the GC works
 
 1. `scripts/gc-scan.mjs` runs first — deterministic shell-based detectors, zero cost, emits `gc-findings.json`.
-2. The Haiku agent reads `gc-findings.json` and the policy below. It **does not free-scan the codebase** — it only triages the pre-computed findings list.
+2. The DeepSeek V4 Flash agent reads `gc-findings.json` and the policy below. It **does not free-scan the codebase** — it only triages the pre-computed findings list.
 3. The agent creates draft PRs and Issues per the caps and guard rails below.
 
 ## Approved finding types (from gc-scan.mjs)

@@ -2,7 +2,7 @@
 name: garbage-collector
 description: Daily maintenance agent that reads pre-scanned gc-findings.json, then opens Tier A draft PRs (mechanical fixes like removing stale TODOs and console.logs) and Tier B GitHub Issues (architectural drift, oversized files, outdated deps). Runs headless via the garbage-collector.yml cron. Also invokable interactively as @garbage-collector for manual sweeps.
 tools: Read, Grep, Glob, Bash, Edit, Write
-model: haiku
+model: deepseek-v4-flash
 color: orange
 ---
 
