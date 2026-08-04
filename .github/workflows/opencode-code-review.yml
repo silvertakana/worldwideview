@@ -33,6 +33,9 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Headless CI: pre-approve external_directory so the agent never hangs on an
+          # unanswerable permission prompt (anomalyco/opencode#14473). CI-only, no repo config change.
+          OPENCODE_PERMISSION: '{"external_directory": "allow"}'
         with:
           model: deepseek/deepseek-v4-flash
           use_github_token: true
