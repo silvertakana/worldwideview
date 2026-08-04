@@ -36,7 +36,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_TOKEN:     ${{ secrets.GC_BOT_TOKEN }}
-      DRY_RUN:      ${{ github.event.inputs.dry_run      || 'false' }}
+      DRY_RUN:      ${{ github.event.inputs.dry_run      || 'true' }}
       DAYS_BRANCH:  ${{ github.event.inputs.days_branch  || '90' }}
       DAYS_COMMENT: ${{ github.event.inputs.days_comment || '180' }}
 
@@ -83,6 +83,9 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Headless CI: pre-approve external_directory so the agent never hangs on an
+          # unanswerable permission prompt (anomalyco/opencode#14473). CI-only, no repo config change.
+          OPENCODE_PERMISSION: '{"external_directory": "allow"}'
         with:
           model: deepseek/deepseek-v4-flash
           use_github_token: true
@@ -98,7 +101,7 @@ jobs:
             ## If DRY_RUN is "true":
             Do NOT create any PRs or Issues.
             Instead, find or create the tracking Issue titled "[gc-bot] Daily Scan Reports" (label: gc-bot) in
-            the silvertakana/worldwideview repository using the gh CLI:
+            the ${{ github.repository }} repository using the gh CLI:
 
               # Find existing tracking issue
               gh issue list --repo ${{ github.repository }} --label gc-bot --search "[gc-bot] Daily Scan Reports" --json number,title
