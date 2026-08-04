@@ -101,13 +101,13 @@ jobs:
             the silvertakana/worldwideview repository using the gh CLI:
 
               # Find existing tracking issue
-              gh issue list --repo silvertakana/worldwideview --label gc-bot --search "[gc-bot] Daily Scan Reports" --json number,title
+              gh issue list --repo ${{ github.repository }} --label gc-bot --search "[gc-bot] Daily Scan Reports" --json number,title
 
               # If it exists, add a comment:
-              gh issue comment <number> --repo silvertakana/worldwideview --body "..."
+              gh issue comment <number> --repo ${{ github.repository }} --body "..."
 
               # If it doesn't exist, create it:
-              gh issue create --repo silvertakana/worldwideview --title "[gc-bot] Daily Scan Reports" --label gc-bot --body "..."
+              gh issue create --repo ${{ github.repository }} --title "[gc-bot] Daily Scan Reports" --label gc-bot --body "..."
 
             The comment body must list every finding with: tier, file, line, description.
             Include the run ID (${{ github.run_id }}) and timestamp at the top.

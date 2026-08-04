@@ -6,9 +6,13 @@ on:
   pull_request_review_comment:
     types: [created]
   issues:
-    types: [opened, assigned]
+    types: [opened]
   pull_request_review:
     types: [submitted]
+
+concurrency:
+  group: opencode-mention-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   opencode:
@@ -35,7 +39,6 @@ jobs:
     permissions:
       actions: read
       contents: read
-      pull-requests: write
       issues: write
       id-token: write
 
@@ -71,7 +74,7 @@ jobs:
                 (number ? ('issue/PR #' + number + ' of ' + repo) : repo) +
                 ' using the gh CLI: gh issue comment ' + number + ' --repo ' + repo + ' --body "..."',
               '',
-              'You have read-only access to repository content. Do not create branches, commits, or PRs.',
+              'Never edit code. Never open branches, commits, or PRs. You may only post a comment.',
               'If the request asks for code changes, explain what would need to change and ask for approval.'
             ].filter(Boolean).join('\n'));
 

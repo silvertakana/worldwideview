@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
     paths-ignore:
-      - '*.md'
+      - '**/*.md'
       - '.gitignore'
 
 concurrency:
@@ -13,6 +13,7 @@ concurrency:
 
 jobs:
   opencode-review:
+    if: contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.pull_request.author_association)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -45,6 +46,8 @@ jobs:
             - Security issues
             - Code quality and maintainability
             - Adherence to project conventions (see AGENTS.md and CLAUDE.md in the repo root)
+
+            Before posting, list existing reviews by github-actions[bot] on this PR (gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews) and DELETE any you find (gh api -X DELETE repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews/<id>) so only this latest review remains.
 
             Post your review as a PR review comment:
               gh pr review ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --comment --body "<your findings>"
