@@ -2,7 +2,8 @@ name: Garbage Collector
 
 on:
   schedule:
-    - cron: '0 6 * * *'   # 06:00 UTC daily
+    - cron: '0 6 * * *'   # daily 06:00 UTC — dry-run report to issue #178
+    - cron: '0 6 * * 1'   # Monday 06:00 UTC — full sweep (DRY_RUN=false)
   workflow_dispatch:
     inputs:
       dry_run:
@@ -36,7 +37,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_TOKEN:     ${{ secrets.GC_BOT_TOKEN }}
-      DRY_RUN:      ${{ github.event.inputs.dry_run      || 'true' }}
+      DRY_RUN:      ${{ github.event.inputs.dry_run || (github.event.schedule == '0 6 * * 1' && 'false') || 'true' }}
       DAYS_BRANCH:  ${{ github.event.inputs.days_branch  || '90' }}
       DAYS_COMMENT: ${{ github.event.inputs.days_comment || '180' }}
 

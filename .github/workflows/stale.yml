@@ -1,5 +1,5 @@
 # Marks issues and PRs as stale after 60 days of inactivity, then closes
-# after 14 more days. Exempts good-first-issue / help-wanted / P0-critical.
+# after 14 more days. Exempts good-first-issue / help-wanted / P0-critical / gc-bot.
 name: Stale Bot
 
 on:
@@ -33,6 +33,6 @@ jobs:
           days-before-close: 14
           stale-issue-label: stale
           stale-pr-label: stale
-          exempt-issue-labels: good first issue,help wanted,P0-critical
-          exempt-pr-labels: good first issue,help wanted,P0-critical
+          exempt-issue-labels: good first issue,help wanted,P0-critical,gc-bot
+          exempt-pr-labels: good first issue,help wanted,P0-critical,gc-bot
           operations-per-run: 100

@@ -1,0 +1,61 @@
+# Weekly digest of open gc-bot items (issues + draft PRs) so the backlog
+# stays visible instead of sinking into the issue list.
+name: GC Digest
+
+on:
+  schedule:
+    - cron: '0 7 * * 5'   # Friday 07:00 UTC weekly
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Post digest to tracking issue
+        uses: actions/github-script@v7
+        env:
+          GH_TOKEN: ${{ secrets.GC_BOT_TOKEN }}
+        with:
+          script: |
+            const repo = context.repo.owner + '/' + context.repo.repo;
+            const { execSync } = require('child_process');
+            const run = (cmd) => { try { return execSync(cmd, { encoding: 'utf8', env: { ...process.env, GH_TOKEN: process.env.GH_TOKEN } }).trim(); } catch (e) { return ''; } };
+
+            // Locate the tracking issue
+            const tracker = run('gh issue list --repo ' + repo + ' --label gc-bot --search "[gc-bot] Daily Scan Reports" --state all --json number,title --jq \'.[0].number\'');
+            if (!tracker) { core.setFailed('Could not find gc-bot tracking issue'); return; }
+
+            // Open gc-bot issues (excluding tracker itself)
+            const issues = JSON.parse(run('gh issue list --repo ' + repo + ' --label gc-bot --state open --json number,title,updatedAt,createdAt --jq \'[.[] | select(.number != ' + tracker + ')]\'' ) || '[]');
+
+            // Open gc-bot PRs (draft Tier A)
+            const prs = JSON.parse(run('gh pr list --repo ' + repo + ' --label gc-bot --state open --json number,title,updatedAt,createdAt --jq \'.\'') || '[]');
+
+            const days = (s) => Math.floor((Date.now() - new Date(s).getTime()) / 86400000);
+
+            let body = '## GC Backlog Digest (' + new Date().toISOString().slice(0,10) + ')\n\n';
+            body += 'Open gc-bot **issues**: ' + issues.length + '\n';
+            if (issues.length) {
+              body += '\n| # | Title | Age (days) | Updated |\n|---|-------|-----------|---------|\n';
+              for (const i of issues) body += '| [' + i.number + '](https://github.com/' + repo + '/issues/' + i.number + ') | ' + (i.title||'').replace(/\|/g,'\\|').slice(0,60) + ' | ' + days(i.createdAt) + ' | ' + days(i.updatedAt) + ' |\n';
+            }
+            body += '\nOpen gc-bot **PRs**: ' + prs.length + '\n';
+            if (prs.length) {
+              body += '\n| # | Title | Age (days) | Updated |\n|---|-------|-----------|---------|\n';
+              for (const p of prs) body += '| [' + p.number + '](https://github.com/' + repo + '/pull/' + p.number + ') | ' + (p.title||'').replace(/\|/g,'\\|').slice(0,60) + ' | ' + days(p.createdAt) + ' | ' + days(p.updatedAt) + ' |\n';
+            }
+            body += '\n_Review gc-bot PRs and triage gc-bot issues. See `.agents/rules/garbage-collection.md`._';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt(tracker, 10),
+              body: body
+            });
