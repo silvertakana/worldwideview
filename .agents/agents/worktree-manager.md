@@ -93,6 +93,34 @@ git -C "C:\dev\wwv\worldwideview" worktree list
 
 ---
 
+## Step 3a — Removal gotchas (Windows / Worktrunk)
+
+These three behaviors have caused slow worktree cleanups. Handle them in order — do NOT rediscover them from scratch.
+
+**1. yaml-language-server holds the directory handle (the big one).**
+OpenCode spawns a `yaml-language-server` LSP watcher whose **working directory is inside the worktree**. It holds an open handle on the directory, so Windows refuses deletion (`Device or resource busy`) even after `git-wt`'s background removal clears the contents. Command-line search for the path FAILS (the lock is the working directory, not the command line). `handle64.exe` finds it but is slow and can hang.
+
+Before removing the directory, kill the watcher first:
+```powershell
+Get-Process | Where-Object { $_.ProcessName -match 'yaml|language' } | Select-Object Id, ProcessName
+# Targeted kill only — never taskkill /F /IM node.exe
+Stop-Process -Id <PID> -Force
+```
+Only use `handle64.exe` as a fallback to find the holder, and run it backgrounded (it can take minutes).
+
+**2. Squash-merge leaves an "unmerged" branch behind.**
+After a squash-merged PR, the local branch commit is not an ancestor of main, so `git-wt remove` reports the branch unmerged and leaves it. Delete it explicitly:
+```powershell
+git branch -D <branch-name>
+```
+
+**3. `git-wt remove` backgrounds the deletion.**
+It unregisters the worktree synchronously but deletes contents in a background task (pre-remove hooks include `docker compose down -v`, which can take time). The directory may briefly linger with contents, then become an empty dir still held by the watcher. Don't fight it immediately — poll/wait for the background task, then clean the leftover empty dir (after killing the watcher per gotcha 1).
+
+Order that works: `git-wt remove --force --yes <branch>` → delete local branch if left (`-D`) → wait for background removal → kill yaml-language-server watcher if dir is held → `rm -rf` the empty dir.
+
+---
+
 ## Step 4 — Orphan recovery
 
 If a worktree was manually deleted and its Docker volume is now orphaned, run from the **main repo root**:
