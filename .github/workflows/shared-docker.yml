@@ -18,6 +18,9 @@ on:
       is-preview:
         type: boolean
         default: false
+      include-preview-secrets:
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -57,7 +60,12 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: ${{ inputs.build-args }}
+          build-args: |
+            ${{ inputs.build-args }}
+            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_CESIUM_ION_TOKEN={0}', secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN) || '' }}
+            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY={0}', secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) || '' }}
+            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_BING_MAPS_KEY={0}', secrets.NEXT_PUBLIC_BING_MAPS_KEY) || '' }}
+            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_SUPABASE_ANON_KEY={0}', secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
