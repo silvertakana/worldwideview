@@ -20,6 +20,8 @@ permissions:
   contents: read
   packages: write
   pull-requests: write
+  id-token: write
+  attestations: write
 
 jobs:
   build-preview:
