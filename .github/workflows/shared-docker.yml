@@ -21,6 +21,10 @@ on:
       include-preview-secrets:
         type: boolean
         default: false
+      platforms:
+        type: string
+        default: 'linux/amd64'
+        description: 'Comma-separated build platforms. Default amd64-only; only the public globe app should pass linux/amd64,linux/arm64.'
 
 jobs:
   build:
@@ -57,7 +61,7 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ inputs.platforms }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
