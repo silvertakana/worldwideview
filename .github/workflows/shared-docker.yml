@@ -88,11 +88,11 @@ jobs:
           sarif_file: trivy-results.sarif
 
       - name: Generate SBOM
-        uses: anchore/syft-action@v0
+        uses: anchore/sbom-action@v0
         with:
           image: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
           format: spdx-json
-          output: sbom.spdx.json
+          output-file: sbom.spdx.json
 
       - name: Sign image with Cosign
         if: ${{ !inputs.is-preview }}
