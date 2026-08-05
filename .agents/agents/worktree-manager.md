@@ -97,6 +97,9 @@ git -C "C:\dev\wwv\worldwideview" worktree list
 
 These three behaviors have caused slow worktree cleanups. Handle them in order — do NOT rediscover them from scratch.
 
+**0. `wt` is Windows Terminal, NOT Worktrunk.**
+On Windows, the bare command `wt` resolves to the Windows Terminal executable, not a worktree command. NEVER invoke bare `wt` for worktree operations — it opens a terminal window or prints Windows Terminal help, and the command appears to "hang" or do nothing useful. ALWAYS use the full binary name `git-wt` (Worktrunk). Verify with `git-wt --version` before any operation (per the tool requirement at the top of this file).
+
 **1. yaml-language-server holds the directory handle (the big one).**
 OpenCode spawns a `yaml-language-server` LSP watcher whose **working directory is inside the worktree**. It holds an open handle on the directory, so Windows refuses deletion (`Device or resource busy`) even after `git-wt`'s background removal clears the contents. Command-line search for the path FAILS (the lock is the working directory, not the command line). `handle64.exe` finds it but is slow and can hang.
 
