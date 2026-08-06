@@ -25,7 +25,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "email and tier must be strings" }, { status: 400 });
   }
 
-  const validTiers = ["free", "pro", "enterprise"];
+  const validTiers = ["free", "pro", "team", "enterprise"];
   if (!validTiers.includes(tier)) {
     return NextResponse.json({ error: `Invalid tier: ${tier}. Must be one of: ${validTiers.join(", ")}` }, { status: 400 });
   }

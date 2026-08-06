@@ -26,6 +26,20 @@ describe("hasMinimumPlan", () => {
     expect(hasMinimumPlan("pro", "enterprise")).toBe(false);
   });
 
+  it("team meets free and pro minimums", () => {
+    expect(hasMinimumPlan("team", "free")).toBe(true);
+    expect(hasMinimumPlan("team", "pro")).toBe(true);
+  });
+
+  it("team does not meet enterprise minimum", () => {
+    expect(hasMinimumPlan("team", "enterprise")).toBe(false);
+  });
+
+  it("team is above pro in hierarchy", () => {
+    expect(hasMinimumPlan("team", "team")).toBe(true);
+    expect(hasMinimumPlan("pro", "team")).toBe(false);
+  });
+
   it("enterprise meets all minimums", () => {
     expect(hasMinimumPlan("enterprise", "free")).toBe(true);
     expect(hasMinimumPlan("enterprise", "pro")).toBe(true);

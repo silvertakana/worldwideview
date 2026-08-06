@@ -3,7 +3,7 @@ import { getActiveOrgId } from "@/lib/ba-org";
 import { getEffectiveTier } from "@/lib/org-tier";
 import { hasMinimumPlan } from "./planGating";
 
-export async function requirePlan(minimum: "free" | "pro" | "enterprise"): Promise<NextResponse | null> {
+export async function requirePlan(minimum: "free" | "pro" | "team" | "enterprise"): Promise<NextResponse | null> {
   const orgId = await getActiveOrgId();
   if (!orgId) return null;
 

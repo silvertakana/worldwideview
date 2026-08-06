@@ -18,7 +18,8 @@ export const TIER_RANK: Record<string, number> = {
   beta_tester: 1,
   early_access: 2,
   pro: 3,
-  enterprise: 4,
+  team: 4,
+  enterprise: 5,
 };
 
 function effectiveTierForLock(tier: string, status: string): string {
