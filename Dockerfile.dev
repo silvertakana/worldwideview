@@ -1,0 +1,26 @@
+# Stage 1: Extract only package.json files for install resolution
+FROM alpine AS extractor
+WORKDIR /app
+COPY . .
+RUN find . -type f \! -name 'package.json' \! -name 'pnpm-workspace.yaml' \! -name 'pnpm-lock.yaml' -delete && \
+    find . -type d -empty -delete
+
+# Stage 2: Install dependencies (cached layer)
+FROM node:22-alpine AS deps
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+WORKDIR /app
+COPY --from=extractor /app ./
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
+
+# Stage 3: Generate Prisma client
+FROM deps
+COPY prisma/ ./prisma/
+COPY prisma.config.ts ./
+RUN npx prisma generate
+
+# Copy prebuild scripts for runtime use
+COPY scripts/copy-cesium.mjs scripts/sync-local-plugins.mjs ./scripts/
+
+ENV WATCHPACK_POLLING=true
+ENV NEXT_TELEMETRY_DISABLED=1
+EXPOSE 3000
