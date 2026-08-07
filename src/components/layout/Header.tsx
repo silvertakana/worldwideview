@@ -445,6 +445,9 @@ export function Header() {
         )}
         {showApiKeys && (
           <div
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowApiKeys(false); } }}
             style={{
                                 position: "fixed",
                                 inset: 0,
@@ -462,6 +465,9 @@ export function Header() {
             <div
               className="glass-panel"
               onClick={(e) => e.stopPropagation()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
               style={{
                                     width: "min(700px, 90vw)",
                                     maxHeight: "80vh",

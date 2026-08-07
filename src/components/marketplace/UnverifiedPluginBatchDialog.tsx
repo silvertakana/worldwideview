@@ -53,10 +53,9 @@ export default function UnverifiedPluginBatchDialog({
 
         <ul className={styles.list}>
           {manifests.map((m) => (
-            <li
+            <label
               key={m.id}
               className={styles.item}
-              onClick={() => toggle(m.id)}
             >
               <input
                 type="checkbox"
@@ -68,7 +67,7 @@ export default function UnverifiedPluginBatchDialog({
               <span className={styles.pluginName}>
                 {m.name ?? m.id}
               </span>
-            </li>
+            </label>
           ))}
         </ul>
 

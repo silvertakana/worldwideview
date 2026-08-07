@@ -35,6 +35,7 @@ export interface WWVHostGlobals {
 
 declare global {
 
+    // eslint-disable-next-line no-var
     var __WWV_HOST__: WWVHostGlobals | undefined;
 }
 

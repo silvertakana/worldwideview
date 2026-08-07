@@ -61,8 +61,9 @@ export function CacheLimitsTab() {
         <div style={sectionHeaderStyle}>Cache & Limits</div>
 
         <div style={inputGroupStyle}>
-          <label style={labelStyle}>Enable Cache</label>
+          <label style={labelStyle} htmlFor="cl-enable-cache">Enable Cache</label>
           <input
+            id="cl-enable-cache"
             type="checkbox"
             checked={dataConfig.cacheEnabled}
             onChange={(e) => updateDataConfig({ cacheEnabled: e.target.checked })}
@@ -71,8 +72,9 @@ export function CacheLimitsTab() {
         </div>
 
         <div style={inputGroupStyle}>
-          <label style={labelStyle}>Cache Max Age (ms)</label>
+          <label style={labelStyle} htmlFor="cl-cache-max-age">Cache Max Age (ms)</label>
           <input
+            id="cl-cache-max-age"
             type="number"
             value={dataConfig.cacheMaxAge}
             onChange={(e) => updateDataConfig({ cacheMaxAge: parseInt(e.target.value) || 0 })}
@@ -81,8 +83,9 @@ export function CacheLimitsTab() {
         </div>
 
         <div style={inputGroupStyle}>
-          <label style={labelStyle}>Max Concurrent Req</label>
+          <label style={labelStyle} htmlFor="cl-max-concurrent-req">Max Concurrent Req</label>
           <input
+            id="cl-max-concurrent-req"
             type="number"
             value={dataConfig.maxConcurrentRequests}
             onChange={(e) => updateDataConfig({ maxConcurrentRequests: parseInt(e.target.value) || 0 })}
@@ -91,8 +94,9 @@ export function CacheLimitsTab() {
         </div>
 
         <div style={inputGroupStyle}>
-          <label style={labelStyle}>Retry Attempts</label>
+          <label style={labelStyle} htmlFor="cl-retry-attempts">Retry Attempts</label>
           <input
+            id="cl-retry-attempts"
             type="number"
             value={dataConfig.retryAttempts}
             onChange={(e) => updateDataConfig({ retryAttempts: parseInt(e.target.value) || 0 })}

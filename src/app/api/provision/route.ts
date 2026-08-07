@@ -27,6 +27,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }));
     if (authError) return authError;
 
+    // eslint-disable-next-line prefer-const
     let body: ProvisionBody;
     try {
         body = JSON.parse(rawBody) as ProvisionBody;
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const slug = email.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
     let uniqueSlug = slug;
     let attempt = 0;
+    // eslint-disable-next-line no-constant-condition
     while (true) {
         const existingOrg = await prisma.pluginOrganization.findUnique({
             where: { slug: uniqueSlug },

@@ -194,6 +194,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
             }}
       >
         {/* Header / Title Bar */}
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
         <div
           style={{
                     display: "flex",
@@ -251,6 +252,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
         </div>
 
         {/* Resize Handle */}
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
         <div
           style={{
                     position: "absolute",

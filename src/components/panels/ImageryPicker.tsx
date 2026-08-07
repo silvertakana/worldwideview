@@ -77,10 +77,19 @@ export function ImageryPicker() {
                         return (
                           <div
                             key={layer.id}
+                            role="button"
+                            tabIndex={0}
                             className={className}
                             onClick={() => {
                                     updateMapConfig({ baseLayerId: layer.id, fallbackLayerId: null });
                                     trackEvent("imagery-layer-change", { layer: layer.id });
+                                }}
+                            onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        updateMapConfig({ baseLayerId: layer.id, fallbackLayerId: null });
+                                        trackEvent("imagery-layer-change", { layer: layer.id });
+                                    }
                                 }}
                             title={isFailedTarget ? "Error: Missing API Key" : (isThisFallback ? "Active Fallback" : "")}
                           >

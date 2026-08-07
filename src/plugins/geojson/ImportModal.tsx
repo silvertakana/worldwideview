@@ -27,10 +27,21 @@ export function ImportModal({ onClose }: ImportModalProps) {
     } = useGeoJsonImport(onClose);
 
     return (
-      <div className="geojson-modal-overlay" onClick={onClose}>
+      <div 
+        className="geojson-modal-overlay" 
+        onClick={onClose}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            onClose();
+          }
+        }}
+      >
         <div
           className="geojson-modal glass-panel"
           onClick={(e) => e.stopPropagation()}
+          role="presentation"
         >
           <div className="geojson-modal__header">
             <h3>Import GeoJSON</h3>

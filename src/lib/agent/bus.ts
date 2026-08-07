@@ -87,6 +87,7 @@ class AgentBus {
 // don't drop and reconnect on every code change in development.
 declare global {
 
+    // eslint-disable-next-line no-var
     var __WWV_AGENT_BUS__: AgentBus | undefined;
 }
 

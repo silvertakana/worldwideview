@@ -24,10 +24,13 @@ export function TimestampProperty({ timestamp, classNamePrefix = "intel-panel" }
     return (
       <IntelPropertyRow label="Timestamp" isColumn classNamePrefix={classNamePrefix}>
         <span
+          role="button"
+          tabIndex={0}
           style={{
  cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px", width: "100%"
 }}
           onClick={() => setShowUtc(!showUtc)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowUtc(!showUtc); } }}
           title="Click to view UTC time"
         >
           {new Date(timestamp).toLocaleString(undefined, {

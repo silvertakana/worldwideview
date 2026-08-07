@@ -87,6 +87,9 @@ export function OverlayConfigTab() {
                           <div
                             key={pluginId}
                             onClick={() => isHighlighted && setHighlightLayerId(null)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isHighlighted) setHighlightLayerId(null); } }}
                             style={{
                                     marginBottom: "var(--space-md)",
                                     background: "var(--bg-tertiary)",
@@ -106,8 +109,9 @@ export function OverlayConfigTab() {
                               Layer
                             </div>
                             <div style={inputGroupStyle}>
-                              <label style={labelStyle}>Polling Interval (ms)</label>
+                              <label htmlFor={`tab-polling-${pluginId}`} style={labelStyle}>Polling Interval (ms)</label>
                               <input
+                                id={`tab-polling-${pluginId}`}
                                 type="number"
                                 value={interval}
                                 onChange={(e) => setPollingInterval(pluginId, parseInt(e.target.value) || 0)}
@@ -143,8 +147,9 @@ export function OverlayConfigTab() {
                     };
                     return (
                       <div key={feature} style={inputGroupStyle}>
-                        <label style={labelStyle}>{labels[feature] || feature}</label>
+                        <label style={labelStyle} htmlFor={`oc-exp-feature-${feature}`}>{labels[feature] || feature}</label>
                         <input
+                          id={`oc-exp-feature-${feature}`}
                           type="checkbox"
                           checked={enabled}
                           onChange={(e) => updateDataConfig({

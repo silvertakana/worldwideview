@@ -36,6 +36,7 @@ function isValidPluginOrLayerId(v: unknown): v is string {
 }
 
 function isValidEntityId(v: unknown): v is string {
+    // eslint-disable-next-line no-control-regex
     return typeof v === "string" && v.length > 0 && v.length <= ENTITY_ID_MAX && !/[\x00-\x1F\x7F]/.test(v);
 }
 

@@ -16,7 +16,7 @@ const OVERPASS_MIRRORS = [
  * Allowed characters: alphanumeric, spaces, and the QL syntax chars: .,;()[]{}!=><~"@/:-
  * Max length 500 chars — users search OSM interactively, not batch-query the planet.
  */
-const OSM_QUERY_ALLOWED = /^[a-zA-Z0-9\s.,;()\[\]{}!=><~"@\/:\-]+$/;
+const OSM_QUERY_ALLOWED = /^[a-zA-Z0-9\s.,;()[\]{}!=><~"@/:-]+$/;
 const OSM_QUERY_MAX_LENGTH = 500;
 
 async function tryMirror(urlStr: string, query: string, timeoutMs: number) {
@@ -76,6 +76,7 @@ export async function POST(request: Request) {
     }
 
     // 3. Parse body with malformed-body guard
+    // eslint-disable-next-line prefer-const
     let body: { query?: string };
     try {
         body = await request.json();

@@ -25,6 +25,9 @@ export function MobileCameraStats() {
       <div
         className={`mobile-camera-stats glass-panel ${collapsed ? "mobile-camera-stats--collapsed" : ""}`}
         onClick={() => setCollapsed(!collapsed)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(!collapsed); } }}
       >
         {collapsed ? (
           <div className="mobile-camera-stats__tab">

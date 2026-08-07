@@ -34,7 +34,10 @@ export default function CameraStatsPanel() {
     return (
       <div
         className={`camera-stats ${collapsed ? "camera-stats--collapsed" : ""}`}
+        role="button"
+        tabIndex={0}
         onClick={() => setCollapsed(!collapsed)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(!collapsed); } }}
         title={collapsed ? "Show HUD" : "Click to hide HUD"}
       >
         {!collapsed ? (

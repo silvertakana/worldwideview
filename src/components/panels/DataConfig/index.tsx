@@ -45,6 +45,7 @@ export function DataConfigPanel() {
       >
         {/* Drag Handle */}
         {!isMobile && (
+        /* eslint-disable-next-line jsx-a11y/no-static-element-interactions */
         <div
           onMouseDown={startResizing}
           style={{

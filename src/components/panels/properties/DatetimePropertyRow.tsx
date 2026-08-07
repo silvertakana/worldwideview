@@ -44,6 +44,9 @@ export function DatetimePropertyRow({ label, iso, classNamePrefix = "intel-panel
                 <span
                     style={{ cursor: "pointer", fontWeight: 600 }}
                     onClick={() => setExpanded(false)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(false); } }}
                 >
                     {formatLocal(iso)}
                 </span>
@@ -58,6 +61,9 @@ export function DatetimePropertyRow({ label, iso, classNamePrefix = "intel-panel
             <span
                 style={{ cursor: "pointer", textDecoration: "underline dotted" }}
                 onClick={() => setExpanded(true)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(true); } }}
             >
                 {formatLocal(iso)}
             </span>

@@ -47,7 +47,7 @@ function SetupForm() {
 
     useEffect(() => {
         if (!isCloudMode) return;
-        let cancelled = false;
+        const cancelled = false;
         validateProvisionToken(token!).then((result) => {
             if (cancelled) return;
             if (result.valid && result.email) {

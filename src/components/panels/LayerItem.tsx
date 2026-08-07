@@ -108,7 +108,10 @@ export function LayerItem({
     return (
       <div
         className={`layer-item ${isSelected ? "layer-item--selected" : ""}`}
+        role="button"
+        tabIndex={0}
         onClick={onSelect}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
       >
         <span className="layer-item__icon">
           <PluginIcon icon={plugin.icon} size={18} />
@@ -135,9 +138,18 @@ export function LayerItem({
 
         <div
           className={`layer-item__toggle ${isEnabled ? "layer-item__toggle--on" : ""}`}
+          role="button"
+          tabIndex={0}
           onClick={(e) => {
                     e.stopPropagation();
                     onToggle();
+                }}
+          onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        onToggle();
+                    }
                 }}
         />
       </div>

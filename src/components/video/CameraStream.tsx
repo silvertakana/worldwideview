@@ -43,6 +43,7 @@ export interface CameraStreamProps {
  *
  * @param props - Component properties.
  */
+// eslint-disable-next-line react/prop-types
 export const CameraStream: React.FC<CameraStreamProps> = ({
     streamUrl, previewUrl, isIframe = false, label, className = "", id,
 }) => {
@@ -173,6 +174,7 @@ label: label || "Camera Stream",
             return (
               <iframe
                 src={embedUrl}
+                title={label || "Camera Stream"}
                 sandbox={isProxiedIframe ? "allow-scripts allow-presentation" : undefined}
                 style={{
  position: "absolute", inset: 0, width: "100%", height: "100%", border: "none"
@@ -232,14 +234,16 @@ label: label || "Camera Stream",
       >
         {!isPlaying ? (
           <div
+            role="button"
+            tabIndex={0}
             style={{
  position: "absolute", inset: 0, cursor: "pointer", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center"
 }}
             onClick={handlePlay}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePlay(); } }}
           >
             {previewUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+              <img
               src={getProxiedStreamUrl(previewUrl)}
               alt={label || "Camera preview"}
               style={{

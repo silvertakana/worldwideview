@@ -39,7 +39,8 @@ export function PluginIcon({ icon, size = 18, color }: PluginIconProps) {
         const Resolved = icons[icon as keyof typeof icons] as LucideIcon | undefined;
         if (Resolved) return <Resolved size={size} color={color} />;
         // Emoji: render as text. Unresolved ASCII icon name: render fallback so stale names don't leak as text.
-        if (/[^\x00-\x7F]/.test(icon)) return <span>{icon}</span>;
+        // eslint-disable-next-line no-control-regex
+        if (/[^\x00-\x7F]/.test(icon)) return <span role="img" aria-label="plugin icon">{icon}</span>;
         return <FallbackIcon size={size} />;
     }
 

@@ -42,4 +42,5 @@ export const entityIdSchema = z
     .string()
     .min(1)
     .max(ENTITY_ID_MAX)
+    // eslint-disable-next-line no-control-regex
     .regex(/^[^\x00-\x1F\x7F]+$/, "must not contain control characters");

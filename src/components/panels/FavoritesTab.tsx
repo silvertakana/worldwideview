@@ -66,7 +66,7 @@ export function FavoritesTab() {
               Accessible
             </div>
             {accessible.map((fav) => (
-              <div key={fav.id} className="layer-item" onClick={() => handleSelect(fav)}>
+              <div key={fav.id} className="layer-item" onClick={() => handleSelect(fav)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(fav); } }}>
                 <span className="layer-item__icon">
                   {typeof fav.icon === "string" ? fav.icon : fav.icon ? <fav.icon size={18} /> : null}
                 </span>

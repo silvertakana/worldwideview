@@ -88,9 +88,11 @@ function applyAction(msg: AgentMessage): void {
             const entities = pluginManager.getEntities(msg.pluginId);
             const entity = entities.find((e) => e.id === msg.entityId);
             if (entity) dataBus.emit("entitySelected", { entity });
+            break;
         }
         case "ping":
             // No-op — useful for an external tool to verify the channel is alive.
+            break;
     }
 }
 

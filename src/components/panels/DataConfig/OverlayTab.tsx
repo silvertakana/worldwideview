@@ -51,6 +51,9 @@ export function OverlayTab() {
                           <div
                             key={pluginId}
                             onClick={() => isHighlighted && setHighlightLayerId(null)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isHighlighted) setHighlightLayerId(null); } }}
                             style={{
                                     marginBottom: "var(--space-md)",
                                     background: "var(--bg-tertiary)",
@@ -70,8 +73,9 @@ export function OverlayTab() {
                               Layer
                             </div>
                             <div style={inputGroupStyle}>
-                              <label style={labelStyle}>Polling Interval (ms)</label>
+                              <label htmlFor={`dc-polling-${pluginId}`} style={labelStyle}>Polling Interval (ms)</label>
                               <input
+                                id={`dc-polling-${pluginId}`}
                                 type="number"
                                 value={interval}
                                 onChange={(e) => setPollingInterval(pluginId, parseInt(e.target.value) || 0)}
@@ -108,8 +112,9 @@ export function OverlayTab() {
                     };
                     return (
                       <div key={feature} style={inputGroupStyle}>
-                        <label style={labelStyle}>{labels[feature] || feature}</label>
+                        <label style={labelStyle} htmlFor={`dc-exp-feature-${feature}`}>{labels[feature] || feature}</label>
                         <input
+                          id={`dc-exp-feature-${feature}`}
                           type="checkbox"
                           checked={enabled}
                           onChange={(e) => updateDataConfig({
@@ -126,8 +131,9 @@ export function OverlayTab() {
           <div style={sectionHeaderStyle}>Cache & Limits</div>
 
           <div style={inputGroupStyle}>
-            <label style={labelStyle}>Enable Cache</label>
+            <label style={labelStyle} htmlFor="dc-ol-enable-cache">Enable Cache</label>
             <input
+              id="dc-ol-enable-cache"
               type="checkbox"
               checked={dataConfig.cacheEnabled}
               onChange={(e) => updateDataConfig({ cacheEnabled: e.target.checked })}
@@ -136,8 +142,9 @@ export function OverlayTab() {
           </div>
 
           <div style={inputGroupStyle}>
-            <label style={labelStyle}>Cache Max Age (ms)</label>
+            <label style={labelStyle} htmlFor="dc-ol-cache-max-age">Cache Max Age (ms)</label>
             <input
+              id="dc-ol-cache-max-age"
               type="number"
               value={dataConfig.cacheMaxAge}
               onChange={(e) => updateDataConfig({ cacheMaxAge: parseInt(e.target.value) || 0 })}
@@ -146,8 +153,9 @@ export function OverlayTab() {
           </div>
 
           <div style={inputGroupStyle}>
-            <label style={labelStyle}>Max Concurrent Req</label>
+            <label style={labelStyle} htmlFor="dc-ol-max-concurrent-req">Max Concurrent Req</label>
             <input
+              id="dc-ol-max-concurrent-req"
               type="number"
               value={dataConfig.maxConcurrentRequests}
               onChange={(e) => updateDataConfig({ maxConcurrentRequests: parseInt(e.target.value) || 0 })}
@@ -156,8 +164,9 @@ export function OverlayTab() {
           </div>
 
           <div style={inputGroupStyle}>
-            <label style={labelStyle}>Retry Attempts</label>
+            <label style={labelStyle} htmlFor="dc-ol-retry-attempts">Retry Attempts</label>
             <input
+              id="dc-ol-retry-attempts"
               type="number"
               value={dataConfig.retryAttempts}
               onChange={(e) => updateDataConfig({ retryAttempts: parseInt(e.target.value) || 0 })}

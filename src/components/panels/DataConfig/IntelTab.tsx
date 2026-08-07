@@ -60,6 +60,10 @@ function LegendItem({
 
     return (
       <div
+        role="button"
+        tabIndex={0}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click(); } }}
         style={{
                 display: "flex",
                 alignItems: "center",
@@ -74,7 +78,6 @@ function LegendItem({
                 position: "relative",
                 overflow: "hidden"
             }}
-        onClick={() => inputRef.current?.click()}
         onMouseEnter={(e) => {
                 e.currentTarget.style.background = "rgba(255,255,255,0.06)";
                 e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
