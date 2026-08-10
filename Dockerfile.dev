@@ -6,7 +6,7 @@ RUN find . -type f \! -name 'package.json' \! -name 'pnpm-workspace.yaml' \! -na
     find . -type d -empty -delete
 
 # Stage 2: Install dependencies (cached layer)
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 COPY --from=extractor /app ./
