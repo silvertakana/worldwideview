@@ -259,6 +259,34 @@ These are not diagnostic work and must be triaged before anything is replayed.
 
 7. **Performance never measured** — 0.9% `perf` commits, no benchmarks.
 
+8. **The test suite is flaky.** *(Found 2026-08-14, Phase 39. Highest severity
+   for roadmap purposes — it invalidates the measurement baseline.)*
+
+   Three consecutive full runs on an identical tree gave three different
+   results:
+
+   | Run | Result |
+   |---|---|
+   | A | 1,207 / 1,207 pass |
+   | B | 4 failures — `better-auth` ×2, `connect-status` |
+   | C | 1,207 / 1,207 pass |
+
+   `src/lib/better-auth.test.ts` passes in isolation (31/31), so this is
+   cross-test interference, not a broken test. Failures cluster in
+   auth-adjacent suites (`better-auth`, `marketplace/connect-status`),
+   suggesting shared module-level state or a shared DB fixture leaking across
+   parallel workers. *(inferred — not yet diagnosed.)*
+
+   **Consequence:** any single green run is weak evidence. That includes the
+   1,207/121 figure in Era 6's `PLUGIN_FIX_REPORT.md`, the identical figure in
+   commit `5ed11dc4`'s message, and the re-verification noted under Era 6 above
+   — all were single observations of a non-deterministic suite. None are wrong,
+   but none are proof.
+
+   **This blocks Phase 40's CI gate.** A gate on a flaky suite fails randomly
+   and trains everyone to re-run until green, which is worse than no gate.
+   Diagnosing flakiness is now a Phase 39 exit criterion.
+
 ---
 
 ## 5. Fork roadmap
