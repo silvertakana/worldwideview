@@ -22,6 +22,8 @@ export default defineConfig({
   // marketplace-from-instance.spec.ts uses playwright.marketplace.config.ts; full-flow requires marketplace repo
   // marketplace-redirect-handshake.spec.ts and marketplace-sign-out.spec.ts require marketplace.wwv.local:3002
   //   — use playwright.cross-app.config.ts for these cross-origin handshake tests
+  // billing-flow.spec.ts / billing-no-org.spec.ts target the web hub billing stack (seeded globe user, hub, Supabase, Stripe)
+  //   — use the web repo's playwright.billing.config.ts (billing is web-owned, ADR-0009)
   testIgnore: [
     '**/pact/**',
     '**/ci/**',
@@ -29,6 +31,8 @@ export default defineConfig({
     '**/marketplace-from-instance.spec.ts',
     '**/marketplace-redirect-handshake.spec.ts',
     '**/marketplace-sign-out.spec.ts',
+    '**/billing-flow.spec.ts',
+    '**/billing-no-org.spec.ts',
   ],
   /* Run tests in files in parallel */
   fullyParallel: true,
