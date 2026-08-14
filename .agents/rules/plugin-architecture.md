@@ -462,7 +462,7 @@ To solve this friction and make third-party plugin hosting highly intuitive, the
 2. **Backend SDK:** They write simple `.ts` fetch scripts returning `GeoEntity[]` and drop them into a mounted `/seeders` volume.
 3. **Zero Configuration:** The Docker engine hot-reloads these seeders, handles the Redis caching, and exposes standardized REST or WebSocket endpoints automatically. The developer focuses only on fetching data, avoiding all backend infrastructure setup.
 
-The `data-engine-seeder-creation.md` skill was removed. Seeder implementation rules are documented inline in `.agents/rules/data-engine-architecture.md`. Seeders live in the separate `wwv-seeders` and `wwv-seeders-private` repositories (cloned to `local-seeders/community/` or `local-seeders/private/` when developing locally).
+The `data-engine-seeder-creation.md` skill was removed. Seeder implementation rules are documented inline in `.agents/rules/data-engine-architecture.md`. Seeders live in the separate `wwv-seeders` and `wwv-seeders-private` repositories (cloned to `local-seeders/community/` or `local-seeders/private/` — nested git clones created by worktree hooks, not tracked in the main repo — when developing locally).
 
 ---
 

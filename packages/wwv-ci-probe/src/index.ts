@@ -30,7 +30,7 @@ program
   .command("ws")
   .description("Connect to engine /stream and wait for a data payload for the given pluginId")
   .argument("<name>", "Canonical plugin id (kebab-case)")
-  .option("--url <url>", "WebSocket URL", "ws://localhost:5000/stream")
+  .option("--url <url>", "WebSocket URL (defaults to WWV_ENGINE_URL, then local engine)", process.env.WWV_ENGINE_URL ?? "ws://localhost:5000/stream")
   .option("--timeout <ms>", "Timeout in milliseconds", "30000")
   .action(async (name: string, opts: { url: string; timeout: string }) => {
     const ok = await probeWs({

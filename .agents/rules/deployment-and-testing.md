@@ -23,7 +23,7 @@ pnpm db:reset         # Reset and re-migrate the frontend database (destructive)
 pnpm start:backends   # Legacy command for standalone Fastify backends
 pnpm clean:backends   # Wipe all plugin database records
 pnpm run scaffold-osm-plugin <name>  # Generate a new plugin from scaffold
-pnpm dev:plugins      # File watcher for local-plugins/ directory (runs automatically in dev)
+pnpm dev:plugins      # File watcher for local-plugins/ (nested clone created by worktree hooks, not tracked in git; runs automatically in dev)
 node packages/wwv-cli/dist/index.js create <name> --local # Scaffold a new local plugin
 node packages/wwv-cli/dist/index.js link <name>           # Promote a local plugin to packages/
 ```

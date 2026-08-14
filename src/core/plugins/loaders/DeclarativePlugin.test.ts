@@ -123,6 +123,8 @@ describe("DeclarativePlugin", () => {
             getCurrentTime: () => new Date(),
             env: {},
             edition: "local",
+            // Host-injected value (PluginContext.getEngineUrl) — arbitrary for this test;
+            // the plugin never consumes it. The address comes from the host, not the plugin.
             getEngineUrl: () => "http://localhost:5001",
         });
 
