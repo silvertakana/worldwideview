@@ -1,4 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
+import { reportToDiagnosticEngine } from "@worldwideview/wwv-diagnostics-client";
+import type { Instrumentation } from "next";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
@@ -29,4 +31,17 @@ export async function register() {
 }
 
 // Capture errors from Server Components, middleware, and proxies
-export const onRequestError = Sentry.captureRequestError;
+export const onRequestError: Instrumentation.onRequestError = (error, request, context) => {
+  Sentry.captureRequestError(error, request, context);
+  const err = error instanceof Error ? error : new Error(String(error));
+  reportToDiagnosticEngine(
+    {
+      message: err.message,
+      severity: "error",
+      category: "runtime",
+      stack: err.stack,
+      metadata: { path: request.path, method: request.method, routePath: context.routePath },
+    },
+    "worldwideview",
+  );
+};
