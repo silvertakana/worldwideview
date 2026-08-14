@@ -24,6 +24,10 @@ export default defineConfig({
   //   — use playwright.cross-app.config.ts for these cross-origin handshake tests
   // billing-flow.spec.ts / billing-no-org.spec.ts target the web hub billing stack (seeded globe user, hub, Supabase, Stripe)
   //   — use the web repo's playwright.billing.config.ts (billing is web-owned, ADR-0009)
+  // example.spec.ts is a redundant smoke test — its app-boot assertions duplicate plugin-system.spec.ts's boot;
+  //   skipping it removes one full app cold-boot from every local run
+  // account-connect-e2e.spec.ts is a cross-app spec with hardcoded https://wwv.local URLs, env-gated test.skip,
+  //   and targets the web-hub accounts flow — it belongs to playwright.web.config.ts, not this main config
   testIgnore: [
     '**/pact/**',
     '**/ci/**',
@@ -33,6 +37,8 @@ export default defineConfig({
     '**/marketplace-sign-out.spec.ts',
     '**/billing-flow.spec.ts',
     '**/billing-no-org.spec.ts',
+    '**/example.spec.ts',
+    '**/account-connect-e2e.spec.ts',
   ],
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -86,30 +92,35 @@ export default defineConfig({
     },
   ],
 
-  /* Run dev servers before starting the tests */
+  /* Run dev servers before starting the tests.
+   * The marketplace webServer entry was removed: no spec in this config's
+   * testIgnore set targets the marketplace (marketplace-*.spec.ts are all
+   * ignored here), so booting it cost time on every local run for nothing.
+   * Marketplace flows use playwright.marketplace.config.ts / cross-app config.
+   */
   webServer: [
     {
-      command: 'pnpm dev',
+      // CI: boot the production server (pnpm build runs in .github/workflows/playwright.yml first) —
+      // faster and more reliable than dev: no per-route compile, no HMR websocket keeping networkidle alive.
+      // Local: dev server for hot reload.
+      command: process.env.CI ? 'pnpm start' : 'pnpm dev',
       env: {
         PORT: '3001',
         NEXT_PUBLIC_WWV_EDITION: 'cloud',
         CROSS_SERVICE_SECRET: 'test-cross-service-secret-for-e2e',
         NEXT_PUBLIC_APP_URL: 'http://localhost:3001',
         NEXT_PUBLIC_MARKETPLACE_URL: 'http://localhost:3002',
+        // Empty HUB_REDIRECT_URL = local-dev mode (proxy.ts skips the hub
+        // redirect). Without this, a stale .env.local value pointing back at
+        // localhost:3001 makes the proxy 307-loop the root path, which hangs
+        // the webServer readiness probe and globalSetup's warm-up fetch.
+        NEXT_PUBLIC_HUB_REDIRECT_URL: '',
       },
       url: 'http://localhost:3001',
       reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
+      // Cold boots run predev (boot-db, safe-db-push, prisma generate,
+      // copy-cesium, sync-local-plugins) which can exceed 120s on first run.
+      timeout: 300 * 1000,
     },
-    // Only start marketplace when the repo is checked out alongside worldwideview.
-    // In CI the marketplace dir does not exist — omitting it prevents spawn ENOENT.
-    ...(hasMarketplace ? [{
-      command: 'pnpm dev',
-      cwd: MARKETPLACE_DIR,
-      env: { PORT: '3002' },
-      url: 'http://localhost:3002',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
-    }] : []),
   ],
 });

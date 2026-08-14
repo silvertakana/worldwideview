@@ -41,7 +41,6 @@ test.describe('Setup Flow', () => {
   test('local mode shows admin creation form', async ({ page }) => {
     test.skip(!!process.env.CI, 'Requires clean DB with no users');
     await page.goto('/setup');
-    await page.waitForLoadState('networkidle');
 
     await expect(page.locator('h1')).toContainText('Welcome');
     await expect(page.locator('input#name')).toBeVisible();
@@ -77,7 +76,6 @@ test.describe('Setup Flow', () => {
       });
 
       await page.goto(`/setup?token=${rawToken}`);
-      await page.waitForLoadState('networkidle');
 
       await expect(page.locator('h1')).toContainText('Activate Your Account');
       const emailInput = page.locator('input#email');
@@ -93,7 +91,6 @@ test.describe('Setup Flow', () => {
 
   test('cloud mode with invalid token shows error', async ({ page }) => {
     await page.goto('/setup?token=invalid-token-value');
-    await page.waitForLoadState('networkidle');
 
     await expect(page.locator('h1')).toContainText('Invalid Setup Link');
     await expect(page.locator('p')).toContainText('Invalid or expired setup link');
@@ -135,7 +132,6 @@ test.describe('Setup Flow', () => {
       });
 
       await page.goto(`/setup?token=${rawToken}`);
-      await page.waitForLoadState('networkidle');
       await expect(page.locator('h1')).toContainText('Activate Your Account');
 
       await page.fill('input#name', 'Activated User');

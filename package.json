@@ -21,6 +21,7 @@
     "test": "vitest run",
     "test:pact": "vitest run tests/pact/",
     "test:e2e": "playwright test",
+    "test:e2e:local": "playwright test --project=chromium --workers=2",
     "test:mutate": "stryker run",
     "lint:urls": "node scripts/lint-urls.mjs",
     "lint": "eslint . && node scripts/lint-urls.mjs",

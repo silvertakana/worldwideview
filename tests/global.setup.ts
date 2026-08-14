@@ -188,9 +188,33 @@ async function globalSetup(config: FullConfig) {
       throw new Error('No cookies returned from sign-in API - auth may have failed silently');
     }
 
+    // 4.5 Warm up the dev server routes so the first test doesn't pay Next.js
+    // cold-compile costs inside the layer-item timeout. Observed: on a cold
+    // server, the first page hits compile /api/marketplace/load on demand and
+    // the marketplace sync fetch is still pending when the 10s layer-item
+    // timeout expires, leaving the layer list empty (bottom-panel flake).
+    try {
+      await fetch(baseURL + '/');
+      const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ');
+      await fetch(baseURL + '/api/marketplace/load', { headers: { Cookie: cookieHeader } });
+      console.log('[Setup] Dev server routes warmed.');
+    } catch (warmErr) {
+      console.warn(`[Setup] Warm-up fetch failed (continuing): ${warmErr instanceof Error ? warmErr.message : String(warmErr)}`);
+    }
+
     // 5. Save storage state with real session cookie from the API response
     if (typeof storageState === 'string') {
-      fs.writeFileSync(storageState, JSON.stringify({ cookies, origins: [] }, null, 2));
+      // Pre-approve the E2E mock plugins so the unverified-plugin gate in
+      // useMarketplaceSync doesn't hold them behind the approval dialog.
+      // trustedPlugins.getApprovedUnverifiedIds() does JSON.parse(raw), so the
+      // value must be a JSON array string of plugin IDs.
+      const approvedMockPlugins = JSON.stringify(['e2e-mock-plugin', 'e2e-mock-bottom-panel']);
+      const origin = new URL(baseURL).origin;
+      const origins = [{
+        origin,
+        localStorage: [{ name: 'wwv_approved_unverified_plugins', value: approvedMockPlugins }],
+      }];
+      fs.writeFileSync(storageState, JSON.stringify({ cookies, origins }, null, 2));
       console.log(`[Setup] Storage state saved with ${cookies.length} cookies.`);
     } else {
       console.warn("Storage state path is not a string, skipping saving context.");

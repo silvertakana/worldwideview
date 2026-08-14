@@ -126,6 +126,12 @@ jobs:
         docker network create coolify || true
         pnpm run predev
 
+    - name: Build production bundle
+      # Production build for faster, more reliable E2E — no per-route dev compile,
+      # no HMR websocket keeping networkidle alive. The webServer command then
+      # boots `pnpm start` (next start) instead of the dev server when CI=true.
+      run: pnpm build
+
     - name: Run Playwright tests
       env:
         BETTER_AUTH_SECRET: test-better-auth-secret-at-least-32-chars!
@@ -171,6 +177,12 @@ jobs:
       run: |
         docker network create coolify || true
         pnpm run predev
+
+    - name: Build production bundle
+      # Production build for faster, more reliable E2E — no per-route dev compile,
+      # no HMR websocket keeping networkidle alive. The webServer command then
+      # boots `pnpm start` (next start) instead of the dev server when CI=true.
+      run: pnpm build
 
     - name: Run Playwright tests
       env:
@@ -221,6 +233,12 @@ jobs:
       run: |
         docker network create coolify || true
         pnpm run predev
+
+    - name: Build production bundle
+      # Production build for faster, more reliable E2E — no per-route dev compile,
+      # no HMR websocket keeping networkidle alive. The webServer command then
+      # boots `pnpm start` (next start) instead of the dev server when CI=true.
+      run: pnpm build
 
     - name: Run Playwright tests
       env:
