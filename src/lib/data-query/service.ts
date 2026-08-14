@@ -12,8 +12,7 @@ import type { FilterValue } from "@/core/plugins/PluginTypes";
 import { hasLocalSource, resolveLocalSnapshot, getLocalSourceIds } from "./localSources";
 
 export function getEngineUrl(): string {
-    const port = process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT || '5001';
-    return `http://localhost:${port}`;
+    return process.env.WWV_DATA_ENGINE_URL ?? `http://localhost:${process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT || '5001'}`;
 }
 
 function normalizeEntity(raw: unknown): GeoEntity | null {

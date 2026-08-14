@@ -48,21 +48,26 @@ are unenforceable.
   This is the HTTP base (scheme + host + port). Do NOT include the `/stream` path:
   ```
   # Correct: REST base only
-  WWV_DATA_ENGINE_URL=http://<engine-host-ip>:5002
+  WWV_DATA_ENGINE_URL=https://dataenginev2.worldwideview.dev
 
   # Wrong: do not include /stream
-  # WWV_DATA_ENGINE_URL=http://<engine-host-ip>:5002/stream
+  # WWV_DATA_ENGINE_URL=https://dataenginev2.worldwideview.dev/stream
   ```
-  The engine's published REST port is **5002** (maps to internal port 5000 in
-  `deploy/production/docker-compose.engine.yml`).
+  The engine listens on internal port 5000 (`PORT=5000` in
+  `deploy/production/docker-compose.engine.yml`) and publishes ports 5000/5001 on the
+  host. The public URL `https://dataenginev2.worldwideview.dev` is reverse-proxied and
+  needs no port. The code reads `WWV_DATA_ENGINE_URL` first in `getEngineUrl()`
+  (`src/lib/data-query/service.ts`) and falls back to
+  `http://localhost:5001` when it is unset.
   Replace `<engine-host-ip>` with the actual engine host IP or hostname visible from
   the `wwv` container.
 - [ ] If the app and engine containers share a Docker network, use the service name:
   ```
   WWV_DATA_ENGINE_URL=http://wwv-data-engine:5000
   ```
-- [ ] Verify reachability: `GET /api/health` should return `"engine": "ok"`.
-  A value of `"degraded"` means the URL is wrong or the engine is not running.
+- [ ] Verify reachability: `GET /api/health` should return `checks.engine: true`.
+  A status of `"degraded"` with `checks.engine: false` means the URL is wrong or the
+  engine is not running.
 
 **What breaks without this:** All MCP data query tools (e.g. `query_plugin_data`)
 report "engine unreachable" and return no data.
@@ -105,8 +110,8 @@ Configure your uptime monitor or Coolify health check against `GET /api/health`.
 | Response | Meaning | Action required |
 |---|---|---|
 | `503` | Database or required config broken | Page on-call immediately |
-| `200` with any `"degraded"` field | Redis or engine unreachable | Investigate; MCP features are impaired but core app is up |
-| `200` all `"ok"` | Fully healthy | No action |
+| `200` with `status: "degraded"` | Redis or engine unreachable (`checks.redis`/`checks.engine` false) | Investigate; MCP features are impaired but core app is up |
+| `200` with `status: "healthy"` (all checks `true`) | Fully healthy | No action |
 
 Recommended alert rule: alert on any `503` immediately; alert on `200` degraded
 after 5 consecutive checks (transient restarts are normal).
@@ -117,7 +122,7 @@ after 5 consecutive checks (transient restarts are normal).
 
 Run these checks in order after applying all settings:
 
-1. `GET /api/health` returns `200` with all fields `"ok"`.
+1. `GET /api/health` returns `200` with `status: "healthy"` and all checks `true`.
 2. Sign in as an admin user, generate an MCP API key, and confirm the key is issued
    (cloud/demo: requires `API_KEY_HMAC_SECRET`).
 3. Run `geocode_location({ query: "Paris" })` via the MCP endpoint and confirm
