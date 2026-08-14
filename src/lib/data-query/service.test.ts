@@ -101,7 +101,7 @@ describe("getEngineUrl", () => {
     it("returns WWV_DATA_ENGINE_URL when set (overrides localhost default)", () => {
         process.env.WWV_DATA_ENGINE_URL = "https://dataenginev2.worldwideview.dev";
         delete process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT;
-        expect(getEngineUrl()).toBe("https://dataenginev2.worldwideview.dev");
+        expect(getEngineUrl()).toBe("https://dataenginev2.worldwideview.dev"); // lint-url: allow (test assertion)
     });
 
     it("uses NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT when WWV_DATA_ENGINE_URL is unset", () => {
