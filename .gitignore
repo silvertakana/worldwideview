@@ -172,3 +172,6 @@ worldwideview.code-workspace
 /step*.png
 /mcp-test-*.png
 /api-keys-response.json
+
+# Graphify analysis output (generated)
+graphify-out/

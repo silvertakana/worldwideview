@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
+    "prepare": "pnpm build",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
