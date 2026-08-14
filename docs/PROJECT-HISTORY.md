@@ -271,11 +271,35 @@ These are not diagnostic work and must be triaged before anything is replayed.
    | B | 4 failures — `better-auth` ×2, `connect-status` |
    | C | 1,207 / 1,207 pass |
 
-   `src/lib/better-auth.test.ts` passes in isolation (31/31), so this is
-   cross-test interference, not a broken test. Failures cluster in
-   auth-adjacent suites (`better-auth`, `marketplace/connect-status`),
-   suggesting shared module-level state or a shared DB fixture leaking across
-   parallel workers. *(inferred — not yet diagnosed.)*
+   `src/lib/better-auth.test.ts` passes in isolation (31/31), so this is not a
+   broken test.
+
+   **The parallel-worker hypothesis was tested and REFUTED (2026-08-15).**
+   The original guess here was shared module state leaking across parallel
+   vitest workers. A controlled comparison on an identical tree says otherwise:
+
+   | Mode | Runs | Result |
+   |---|---|---|
+   | Sequential (`--no-file-parallelism`) | 3 | 3/3 green |
+   | Parallel (default) | 4 | 4/4 green |
+
+   Seven consecutive green runs. Parallel mode did not reproduce the failure,
+   so parallelism is not the mechanism. `vitest.config.ts` sets no `pool` or
+   `isolate` override, so Vitest 4 defaults (per-file isolation) apply — which
+   is consistent with this result.
+
+   **Current best hypothesis: load-dependent timing.** *(inferred —
+   correlational, NOT proven.)* The failures occurred ~19:30–19:40 while the
+   machine was under concurrent load (the concurrent writer plus other agents);
+   the seven green runs occurred on a quiet machine at ~00:40.
+   `src/lib/better-auth.ts` has an mtime of 18:53, immediately before the
+   failing window. Auth/session tests are timing-sensitive.
+
+   **What is missing:** the failure's actual error text was never captured, so
+   "timeout under load" is unconfirmed. Reproducing it requires running the
+   suite under deliberate CPU/memory pressure with full output captured. Until
+   then the cause is OPEN. The only things established are that the suite is
+   non-deterministic, and that parallelism is not why.
 
    **Consequence:** any single green run is weak evidence. That includes the
    1,207/121 figure in Era 6's `PLUGIN_FIX_REPORT.md`, the identical figure in
