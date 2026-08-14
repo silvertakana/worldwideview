@@ -162,8 +162,16 @@ From `PLUGIN_FIX_REPORT.md`, not git: 29 plugins built, 1,207 tests passed acros
 121 files, formatting fixes to `wwv-plugin-aviation` and
 `wwv-plugin-military-aviation`.
 
-> ⚠️ These are generated-report claims, **not independently re-verified** here.
-> Phase 39 re-runs them rather than inheriting them on trust.
+> ✅ **Re-verified 2026-08-14 (Phase 39): the report was accurate.** A clean run
+> gives exactly **1,207 tests passing across 121 files, 0 failures**.
+>
+> Worth recording *how* that was established, because the first run disagreed.
+> It reported 2 failures / 1,195 passing, which looked like the report
+> overstating success. It was the opposite: the failures were **self-inflicted**
+> — the fork's `git checkout` had restored the stale tracked SDK `dist/`
+> (defect #4). Rebuilding the SDK made all 1,207 pass. The report was right; the
+> checkout broke it. Re-verification was still the correct call — it surfaced a
+> real defect that had nothing to do with the claim being checked.
 
 ### Era 7 — Diagnostic Engine *(the "Phase 3 engine" — excluded from the fork)*
 
@@ -200,10 +208,17 @@ These are not diagnostic work and must be triaged before anything is replayed.
 
 ### Confirmed defects
 
-1. **Type errors are suppressed in production builds.** `next.config.ts:17` sets
-   `typescript: { ignoreBuildErrors: true }` — directly contradicting the
-   project's own `CLAUDE.md` ("strict TypeScript 5… never use `any` or
-   `@ts-ignore`"). Type errors ship silently. **Highest severity.**
+1. **Type-checking is disabled in production builds — but nothing is currently
+   broken by it.** `next.config.ts:17` sets `typescript: { ignoreBuildErrors:
+   true }`, contradicting the project's own `CLAUDE.md` ("strict TypeScript 5…
+   never use `any` or `@ts-ignore`").
+
+   **Measured 2026-08-14 (Phase 39):** `tsc --noEmit` across **515 files** under
+   `strict: true` returns **0 errors**. The flag is hiding nothing today. This is
+   a **latent** risk — the guard is off, so the *next* type error ships silently
+   — not present damage. Downgraded from "highest severity"; the fix is to delete
+   the flag and add a CI gate (Phase 40), cheap precisely because the backlog is
+   empty.
 
 2. **Build parallelism capped at 2 of 12 cores.** `next.config.ts:10` sets
    `experimental.cpus: 2` while line 9 sets `memoryBasedWorkersCount: true` —
@@ -212,9 +227,31 @@ These are not diagnostic work and must be triaged before anything is replayed.
 3. **The OOM is environmental.** 0 B swap with ~5.2 GiB free explains it; the
    project's own deploy notes already record these builds needing 7–10 GB.
 
-4. **140 build artifacts tracked in git.** `graphify-out/` is absent from
-   `.gitignore`; `packages/*/dist/` *is* ignored (line 103) but files remain
-   tracked — stale index entries an ignore rule cannot retroactively remove.
+4. **139 build artifacts tracked in git — and they actively break the test
+   suite.** *(Promoted to highest severity; partially fixed in `23fa804e`.)*
+
+   `graphify-out/` (133 files) was absent from `.gitignore`;
+   `packages/wwv-plugin-sdk/dist/` (6 files) *is* ignored (line 103) but stayed
+   tracked as stale index entries an ignore rule cannot retroactively remove.
+
+   **Proven causal chain (Phase 39):** the committed `dist/` predates
+   `src/viteGlobals.ts`, so `dist/index.js` does
+   `require("./viteGlobals")` — a file never built into it. **Any `git checkout`
+   restores that stale build and breaks 3 test files**
+   (`wwv-lib-incidents`, `better-auth`, `mcp/transport-spike`). Reproduced
+   exactly this way during the fork.
+
+   **The obvious fix would have made it worse.** Untracking `dist/` alone leaves
+   a fresh clone with *no* SDK build: the package declares
+   `main: dist/index.js`, yet it had no `prepare`/`postinstall` hook and neither
+   `predev` nor `prebuild` builds it. That is *why* it was tracked.
+   `23fa804e` adds a `prepare` hook so `pnpm install` always yields a current
+   dist — the precondition for untracking. Remaining step:
+   `git rm -r --cached packages/wwv-plugin-sdk/dist graphify-out`.
+
+   > Note: `wwv-ci-probe` and `wwv-cli` share the same shape
+   > (`main: dist/index.js`, no `prepare`) with dist untracked — likely already
+   > latently broken. Unverified; out of scope.
 
 5. **Release traceability lapsed** — no tag since `v1.6`.
 
