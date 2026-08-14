@@ -83,7 +83,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL,HIGH
-        continue-on-error: ${{ inputs.is-preview }}
+        continue-on-error: ${{ inputs.is-preview || false }}
 
       - name: Upload Trivy results to GitHub Security
         if: always()
@@ -121,7 +121,7 @@ jobs:
           docker stop $CONTAINER_NAME
           docker rm $CONTAINER_NAME
           exit ${EXIT:-0}
-        continue-on-error: ${{ inputs.is-preview }}
+        continue-on-error: ${{ inputs.is-preview || false }}
 
       - name: Trigger Coolify deploy
         if: ${{ !inputs.is-preview }}
