@@ -100,10 +100,14 @@ export default defineConfig({
    */
   webServer: [
     {
-      // CI: boot the production server (pnpm build runs in .github/workflows/playwright.yml first) —
-      // faster and more reliable than dev: no per-route compile, no HMR websocket keeping networkidle alive.
+      // CI: boot the production STANDALONE server (pnpm build runs in .github/workflows/playwright.yml
+      // first). `next start` cannot serve an `output: "standalone"` build — Next warns and the app
+      // never hydrates under WebKitGTK (the PR #430 webkit CI failures). scripts/serve-standalone.mjs
+      // mirrors the Dockerfile: copies static assets into .next/standalone and runs
+      // .next/standalone/server.js. Faster and more reliable than dev: no per-route compile,
+      // no HMR websocket keeping networkidle alive.
       // Local: dev server for hot reload.
-      command: process.env.CI ? 'pnpm start' : 'pnpm dev',
+      command: process.env.CI ? 'node scripts/serve-standalone.mjs' : 'pnpm dev',
       env: {
         PORT: '3001',
         NEXT_PUBLIC_WWV_EDITION: 'cloud',
