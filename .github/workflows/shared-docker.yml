@@ -74,6 +74,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Trivy vulnerability scanner
+        id: trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
@@ -83,13 +84,17 @@ jobs:
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL,HIGH
-        continue-on-error: ${{ inputs.is-preview || false }}
+        continue-on-error: true
 
       - name: Upload Trivy results to GitHub Security
         if: always()
         uses: github/codeql-action/upload-sarif@v4.37.3
         with:
           sarif_file: trivy-results.sarif
+
+      - name: Fail build if Trivy found vulnerabilities (non-preview)
+        if: steps.trivy.outcome == 'failure' && !inputs.is-preview
+        run: exit 1
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
@@ -112,6 +117,7 @@ jobs:
           subject-digest: ${{ steps.build-and-push.outputs.digest }}
 
       - name: Smoke test
+        id: smoke
         run: |
           IMAGE="${{ fromJSON(steps.meta.outputs.json).tags[0] }}"
           CONTAINER_NAME="smoke-${{ github.sha }}"
@@ -121,7 +127,11 @@ jobs:
           docker stop $CONTAINER_NAME
           docker rm $CONTAINER_NAME
           exit ${EXIT:-0}
-        continue-on-error: ${{ inputs.is-preview || false }}
+        continue-on-error: true
+
+      - name: Fail build if smoke test failed (non-preview)
+        if: steps.smoke.outcome == 'failure' && !inputs.is-preview
+        run: exit 1
 
       - name: Trigger Coolify deploy
         if: ${{ !inputs.is-preview }}
