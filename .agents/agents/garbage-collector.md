@@ -45,9 +45,22 @@ git branch -r --list 'origin/gc/*'
 
 # Open gc-bot Issues
 gh issue list --label gc-bot --state open --json number,title
+
+# CLOSED gc-bot Issues — a finding covered by a closed issue must RE-OPEN it, not duplicate it
+gh issue list --label gc-bot --state closed --json number,title --limit 100
 ```
 
-Build a mental map of already-handled concerns. For each finding, skip it if an open PR or Issue already covers the same file + pattern.
+Build a mental map of already-handled concerns. For each finding:
+
+1. Skip it if an open PR or open Issue already covers the same file + pattern.
+2. Skip it if a remote `gc/*` branch already covers the same patternId/type.
+3. If a **CLOSED** gc-bot Issue substantially covers the finding (same file + pattern, or same concern), **re-open that Issue** with a comment:
+   ```bash
+   gh issue reopen <number>
+   gh issue comment <number> --body "Re-opening: this finding resurfaced in the <scan-date> scan — <finding summary>"
+   ```
+   Do NOT create a new Issue.
+4. Only create a new Issue when neither an open nor a closed gc-bot Issue covers the finding.
 
 ## Step 5 — Tier A: Create draft PRs (max 3 per run)
 
@@ -191,6 +204,17 @@ No PRs or Issues were created (dry-run mode).
 EOF
 )"
 ```
+
+**Report-dedup rule (dry-run):** before posting, check the previous report comment on the tracking Issue and only post when the findings changed materially. To read the last comment:
+
+```bash
+# Last comment body on the tracking Issue (comments are returned oldest-first, so [-1] is the most recent)
+gh issue view <number> --comments --json comments --jq '.comments[-1].body'
+```
+
+- If the previous report's findings are identical to the current scan (same finding count, same file + type sets), post **nothing** — or at most a one-line "No changes since <previous-date>." but ONLY if the previous report comment is more than 7 days old.
+- If findings changed materially (new findings, resolved findings, or changed counts), post the full report above.
+- The **Monday full sweep** (DRY_RUN=false) always posts a full digest regardless, so the weekly state is always visible.
 
 ## Step 8 — Output summary
 

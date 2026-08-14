@@ -1,0 +1,36 @@
+# GC stale lifecycle — marks untouched gc-bot issues stale after 30 days, then
+# closes after 14 more. ONLY touches gc-bot issues (only-labels) so it never
+# interferes with human issues. PR handling is disabled (the GC bot opens draft
+# PRs for humans to review — never auto-close those). The general stale bot
+# (stale.yml) exempts gc-bot, so the two workflows never double-process.
+name: GC Stale Bot
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # daily 07:00 UTC
+  workflow_dispatch: # manual trigger
+
+permissions:
+  issues: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          only-labels: 'gc-bot'
+          days-before-stale: 30
+          days-before-close: 14
+          stale-issue-message: >
+            This gc-bot issue has been inactive for 30 days. If there is no
+            further activity in the next 14 days it will be closed automatically.
+            Add the 'Not Stale' label if it should stay open.
+          close-issue-message: >
+            Closing this gc-bot issue due to 44 days of inactivity. The GC bot
+            will re-open it if the finding resurfaces in a future scan.
+          stale-issue-label: stale
+          exempt-issue-labels: 'Not Stale'
+          operations-per-run: 100
+          days-before-pr-stale: -1
+          days-before-pr-close: -1

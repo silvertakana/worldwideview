@@ -116,6 +116,17 @@ jobs:
             The comment body must list every finding with: tier, file, line, description.
             Include the run ID (${{ github.run_id }}) and timestamp at the top.
 
+            ## Report-dedup rule (dry-run):
+            Before posting, compare the current scan against the previous report comment on the tracking Issue.
+            Read the last comment with (comments are returned oldest-first, so [-1] is the most recent):
+              gh api repos/${{ github.repository }}/issues/<number>/comments?per_page=100 --jq '.[-1].body'
+            - If the previous report's findings are identical to the current scan (same finding count,
+              same file + type sets), post NOTHING — or at most a one-line "No changes since <previous-date>."
+              ONLY if the previous report comment is more than 7 days old.
+            - If findings changed materially (new findings, resolved findings, or changed counts), post the
+              full report.
+            - The Monday full sweep (DRY_RUN=false) always posts a full digest regardless.
+
             ## If DRY_RUN is "false":
             Execute the full sweep procedure described in `.agents/agents/garbage-collector.md`.
             Create Tier A draft PRs and Tier B Issues per the guard rails in `.agents/rules/garbage-collection.md`.
