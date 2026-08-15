@@ -1,6 +1,6 @@
 {
   "name": "worldwideview",
-  "version": "2.65.28",
+  "version": "2.65.29",
   "private": true,
   "license": "EL-2.0",
   "type": "module",
@@ -76,7 +76,7 @@
     "@pact-foundation/pact": "^17.0.1",
     "@pact-foundation/pact-cli": "^18.1.1",
     "@playwright/test": "^1.62.1",
-    "@size-limit/preset-app": "^11.0.0",
+    "@size-limit/file": "^11.0.0",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@testing-library/dom": "^10.4.1",
