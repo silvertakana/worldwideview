@@ -83,6 +83,25 @@ export async function resolveTrustedOrigins(request?: Request): Promise<string[]
     return [...new Set(base)];
 }
 
+/**
+ * Decide whether session cookies carry the `__Secure-` prefix + Secure attribute.
+ *
+ * Better Auth's default enables them whenever NODE_ENV=production and no
+ * baseURL is configured (better-auth/dist/cookies/index.mjs falls back to
+ * `isProduction`). That silently breaks every plain-HTTP serving of the
+ * production build: WebKit (Safari and WebKitGTK) refuses `__Secure-`/Secure
+ * cookies over http — with no localhost exemption, unlike Chromium and
+ * Firefox — so the session cookie is dropped and every navigation bounces
+ * back to /login (the PR #430 webkit-only Playwright CI failures; also any
+ * http LAN self-host for Safari users). Derive the flag from the configured
+ * app URL's protocol instead. When no URL is configured, leave the option
+ * unset so Better Auth's own default still applies.
+ */
+const resolvedAppUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.BETTER_AUTH_URL || "";
+const useSecureCookies: boolean | undefined = resolvedAppUrl
+    ? resolvedAppUrl.startsWith("https://")
+    : undefined;
+
 export const auth = betterAuth({
     basePath: "/api/ba",
     database: prismaAdapter(prisma, {
@@ -126,6 +145,7 @@ export const auth = betterAuth({
     },
     advanced: {
         cookiePrefix: "better-auth",
+        useSecureCookies,
     },
     trustedOrigins: resolveTrustedOrigins,
     // Phase 72: All five Better Auth plugins configured.
