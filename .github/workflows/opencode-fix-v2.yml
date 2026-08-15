@@ -12,10 +12,6 @@ on:
   issues:
     types: [labeled]
 
-concurrency:
-  group: opencode-fix-${{ github.event.issue.number || github.event.inputs.issue_number }}
-  cancel-in-progress: true
-
 env:
   GH_TOKEN: ${{ secrets.GREMLIN_PAT }}
 
@@ -24,13 +20,18 @@ jobs:
     if: |
       (github.event_name == 'issue_comment' && 
        (contains(github.event.comment.body, '/opencode') || contains(github.event.comment.body, '/oc') || contains(github.event.comment.body, '/gremlin')) &&
-       contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.comment.author_association)) ||
+       contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.comment.author_association) &&
+       github.event.comment.user.type != 'Bot') ||
       (github.event_name == 'issues' && github.event.action == 'labeled' && 
        github.event.label.name == 'agent-fix' &&
-       contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.sender.author_association)) ||
+       contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.sender.author_association) &&
+       github.event.sender.type != 'Bot') ||
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: opencode-fix-${{ github.event.issue.number || github.event.inputs.issue_number }}
+      cancel-in-progress: true
     permissions:
       contents: write
       pull-requests: write
