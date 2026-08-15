@@ -1,5 +1,16 @@
 # Performance Baseline
 
+> [!WARNING]
+> **SUPERSEDED — the build and bundle numbers below are pre-merge and must be re-measured.**
+> On 2026-08-15 the fork merged 9 upstream commits (`origin/main`). That merge bumped
+> **Next 16.2.11 → 16.3.0** (in two hops, swapping every `@next/swc-*` native binary),
+> plus react/react-dom 19.2.7 → 19.2.8, resium 1.23.0 → 1.24.0, lucide-react 1.23.0 →
+> 1.28.0 and ~33 others. Build wall clock, peak RSS and every chunk size are stale.
+> **Unchanged inputs:** `cesium ^1.143.0`, `zustand ^5.0.14`, and webpack (not a direct
+> dep) — so the 3,944 KB Cesium+Draco chunk should survive roughly intact. If it moves,
+> the cause is resium or the new SWC compiler, not Cesium.
+> The **Tests** section below is current and has been updated post-merge.
+
 **Measured:** 2026-08-15, ~00:50 SGT
 **Commit:** `115e94ce` on `fork/optimization-baseline`
 **Host:** 12 cores · 15 GiB RAM · **0 B swap** · quiet machine (~8 GiB free at start)
@@ -90,16 +101,35 @@ non-issue. **Establish this before acting on it.**
 
 | Metric | Value |
 |---|---|
-| Suite | 1,207 tests · 121 files |
-| Wall clock (warm) | ~18–20 s |
-| Wall clock (cold) | ~39 s |
-| Determinism | **NOT deterministic** — see [PROJECT-HISTORY](PROJECT-HISTORY.md) defect 8 |
+| Suite (pre-merge) | 1,207 tests · 121 files |
+| Suite (post-merge) | **1,212 tests · 121 files** (+5 from upstream) |
+| Wall clock (quiet machine) | ~18–20 s warm, ~39 s cold |
+| Wall clock (loaded machine) | **81 s — and 2 tests fail** |
 
-7 consecutive green runs (3 sequential + 4 parallel) on a quiet machine.
-Earlier, under load, 2 runs failed in auth-adjacent suites. Parallelism was
-tested and **refuted** as the cause. Root cause remains **OPEN**.
+### Flakiness root cause — RESOLVED
 
-**Any CI gate built on this suite is unreliable until that is resolved.**
+Phase 39 left this **OPEN**: 7 green runs on a quiet machine, 2 failures under load,
+error text never captured. Parallelism was tested and **refuted**.
+
+Reproduced on 2026-08-15 immediately after a `pnpm install` + `tsc` run, i.e. on a
+loaded machine, with the error text finally captured:
+
+```
+FAIL  src/lib/better-auth.test.ts > Better Auth instance > exports an auth instance
+Error: Hook timed out in 10000ms.
+ ❯ src/lib/better-auth.test.ts:79:1   (beforeEach)
+```
+
+**Cause: a fixed 10,000 ms `hookTimeout` (vitest's default), not a logic defect.**
+The `beforeEach` at [better-auth.test.ts:79](../src/lib/better-auth.test.ts) took
+40,362 ms under load. `src/app/api/mcp/transport-spike.test.ts` fails the same way.
+Note `environment 336.66 s` in that run versus a 71 s total — environment setup, not
+test logic, is what dilates. This confirms the Phase 39 load-dependent timing
+hypothesis and supplies the mechanism it lacked.
+
+**Fix:** raise `hookTimeout` in `vitest.config.ts`, or make that `beforeEach` cheaper.
+Until then **any CI gate on this suite will flake on a busy runner** — and the two
+affected files are precisely the auth-adjacent ones Phase 39 fingered.
 
 ---
 
