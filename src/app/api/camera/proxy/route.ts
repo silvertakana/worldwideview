@@ -61,4 +61,9 @@ export async function GET(req: NextRequest) {
     }
 }
 
+// Live camera proxy — never statically collected at build time. This route
+// must evaluate per-request (it proxies arbitrary live URLs), and keeping it
+// dynamic also prevents build-time module evaluation of safeFetch/undici.
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";

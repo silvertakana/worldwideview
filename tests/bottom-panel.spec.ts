@@ -16,6 +16,22 @@ test.describe('Bottom Panel System', () => {
             }
         });
 
+        // Block the marketplace sync's window-focus re-sync. With 2 parallel
+        // workers, the sibling test's browser activity fires focus/blur on this
+        // page's window; useMarketplaceSync re-runs /api/marketplace/load on every
+        // focus event, and each re-sync can re-mount the unverified-plugin dialog
+        // (full-screen overlay, z-index 10000) that swallows drag mousedowns.
+        // A capture-phase listener with stopImmediatePropagation prevents the
+        // sync's bubble-phase focus listener from ever running.
+        await page.evaluate(() => {
+            const blocker = (e: Event) => {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+            };
+            window.addEventListener('focus', blocker, true);
+            window.addEventListener('blur', blocker, true);
+        });
+
         // The unverified plugin dialog might appear for the mock plugin.
         const installBtn = page.getByRole('button', { name: /Install Selected/ });
         try {
@@ -26,9 +42,25 @@ test.describe('Bottom Panel System', () => {
             console.log('Unverified plugin dialog did not appear.');
         }
 
-        // Toggle the layer ON so it appears in the bottom panel
+        // Toggle the layer ON so it appears in the bottom panel.
+        // The unverified-plugin gate dialog mounts asynchronously once the
+        // /api/marketplace/load sync settles — sometimes AFTER the 5s wait above.
+        // While it is up the mock plugin is gated and its layer item never
+        // registers, so keep dismissing the dialog WHILE waiting for the item
+        // (toPass re-runs the block until the layer item is visible).
         const layerItem = page.locator('.layer-item', { hasText: 'E2E Bottom Panel Mock' });
-        await expect(layerItem).toBeVisible({ timeout: 10000 });
+        await expect(async () => {
+            const installBtn = page.getByRole('button', { name: /Install Selected/ });
+            if (await installBtn.isVisible().catch(() => false)) {
+                try {
+                    await installBtn.click({ timeout: 3000 });
+                } catch {
+                    // Dialog is closing (button disabled/detached) — keep polling.
+                }
+                await page.waitForTimeout(200);
+            }
+            await expect(layerItem).toBeVisible({ timeout: 1000 });
+        }).toPass({ timeout: 45000 });
         
         // Find the toggle switch inside the layer item and click it if it's not already on
         const toggleBtn = layerItem.locator('.layer-item__toggle');
@@ -83,6 +115,25 @@ test.describe('Bottom Panel System', () => {
         const bottomPanel = page.locator('.bottom-panel.open');
         await expect(bottomPanel).toBeVisible();
 
+        // The panel opens with a 400ms CSS height transition (0 -> bottomPanelHeight).
+        // toBeVisible() passes on opacity while the panel is STILL growing, so the
+        // handle position must not be read until the height is stable: a stale box
+        // makes the next mousedown land on panel content instead of the handle, and
+        // the drag silently never registers. Poll until two consecutive reads agree.
+        const waitForSettledHeight = async (): Promise<number> => {
+            let prev = -1;
+            let current = 0;
+            const deadline = Date.now() + 10000;
+            do {
+                current = (await bottomPanel.boundingBox())?.height ?? 0;
+                if (prev >= 0 && Math.abs(current - prev) < 0.5) break;
+                prev = current;
+                await page.waitForTimeout(50);
+            } while (Date.now() < deadline);
+            return current;
+        };
+        await waitForSettledHeight();
+
         // Get initial height
         const initialBox = await bottomPanel.boundingBox();
         expect(initialBox).not.toBeNull();
@@ -91,43 +142,56 @@ test.describe('Bottom Panel System', () => {
         const dragHandle = page.locator('[data-testid="bottom-panel-resize-handle"]');
         await expect(dragHandle).toBeVisible();
 
-        const handleBox = await dragHandle.boundingBox();
-        expect(handleBox).not.toBeNull();
+        // Drag the resize handle by deltaY pixels using the real mouse (Chromium
+        // synthesizes pointer events from mouse events, which drives the React
+        // pointer handlers in BottomPanelManager). The handle position is
+        // re-read IMMEDIATELY before each mousedown, and after each drag the
+        // height is polled until it stops changing before any position is reused.
+        const dragResizeHandle = async (deltaY: number): Promise<number> => {
+            // The unverified-plugin gate dialog is a full-screen overlay
+            // (z-index 10000) that mounts asynchronously once /api/marketplace/load
+            // settles — which can happen AFTER the beforeEach's 5s window. While
+            // it is up it swallows every mousedown, silently killing the drag.
+            // If present, dismiss it and WAIT for the overlay to actually leave
+            // the DOM: approveSelected loads every pending manifest before the
+            // dialog hides, so the click alone does not clear the screen.
+            const installBtn = page.getByRole('button', { name: /Install Selected/ });
+            if (await installBtn.isVisible().catch(() => false)) {
+                await installBtn.click();
+                await expect(installBtn).toBeHidden({ timeout: 15000 });
+                console.log('Resize test: dismissed late unverified plugin dialog.');
+            }
+
+            const box = await dragHandle.boundingBox();
+            expect(box).not.toBeNull();
+            const startX = box!.x + box!.width / 2;
+            const startY = box!.y + box!.height / 2;
+
+            await page.mouse.move(startX, startY);
+            await page.mouse.down();
+            await page.waitForTimeout(100); // allow React to process mousedown and set drag state
+            await page.mouse.move(startX, startY + deltaY, { steps: 10 });
+            await page.waitForTimeout(100); // allow resize state to update
+            await page.mouse.up();
+
+            return waitForSettledHeight();
+        };
 
         // Perform drag UP
-        await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + handleBox!.height / 2);
-        await page.mouse.down();
-        await page.waitForTimeout(100); // allow React to process mousedown and attach mousemove listener
-        
-        // Drag up by 100 pixels with steps to simulate smooth motion and trigger isDragging styles
-        await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y - 100, { steps: 10 });
-        await page.waitForTimeout(100); // allow resize state to update
-        await page.mouse.up();
-        await page.waitForTimeout(400); // wait for CSS transition to settle since opacity/height transitions apply
+        await dragResizeHandle(-100);
 
-        // Check new height
-        const finalBox = await bottomPanel.boundingBox();
-        expect(finalBox).not.toBeNull();
-        expect(finalBox!.height).toBeGreaterThan(initialBox!.height + 50);
+        // Check new height (poll: CSS transition + React state settle asynchronously)
+        await expect.poll(async () => (await bottomPanel.boundingBox())?.height ?? 0, { timeout: 10000 })
+            .toBeGreaterThan(initialBox!.height + 50);
+        const finalBoxHeight = (await bottomPanel.boundingBox())!.height;
 
-        // Get updated handle position for second drag
-        const newHandleBox = await dragHandle.boundingBox();
-        expect(newHandleBox).not.toBeNull();
+        // Drag DOWN (the helper re-reads the handle position from its settled
+        // post-drag-up location, so this drag always starts on the handle)
+        await dragResizeHandle(100);
 
-        // Drag DOWN
-        await page.mouse.move(newHandleBox!.x + newHandleBox!.width / 2, newHandleBox!.y + newHandleBox!.height / 2);
-        await page.mouse.down();
-        await page.waitForTimeout(100);
-        
-        await page.mouse.move(newHandleBox!.x + newHandleBox!.width / 2, newHandleBox!.y + 100, { steps: 10 });
-        await page.waitForTimeout(100);
-        await page.mouse.up();
-        await page.waitForTimeout(400);
-
-        // Check height decreased
-        const shrunkBox = await bottomPanel.boundingBox();
-        expect(shrunkBox).not.toBeNull();
-        expect(shrunkBox!.height).toBeLessThan(finalBox!.height - 50);
+        // Check height decreased from the dragged-up height (poll — same settle rationale)
+        await expect.poll(async () => (await bottomPanel.boundingBox())?.height ?? 0, { timeout: 10000 })
+            .toBeLessThan(finalBoxHeight - 50);
     });
 });
 

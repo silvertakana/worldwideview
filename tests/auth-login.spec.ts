@@ -51,7 +51,6 @@ test.describe('Login Flow', () => {
 
   test('sign in with valid credentials redirects to home', async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
 
     await page.fill('#email', LOGIN_TEST_EMAIL);
     await page.fill('#password', LOGIN_TEST_PASSWORD);
@@ -63,7 +62,6 @@ test.describe('Login Flow', () => {
 
   test('session persists on hard refresh', async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
 
     await page.fill('#email', LOGIN_TEST_EMAIL);
     await page.fill('#password', LOGIN_TEST_PASSWORD);
@@ -73,7 +71,6 @@ test.describe('Login Flow', () => {
     await expect(page.locator('[data-testid="app-ready"]')).toBeVisible({ timeout: 30000 });
 
     await page.reload();
-    await page.waitForLoadState('networkidle');
 
     expect(page.url()).not.toContain('/login');
     await expect(page.locator('[data-testid="app-ready"]')).toBeVisible({ timeout: 30000 });

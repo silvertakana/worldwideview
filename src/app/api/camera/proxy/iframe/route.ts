@@ -102,4 +102,10 @@ export async function GET(req: NextRequest) {
     }
 }
 
+// Live camera proxy — never statically collected at build time.
+// Next.js would otherwise evaluate this module (and the undici fetch/Agent
+// import via safeFetch) during build config collection, which breaks under
+// undici v8 on Node 26 with `util.markAsUncloneable is not a function`.
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";

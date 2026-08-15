@@ -10,32 +10,31 @@ on:
   pull_request_review:
     types: [submitted]
 
-concurrency:
-  group: opencode-mention-${{ github.event.issue.number || github.event.pull_request.number }}
-  cancel-in-progress: true
-
 jobs:
   opencode:
     if: |
       (github.event_name == 'issue_comment' &&
         (contains(github.event.comment.body, '@claude') || contains(github.event.comment.body, '@Claude') || contains(github.event.comment.body, '@opencode') || contains(github.event.comment.body, '@OpenCode')) &&
         contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.comment.author_association) &&
-        github.event.comment.user.login != 'github-actions[bot]') ||
+        github.event.comment.user.type != 'Bot') ||
       (github.event_name == 'pull_request_review_comment' &&
         (contains(github.event.comment.body, '@claude') || contains(github.event.comment.body, '@Claude') || contains(github.event.comment.body, '@opencode') || contains(github.event.comment.body, '@OpenCode')) &&
         contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.comment.author_association) &&
-        github.event.comment.user.login != 'github-actions[bot]') ||
+        github.event.comment.user.type != 'Bot') ||
       (github.event_name == 'pull_request_review' &&
         (contains(github.event.review.body, '@claude') || contains(github.event.review.body, '@Claude') || contains(github.event.review.body, '@opencode') || contains(github.event.review.body, '@OpenCode')) &&
         contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.sender.author_association) &&
-        github.event.review.user.login != 'github-actions[bot]') ||
+        github.event.review.user.type != 'Bot') ||
       (github.event_name == 'issues' &&
         ((contains(github.event.issue.body, '@claude') || contains(github.event.issue.body, '@Claude') || contains(github.event.issue.body, '@opencode') || contains(github.event.issue.body, '@OpenCode')) ||
          (contains(github.event.issue.title, '@claude') || contains(github.event.issue.title, '@Claude') || contains(github.event.issue.title, '@opencode') || contains(github.event.issue.title, '@OpenCode'))) &&
         contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.sender.author_association) &&
-        github.event.sender.login != 'github-actions[bot]')
+        github.event.sender.type != 'Bot')
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: opencode-mention-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: true
     permissions:
       actions: read
       contents: read
@@ -86,13 +85,13 @@ jobs:
       - name: Run OpenCode
         uses: anomalyco/opencode/github@v1.18.11
         env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Headless CI: pre-approve external_directory so the agent never hangs on an
           # unanswerable permission prompt (anomalyco/opencode#14473). CI-only, no repo config change.
           OPENCODE_PERMISSION: '{"external_directory": "allow"}'
         with:
-          model: deepseek/deepseek-v4-flash
+          model: opencode-go/deepseek-v4-flash
           use_github_token: true
           share: false
           prompt: ${{ steps.prompt.outputs.prompt }}
