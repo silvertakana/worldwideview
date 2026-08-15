@@ -1,15 +1,19 @@
 # Performance Baseline
 
-> [!WARNING]
-> **SUPERSEDED — the build and bundle numbers below are pre-merge and must be re-measured.**
-> On 2026-08-15 the fork merged 9 upstream commits (`origin/main`). That merge bumped
-> **Next 16.2.11 → 16.3.0** (in two hops, swapping every `@next/swc-*` native binary),
-> plus react/react-dom 19.2.7 → 19.2.8, resium 1.23.0 → 1.24.0, lucide-react 1.23.0 →
-> 1.28.0 and ~33 others. Build wall clock, peak RSS and every chunk size are stale.
-> **Unchanged inputs:** `cesium ^1.143.0`, `zustand ^5.0.14`, and webpack (not a direct
-> dep) — so the 3,944 KB Cesium+Draco chunk should survive roughly intact. If it moves,
-> the cause is resium or the new SWC compiler, not Cesium.
-> The **Tests** section below is current and has been updated post-merge.
+> [!CAUTION]
+> **The 8,339 MB peak-RSS figure below is WRONG. The measurement method was broken.**
+> The original script summed RSS across *every* `node|next-` process on the host, not
+> just the build's. A corrected run recorded **7,479 MB of pre-existing node processes**
+> (33 PIDs — Claude Code itself, claude-desktop, a stray `next-server`) that were being
+> counted as build memory.
+>
+> **The build's true peak is 3,575 MB** — comfortably under the 6,144 MB heap cap, not
+> straining against it. Every conclusion drawn from "the build needs 8.3 GB" was wrong,
+> including the inference that the `cpus: 2` pin was load-bearing OOM mitigation.
+>
+> Re-measured post-merge on 2026-08-15 at `4998e400` (Next 16.3.0). See
+> **Post-merge results** below for current numbers; the tables further down are the
+> superseded pre-merge run, kept for the record.
 
 **Measured:** 2026-08-15, ~00:50 SGT
 **Commit:** `115e94ce` on `fork/optimization-baseline`
@@ -24,7 +28,39 @@ process tree; `/usr/bin/time` is **not installed** on this host).
 
 ---
 
-## Build
+## Post-merge results (current)
+
+Measured at `4998e400`, Next **16.3.0**, after merging 9 upstream commits.
+Method corrected to exclude pre-existing node PIDs.
+
+| Metric | Pre-merge (16.2.11) | Post-merge (16.3.0) | Δ |
+|---|---:|---:|---|
+| Exit code | 0 | **0** | build succeeds |
+| Wall clock | 371 s | **418 s** | +47 s (+12.7%) |
+| Peak build RSS | ~~8,339 MB~~ *(bad method)* | **3,575 MB** | method fixed |
+| Peak system used | 11,328 MB | 12,294 MB | +966 MB |
+| Available RAM at start | ~8,000 MB | **4,616 MB** | harsher run |
+| Client JS total | 8.1 MB | **8.1 MB** | unchanged |
+| Chunk count | 103 | **102** | −1 |
+| Largest chunk (Cesium+Draco) | 3,944.3 KB | **3,944.0 KB** | −0.3 KB |
+
+**The Cesium prediction held exactly.** `cesium ^1.143.0`, `zustand ^5.0.14` and webpack
+were untouched by the merge, so the dominant chunk was predicted to survive intact — it
+moved by 0.3 KB. Next 16.3.0, react 19.2.8, resium 1.24.0 and lucide-react's five-minor
+jump did **not** measurably move the bundle.
+
+**The +47 s is not cleanly attributable.** The post-merge run had 4,616 MB available
+versus ~8,000 MB for the baseline, so machine load is confounded with the Next upgrade.
+Isolating it needs both runs on an equally quiet host.
+
+**Still UNMEASURED: per-route First Load JS.** Next 16.3.0 emits only a
+`Route (app) Revalidate Expire` header to a non-TTY log — no size columns. The
+gap recorded pre-merge survives the upgrade; a TTY run or bundle analyzer is still
+required.
+
+---
+
+## Build (pre-merge, superseded)
 
 | Metric | Value |
 |---|---|
