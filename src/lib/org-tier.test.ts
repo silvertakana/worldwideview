@@ -143,6 +143,42 @@ describe("setOrgTier", () => {
     );
   });
 
+  it("locks workspace on downgrade from team to free", async () => {
+    mockFindUnique.mockResolvedValue(makeOrgTier({ tier: "team", status: "active" }));
+    mockUpsert.mockResolvedValue({});
+    mockPluginMemberFindMany.mockResolvedValue([{ userId: "user-1" }]);
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    await setOrgTier("org-1", { tier: "free", status: "active" });
+
+    expect(mockWorkspaceUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { ownerId: { in: ["user-1"] } },
+        data: expect.objectContaining({
+          locked: true,
+          lockedReason: expect.stringContaining("Tier downgraded from team"),
+          lockedAt: expect.any(Date),
+        }),
+      }),
+    );
+  });
+
+  it("unlocks workspace on upgrade from pro to team", async () => {
+    mockFindUnique.mockResolvedValue(makeOrgTier({ tier: "pro", status: "active" }));
+    mockUpsert.mockResolvedValue({});
+    mockPluginMemberFindMany.mockResolvedValue([{ userId: "user-1" }]);
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    await setOrgTier("org-1", { tier: "team", status: "active" });
+
+    expect(mockWorkspaceUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { ownerId: { in: ["user-1"] } },
+        data: { locked: false, lockedReason: null, lockedAt: null },
+      }),
+    );
+  });
+
   it("locks workspace when status is canceled (treats as free rank)", async () => {
     mockFindUnique.mockResolvedValue(makeOrgTier({ tier: "pro", status: "active" }));
     mockUpsert.mockResolvedValue({});

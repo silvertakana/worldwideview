@@ -26,7 +26,9 @@ node_modules/
 # GSD tool install (vendored global tool, reinstall via the GSD installer; not committed)
 /.agents/get-shit-done/
 /.agents/commands/gsd/
-/.agents/agents/gsd-*.md
+/.agents/agents/*
+!/.agents/agents/garbage-collector.md
+!/.agents/agents/security-reviewer.md
 /.agents/hooks/gsd-*
 /.agents/worktrees/
 /.agents/.gsd-profile
