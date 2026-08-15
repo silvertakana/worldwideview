@@ -7,6 +7,7 @@ import {
     Cesium3DTileset,
     Cesium3DTileStyle,
     Terrain,
+    EllipsoidTerrainProvider,
     UrlTemplateImageryProvider,
     createOsmBuildingsAsync
 } from "cesium";
@@ -116,12 +117,18 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
         updateImagery();
     }, [viewer, viewerReady, baseLayerId, fallbackLayerId]);
 
-    // 3. Enable Cesium World Terrain for non-Google 3D mode.
+    // 3. Enable terrain for non-Google 3D mode.
     //    depthTestAgainstTerrain is already true (useViewerInitialization) and OSM 3D
     //    Buildings store absolute WGS84 heights including terrain elevation — both need
     //    real terrain. Without it the globe is a smooth ellipsoid, buildings float, and
     //    depth clipping is inaccurate. In Google 3D mode globe.show is false so the
     //    terrain provider is irrelevant; no need to tear it down on mode switch.
+    //    NOTE: Terrain.fromWorldTerrain() requires a valid Cesium ion token (asset 1).
+    //    With the token unset/revoked the terrain provider 401s and the globe quadtree
+    //    never starts — the surface stays black and no imagery tiles are requested.
+    //    EllipsoidTerrainProvider is tokenless (flat terrain) and lets the imagery
+    //    basemap render; real elevation terrain can be restored when an ion token is
+    //    configured.
     const isGoogle3D = activeLayerId === "google-3d";
     const is3DMode = sceneMode === 3;
 
@@ -129,7 +136,7 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
         if (!viewer || !viewerReady || viewer.isDestroyed()) return;
         if (isGoogle3D || !is3DMode || terrainActiveRef.current) return;
 
-        viewer.scene.setTerrain(Terrain.fromWorldTerrain());
+        viewer.scene.setTerrain(new Terrain(Promise.resolve(new EllipsoidTerrainProvider())));
         terrainActiveRef.current = true;
     }, [viewer, viewerReady, isGoogle3D, is3DMode]);
 
