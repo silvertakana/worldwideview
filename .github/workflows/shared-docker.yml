@@ -25,6 +25,10 @@ on:
         type: string
         default: 'linux/amd64'
         description: 'Comma-separated build platforms. Default amd64-only; only the public globe app should pass linux/amd64,linux/arm64.'
+      ref:
+        type: string
+        default: ''
+        description: 'Git ref to check out (e.g. refs/pull/123/merge). Defaults to the triggering ref.'
 
 jobs:
   build:
@@ -37,6 +41,8 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
