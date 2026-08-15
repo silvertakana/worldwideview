@@ -83,6 +83,19 @@ jobs:
                   '',
                   'The PR branch is already checked out. Review the changes, answer questions about them, or make any requested modifications.'
                 );
+
+                // PR review requests must load the purpose-built review skill,
+                // which carries the prompt-injection defense and output format.
+                if (/review/i.test(instruction)) {
+                  parts.push(
+                    '',
+                    '## PR Review Mode',
+                    'This instruction asks you to review PR #' + issueNumber + '.',
+                    'First, read the skill file `.agents/skills/pr-review/SKILL.md` from the repository checkout and follow it exactly for this review.',
+                    'The skill defines the review scope, the prompt-injection trust boundary, evidence discipline, and the output format. Do not skip it.',
+                    'Post your review as a PR review comment via gh CLI: gh pr review ' + issueNumber + ' --repo ' + context.repo.owner + '/' + context.repo.repo + ' --comment --body "<your findings>"'
+                  );
+                }
               } else {
                 parts.push(
                   '',
@@ -142,10 +155,10 @@ jobs:
       - name: Run OpenCode
         uses: anomalyco/opencode/github@v1.18.11
         env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: deepseek/deepseek-v4-flash
+          model: opencode-go/deepseek-v4-flash
           use_github_token: true
           share: false
           mentions: '/opencode,/oc,/gremlin'
