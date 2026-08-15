@@ -111,7 +111,7 @@ export function LayerItem({
         role="button"
         tabIndex={0}
         onClick={onSelect}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(); } }}
       >
         <span className="layer-item__icon">
           <PluginIcon icon={plugin.icon} size={18} />
