@@ -1,10 +1,14 @@
 {
   "name": "worldwideview",
 <<<<<<< HEAD
+<<<<<<< HEAD
   "version": "2.65.29",
 =======
   "version": "2.65.29",
 >>>>>>> 5f4cf60c (fix: make PR Preview on-demand via /preview comment)
+=======
+  "version": "2.65.30",
+>>>>>>> 098259b9 (fix: least-privilege checkout for preview workflow (CodeQL))
   "private": true,
   "license": "EL-2.0",
   "type": "module",

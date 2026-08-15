@@ -43,6 +43,10 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.ref }}
+          # Untrusted-content trigger (issue_comment -> PR merge ref): never
+          # persist the GITHUB_TOKEN into the checkout, so checked-out code
+          # cannot exfiltrate it (CodeQL privileged-workflow hardening).
+          persist-credentials: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
