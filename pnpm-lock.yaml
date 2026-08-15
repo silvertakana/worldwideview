@@ -50,6 +50,9 @@ importers:
       '@types/pg':
         specifier: ^8.20.2
         version: 8.20.2
+      '@worldwideview/wwv-diagnostics-client':
+        specifier: workspace:*
+        version: link:packages/wwv-diagnostics-client
       '@worldwideview/wwv-lib-aviation':
         specifier: workspace:*
         version: link:packages/wwv-lib-aviation
@@ -299,6 +302,8 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
+
+  packages/wwv-diagnostics-client: {}
 
   packages/wwv-lib-aviation:
     dependencies:
@@ -1452,7 +1457,6 @@ packages:
   '@pact-foundation/pact-cli@18.1.1':
     resolution: {integrity: sha512-K1mIflg+TGbogtPD/o/H9deq7c7ItsPa2d73Cc1uV1Kqf4xMDy0YEE9Jyv588Kq9+uciLsRcu2HyXhYMHFhNhA==}
     engines: {node: '>=16'}
-    cpu: [x64, arm64]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -1494,7 +1498,6 @@ packages:
   '@pact-foundation/pact-core@19.2.0':
     resolution: {integrity: sha512-7EB2e850hmBzGnwOYTRj4TCFCJQa9zaOy53bK+ybzEDx801olf0gVlYqMYHt1EsHUZzmtS5uDybpr9UMcZQxgg==}
     engines: {node: '>=20'}
-    cpu: [x64, ia32, arm64]
     os: [darwin, linux, win32]
 
   '@pact-foundation/pact@17.0.1':

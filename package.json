@@ -40,6 +40,7 @@
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.111.0",
     "@types/pg": "^8.20.2",
+    "@worldwideview/wwv-diagnostics-client": "workspace:*",
     "@worldwideview/wwv-lib-aviation": "workspace:*",
     "@worldwideview/wwv-lib-incidents": "workspace:*",
     "@worldwideview/wwv-plugin-sdk": "workspace:*",
