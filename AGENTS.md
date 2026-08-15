@@ -17,7 +17,7 @@ WorldWideView is a **real-time geospatial intelligence engine** visualizing live
 | Event Bus | Custom typed `DataBus` (pub/sub singleton) |
 | Styling | Vanilla CSS — **no Tailwind** |
 | Database | PostgreSQL via Prisma 7 |
-| Auth | NextAuth v5 beta (Credentials provider, JWT sessions) |
+| Auth | better-auth (email/password, JWT sessions, API keys via @better-auth/api-key) |
 | Package Manager | pnpm (monorepo with `pnpm-workspace.yaml`) |
 | Testing | Vitest + jsdom + React Testing Library |
 | Deployment | Docker multi-stage build → Coolify |

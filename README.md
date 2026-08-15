@@ -75,7 +75,7 @@ flowchart TD
 ## Prerequisites
 
 Before running the application, ensure you have the following installed:
-- [Node.js](https://nodejs.org/) (v18+)
+- [Node.js](https://nodejs.org/) (v20+)
 - [pnpm](https://pnpm.io/) (v9+)
 - [Docker](https://www.docker.com/) (for self-hosting or full local dev)
 - PostgreSQL (or rely on the `coolify-db` / local compose container)
@@ -107,7 +107,7 @@ To run the source code locally for contributing or developing:
 git clone https://github.com/silvertakana/worldwideview.git
 cd worldwideview
 pnpm install
-pnpm run setup   # generates .env.local with AUTH_SECRET
+pnpm run setup   # generates .env.local with BETTER_AUTH_SECRET + ENCRYPTION_MASTER_KEY
 pnpm run dev:all # boots the UI, cache layers, and the data engine
 ```
 Visit `http://localhost:3000` to see the live globe.
@@ -134,7 +134,7 @@ worldwideview/
 
 WorldWideView operates on an open-core philosophy. The platform itself is data-agnostic; all data sources are dynamically imported as plugins at runtime.
 
-- **[Plugin Quickstart Guide](docs/plugin-quickstart.md)**: Learn how to scaffold and link your first plugin using the `@worldwideview/cli`.
+- **[Plugin Quickstart Guide](docs/plugin-quickstart.md)**: Learn how to scaffold and link your first plugin using the `@worldwideview/wwv-cli`.
 - **[Advanced Plugin Guide](docs/plugin-advanced.md)**: Deep dive into microservice data seeders, WebSockets, complex 3D rendering, and Marketplace publishing.
 
 ## Repository Ecosystem
