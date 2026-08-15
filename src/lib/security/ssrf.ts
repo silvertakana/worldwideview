@@ -1,6 +1,7 @@
 import dns from "dns/promises";
 import { fetch, Agent } from "undici";
 
+// RFC1918 + loopback + link-local detection: used to reject requests to private networks in the StreamProxy chain.
 export function isPrivateIP(ip: string): boolean {
     if (/^(127\.|10\.|192\.168\.|169\.254\.|0\.)/.test(ip)) return true;
     if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) return true;
