@@ -81,6 +81,8 @@ pnpm test         # Vitest
 pnpm db:reset     # Wipe + re-migrate DB (destructive)
 ```
 
+**Fresh worktree bootstrap**: a `git-wt` worktree starts with no `node_modules` and no env files. Run `pnpm install`, then copy `.env.local` from the main checkout (or a sibling worktree) if missing. `pnpm dev` auto-runs `prisma db push` + `copy-cesium` via `predev`. The main checkout is read-only and often stale: always read `origin/main` or work in a worktree.
+
 See `.agents/context/` → [deployment and testing details in `.agents/rules/deployment-and-testing.md`] for Docker architecture, Coolify rules, and CSP headers.
 
 ---
