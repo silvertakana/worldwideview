@@ -99,6 +99,10 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/silvertakana/worldwidev
 > [!NOTE]
 > Ensure you connect a PostgreSQL database via the `DATABASE_URL` environment variable for production deployments.
 
+### Run on your own domain
+
+The self-hosted globe runs on any domain, LAN IP, or hostname you choose - localhost, a private network address, a custom domain, or behind a reverse proxy. There is no allowlist to update and nothing restricts which origin you open the instance on: the local edition automatically trusts the incoming origin, so login and CSRF cookie handling work on any address. Behind a reverse proxy, set `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated) to the public origins your users will access. For local dev servers, set `ALLOWED_DEV_ORIGIN` to the dev origin you browse from.
+
 ## Quick Start (Local Development)
 
 To run the source code locally for contributing or developing:
