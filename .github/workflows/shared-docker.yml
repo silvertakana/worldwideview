@@ -68,6 +68,11 @@ jobs:
       - name: Build and push
         id: build-and-push
         uses: docker/build-push-action@v7
+        env:
+          NEXT_PUBLIC_CESIUM_ION_TOKEN: ${{ secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_BING_MAPS_KEY: ${{ secrets.NEXT_PUBLIC_BING_MAPS_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         with:
           context: .
           push: true
@@ -76,10 +81,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             ${{ inputs.build-args }}
-            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_CESIUM_ION_TOKEN={0}', secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN) || '' }}
-            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY={0}', secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) || '' }}
-            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_BING_MAPS_KEY={0}', secrets.NEXT_PUBLIC_BING_MAPS_KEY) || '' }}
-            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_SUPABASE_ANON_KEY={0}', secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY) || '' }}
+            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_CESIUM_ION_TOKEN={0}', env.NEXT_PUBLIC_CESIUM_ION_TOKEN) || '' }}
+            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY={0}', env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) || '' }}
+            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_BING_MAPS_KEY={0}', env.NEXT_PUBLIC_BING_MAPS_KEY) || '' }}
+            ${{ inputs.include-preview-secrets && format('NEXT_PUBLIC_SUPABASE_ANON_KEY={0}', env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
