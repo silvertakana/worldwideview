@@ -135,7 +135,7 @@ This guarantee covers login, cookies, and CSRF handling:
 - **No login/CSRF allowlist may be hardcoded to Sparvii-owned domains.** Every origin a self-hoster can use must be configurable, never implicit.
 - The operator-facing configuration keys are:
   - `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated) - production and reverse-proxy setups; adds extra trusted origins for CSRF/cookie writes
-  - `ALLOWED_DEV_ORIGIN` - dev servers only; ignored in production builds
+  - `ALLOWED_DEV_ORIGIN` (comma-separated) - dev servers only; ignored in production builds
 - **Hardcoded host allowlists are permitted ONLY for narrow security fences that are not login gates** - for example, marketplace token/install redirect hosts that prevent open redirects. They must never gate login or cookie acceptance.
 
 ---
