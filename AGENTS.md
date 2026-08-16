@@ -169,6 +169,13 @@ See `.agents/context/INDEX.md` for the full navigation table. Key files:
 
 ---
 
+## 13. Known CI Caveats
+
+- **PR Preview can fail at startup (`startup_failure`, 0 jobs)**: GitHub silently rejects a whole reusable workflow when the `secrets` context appears inside its `if:`/`with:` values (see commit `28d6748`). The pattern regressed into `shared-docker.yml` build-args (PR #411); the fix is in-flight as PR #443. Until #443 merges, treat `startup_failure` on PR Preview as a workflow-registration issue, not a code/test failure — a re-run will not clear it.
+- Nothing else is currently known-red. Treat new failures as real until proven cosmetic.
+
+---
+
 ## Hard Rule
 
 > **Always interface-based, extensible, composable, modular. Never band-aids on band-aids.**
