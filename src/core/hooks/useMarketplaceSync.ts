@@ -9,6 +9,8 @@ import type { PluginManifest } from "@/core/plugins/PluginManifest";
 import {
   getApprovedUnverifiedIds,
   approveUnverifiedPlugin,
+  getDeniedUnverifiedIds,
+  denyUnverifiedPlugin,
 } from "@/lib/marketplace/trustedPlugins";
 import { getDisabledPluginIds } from "@/core/plugins/pluginPreferences";
 import { isDemo } from "@/core/edition";
@@ -117,16 +119,20 @@ export function useMarketplaceSync(hostReady: boolean) {
 
             const { manifests } = json as { manifests: PluginManifest[] };
             const approved = getApprovedUnverifiedIds();
+            const denied = getDeniedUnverifiedIds();
             const newPending: PluginManifest[] = [];
 
             for (const manifest of manifests) {
                 if (!manifest.id) continue;
                 if (loadedIds.current.has(manifest.id)) continue;
 
-                // Unverified + not yet approved → collect for batch review
+                // Unverified + not yet approved → collect for batch review.
+                // Permanently denied plugins are skipped so re-syncs don't re-open the dialog.
                 // On demo, skip the gate — admin already approved by installing
                 if (!isDemo && manifest.trust === "unverified" && !approved.has(manifest.id)) {
-                    newPending.push(manifest);
+                    if (!denied.has(manifest.id)) {
+                        newPending.push(manifest);
+                    }
                     continue;
                 }
 
@@ -171,8 +177,12 @@ export function useMarketplaceSync(hostReady: boolean) {
 
     /** Called when user denies all pending unverified plugins. */
     const denyAll = useCallback(() => {
+        // Persist the denials so a later sync (e.g. window focus) doesn't re-pend them.
+        for (const manifest of pendingUnverified) {
+            denyUnverifiedPlugin(manifest.id);
+        }
         setPendingUnverified([]);
-    }, []);
+    }, [pendingUnverified]);
 
     const syncPlugins = useCallback(async () => {
         if (!hostReady) return;
@@ -187,7 +197,21 @@ export function useMarketplaceSync(hostReady: boolean) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         syncPlugins();
 
-        const handleFocus = () => { syncPlugins(); };
+        // Debounce focus-triggered re-syncs: rapid focus/blur pairs (e.g. from
+        // iframe or sibling-window activity) shouldn't each trigger a full sync.
+        const FOCUS_SYNC_DEBOUNCE_MS = 1500;
+        let lastSyncAt = Date.now();
+        let syncInFlight = false;
+
+        const handleFocus = () => {
+            if (syncInFlight) return;
+            if (Date.now() - lastSyncAt < FOCUS_SYNC_DEBOUNCE_MS) return;
+            syncInFlight = true;
+            lastSyncAt = Date.now();
+            syncPlugins().finally(() => {
+                syncInFlight = false;
+            });
+        };
         window.addEventListener("focus", handleFocus);
         return () => window.removeEventListener("focus", handleFocus);
     }, [syncPlugins, hostReady]);
