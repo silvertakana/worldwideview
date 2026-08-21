@@ -46,6 +46,26 @@ describe("useSessionId", () => {
         expect(result.current).toBe(existingId);
     });
 
+    it("generates a valid UUID and stores it in sessionStorage in insecure contexts (crypto.randomUUID is undefined)", async () => {
+        expect(sessionStorage.getItem(SESSION_ID_KEY)).toBeNull();
+
+        const originalRandomUUID = crypto.randomUUID;
+        // @ts-expect-error test mock for insecure context (LAN HTTP)
+        crypto.randomUUID = undefined;
+
+        try {
+            const { result } = renderHook(() => useSessionId());
+            await act(async () => {});
+
+            const stored = sessionStorage.getItem(SESSION_ID_KEY);
+            expect(stored).not.toBeNull();
+            expect(result.current).toBe(stored);
+            expect(result.current).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+        } finally {
+            crypto.randomUUID = originalRandomUUID;
+        }
+    });
+
     it("returns the same id on a second render (stable across rerenders)", async () => {
         const { result, rerender } = renderHook(() => useSessionId());
         await act(async () => {});

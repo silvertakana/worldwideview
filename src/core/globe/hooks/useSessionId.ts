@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { generateUUID } from "@/lib/uuid";
 
 const SESSION_ID_KEY = "wwv-globe-session-id";
 
@@ -13,7 +14,7 @@ export function useSessionId(): string {
         // sessionStorage is only available in the browser (this effect never runs on the server)
         const existing = sessionStorage.getItem(SESSION_ID_KEY);
         const id = existing ?? (() => {
-            const newId = crypto.randomUUID();
+            const newId = generateUUID();
             sessionStorage.setItem(SESSION_ID_KEY, newId);
             return newId;
         })();
