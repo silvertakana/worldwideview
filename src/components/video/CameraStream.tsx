@@ -16,7 +16,7 @@ import { useStore } from "@/core/state/store";
 import { PannableView } from "@/components/common/PannableView";
 import { HlsPlayer } from "./HlsPlayer";
 import {
- isHlsUrl, isKnownVideoPlatform, getYouTubeEmbedUrl, getStreamErrorMessage, getProxiedStreamUrl, getProxiedIframeUrl
+ isHlsUrl, isKnownVideoPlatform, getYouTubeEmbedUrl, getStreamErrorMessage, getProxiedStreamUrl, getProxiedIframeUrl, cleanStreamUrl
 } from "./streamUtils";
 
 /**
@@ -58,13 +58,14 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
     const [imgRefreshTick, setImgRefreshTick] = useState(0);
 
     useEffect(() => {
+        const cleaned = cleanStreamUrl(streamUrl);
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsPlaying(false); setError(null); setIsLoading(false); setHlsFailed(false);
-        setActiveStreamUrl(streamUrl);
+        setActiveStreamUrl(cleaned);
 
-        if (streamUrl.includes("balticlivecam.com")) {
+        if (cleaned.includes("balticlivecam.com")) {
             setIsLoading(true);
-            fetch(`/api/camera/extract?url=${encodeURIComponent(streamUrl)}`)
+            fetch(`/api/camera/extract?url=${encodeURIComponent(cleaned)}`)
                 .then((r) => r.json())
                 .then((d) => {
                     if (d.streamUrl) {
