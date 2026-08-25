@@ -242,6 +242,45 @@ export type FilterValue =
     | { type: "range"; min: number; max: number }
     | { type: "boolean"; value: boolean };
 
+// ─── Alert Definitions ──────────────────────────────────────
+export type AlertFieldType = "number" | "string" | "boolean";
+
+export type AlertOperator =
+    | "gt"
+    | "lt"
+    | "gte"
+    | "lte"
+    | "eq"
+    | "neq"
+    | "contains"
+    | "exists";
+
+/** A field a plugin exposes to the alert-condition builder (P2, app-side rules). */
+export interface AlertFieldDefinition {
+    /** Key resolved against `entity.properties` first, then the entity top level (mirrors FilterDefinition.propertyKey). */
+    key: string;
+    /** Human-readable label shown in the condition builder. */
+    label: string;
+    type: AlertFieldType;
+    /** Operators allowed for this field. Defaults to all when omitted. */
+    operators?: AlertOperator[];
+}
+
+/** Single-condition shape used by rules (v1 keeps ONE condition per rule). */
+export interface AlertCondition {
+    field: string;
+    op: AlertOperator;
+    value?: unknown;
+}
+
+/** Client-safe snapshot of a persisted rule, carried by the `alertFired` bus event. */
+export interface AlertRuleSnapshot {
+    id: string;
+    name: string;
+    pluginId: string;
+    condition: AlertCondition;
+}
+
 /**
  * @interface WorldPlugin
  * @description The core lifecycle interface for all WorldWideView extensions.
@@ -271,6 +310,8 @@ export interface WorldPlugin {
     getSelectionBehavior?(entity: GeoEntity): SelectionBehavior | null;
     getServerConfig?(): ServerPluginConfig;
     getFilterDefinitions?(): FilterDefinition[];
+    /** Declares fields the plugin exposes to the alert-condition builder. Omit for no alertable fields. */
+    getAlertDefinitions?(): AlertFieldDefinition[];
     getLegend?(): { label: string; color: string; filterId?: string; filterValue?: string }[];
     getSidebarComponent?(): ComponentType<{ plugin?: any } | any>;
     getDetailComponent?(): ComponentType<{ entity: GeoEntity }>;
@@ -319,6 +360,7 @@ export type DataBusEvents = {
     globeReady: Record<string, never>;
     pluginError: { pluginId?: string; message: string; error?: Error };
     layerLoadingChanged: { pluginId: string; loading: boolean };
+    alertFired: { rule: AlertRuleSnapshot; entity: GeoEntity; pluginId: string };
 };
 
 export * from "./viteGlobals";
