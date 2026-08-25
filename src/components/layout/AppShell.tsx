@@ -21,6 +21,7 @@ import { pluginRegistry } from "@/core/plugins/PluginRegistry";
 
 import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
+import { useAlertEngine } from "@/lib/alerts/engine";
 import { PanelToggleArrows } from "@/components/layout/PanelToggleArrows";
 import { FloatingVideoManager } from "@/components/video/FloatingVideoManager";
 import { BootOverlay } from "@/components/common/BootOverlay";
@@ -168,6 +169,11 @@ export function AppShell() {
         }
     }, [boot.phase, bootStart]);
     const activeBottomPanel = useStore((s) => s.activeBottomPanel);
+
+    // Alert engine (P2 backend core): evaluates enabled alert rules against
+    // live dataBus updates and emits `alertFired`. Headless — the UI agent
+    // builds the bell/badge/panel/toasts on top of the alertFired event.
+    useAlertEngine();
 
     const rootClasses = [
         "app-shell",
