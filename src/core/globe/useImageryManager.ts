@@ -69,6 +69,16 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
                 }
             }
 
+            // A Google tileset only exists on keyed builds. Without one, never
+            // hide the globe surface or drop the imagery layer for a layer
+            // that cannot load; route through the existing fallback instead.
+            if (isGoogle3D && !foundTileset) {
+                if (fallbackLayerId !== "bing-aerial") {
+                    useStore.getState().updateMapConfig({ fallbackLayerId: "bing-aerial" });
+                }
+                return; // effect re-runs with the fallback layer; keep current imagery visible
+            }
+
             if (foundTileset) {
                 foundTileset.show = isGoogle3D;
             }

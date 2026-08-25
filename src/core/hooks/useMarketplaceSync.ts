@@ -25,6 +25,8 @@ export function useMarketplaceSync(hostReady: boolean) {
     const initLayer = useStore((s) => s.initLayer);
     const loadedIds = useRef<Set<string>>(new Set());
     const initialDisabledIds = useRef<Set<string> | null>(null);
+    const syncInFlightRef = useRef(false);
+    const lastSyncAtRef = useRef(0);
     const [needsReload, setNeedsReload] = useState(false);
     const [pendingUnverified, setPendingUnverified] = useState<PluginManifest[]>([]);
 
@@ -76,6 +78,9 @@ export function useMarketplaceSync(hostReady: boolean) {
         }
 
         try {
+            // Reserve the id BEFORE the awaited load so a concurrent sync
+            // pass can never double-load this manifest.
+            loadedIds.current.add(manifest.id);
             console.log(`[MarketplaceSync] Loading manifest: ${manifest.id}`);
             await pluginManager.loadFromManifest(manifest);
 
@@ -95,9 +100,11 @@ export function useMarketplaceSync(hostReady: boolean) {
                 await pluginManager.enablePlugin(manifest.id);
             }
 
-            loadedIds.current.add(manifest.id);
             console.log(`[MarketplaceSync] Hot-loaded plugin "${manifest.id}"`);
         } catch (err) {
+            // Release the reservation so a failed load can be retried by a
+            // later sync.
+            loadedIds.current.delete(manifest.id);
             console.error(`[MarketplaceSync] Failed to load "${manifest.id}":`, err);
             const store = useStore.getState();
             if (store.showErrorToast) {
@@ -186,31 +193,34 @@ export function useMarketplaceSync(hostReady: boolean) {
 
     const syncPlugins = useCallback(async () => {
         if (!hostReady) return;
-        await captureInitialDisabled();
-        await syncMarketplacePlugins();
-        await checkBuiltinChanges();
+        if (syncInFlightRef.current) return;
+        syncInFlightRef.current = true;
+        try {
+            await captureInitialDisabled();
+            await syncMarketplacePlugins();
+            await checkBuiltinChanges();
+        } finally {
+            syncInFlightRef.current = false;
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initLayer, hostReady]);
 
     useEffect(() => {
         if (!hostReady) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         syncPlugins();
+        lastSyncAtRef.current = Date.now();
 
         // Debounce focus-triggered re-syncs: rapid focus/blur pairs (e.g. from
         // iframe or sibling-window activity) shouldn't each trigger a full sync.
         const FOCUS_SYNC_DEBOUNCE_MS = 1500;
-        let lastSyncAt = Date.now();
-        let syncInFlight = false;
 
         const handleFocus = () => {
-            if (syncInFlight) return;
-            if (Date.now() - lastSyncAt < FOCUS_SYNC_DEBOUNCE_MS) return;
-            syncInFlight = true;
-            lastSyncAt = Date.now();
-            syncPlugins().finally(() => {
-                syncInFlight = false;
-            });
+            if (Date.now() - lastSyncAtRef.current < FOCUS_SYNC_DEBOUNCE_MS) return;
+            lastSyncAtRef.current = Date.now();
+            // syncPlugins() itself is guarded: while the mount sync (or any
+            // other sync) is in flight, this trigger is skipped, so two passes
+            // can never walk the manifest list concurrently.
+            syncPlugins();
         };
         window.addEventListener("focus", handleFocus);
         return () => window.removeEventListener("focus", handleFocus);

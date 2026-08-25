@@ -1,6 +1,6 @@
 {
   "name": "worldwideview",
-  "version": "2.65.35",
+"version": "2.65.36",
   "private": true,
   "license": "EL-2.0",
   "type": "module",
@@ -115,6 +115,8 @@
   "pnpm": {
     "overrides": {
       "@spz-loader/core": "0.3.0",
+      "minimatch@10.2.5>brace-expansion": "^5.0.9",
+      "deepmerge-ts": "^8.0.0",
       "dompurify@<3.4.13": "^3.4.13",
       "fast-uri@<3.1.5": "^3.1.5",
       "form-data@<2.5.4": "^2.5.5",

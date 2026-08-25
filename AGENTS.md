@@ -34,7 +34,7 @@ Agents MUST respect these at all times:
 - **Nine Zustand slices** under `src/core/state/`: access via `useStore` in React, `useStore.getState()` elsewhere.
 - **Primitive-based rendering**: Point/Billboard/Label/Polyline collections only. Never mix `size`/`outlineWidth`/`outlineColor` onto billboard entities — GPU silently clips.
 - **Three editions** via `NEXT_PUBLIC_WWV_EDITION` (`local` / `cloud` / `demo`); feature flags in `src/core/edition.ts`.
-- **Nested git clones**: `local-plugins/` (community plugins) and `local-seeders/community/` + `local-seeders/private/` (seeders) are **independent git repos cloned inside this repo, gitignored from it**. Each has its own remote. Run `git pull` inside each before editing; commits/pushes there go to their own upstream — not to `worldwideview`. See `.agents/context/ecosystem-repositories.md`.
+- **Nested git clones**: `local-plugins/` (community plugins) and `local-seeders/community/` + `local-seeders/private/` (seeders) are **independent git repos cloned inside this repo, gitignored from it**. Each has its own remote. Run `git pull` inside each before editing; commits/pushes there go to their own upstream — not to `worldwideview`. Ecosystem repository-layout details are internal maintainer notes (`.agents/context/`, not shipped in this repo).
 
 ---
 
@@ -67,7 +67,7 @@ Agents MUST respect these at all times:
 
 ## 6. Environment & Configuration
 
-See `.agents/context/environment-config.md` for required environment variables and secrets.
+Required environment variables and secrets are documented in `.env.example` (public) and in internal maintainer notes (`.agents/context/`, not shipped in this repo).
 
 ---
 
@@ -83,7 +83,7 @@ pnpm db:reset     # Wipe + re-migrate DB (destructive)
 
 **Fresh worktree bootstrap**: a `git-wt` worktree starts with no `node_modules` and no env files. Run `pnpm install`, then copy `.env.local` from the main checkout (or a sibling worktree) if missing. `pnpm dev` auto-runs `prisma db push` + `copy-cesium` via `predev`. The main checkout is read-only and often stale: always read `origin/main` or work in a worktree.
 
-See `.agents/context/` → [deployment and testing details in `.agents/rules/deployment-and-testing.md`] for Docker architecture, Coolify rules, and CSP headers.
+See [deployment and testing details in `.agents/rules/deployment-and-testing.md`] for Docker architecture, Coolify rules, and CSP headers.
 
 ---
 
@@ -109,42 +109,18 @@ These load automatically when you read/edit files matching their paths:
 
 ## 9. On-Demand Context (read explicitly when needed)
 
-See `.agents/context/INDEX.md` for the full navigation table. Key files:
-
-| When to read | File |
-|---|---|---|
-| Product vision, business model, Edition system | `.agents/context/platform-architecture.md` |
-| Finding files, repo layout | `.agents/context/directory-structure.md` |
-| Routing fix to correct repository | `.agents/context/ecosystem-repositories.md` |
-| Next.js, data pipeline, Redis, DB schema | `.agents/context/application-architecture.md` |
-| Debugging plugin data, namespace collisions | `.agents/context/troubleshooting-and-debugging.md` |
-| SSH, Coolify MCP | `.agents/context/server-management.md` |
-| Coding principles, Definition of Done | `.agents/context/coding-principles.md` |
-| `.env` variables and secrets | `.agents/context/environment-config.md` |
-| Subagents and agent routing | `.agents/context/subagents.md` |
-| GSD planning, junction policy, worktree planning | `.agents/context/gsd-planning.md` |
-| Tool selection, search strategy, workload distribution | `.agents/context/tool-selection.md` |
-| Graphify queries | `.agents/context/graphify-usage.md` |
-| Slash commands | `.agents/context/slash-commands.md` |
-| OpenCode vs Claude Code tooling differences | `.agents/context/opencode-compatibility.md` |
-| Canonical terminology across all systems | `.agents/context/terminology.md` |
+The `.agents/context/` directory (agent guidance, environment notes, slash-command references, tooling) is internal maintainer documentation and is **not shipped in this public repo**. External contributors should rely on `README.md`, `.env.example`, module JSDoc, and the on-demand rules in section 8.
 
 ---
 
 ## 10. Slash Commands
 
-| Command | Description | File |
-|---|---|---|
-| `/commit` | **Required before every commit** — bump semver + conventional commit | `.agents/skills/commit/SKILL.md` |
-| `/remember` | Save a lesson or fact into permanent memory | `.agents/skills/remember/SKILL.md` |
-| `/pr-review` | 6-role comprehensive pull request review | `.agents/skills/pr-review/SKILL.md` |
-| `/local-dev` | Check, start, troubleshoot local dev environment | `.agents/workflows/local-dev.md` |
-| `/data-engine-cli` | Use the wwv-data-engine CLI wrapper | `.agents/workflows/data-engine-cli.md` |
-| `/debugging-coolify` | Troubleshoot deployed apps on Coolify via MCP/SSH | `.agents/workflows/debugging-coolify.md` |
-| `/five` | Five Whys root cause analysis | `.agents/workflows/five.md` |
-| `/stitch-to-nextjs` | Generate UI with Stitch MCP, port into Next.js | `.agents/workflows/stitch-to-nextjs.md` |
-| `/branch-cleanup` | **Post-merge teardown** — commit leftovers, delete plan file, remove worktree via worktree-manager | `.agents/skills/branch-cleanup/SKILL.md` |
-| `/triage-issue` | Triage a single issue (plugin/feature/bug/question) per `TRIAGE.md`; confirm before any state change | `.agents/workflows/triage-issue.md` |
+| Command | Description |
+|---|---|
+| `/pr-review` | 6-role comprehensive pull request review (source: `.agents/skills/pr-review/SKILL.md`) |
+| `/branch-cleanup` | **Post-merge teardown**: commit leftovers, delete plan file, remove worktree via worktree-manager (source: `.agents/skills/branch-cleanup/SKILL.md`) |
+| `/triage-issue` | Triage a single issue (plugin/feature/bug/question) per `TRIAGE.md`; confirm before any state change (source: `.agents/workflows/triage-issue.md`) |
+| `/commit`, `/remember`, `/local-dev`, `/data-engine-cli`, `/debugging-coolify`, `/five`, `/stitch-to-nextjs` | Internal maintainer slash commands, implemented by `.agents/` files that are not shipped in this public repo |
 
 ---
 
@@ -153,12 +129,9 @@ See `.agents/context/INDEX.md` for the full navigation table. Key files:
 | Skill | When to Use |
 |---|---|
 | `worldwideview-plugin-creation` | **Use when creating any plugin** — strict architectural checklist |
-| `plugin-creation-master-guide.md` | Decision matrix for choosing plugin architecture |
-| `osm-static-plugin-creation.md` | Creating static GeoJSON plugins from OpenStreetMap |
-| `database-operations.md` | Prisma schema changes, migrations, database queries |
-| `database-incident-recovery-procedures.md` | Safely restoring a broken production database |
+| (internal skills: `plugin-creation-master-guide.md`, `osm-static-plugin-creation.md`, `database-operations.md`, `database-incident-recovery-procedures.md`) | Internal maintainer skills, not shipped in this public repo |
 
-52 global skills available. See `.agents/global-skills-index.md`.
+Additional internal skills are kept under `.agents/skills/` for maintainers and are not shipped in this public repo.
 
 ---
 
@@ -182,4 +155,4 @@ See `.agents/context/INDEX.md` for the full navigation table. Key files:
 
 > **Always interface-based, extensible, composable, modular. Never band-aids on band-aids.**
 
-Read `.agents/context/coding-principles.md` before any non-trivial code change.
+Maintainers: read the internal coding-principles notes (`.agents/context/coding-principles.md`, not shipped in this public repo) before any non-trivial code change.

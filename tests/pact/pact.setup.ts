@@ -11,6 +11,7 @@ export const provider = new PactV3({
   host: '127.0.0.1',
 });
 
-export const PACT_BROKER_URL = process.env.PACT_BROKER_URL || 'http://192.168.68.69:9292';
-export const PACT_BROKER_USERNAME = process.env.PACT_BROKER_USERNAME || 'silver';
-export const PACT_BROKER_PASSWORD = process.env.PACT_BROKER_PASSWORD || '135789';
+export const PACT_BROKER_URL =
+  process.env.PACT_BROKER_URL || 'http://pactbroker.worldwideview.dev';
+export const PACT_BROKER_USERNAME = process.env.PACT_BROKER_USERNAME || '';
+export const PACT_BROKER_PASSWORD = process.env.PACT_BROKER_PASSWORD || '';

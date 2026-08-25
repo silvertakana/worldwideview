@@ -6,6 +6,7 @@
 
 import type { StateCreator } from "zustand";
 import type { AppStore } from "./store";
+import { resolveDefaultBaseLayerId } from "./mapDefaults";
 
 // ─── Data Configuration ──────────────────────────────────────
 /**
@@ -109,7 +110,12 @@ export const createConfigSlice: StateCreator<AppStore, [], [], ConfigSlice> = (s
         maxScreenSpaceError: 32, // Increase from 16 to 32 to significantly reduce 3D tile network requests and costs
         shadowsEnabled: false,
         enableLighting: false,
-        baseLayerId: (typeof window !== "undefined" && window.localStorage && typeof window.localStorage.getItem === "function") ? (localStorage.getItem("wwv_map_layer") || "google-3d") : "google-3d",
+        baseLayerId: resolveDefaultBaseLayerId(
+            typeof window !== "undefined" && window.localStorage && typeof window.localStorage.getItem === "function"
+                ? localStorage.getItem("wwv_map_layer")
+                : null,
+            process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+        ),
         fallbackLayerId: null,
         sceneMode: 3,
         showOsmBuildings: true,

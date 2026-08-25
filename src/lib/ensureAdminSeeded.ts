@@ -2,6 +2,7 @@
 
 import { hashPassword } from "better-auth/crypto";
 import { prisma } from "@/lib/db";
+import { isDemo } from "@/core/edition";
 
 /**
  * Auto-seed the initial admin account from environment variables.
@@ -52,7 +53,7 @@ export async function ensureAdminSeeded(): Promise<{
                     email,
                     name: "Admin",
                     emailVerified: true,
-                    role: "demo-admin",
+                    role: isDemo ? "demo-admin" : "admin",
                 },
             }),
             prisma.betterAuthAccount.create({
