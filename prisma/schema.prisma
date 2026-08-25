@@ -146,6 +146,7 @@ model BetterAuthUser {
   memberships   WorkspaceMember[]
   apiKeys       UserApiKey[]
   setupTokens   SetupToken[]
+  alertRules    AlertRule[]
 
   @@map("user")
 }
@@ -303,4 +304,37 @@ model SetupToken {
   @@index([tokenHash])
   @@index([userId])
   @@map("setup_tokens")
+}
+
+// -----------------------------------------------------------------------
+// Alerts (P2, app-side rules — see .planning, never committed)
+// -----------------------------------------------------------------------
+
+model AlertRule {
+  id        String   @id @default(cuid())
+  userId    String
+  pluginId  String
+  name      String
+  condition Json
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events    AlertEvent[]
+
+  @@index([userId])
+  @@map("alert_rules")
+}
+
+model AlertEvent {
+  id        String    @id @default(cuid())
+  ruleId    String
+  pluginId  String
+  entityId  String?
+  summary   String
+  matchedAt DateTime  @default(now())
+  rule      AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+  @@map("alert_events")
 }
