@@ -13,10 +13,11 @@ import {
  Play, Square, Loader2, AlertCircle, ExternalLink, Maximize2
 } from "lucide-react";
 import { useStore } from "@/core/state/store";
+import { isHostAllowlisted } from "@/lib/security/hostAllowlist";
 import { PannableView } from "@/components/common/PannableView";
 import { HlsPlayer } from "./HlsPlayer";
 import {
- isHlsUrl, isKnownVideoPlatform, getYouTubeEmbedUrl, getStreamErrorMessage, getProxiedStreamUrl, getProxiedIframeUrl
+ isHlsUrl, isKnownVideoPlatform, getYouTubeEmbedUrl, getStreamErrorMessage, getProxiedStreamUrl, getProxiedIframeUrl, cleanStreamUrl
 } from "./streamUtils";
 
 /**
@@ -58,13 +59,18 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
     const [imgRefreshTick, setImgRefreshTick] = useState(0);
 
     useEffect(() => {
+        const cleaned = cleanStreamUrl(streamUrl);
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsPlaying(false); setError(null); setIsLoading(false); setHlsFailed(false);
-        setActiveStreamUrl(streamUrl);
+        setActiveStreamUrl(cleaned);
 
-        if (streamUrl.includes("balticlivecam.com")) {
+        // Only hand balticlivecam URLs to the extractor when the *hostname*
+        // itself is balticlivecam.com (or a subdomain of it). A raw substring
+        // check over the whole URL would let an attacker smuggle arbitrary
+        // hosts before or after the allowed domain into the server-side fetch.
+        if (isHostAllowlisted(cleaned, ["balticlivecam.com"])) {
             setIsLoading(true);
-            fetch(`/api/camera/extract?url=${encodeURIComponent(streamUrl)}`)
+            fetch(`/api/camera/extract?url=${encodeURIComponent(cleaned)}`)
                 .then((r) => r.json())
                 .then((d) => {
                     if (d.streamUrl) {

@@ -78,6 +78,7 @@ function mockEngine404(): void {
 describe("getEngineUrl", () => {
     const ORIGINAL_ENGINE_URL = process.env.WWV_DATA_ENGINE_URL;
     const ORIGINAL_ENGINE_PORT = process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT;
+    const ORIGINAL_PUBLIC_ENGINE_URL = process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL;
 
     afterEach(() => {
         if (ORIGINAL_ENGINE_URL === undefined) {
@@ -90,24 +91,96 @@ describe("getEngineUrl", () => {
         } else {
             process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT = ORIGINAL_ENGINE_PORT;
         }
+        if (ORIGINAL_PUBLIC_ENGINE_URL === undefined) {
+            delete process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL;
+        } else {
+            process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL = ORIGINAL_PUBLIC_ENGINE_URL;
+        }
     });
 
-    it("returns localhost:5001 by default (no env vars set)", () => {
+    it("returns localhost:5000 by default (no env vars set)", () => {
         delete process.env.WWV_DATA_ENGINE_URL;
+        delete process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL;
         delete process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT;
-        expect(getEngineUrl()).toBe("http://localhost:5001");
+        expect(getEngineUrl()).toBe("http://localhost:5000");
     });
 
-    it("returns WWV_DATA_ENGINE_URL when set (overrides localhost default)", () => {
-        process.env.WWV_DATA_ENGINE_URL = "https://dataenginev2.worldwideview.dev";
+    it("returns WWV_DATA_ENGINE_URL when set (overrides all other sources)", () => {
+        process.env.WWV_DATA_ENGINE_URL = "https://dataenginev2.worldwideview.dev"; // lint-url: allow (test asserts env override wins)
+        process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL = "https://public-override.example";
         delete process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT;
         expect(getEngineUrl()).toBe("https://dataenginev2.worldwideview.dev"); // lint-url: allow (test assertion)
     });
 
-    it("uses NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT when WWV_DATA_ENGINE_URL is unset", () => {
+    it("returns NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL when WWV_DATA_ENGINE_URL is unset (#387)", () => {
         delete process.env.WWV_DATA_ENGINE_URL;
+        process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL = "https://dataengine.example.com";
+        delete process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT;
+        expect(getEngineUrl()).toBe("https://dataengine.example.com");
+    });
+
+    it("normalizes the WS form (ws + /stream) of the public engine URL into a REST base (#387)", () => {
+        delete process.env.WWV_DATA_ENGINE_URL;
+        // This is exactly the shape .env.local ships for operator-run deployments.
+        process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL = "ws://localhost:5000/stream";
+        delete process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT;
+        expect(getEngineUrl()).toBe("http://localhost:5000");
+    });
+
+    it("uses NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT when no engine URL is configured", () => {
+        delete process.env.WWV_DATA_ENGINE_URL;
+        delete process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL;
         process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT = "5555";
         expect(getEngineUrl()).toBe("http://localhost:5555");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// fetchEngineSnapshot — engine snapshot shape normalization (#388)
+// ---------------------------------------------------------------------------
+
+describe("fetchEngineSnapshot shape normalization", () => {
+    function mockEngineResponse(body: unknown): void {
+        vi.mocked(global.fetch).mockResolvedValue(
+            new Response(JSON.stringify(body), { status: 200 }),
+        );
+    }
+
+    it("accepts an indexed map keyed by id without crashing", async () => {
+        mockEngineResponse({
+            "el-1": makeEntity({ id: "el-1", label: "Alpha", pluginId: "test-plugin" }),
+            "el-2": makeEntity({ id: "el-2", label: "Beta", pluginId: "test-plugin" }),
+        });
+        const snapshot = await fetchPluginSnapshot("test-plugin");
+        expect(snapshot?.entities).toHaveLength(2);
+        expect(snapshot?.entities.map((e) => e.id)).toEqual(["el-1", "el-2"]);
+    });
+
+    it("flattens a nested indexed map under items", async () => {
+        mockEngineResponse({
+            items: {
+                "el-1": makeEntity({ id: "el-1", label: "Gamma", pluginId: "test-plugin" }),
+            },
+        });
+        const snapshot = await fetchPluginSnapshot("test-plugin");
+        expect(snapshot?.entities).toHaveLength(1);
+        expect(snapshot?.entities[0]?.id).toBe("el-1");
+    });
+
+    it("accepts a data-array wrapper shape", async () => {
+        mockEngineResponse({
+            data: [makeEntity({ id: "el-9", label: "Delta", pluginId: "test-plugin" })],
+        });
+        const snapshot = await fetchPluginSnapshot("test-plugin");
+        expect(snapshot?.entities).toHaveLength(1);
+        expect(snapshot?.entities[0]?.id).toBe("el-9");
+    });
+
+    it("returns an empty snapshot instead of crashing on malformed payloads", async () => {
+        mockEngineResponse({ items: "not-an-array" });
+        const snapshot = await fetchPluginSnapshot("test-plugin");
+        expect(snapshot).not.toBeNull();
+        expect(snapshot?.entities).toEqual([]);
     });
 });
 

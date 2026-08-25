@@ -11,8 +11,36 @@ import { matchFilterValue } from "@/core/filters/matchFilterValue";
 import type { FilterValue } from "@/core/plugins/PluginTypes";
 import { hasLocalSource, resolveLocalSnapshot, getLocalSourceIds } from "./localSources";
 
+/**
+ * Normalize a configured engine base URL for HTTP (REST) usage.
+ * The WebSocket path suffix ("/stream") and ws(s):// scheme are the forms used
+ * by plugin routing (resolveEngineUrl.ts), but the engine's REST routes
+ * (/manifest, /api/:id) live at the root — a "/stream" suffix would 404 every
+ * snapshot request, so both are normalized away here.
+ */
+function normalizeEngineBaseUrl(raw: string): string {
+    const url = raw.trim().replace(/\/+$/, "");
+    const httpUrl = url.replace(/^wss:\/\//i, "https://").replace(/^ws:\/\//i, "http://");
+    if (httpUrl.endsWith("/stream")) return httpUrl.slice(0, -"/stream".length);
+    return httpUrl;
+}
+
+/**
+ * Resolve the data engine's REST base URL.
+ * Precedence:
+ *   1. WWV_DATA_ENGINE_URL — server-side explicit override.
+ *   2. NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL — public/operator override; the
+ *      same variable plugin routing uses as its global engine fallback.
+ *   3. Localhost on NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT — default 5000, the port
+ *      docker-compose.dev.yml binds for wwv-data-engine (HTTP and WS share it).
+ */
 export function getEngineUrl(): string {
-    return process.env.WWV_DATA_ENGINE_URL ?? `http://localhost:${process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT || '5001'}`;
+    const explicitUrl = process.env.WWV_DATA_ENGINE_URL;
+    if (explicitUrl) return normalizeEngineBaseUrl(explicitUrl);
+    const publicUrl = process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL;
+    if (publicUrl) return normalizeEngineBaseUrl(publicUrl);
+    const port = process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT || "5000";
+    return `http://localhost:${port}`;
 }
 
 function normalizeEntity(raw: unknown): GeoEntity | null {
@@ -41,6 +69,36 @@ function validatePluginId(pluginId: string): string {
 }
 
 /**
+ * Normalize an engine snapshot payload into a flat list of entity records so
+ * callers can reduce/filter it safely regardless of shape:
+ *  - top-level array → as-is;
+ *  - wrapper object (`items`/`data`/`entities` array) → unwrapped (recursed one
+ *    level, so a wrapper containing an indexed map is fully flattened);
+ *  - indexed map keyed by id (`{ "<id>": entity }`) → Object.values;
+ *  - anything unrecognized → [] (defensive; never throws).
+ */
+function toEntityList(payload: unknown): unknown[] {
+    if (Array.isArray(payload)) return payload;
+    if (typeof payload !== "object" || payload === null) return [];
+
+    const obj = payload as Record<string, unknown>;
+    for (const key of ["items", "data", "entities"] as const) {
+        if (obj[key] !== undefined) {
+            return toEntityList(obj[key]);
+        }
+    }
+
+    // Indexed map: every value is itself an object (a scalar field soup is
+    // metadata, not an entity map). null values are tolerated — the reduce
+    // below filters them via normalizeEntity.
+    const values = Object.values(obj);
+    if (values.length > 0 && values.every((v) => typeof v === "object")) {
+        return values;
+    }
+    return [];
+}
+
+/**
  * Private helper: attempt to fetch a plugin snapshot from the data engine.
  * Returns null on 404, non-2xx, or network failure.
  * Validation of pluginId is the caller's responsibility.
@@ -56,8 +114,7 @@ async function fetchEngineSnapshot(safeId: string): Promise<PluginDataSnapshot |
             return null;
         }
         const data: unknown = await res.json();
-        const raw = Array.isArray(data) ? data : ((data as Record<string, unknown>)?.items ?? []) as unknown[];
-        const entities: GeoEntity[] = (raw as unknown[]).reduce<GeoEntity[]>((acc, item) => {
+        const entities: GeoEntity[] = toEntityList(data).reduce<GeoEntity[]>((acc, item) => {
             const entity = normalizeEntity(item);
             if (entity !== null) acc.push(entity);
             return acc;
