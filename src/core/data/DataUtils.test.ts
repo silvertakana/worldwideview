@@ -37,13 +37,14 @@ describe("EngineManifest", () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it("should return null and cache failure if local engine is missing", async () => {
+  it("should return null and back off (not cache permanently) when local engine is missing", async () => {
     (global.fetch as any).mockRejectedValue(new Error("Connection refused"));
 
     const plugins = await fetchLocalEngineManifest();
     expect(plugins).toBeNull();
 
-    // Should not retry fetch
+    // Within the 30s backoff window the failure is served from memory, not
+    // re-fetched (fetch count stays 1) — but it is NOT cached permanently (#396).
     await fetchLocalEngineManifest();
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });

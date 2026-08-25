@@ -2,8 +2,14 @@
 // Fetches /manifest from a local data engine to discover available seeders.
 // Used by resolveEngineUrl for per-plugin local vs cloud routing.
 
+/** Abort timeout for a single manifest-discovery attempt (ms); env-overridable. */
+export const ENGINE_DISCOVERY_TIMEOUT_MS = Number(process.env.WWV_ENGINE_DISCOVERY_TIMEOUT_MS) || 2000;
+/** How long a failed discovery suppresses re-fetching (ms). Failures are NOT cached permanently. */
+export const ENGINE_DISCOVERY_RETRY_MS = 30_000;
+
 let localManifest: string[] | null = null;
 let manifestFetched = false;
+let lastFailureAt = 0;
 
 /**
  * Resolve the base URL of the local data engine.
@@ -23,40 +29,52 @@ function getLocalEngineBase() {
 
 /**
  * Fetch the list of available seeders from a local engine.
- * Returns null if no local engine is detected (timeout after 500ms).
+ * Returns null when no local engine is detected (request failure or an abort
+ * after ENGINE_DISCOVERY_TIMEOUT_MS).
  *
  * The engine guarantees manifest IDs are already in kebab-case (the seeder's
  * exported `name` field is the canonical plugin ID). No client-side translation
  * is needed — what the engine reports is what the frontend uses.
+ *
+ * Caching model: a SUCCESSFUL discovery is cached indefinitely, but a FAILED
+ * one is not — it backs off for ENGINE_DISCOVERY_RETRY_MS (30s) and the next
+ * call after that window tries discovery again. Previously the first 500ms
+ * timeout was cached as "no local engine" forever (until resetManifestCache()),
+ * permanently misrouting every plugin to the cloud engine.
  */
 export async function fetchLocalEngineManifest(): Promise<string[] | null> {
   if (manifestFetched) return localManifest;
-  manifestFetched = true;
+  // Backoff: serve the previous failure from memory (no network cost) only
+  // until the retry window elapses, then attempt discovery again.
+  if (lastFailureAt > 0 && Date.now() - lastFailureAt < ENGINE_DISCOVERY_RETRY_MS) {
+    return null;
+  }
 
   try {
     const controller = new AbortController();
-    // 500ms is more than enough for a localhost connection.
-    const timeout = setTimeout(() => controller.abort(), 500);
+    const timeout = setTimeout(() => controller.abort(), ENGINE_DISCOVERY_TIMEOUT_MS);
 
     const res = await fetch(`${getLocalEngineBase()}/manifest`, {
       signal: controller.signal,
     });
     clearTimeout(timeout);
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      lastFailureAt = Date.now();
+      return null;
+    }
 
     const data = await res.json();
     localManifest = data.plugins || [];
+    manifestFetched = true;
     console.log(
-      `[EngineManifest] Local engine detected: ${localManifest!.length} seeders`,
+      `[EngineManifest] Local engine detected: ${localManifest.length} seeders`,
       localManifest
     );
     return localManifest;
   } catch {
+    lastFailureAt = Date.now();
     console.log("[EngineManifest] No local engine detected, using cloud.");
-    // We intentionally leave manifestFetched = true here.
-    // This caches the failure so we don't incur this timeout penalty
-    // every single time a plugin is toggled.
     return null;
   }
 }
@@ -85,4 +103,5 @@ export function isPluginBlocklisted(pluginId: string): boolean {
 export function resetManifestCache(): void {
   localManifest = null;
   manifestFetched = false;
+  lastFailureAt = 0;
 }
