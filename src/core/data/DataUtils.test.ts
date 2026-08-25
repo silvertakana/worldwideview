@@ -97,6 +97,8 @@ describe("resolveEngineUrl", () => {
     await fetchLocalEngineManifest();
 
     const url = resolveEngineUrl("plugin-local");
+    // 5000 is the local-engine default from NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT
+    // (getLocalWsUrl in resolveEngineUrl.ts) — this pins the default local routing.
     expect(url).toContain("localhost:5000/stream");
   });
 

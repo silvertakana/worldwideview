@@ -25,7 +25,7 @@ Ensure you have the following installed on your machine:
 
 ### 1.2 Clone the Repository
 
-You only need the main WorldWideView application. The data engine backend will run automatically via Docker. Open your terminal and navigate to the folder where you want to store your code (e.g., `C:\dev`).
+You only need the main WorldWideView application. The data engine backend will run automatically via Docker. Open your terminal and navigate to the folder where you want to store your code (e.g., any empty projects folder).
 
 Run this command to download the code:
 ```bash
@@ -245,7 +245,7 @@ You've built it, now share it with the world!
 
 ### 7.1 Update package.json
 
-Open `c:\dev\worldwideview\local-plugins\wwv-plugin-iss\package.json`. You must add a `"worldwideview"` metadata block so the marketplace knows how to read your plugin. Ensure your file looks like this:
+Open `local-plugins/wwv-plugin-iss/package.json`. You must add a `"worldwideview"` metadata block so the marketplace knows how to read your plugin. Ensure your file looks like this:
 
 ```json
 {

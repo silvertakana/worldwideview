@@ -1,5 +1,4 @@
 import dns from "dns/promises";
-import { fetch, Agent } from "undici";
 
 export function isPrivateIP(ip: string): boolean {
     if (/^(127\.|10\.|192\.168\.|169\.254\.|0\.)/.test(ip)) return true;
@@ -86,6 +85,15 @@ export async function safeFetch(urlStr: string, options: FetchOptions = {}): Pro
         if (err instanceof Error && err.message.includes("SSRF")) throw err;
         throw new Error(`SSRF Error: DNS resolution failed - ${err instanceof Error ? err.message : String(err)}`);
     }
+
+    // Lazy-load undici only when a request actually runs, never at module scope.
+    // Importing undici at module top-level crashes Next.js build-time page-data
+    // collection on Node 26 (`util.markAsUncloneable is not a function`): Next
+    // evaluates every route module that imports this file during `Collecting
+    // page data`, and undici v8 evaluates incompatibly with Node 26 internals
+    // at load time. Keeping the import inside the function body guarantees
+    // module evaluation never touches undici -- it loads only on first fetch.
+    const { fetch, Agent } = await import("undici");
 
     const customAgent = new Agent({
         connect: {

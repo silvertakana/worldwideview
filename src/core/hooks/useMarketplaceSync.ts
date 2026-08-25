@@ -9,6 +9,8 @@ import type { PluginManifest } from "@/core/plugins/PluginManifest";
 import {
   getApprovedUnverifiedIds,
   approveUnverifiedPlugin,
+  getDeniedUnverifiedIds,
+  denyUnverifiedPlugin,
 } from "@/lib/marketplace/trustedPlugins";
 import { getDisabledPluginIds } from "@/core/plugins/pluginPreferences";
 import { isDemo } from "@/core/edition";
@@ -23,6 +25,8 @@ export function useMarketplaceSync(hostReady: boolean) {
     const initLayer = useStore((s) => s.initLayer);
     const loadedIds = useRef<Set<string>>(new Set());
     const initialDisabledIds = useRef<Set<string> | null>(null);
+    const syncInFlightRef = useRef(false);
+    const lastSyncAtRef = useRef(0);
     const [needsReload, setNeedsReload] = useState(false);
     const [pendingUnverified, setPendingUnverified] = useState<PluginManifest[]>([]);
 
@@ -74,6 +78,9 @@ export function useMarketplaceSync(hostReady: boolean) {
         }
 
         try {
+            // Reserve the id BEFORE the awaited load so a concurrent sync
+            // pass can never double-load this manifest.
+            loadedIds.current.add(manifest.id);
             console.log(`[MarketplaceSync] Loading manifest: ${manifest.id}`);
             await pluginManager.loadFromManifest(manifest);
 
@@ -93,9 +100,11 @@ export function useMarketplaceSync(hostReady: boolean) {
                 await pluginManager.enablePlugin(manifest.id);
             }
 
-            loadedIds.current.add(manifest.id);
             console.log(`[MarketplaceSync] Hot-loaded plugin "${manifest.id}"`);
         } catch (err) {
+            // Release the reservation so a failed load can be retried by a
+            // later sync.
+            loadedIds.current.delete(manifest.id);
             console.error(`[MarketplaceSync] Failed to load "${manifest.id}":`, err);
             const store = useStore.getState();
             if (store.showErrorToast) {
@@ -117,16 +126,20 @@ export function useMarketplaceSync(hostReady: boolean) {
 
             const { manifests } = json as { manifests: PluginManifest[] };
             const approved = getApprovedUnverifiedIds();
+            const denied = getDeniedUnverifiedIds();
             const newPending: PluginManifest[] = [];
 
             for (const manifest of manifests) {
                 if (!manifest.id) continue;
                 if (loadedIds.current.has(manifest.id)) continue;
 
-                // Unverified + not yet approved → collect for batch review
+                // Unverified + not yet approved → collect for batch review.
+                // Permanently denied plugins are skipped so re-syncs don't re-open the dialog.
                 // On demo, skip the gate — admin already approved by installing
                 if (!isDemo && manifest.trust === "unverified" && !approved.has(manifest.id)) {
-                    newPending.push(manifest);
+                    if (!denied.has(manifest.id)) {
+                        newPending.push(manifest);
+                    }
                     continue;
                 }
 
@@ -171,23 +184,44 @@ export function useMarketplaceSync(hostReady: boolean) {
 
     /** Called when user denies all pending unverified plugins. */
     const denyAll = useCallback(() => {
+        // Persist the denials so a later sync (e.g. window focus) doesn't re-pend them.
+        for (const manifest of pendingUnverified) {
+            denyUnverifiedPlugin(manifest.id);
+        }
         setPendingUnverified([]);
-    }, []);
+    }, [pendingUnverified]);
 
     const syncPlugins = useCallback(async () => {
         if (!hostReady) return;
-        await captureInitialDisabled();
-        await syncMarketplacePlugins();
-        await checkBuiltinChanges();
+        if (syncInFlightRef.current) return;
+        syncInFlightRef.current = true;
+        try {
+            await captureInitialDisabled();
+            await syncMarketplacePlugins();
+            await checkBuiltinChanges();
+        } finally {
+            syncInFlightRef.current = false;
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initLayer, hostReady]);
 
     useEffect(() => {
         if (!hostReady) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         syncPlugins();
+        lastSyncAtRef.current = Date.now();
 
-        const handleFocus = () => { syncPlugins(); };
+        // Debounce focus-triggered re-syncs: rapid focus/blur pairs (e.g. from
+        // iframe or sibling-window activity) shouldn't each trigger a full sync.
+        const FOCUS_SYNC_DEBOUNCE_MS = 1500;
+
+        const handleFocus = () => {
+            if (Date.now() - lastSyncAtRef.current < FOCUS_SYNC_DEBOUNCE_MS) return;
+            lastSyncAtRef.current = Date.now();
+            // syncPlugins() itself is guarded: while the mount sync (or any
+            // other sync) is in flight, this trigger is skipped, so two passes
+            // can never walk the manifest list concurrently.
+            syncPlugins();
+        };
         window.addEventListener("focus", handleFocus);
         return () => window.removeEventListener("focus", handleFocus);
     }, [syncPlugins, hostReady]);

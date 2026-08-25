@@ -344,10 +344,17 @@ function detectOutdatedDeps() {
     } else {
       const cols = line.trim().split(/\s+/);
       if (cols.length < 3) continue;
+      // Guard against prose lines (e.g. "No dependencies need to be updated.") that
+      // pass the line filter: a real row has a version in the current or latest column.
+      if (!/^\d/.test(cols[1]) && !/^\d/.test(cols[2])) continue;
       [pkg, current, latest] = cols;
     }
     if (!pkg || !current || !latest || current === latest) continue;
-    const isMajor = current.replace(/^[^0-9]*/, '').split('.')[0] !== latest.replace(/^[^0-9]*/, '').split('.')[0];
+    // pnpm renders non-version status text in the Latest column (e.g. "Deprecated").
+    // Treat such markers as not-a-version: no major/minor comparison is possible.
+    const latestIsMarker = !/\d/.test(latest);
+    const isMajor = !latestIsMarker &&
+      current.replace(/^[^0-9]*/, '').split('.')[0] !== latest.replace(/^[^0-9]*/, '').split('.')[0];
     add({
       type: 'outdated-dep',
       tier: 'B',
@@ -355,7 +362,9 @@ function detectOutdatedDeps() {
       current,
       latest,
       isMajor,
-      description: `${pkg}: ${current} → ${latest}${isMajor ? ' ⚠ MAJOR bump — review breaking changes before upgrading' : ''}`,
+      description: latestIsMarker
+        ? `${pkg}: ${current} → ${latest}${latest === 'Deprecated' ? ' — package deprecated, find a replacement' : ' — Latest is a status marker, not a version'}`
+        : `${pkg}: ${current} → ${latest}${isMajor ? ' ⚠ MAJOR bump — review breaking changes before upgrading' : ''}`,
     });
   }
 }

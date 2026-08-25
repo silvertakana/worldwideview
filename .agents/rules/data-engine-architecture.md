@@ -30,7 +30,7 @@ In production, the `wwv-data-engine-v2` does NOT mount the local file system. In
 4. It then runs a single **workspace-aware `pnpm install --prod`**. This ensures all custom unbundled dependencies declared by the extracted plugins are downloaded directly into the container and properly linked together.
 ## 5. Namespace Separation Rule
 
-To prevent collisions and `404` or `ERR_MODULE_NOT_FOUND` errors, seeders **MUST NOT** exist simultaneously in both the community (`wwv-seeders`, cloned to a `local-seeders/community/` directory when developing locally) and private (`wwv-seeders-private`, cloned to `local-seeders/private/`) repositories. Namespace overlaps will cause module resolution failures when the V2 engine attempts to load them. Private seeders have priority.
+To prevent collisions and `404` or `ERR_MODULE_NOT_FOUND` errors, seeders **MUST NOT** exist simultaneously in both the community (`wwv-seeders`, cloned to a `local-seeders/community/` directory when developing locally; these are nested git clones created by worktree hooks, not tracked in the main repo) and private (`wwv-seeders-private`, cloned to `local-seeders/private/` the same way) repositories. Namespace overlaps will cause module resolution failures when the V2 engine attempts to load them. Private seeders have priority.
 
 ## 6. Plugin ID Contract — Single Source of Truth
 

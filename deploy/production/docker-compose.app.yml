@@ -17,12 +17,12 @@ services:
       - "WWV_DEMO_ADMIN_SECRET=${WWV_DEMO_ADMIN_SECRET:-}"
       - "WWV_BRIDGE_TOKEN=${WWV_BRIDGE_TOKEN:-}"
       - "DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/worldwideview?schema=public}"
-      # Provide the explicit public or host IP of the data engine for the frontend to use.
-      - "NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL=http://192.168.68.69:5002/stream"
+      # Provide the explicit public URL of the data engine for the frontend to use.
+      - "NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL=https://dataenginev2.worldwideview.dev/stream"
       # REST base URL for server-side MCP data queries (NOT the WebSocket /stream path).
-      # Default assumes the engine runs on the same host, published on port 5002.
-      # Operators using a separate engine host must override to http://<engine-host>:5002
-      - "WWV_DATA_ENGINE_URL=${WWV_DATA_ENGINE_URL:-http://192.168.68.69:5002}"
+      # getEngineUrl() reads this first and falls back to http://localhost:5001 when unset.
+      # The public URL is network-topology-independent (verified reachable from app containers).
+      - "WWV_DATA_ENGINE_URL=${WWV_DATA_ENGINE_URL:-https://dataenginev2.worldwideview.dev}"
       # Redis session/cache/rate-limit store.
       # Operators using a managed Redis (e.g. Upstash) should set REDIS_URL to their
       # rediss:// endpoint in .env and remove the wwv-redis service and depends_on below.

@@ -4,7 +4,13 @@ const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["@prisma/client", "prisma"],
   transpilePackages: ["@worldwideview/wwv-plugin-sdk", "resium", "react-player", "satellite.js", "@worldwideview/wwv-plugin-fortiguard", "@worldwideview/wwv-plugin-nz-traffic-cameras"],
-  allowedDevOrigins: process.env.ALLOWED_DEV_ORIGIN ? [process.env.ALLOWED_DEV_ORIGIN] : undefined,
+  allowedDevOrigins: [
+    "*.wwv.local",
+    "wwv.local",
+    "app.wwv.local",
+    "localhost",
+    ...(process.env.ALLOWED_DEV_ORIGIN ? process.env.ALLOWED_DEV_ORIGIN.split(",") : []),
+  ],
   experimental: {
     memoryBasedWorkersCount: true,
     cpus: 2,

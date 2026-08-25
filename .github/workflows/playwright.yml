@@ -115,6 +115,12 @@ jobs:
     - name: Install dependencies
       run: pnpm install
 
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ms-playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
     - name: Install Playwright Browsers
       run: pnpm exec playwright install --with-deps
 
@@ -125,6 +131,12 @@ jobs:
       run: |
         docker network create coolify || true
         pnpm run predev
+
+    - name: Build production bundle
+      # Production build for faster, more reliable E2E — no per-route dev compile,
+      # no HMR websocket keeping networkidle alive. The webServer command then
+      # boots `pnpm start` (next start) instead of the dev server when CI=true.
+      run: pnpm build
 
     - name: Run Playwright tests
       env:
@@ -161,6 +173,12 @@ jobs:
     - name: Install dependencies
       run: pnpm install
 
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ms-playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
     - name: Install Playwright Browsers
       run: pnpm exec playwright install --with-deps
 
@@ -171,6 +189,12 @@ jobs:
       run: |
         docker network create coolify || true
         pnpm run predev
+
+    - name: Build production bundle
+      # Production build for faster, more reliable E2E — no per-route dev compile,
+      # no HMR websocket keeping networkidle alive. The webServer command then
+      # boots `pnpm start` (next start) instead of the dev server when CI=true.
+      run: pnpm build
 
     - name: Run Playwright tests
       env:
@@ -211,6 +235,12 @@ jobs:
     - name: Install dependencies
       run: pnpm install
 
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ms-playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
     - name: Install Playwright Browsers
       run: pnpm exec playwright install --with-deps
 
@@ -221,6 +251,12 @@ jobs:
       run: |
         docker network create coolify || true
         pnpm run predev
+
+    - name: Build production bundle
+      # Production build for faster, more reliable E2E — no per-route dev compile,
+      # no HMR websocket keeping networkidle alive. The webServer command then
+      # boots `pnpm start` (next start) instead of the dev server when CI=true.
+      run: pnpm build
 
     - name: Run Playwright tests
       env:

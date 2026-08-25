@@ -12,7 +12,8 @@ The WorldWideView project uses **Playwright** for end-to-end (E2E) testing. This
 
 ## 1. Resource Constraints & Parallelism
 - **Worker Limits:** The Playwright configuration (`playwright.config.ts`) is strictly limited to a maximum of **2 workers**. 
-- **Reasoning:** Running Next.js compilation alongside a heavy Prisma connection pool inside multiple parallel test workers will lead to database connection exhaustion and resource contention on CI and local environments. Do not increase the worker count beyond 2 without careful consideration of the database pool limits.
+- **Reasoning:** Running Next.js compilation alongside a heavy Prisma connection pool inside multiple parallel test workers will lead to database connection exhaustion and resource contention on CI and local environments. Do not increase the worker count beyond 2 without careful consideration of the database pool limits. Verified 2026-08-14: `--workers=4` causes Prisma `Operation has timed out` failures under load; 2 workers runs the full chromium suite green in ~1.5 min.
+- **Fast local loop:** use `pnpm test:e2e:local` (chromium-only, 2 workers) for the quick dev loop. Full browser matrix runs via `pnpm test:e2e` or CI's per-project jobs.
 
 ## 2. Test User Lifecycle
 E2E tests require an authenticated user to access core application features. We manage this test user securely to ensure the environment stays pristine:

@@ -8,8 +8,9 @@ let manifestFetched = false;
 /**
  * Resolve the base URL of the local data engine.
  *
- * Always checks localhost:5000 — the port docker-compose.yml binds for
- * wwv-data-engine. NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL is intentionally
+ * Always checks the local engine at localhost on NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT
+ * (default 5000 — the port docker-compose.yml binds for wwv-data-engine).
+ * NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL is intentionally
  * NOT used here: that variable belongs to each plugin's own declared engine
  * URL (production, third-party, etc.) and must not poison local detection.
  * Mixing the two caused the production engine to be reported as "local".

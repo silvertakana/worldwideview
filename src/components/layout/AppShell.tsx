@@ -15,6 +15,7 @@ import { DataConfigPanel } from "@/components/panels/DataConfig";
 import CameraStatsPanel from "@/components/panels/CameraStatsPanel";
 import { BottomPanelManager } from "@/components/layout/BottomPanelManager";
 import { TimelineSync } from "@/core/globe/TimelineSync";
+import { isGlobeSupported } from "@/core/globe/globeSupport";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { pluginRegistry } from "@/core/plugins/PluginRegistry";
 
@@ -136,7 +137,12 @@ export function AppShell() {
         // Safety fallback: if the globe never initialises (e.g. WebGL unavailable
         // in headless CI environments), force the boot sequence after 20 s so the
         // app still reaches the "ready" state and tests are not left hanging.
-        const safetyTimer = setTimeout(() => startBootOnce("safety-timeout"), 20_000);
+        // Fail fast when the environment cannot construct a Cesium viewer at all
+        // (headless WebKit lacks OffscreenCanvas): the viewer fails instantly, so
+        // waiting the full 20 s would only delay app-ready without any chance of
+        // the globeReady event firing.
+        const safetyTimeoutMs = isGlobeSupported() ? 20_000 : 2_000;
+        const safetyTimer = setTimeout(() => startBootOnce("safety-timeout"), safetyTimeoutMs);
 
         startPlatform();
 

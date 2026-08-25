@@ -1,5 +1,5 @@
 import {
-    describe, it, expect, vi, beforeEach,
+    describe, it, expect, vi, beforeEach, afterEach,
 } from "vitest";
 import type { GeoEntity } from "@worldwideview/wwv-plugin-sdk";
 import type { PluginDataSnapshot } from "@/lib/data-query/types";
@@ -10,6 +10,7 @@ import {
     getPluginData,
     fetchPluginSnapshot,
     getAllPluginSnapshots,
+    getEngineUrl,
 } from "@/lib/data-query/service";
 
 // ---------------------------------------------------------------------------
@@ -69,6 +70,46 @@ function mockEngine404(): void {
         new Response(null, { status: 404 }),
     );
 }
+
+// ---------------------------------------------------------------------------
+// getEngineUrl — engine base-URL resolution (env-var contract)
+// ---------------------------------------------------------------------------
+
+describe("getEngineUrl", () => {
+    const ORIGINAL_ENGINE_URL = process.env.WWV_DATA_ENGINE_URL;
+    const ORIGINAL_ENGINE_PORT = process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT;
+
+    afterEach(() => {
+        if (ORIGINAL_ENGINE_URL === undefined) {
+            delete process.env.WWV_DATA_ENGINE_URL;
+        } else {
+            process.env.WWV_DATA_ENGINE_URL = ORIGINAL_ENGINE_URL;
+        }
+        if (ORIGINAL_ENGINE_PORT === undefined) {
+            delete process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT;
+        } else {
+            process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT = ORIGINAL_ENGINE_PORT;
+        }
+    });
+
+    it("returns localhost:5001 by default (no env vars set)", () => {
+        delete process.env.WWV_DATA_ENGINE_URL;
+        delete process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT;
+        expect(getEngineUrl()).toBe("http://localhost:5001");
+    });
+
+    it("returns WWV_DATA_ENGINE_URL when set (overrides localhost default)", () => {
+        process.env.WWV_DATA_ENGINE_URL = "https://dataenginev2.worldwideview.dev";
+        delete process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT;
+        expect(getEngineUrl()).toBe("https://dataenginev2.worldwideview.dev"); // lint-url: allow (test assertion)
+    });
+
+    it("uses NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT when WWV_DATA_ENGINE_URL is unset", () => {
+        delete process.env.WWV_DATA_ENGINE_URL;
+        process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT = "5555";
+        expect(getEngineUrl()).toBe("http://localhost:5555");
+    });
+});
 
 // ---------------------------------------------------------------------------
 // QUERY-01 — searchEntities

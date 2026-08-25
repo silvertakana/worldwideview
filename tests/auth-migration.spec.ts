@@ -46,7 +46,6 @@ test.describe('Legacy User Migration', () => {
 
   test('legacy user is migrated and can sign in', async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
 
     await page.fill('#email', LEGACY_MIGRATION_EMAIL);
     await page.fill('#password', LEGACY_MIGRATION_PASSWORD);
@@ -69,7 +68,6 @@ test.describe('Legacy User Migration', () => {
 
   test('migration is idempotent - second login does not create duplicate', async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
 
     await page.fill('#email', LEGACY_MIGRATION_EMAIL);
     await page.fill('#password', LEGACY_MIGRATION_PASSWORD);

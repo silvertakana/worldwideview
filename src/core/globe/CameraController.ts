@@ -8,8 +8,12 @@ import { dataBus } from "@/core/data/DataBus";
 
 // Camera presets
 const CAMERA_PRESETS: Record<string, { lat: number; lon: number; alt: number; heading: number; pitch: number }> = {
+    // global is the boot default view. pitch -90 (exact straight-down) makes Cesium's
+    // zoom3D compute a zero-length rotation axis when the cursor is at the view center
+    // (picked point == camera nadir) and the render loop dies with
+    // "normalized result is not a number". A slight tilt keeps the axis well-defined.
     global: {
- lat: 20, lon: 0, alt: 20000000, heading: 0, pitch: -90
+    lat: 20, lon: 0, alt: 20000000, heading: 0, pitch: -85
 },
     americas: {
  lat: 15, lon: -80, alt: 12000000, heading: 0, pitch: -80

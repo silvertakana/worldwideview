@@ -125,6 +125,19 @@ Two UX rules follow from this architecture:
 1. **Authenticated users visiting `/login` or `/signup` are redirected to the dashboard.** This is standard best practice and prevents confusion when a user with an active session lands on the login page.
 2. **The setup page (`/setup`) is a dedicated route, separate from `/login` and `/signup`.** It is keyed on the setup token in the URL query parameter. Without a valid token, the page redirects to `/login`. This prevents the setup flow from being confused with the regular login flow.
 
+### ADR-007F: Domain Configurability Guarantee
+
+> **The Globe must function on any domain the operator chooses.** Localhost, a LAN IP, a custom domain, or a reverse-proxied domain - any address must work without a platform-operated allowlist.
+
+This guarantee covers login, cookies, and CSRF handling:
+
+- The **local edition auto-trusts the incoming request origin** (see `resolveTrustedOrigins` in `src/lib/better-auth.ts`). The operator is the sole user, so trusting whatever origin they open the instance on is deliberate by design, not a gap.
+- **No login/CSRF allowlist may be hardcoded to Sparvii-owned domains.** Every origin a self-hoster can use must be configurable, never implicit.
+- The operator-facing configuration keys are:
+  - `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated) - production and reverse-proxy setups; adds extra trusted origins for CSRF/cookie writes
+  - `ALLOWED_DEV_ORIGIN` (comma-separated) - dev servers only; ignored in production builds
+- **Hardcoded host allowlists are permitted ONLY for narrow security fences that are not login gates** - for example, marketplace token/install redirect hosts that prevent open redirects. They must never gate login or cookie acceptance.
+
 ---
 
 ## Implementation Gap

@@ -75,7 +75,7 @@ flowchart TD
 ## Prerequisites
 
 Before running the application, ensure you have the following installed:
-- [Node.js](https://nodejs.org/) (v18+)
+- [Node.js](https://nodejs.org/) (v20+)
 - [pnpm](https://pnpm.io/) (v9+)
 - [Docker](https://www.docker.com/) (for self-hosting or full local dev)
 - PostgreSQL (or rely on the `coolify-db` / local compose container)
@@ -99,6 +99,10 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/silvertakana/worldwidev
 > [!NOTE]
 > Ensure you connect a PostgreSQL database via the `DATABASE_URL` environment variable for production deployments.
 
+### Run on your own domain
+
+The self-hosted globe runs on any domain, LAN IP, or hostname you choose - localhost, a private network address, a custom domain, or behind a reverse proxy. There is no allowlist to update and nothing restricts which origin you open the instance on: the local edition automatically trusts the incoming origin, so login and CSRF cookie handling work on any address. Behind a reverse proxy, set `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated) to the public origins your users will access. For local dev servers, set `ALLOWED_DEV_ORIGIN` (comma-separated) to the dev origin(s) you browse from.
+
 ## Quick Start (Local Development)
 
 To run the source code locally for contributing or developing:
@@ -107,7 +111,7 @@ To run the source code locally for contributing or developing:
 git clone https://github.com/silvertakana/worldwideview.git
 cd worldwideview
 pnpm install
-pnpm run setup   # generates .env.local with AUTH_SECRET
+pnpm run setup   # generates .env.local with BETTER_AUTH_SECRET + ENCRYPTION_MASTER_KEY
 pnpm run dev:all # boots the UI, cache layers, and the data engine
 ```
 Visit `http://localhost:3000` to see the live globe.
@@ -134,7 +138,7 @@ worldwideview/
 
 WorldWideView operates on an open-core philosophy. The platform itself is data-agnostic; all data sources are dynamically imported as plugins at runtime.
 
-- **[Plugin Quickstart Guide](docs/plugin-quickstart.md)**: Learn how to scaffold and link your first plugin using the `@worldwideview/cli`.
+- **[Plugin Quickstart Guide](docs/plugin-quickstart.md)**: Learn how to scaffold and link your first plugin using the `@worldwideview/wwv-cli`.
 - **[Advanced Plugin Guide](docs/plugin-advanced.md)**: Deep dive into microservice data seeders, WebSockets, complex 3D rendering, and Marketplace publishing.
 
 ## Repository Ecosystem

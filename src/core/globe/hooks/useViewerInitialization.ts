@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import type { Viewer as CesiumViewer } from "cesium";
 import {
- Cartesian3, CameraEventType, KeyboardEventModifier, createGooglePhotorealistic3DTileset, GoogleMaps
+    Cartesian3, CameraEventType, KeyboardEventModifier, createGooglePhotorealistic3DTileset, GoogleMaps, Math as CesiumMath
 } from "cesium";
 import { dataBus } from "@/core/data/DataBus";
 import { getUserApiKey } from "@/lib/userApiKeys";
@@ -51,7 +51,13 @@ export function useViewerInitialization(sceneSettings: any) {
         });
 
         // Initial Camera Position (Sync)
-        viewer.camera.setView({ destination: Cartesian3.fromDegrees(0, 20, 10000000) });
+        // A slight pitch (not exactly -90deg straight-down) keeps the zoom rotation
+        // axis well-defined: at pitch -90 Cesium's zoom3D computes a zero-length axis
+        // and the render loop dies with "normalized result is not a number".
+        viewer.camera.setView({
+            destination: Cartesian3.fromDegrees(0, 20, 10000000),
+            orientation: { heading: 0, pitch: CesiumMath.toRadians(-85), roll: 0 }
+        });
 
         // Signal ready NOW so UI and Overlays (OSM Box) appear instantly
         setViewerReady(true);
@@ -62,7 +68,10 @@ export function useViewerInitialization(sceneSettings: any) {
             if (globeFired) return;
             globeFired = true;
             if (!viewer.isDestroyed()) {
-                viewer.camera.setView({ destination: Cartesian3.fromDegrees(0, 20, 60000000) });
+                viewer.camera.setView({
+                    destination: Cartesian3.fromDegrees(0, 20, 60000000),
+                    orientation: { heading: 0, pitch: CesiumMath.toRadians(-85), roll: 0 }
+                });
             }
             dataBus.emit("globeReady", {} as Record<string, never>);
         };
@@ -112,7 +121,10 @@ export function useViewerInitialization(sceneSettings: any) {
 
             if (!googleLoaded) {
                  if (useStore.getState().mapConfig.baseLayerId === "google-3d") {
-                       useStore.getState().updateMapConfig({ fallbackLayerId: "bing-aerial" });
+                       // Tokenless OSM basemap: the bing-aerial tiered fallback chains Google XYZ
+                       // -> Ion (needs a token) -> OSM but never verifies tile loading, so with
+                       // no Google key / no ion token / no Bing key the viewport stays dark.
+                       useStore.getState().updateMapConfig({ fallbackLayerId: "osm" });
                  }
                  if (!activeKey || activeKey.length < 20) {
                      useStore.getState().showErrorToast?.("Google Maps 3D is not available. No valid API key configured.");

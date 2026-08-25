@@ -179,11 +179,11 @@ Three thin adapter modules provide all edition-specific behaviour -- everything 
 
 | Adapter | Local | Cloud | Demo |
 |---|---|---|---|
-| `src/lib/auth.ts` | Auth.js `Credentials` (bcrypt + PostgreSQL) | Auth.js `@auth/supabase-adapter` | Disabled |
+| `src/lib/better-auth.ts` | Auth.js `Credentials` (bcrypt + PostgreSQL) | Auth.js `@auth/supabase-adapter` | Disabled |
 | Storage adapter (planned) | `fs.writeFile()` to `data/` | Supabase Storage SDK | Read-only |
 | Tenant adapter (planned) | No-op (single tenant) | Sets `app.tenant_id` for RLS | No-op |
 
-> The storage and tenant adapters listed above are planned for the Cloud edition build-out and are not yet implemented as separate files. Auth is fully implemented in `src/lib/auth.ts` and `src/lib/auth.config.ts`.
+> The storage and tenant adapters listed above are planned for the Cloud edition build-out and are not yet implemented as separate files. Auth is implemented in `src/lib/better-auth.ts` (server) and `src/lib/auth-client.ts` (client), with supporting modules under `src/lib/auth/`.
 
 ---
 

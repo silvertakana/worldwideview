@@ -1,4 +1,4 @@
-# Auto-classifies new/edited issues by calling DeepSeek API to determine
+# Auto-classifies new/edited issues by calling the OpenCode Go API to determine
 # target repo and type, then applies labels and posts a routing comment.
 name: Issue Classifier
 
@@ -50,19 +50,19 @@ jobs:
             }
             return 'proceed';
 
-      - name: Classify via DeepSeek API
+      - name: Classify via OpenCode Go API
         id: classify
         if: steps.has-repo-label.outputs.result != 'skip'
         continue-on-error: true
         uses: actions/github-script@v7
         env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         with:
           script: |
-            const apiKey = process.env.DEEPSEEK_API_KEY;
+            const apiKey = process.env.OPENCODE_API_KEY;
             if (!apiKey) {
               core.setOutput('api_failed', 'true');
-              core.setOutput('api_error', 'DEEPSEEK_API_KEY not set');
+              core.setOutput('api_error', 'OPENCODE_API_KEY not set');
               return;
             }
 
@@ -87,7 +87,7 @@ jobs:
               'confidence must be high, medium, or low.';
 
             const payload = {
-              model: 'deepseek-chat',
+              model: 'deepseek-v4-flash',
               messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: 'Title: ' + title + '\nBody: ' + body }
@@ -95,7 +95,7 @@ jobs:
             };
 
             try {
-              const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+              const response = await fetch('https://opencode.ai/zen/go/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -163,7 +163,7 @@ jobs:
             core.setOutput('repo', repo);
             core.setOutput('type', type);
             core.setOutput('confidence', confidence);
-            core.setOutput('reasoning', 'Keyword fallback (DeepSeek API unavailable)');
+            core.setOutput('reasoning', 'Keyword fallback (OpenCode Go API unavailable)');
 
       - name: Apply labels
         if: steps.has-repo-label.outputs.result != 'skip'
@@ -208,7 +208,7 @@ jobs:
             body += '| Reasoning | ' + (reasoning || 'N/A') + ' |\n';
 
             if (isFallback) {
-              body += '\n> Classification used keyword fallback (DeepSeek API was unavailable).\n';
+              body += '\n> Classification used keyword fallback (OpenCode Go API was unavailable).\n';
             }
             if (conf === 'low') {
               body += '\n> Low-confidence classification. A maintainer should verify and adjust labels as needed.';

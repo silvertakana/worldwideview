@@ -28,8 +28,9 @@ function getLocalWsUrl() {
  * Resolves the WebSocket engine URL for a given plugin.
  *
  * Resolution order:
- * 1. Local engine (if running at localhost:5000 and has this plugin's seeder,
- *    AND the plugin is not in NEXT_PUBLIC_WWV_LOCAL_ENGINE_BLOCKLIST)
+ * 1. Local engine (if running on NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT — default
+ *    localhost:5000 — and has this plugin's seeder, AND the plugin is not in
+ *    NEXT_PUBLIC_WWV_LOCAL_ENGINE_BLOCKLIST)
  * 2. Plugin's ServerPluginConfig.streamUrl (code-based plugins)
  * 3. Plugin's PluginManifest.dataSource.streamUrl (manifest-based plugins)
  * 4. NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL env var
