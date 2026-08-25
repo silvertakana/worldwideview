@@ -69,6 +69,36 @@ function validatePluginId(pluginId: string): string {
 }
 
 /**
+ * Normalize an engine snapshot payload into a flat list of entity records so
+ * callers can reduce/filter it safely regardless of shape:
+ *  - top-level array → as-is;
+ *  - wrapper object (`items`/`data`/`entities` array) → unwrapped (recursed one
+ *    level, so a wrapper containing an indexed map is fully flattened);
+ *  - indexed map keyed by id (`{ "<id>": entity }`) → Object.values;
+ *  - anything unrecognized → [] (defensive; never throws).
+ */
+function toEntityList(payload: unknown): unknown[] {
+    if (Array.isArray(payload)) return payload;
+    if (typeof payload !== "object" || payload === null) return [];
+
+    const obj = payload as Record<string, unknown>;
+    for (const key of ["items", "data", "entities"] as const) {
+        if (obj[key] !== undefined) {
+            return toEntityList(obj[key]);
+        }
+    }
+
+    // Indexed map: every value is itself an object (a scalar field soup is
+    // metadata, not an entity map). null values are tolerated — the reduce
+    // below filters them via normalizeEntity.
+    const values = Object.values(obj);
+    if (values.length > 0 && values.every((v) => typeof v === "object")) {
+        return values;
+    }
+    return [];
+}
+
+/**
  * Private helper: attempt to fetch a plugin snapshot from the data engine.
  * Returns null on 404, non-2xx, or network failure.
  * Validation of pluginId is the caller's responsibility.
@@ -84,8 +114,7 @@ async function fetchEngineSnapshot(safeId: string): Promise<PluginDataSnapshot |
             return null;
         }
         const data: unknown = await res.json();
-        const raw = Array.isArray(data) ? data : ((data as Record<string, unknown>)?.items ?? []) as unknown[];
-        const entities: GeoEntity[] = (raw as unknown[]).reduce<GeoEntity[]>((acc, item) => {
+        const entities: GeoEntity[] = toEntityList(data).reduce<GeoEntity[]>((acc, item) => {
             const entity = normalizeEntity(item);
             if (entity !== null) acc.push(entity);
             return acc;
