@@ -147,7 +147,7 @@ enableLighting,
 
     useEffect(() => {
         if (!viewerRef.current || viewerRef.current.isDestroyed()) return;
-        return setupInteractionHandlers(viewerRef.current, hoveredEntityIdRef);
+        return setupInteractionHandlers(viewerRef.current, hoveredEntityIdRef, animatablesMapRef);
     }, [viewerReady]);
 
     useEffect(() => {
