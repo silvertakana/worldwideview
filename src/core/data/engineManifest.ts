@@ -65,13 +65,14 @@ export async function fetchLocalEngineManifest(): Promise<string[] | null> {
     }
 
     const data = await res.json();
-    localManifest = data.plugins || [];
+    const plugins: string[] = data.plugins || [];
+    localManifest = plugins;
     manifestFetched = true;
     console.log(
-      `[EngineManifest] Local engine detected: ${localManifest.length} seeders`,
-      localManifest
+      `[EngineManifest] Local engine detected: ${plugins.length} seeders`,
+      plugins
     );
-    return localManifest;
+    return plugins;
   } catch {
     lastFailureAt = Date.now();
     console.log("[EngineManifest] No local engine detected, using cloud.");
