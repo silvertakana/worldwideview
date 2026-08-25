@@ -15,9 +15,10 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/db";
 import { isLocal, isDemo } from "@/core/edition";
-import { organization, admin, jwt } from "better-auth/plugins";
+import { organization, admin } from "better-auth/plugins";
 import { oneTimeToken } from "better-auth/plugins/one-time-token";
 import { apiKey } from "@better-auth/api-key";
+import { jwtPlugin } from "@/lib/auth/jwt-plugin";
 import { evaluatePasswordStrength, MIN_PASSWORD_SCORE } from "@/lib/password-strength";
 
 /**
@@ -166,9 +167,7 @@ export const auth = betterAuth({
         admin(),
         // JWT + JWKS — token endpoint at /api/ba/token, JWKS at /api/ba/jwks.
         // The data engine fetches JWKS from this endpoint to verify plugin tickets.
-        jwt({
-            schema: { jwks: { modelName: "pluginJwks" } },
-        }),
+        jwtPlugin,
         // One-time tokens — replaces setup token flow from src/lib/auth/setupToken.ts.
         // Tokens expire after 1 hour by default.
         oneTimeToken({ expiresIn: 3600 }),
