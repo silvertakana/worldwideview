@@ -96,7 +96,7 @@ export async function createAdminAccount(formData: FormData): Promise<SetupResul
                 email,
                 name,
                 emailVerified: false,
-                role: isDemo ? "demo-admin" : "user",
+                role: isDemo ? "demo-admin" : "admin",
             },
         }),
         prisma.betterAuthAccount.create({
