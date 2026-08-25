@@ -13,25 +13,8 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // Parse and validate the URL before ANY request is made. The guard is
-        // an explicit parsed-hostname comparison (property access directly in
-        // the condition), never a raw substring over the whole URL, so
-        // arbitrary hosts cannot precede or follow the allowed domain. URL
-        // parsing ignores userinfo; it is stripped below so credentials never
-        // reach the network.
-        const resolved = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(targetUrl) ? targetUrl : `https://${targetUrl}`;
-        const parsedTarget = new URL(resolved);
-
-        if (
-            (parsedTarget.protocol === "http:" || parsedTarget.protocol === "https:")
-            && (parsedTarget.hostname === "balticlivecam.com"
-                || parsedTarget.hostname.endsWith(".balticlivecam.com"))
-        ) {
-            parsedTarget.username = "";
-            parsedTarget.password = "";
-            const extractUrl = parsedTarget.toString();
-
-            const response = await fetch(extractUrl, {
+        if (targetUrl.includes("balticlivecam.com")) {
+            const response = await fetch(targetUrl, {
                 headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
             });
             const html = await response.text();
@@ -46,7 +29,7 @@ export async function GET(req: NextRequest) {
             const ajaxRes = await fetch(ajaxUrl, {
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    Referer: extractUrl
+                    Referer: targetUrl
                 }
             });
             const ajaxHtml = await ajaxRes.text();
