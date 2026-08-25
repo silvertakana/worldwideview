@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { GeoEntity } from "@worldwideview/wwv-plugin-sdk";
+import type { AlertCondition, GeoEntity } from "@worldwideview/wwv-plugin-sdk";
 import { evaluateCondition, evaluateRule } from "./evaluate";
 
 const MAG_ENTITY = {
@@ -209,7 +209,11 @@ describe("evaluateCondition — entities and robustness", () => {
 
 describe("evaluateRule (v1 single-condition wrapper)", () => {
     it("matches when condition matches", () => {
-        const rule = { name: "Big quake", pluginId: "earthquakes", condition: { field: "magnitude", op: "gt", value: 5 } };
+        const rule: { name: string; pluginId: string; condition: AlertCondition } = {
+            name: "Big quake",
+            pluginId: "earthquakes",
+            condition: { field: "magnitude", op: "gt", value: 5 },
+        };
         expect(evaluateRule(rule, MAG_ENTITY)).toBe(true);
         expect(evaluateRule(rule, { ...MAG_ENTITY, magnitude: 3 })).toBe(false);
     });
@@ -219,7 +223,7 @@ describe("evaluateRule (v1 single-condition wrapper)", () => {
     });
 
     it("works against a GeoEntity shape (evaluateRule accepts GeoEntity)", () => {
-        const rule = { condition: { field: "latitude", op: "gt", value: 60 } };
+        const rule: { condition: AlertCondition } = { condition: { field: "latitude", op: "gt", value: 60 } };
         const geoEntity: GeoEntity = {
             id: "geo-2",
             pluginId: "earthquakes",
