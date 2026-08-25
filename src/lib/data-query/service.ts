@@ -11,8 +11,36 @@ import { matchFilterValue } from "@/core/filters/matchFilterValue";
 import type { FilterValue } from "@/core/plugins/PluginTypes";
 import { hasLocalSource, resolveLocalSnapshot, getLocalSourceIds } from "./localSources";
 
+/**
+ * Normalize a configured engine base URL for HTTP (REST) usage.
+ * The WebSocket path suffix ("/stream") and ws(s):// scheme are the forms used
+ * by plugin routing (resolveEngineUrl.ts), but the engine's REST routes
+ * (/manifest, /api/:id) live at the root — a "/stream" suffix would 404 every
+ * snapshot request, so both are normalized away here.
+ */
+function normalizeEngineBaseUrl(raw: string): string {
+    const url = raw.trim().replace(/\/+$/, "");
+    const httpUrl = url.replace(/^wss:\/\//i, "https://").replace(/^ws:\/\//i, "http://");
+    if (httpUrl.endsWith("/stream")) return httpUrl.slice(0, -"/stream".length);
+    return httpUrl;
+}
+
+/**
+ * Resolve the data engine's REST base URL.
+ * Precedence:
+ *   1. WWV_DATA_ENGINE_URL — server-side explicit override.
+ *   2. NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL — public/operator override; the
+ *      same variable plugin routing uses as its global engine fallback.
+ *   3. Localhost on NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT — default 5000, the port
+ *      docker-compose.dev.yml binds for wwv-data-engine (HTTP and WS share it).
+ */
 export function getEngineUrl(): string {
-    return process.env.WWV_DATA_ENGINE_URL ?? `http://localhost:${process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT || '5001'}`;
+    const explicitUrl = process.env.WWV_DATA_ENGINE_URL;
+    if (explicitUrl) return normalizeEngineBaseUrl(explicitUrl);
+    const publicUrl = process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL;
+    if (publicUrl) return normalizeEngineBaseUrl(publicUrl);
+    const port = process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT || "5000";
+    return `http://localhost:${port}`;
 }
 
 function normalizeEntity(raw: unknown): GeoEntity | null {
