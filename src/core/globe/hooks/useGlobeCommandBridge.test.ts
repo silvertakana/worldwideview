@@ -13,11 +13,17 @@
  *   BRIDGE-05  Empty sessionId -> EventSource never created
  *   BRIDGE-06  Unmount -> EventSource.close() called
  *   BRIDGE-07  onerror firing -> no throw
+ *   BRIDGE-08  readyState CLOSED -> EventSource recreated with backoff, consumption resumes
+ *   BRIDGE-09  Backoff doubles per failed attempt, resets after successful onopen
+ *   BRIDGE-10  Unmount clears pending reconnect timer and closes current EventSource
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useGlobeCommandBridge } from "./useGlobeCommandBridge";
+import {
+    useGlobeCommandBridge,
+    SSE_RECONNECT_BASE_DELAY_MS,
+} from "./useGlobeCommandBridge";
 
 // ---------------------------------------------------------------------------
 // Mock DataBus
@@ -107,10 +113,17 @@ const mockedUseStore = useStore as unknown as {
 // ---------------------------------------------------------------------------
 
 let mockEs: MockEventSource;
+const mockEsInstances: MockEventSource[] = [];
 
 class MockEventSource {
+    static CONNECTING = 0;
+    static OPEN = 1;
+    static CLOSED = 2;
+
     url: string;
+    readyState = MockEventSource.CONNECTING;
     onmessage: ((ev: MessageEvent) => void) | null = null;
+    onopen: (() => void) | null = null;
     onerror: ((ev: Event) => void) | null = null;
     close = vi.fn();
 
@@ -118,6 +131,7 @@ class MockEventSource {
         this.url = url;
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         mockEs = this;
+        mockEsInstances.push(this);
     }
 }
 
@@ -127,6 +141,7 @@ class MockEventSource {
 
 beforeEach(() => {
     vi.resetAllMocks();
+    mockEsInstances.length = 0;
 
     // Install MockEventSource as the global before each test
     global.EventSource = MockEventSource as unknown as typeof EventSource;
@@ -331,5 +346,181 @@ describe("useGlobeCommandBridge onerror resilience (BRIDGE-07)", () => {
         });
 
         // Reaching here without an unhandled exception is the assertion
+    });
+});
+
+// ---------------------------------------------------------------------------
+// BRIDGE-08: reconnect after readyState CLOSED
+// ---------------------------------------------------------------------------
+
+describe("useGlobeCommandBridge reconnect on terminal close (BRIDGE-08)", () => {
+    it("creates a new EventSource after readyState becomes CLOSED", () => {
+        vi.useFakeTimers();
+        try {
+            renderHook(() => useGlobeCommandBridge("sess-1"));
+            const first = mockEs;
+            first.readyState = MockEventSource.CLOSED;
+
+            act(() => {
+                first.onerror?.(new Event("error"));
+            });
+
+            // A CLOSED stream must not reconnect instantly: creation waits for backoff.
+            expect(mockEsInstances).toHaveLength(1);
+
+            act(() => {
+                vi.advanceTimersByTime(SSE_RECONNECT_BASE_DELAY_MS);
+            });
+
+            expect(mockEsInstances).toHaveLength(2);
+            expect(mockEs.url).toContain("/api/globe/commands/stream");
+            expect(mockEs.url).toContain("sessionId=sess-1");
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("resumes command consumption on the reconnected EventSource", () => {
+        vi.useFakeTimers();
+        try {
+            renderHook(() => useGlobeCommandBridge("sess-1"));
+            const first = mockEs;
+            first.readyState = MockEventSource.CLOSED;
+
+            act(() => {
+                first.onerror?.(new Event("error"));
+            });
+            act(() => {
+                vi.advanceTimersByTime(SSE_RECONNECT_BASE_DELAY_MS);
+            });
+
+            // The reconnected instance must have onmessage re-wired, otherwise
+            // commands pushed after the restart would be silently dropped.
+            act(() => {
+                mockEs.onmessage?.(
+                    new MessageEvent("message", {
+                        data: JSON.stringify({
+                            commands: [{ type: "pan", lat: 5, lon: 6, alt: 100 }],
+                        }),
+                    }),
+                );
+            });
+
+            expect(mockEmit).toHaveBeenCalledWith(
+                "cameraGoTo",
+                expect.objectContaining({ lat: 5, lon: 6, alt: 100 }),
+            );
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// BRIDGE-09: backoff doubles per failure, resets after successful open
+// ---------------------------------------------------------------------------
+
+describe("useGlobeCommandBridge reconnect backoff (BRIDGE-09)", () => {
+    it("doubles the delay between failed reconnects and resets it after onopen", () => {
+        vi.useFakeTimers();
+        try {
+            renderHook(() => useGlobeCommandBridge("sess-1"));
+
+            // Failure 1 -> reconnect scheduled at the base delay (1s).
+            const first = mockEs;
+            first.readyState = MockEventSource.CLOSED;
+            act(() => {
+                first.onerror?.(new Event("error"));
+            });
+            act(() => {
+                vi.advanceTimersByTime(SSE_RECONNECT_BASE_DELAY_MS);
+            });
+            expect(mockEsInstances).toHaveLength(2);
+
+            // Failure 2 -> the next reconnect must wait 2x the base delay.
+            const second = mockEs;
+            second.readyState = MockEventSource.CLOSED;
+            act(() => {
+                second.onerror?.(new Event("error"));
+            });
+            act(() => {
+                vi.advanceTimersByTime(SSE_RECONNECT_BASE_DELAY_MS * 2);
+            });
+            expect(mockEsInstances).toHaveLength(3);
+
+            // Success: onopen resets the backoff to the base delay.
+            act(() => {
+                mockEs.onopen?.();
+            });
+
+            // Failure 3 -> reconnect must happen at the base delay again, not 4x.
+            const third = mockEs;
+            third.readyState = MockEventSource.CLOSED;
+            act(() => {
+                third.onerror?.(new Event("error"));
+            });
+            act(() => {
+                vi.advanceTimersByTime(SSE_RECONNECT_BASE_DELAY_MS);
+            });
+            expect(mockEsInstances).toHaveLength(4);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// BRIDGE-10: unmount clears pending reconnect timer and closes current stream
+// ---------------------------------------------------------------------------
+
+describe("useGlobeCommandBridge unmount cleanup with pending reconnect (BRIDGE-10)", () => {
+    it("does not reconnect after unmount when a reconnect timer is pending", () => {
+        vi.useFakeTimers();
+        try {
+            const { unmount } = renderHook(() => useGlobeCommandBridge("sess-1"));
+            const first = mockEs;
+            first.readyState = MockEventSource.CLOSED;
+
+            act(() => {
+                first.onerror?.(new Event("error"));
+            });
+
+            unmount();
+            act(() => {
+                vi.advanceTimersByTime(60_000);
+            });
+
+            // No EventSource may be created after unmount (timer was cleared).
+            expect(mockEsInstances).toHaveLength(1);
+            expect(first.close).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("closes the reconnected EventSource on unmount", () => {
+        vi.useFakeTimers();
+        try {
+            const { unmount } = renderHook(() => useGlobeCommandBridge("sess-1"));
+            const first = mockEs;
+            first.readyState = MockEventSource.CLOSED;
+
+            act(() => {
+                first.onerror?.(new Event("error"));
+            });
+            act(() => {
+                vi.advanceTimersByTime(SSE_RECONNECT_BASE_DELAY_MS);
+            });
+            const second = mockEs;
+            expect(mockEsInstances).toHaveLength(2);
+
+            unmount();
+
+            // first.close() happened at reconnect time; second.close() on unmount.
+            expect(first.close).toHaveBeenCalledTimes(1);
+            expect(second.close).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
