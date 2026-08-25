@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/ba-session";
+import { isHostAllowlisted } from "@/lib/security/hostAllowlist";
 
 export async function GET(req: NextRequest) {
     const session = await getServerSession();
@@ -13,8 +14,18 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        if (targetUrl.includes("balticlivecam.com")) {
-            const response = await fetch(targetUrl, {
+        // Match on the parsed hostname, never a raw substring over the URL,
+        // so arbitrary hosts cannot precede or follow the allowed domain.
+        // Userinfo is stripped before fetching so credentials never reach the
+        // network and the URL still satisfies the hostname check.
+        if (isHostAllowlisted(targetUrl, ["balticlivecam.com"])) {
+            const resolved = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(targetUrl) ? targetUrl : `https://${targetUrl}`;
+            const parsedTarget = new URL(resolved);
+            parsedTarget.username = "";
+            parsedTarget.password = "";
+            const extractUrl = parsedTarget.toString();
+
+            const response = await fetch(extractUrl, {
                 headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
             });
             const html = await response.text();
@@ -29,7 +40,7 @@ export async function GET(req: NextRequest) {
             const ajaxRes = await fetch(ajaxUrl, {
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    Referer: targetUrl
+                    Referer: extractUrl
                 }
             });
             const ajaxHtml = await ajaxRes.text();

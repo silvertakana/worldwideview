@@ -13,6 +13,7 @@ import {
  Play, Square, Loader2, AlertCircle, ExternalLink, Maximize2
 } from "lucide-react";
 import { useStore } from "@/core/state/store";
+import { isHostAllowlisted } from "@/lib/security/hostAllowlist";
 import { PannableView } from "@/components/common/PannableView";
 import { HlsPlayer } from "./HlsPlayer";
 import {
@@ -63,7 +64,11 @@ export const CameraStream: React.FC<CameraStreamProps> = ({
         setIsPlaying(false); setError(null); setIsLoading(false); setHlsFailed(false);
         setActiveStreamUrl(cleaned);
 
-        if (cleaned.includes("balticlivecam.com")) {
+        // Only hand balticlivecam URLs to the extractor when the *hostname*
+        // itself is balticlivecam.com (or a subdomain of it). A raw substring
+        // check over the whole URL would let an attacker smuggle arbitrary
+        // hosts before or after the allowed domain into the server-side fetch.
+        if (isHostAllowlisted(cleaned, ["balticlivecam.com"])) {
             setIsLoading(true);
             fetch(`/api/camera/extract?url=${encodeURIComponent(cleaned)}`)
                 .then((r) => r.json())
