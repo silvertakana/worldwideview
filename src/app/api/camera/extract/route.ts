@@ -14,21 +14,19 @@ export async function GET(req: NextRequest) {
 
     try {
         // Parse and validate the URL before ANY request is made. The guard is
-        // an explicit parsed-hostname comparison (exact match or subdomain
-        // suffix), never a raw substring over the whole URL, so arbitrary
-        // hosts cannot precede or follow the allowed domain. URL parsing also
-        // ignores userinfo; it is stripped below so credentials never reach
-        // the network. Kept inline at this server boundary so SAST tooling
-        // sees the allowlist guard directly on the fetch path.
+        // an explicit parsed-hostname comparison (property access directly in
+        // the condition), never a raw substring over the whole URL, so
+        // arbitrary hosts cannot precede or follow the allowed domain. URL
+        // parsing ignores userinfo; it is stripped below so credentials never
+        // reach the network.
         const resolved = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(targetUrl) ? targetUrl : `https://${targetUrl}`;
         const parsedTarget = new URL(resolved);
-        // URL.hostname is already lowercase per the URL spec.
-        const hostname = parsedTarget.hostname;
-        const isAllowedHost =
-            hostname === "balticlivecam.com" || hostname.endsWith(".balticlivecam.com");
-        const isWebProtocol = parsedTarget.protocol === "http:" || parsedTarget.protocol === "https:";
 
-        if (isAllowedHost && isWebProtocol) {
+        if (
+            (parsedTarget.protocol === "http:" || parsedTarget.protocol === "https:")
+            && (parsedTarget.hostname === "balticlivecam.com"
+                || parsedTarget.hostname.endsWith(".balticlivecam.com"))
+        ) {
             parsedTarget.username = "";
             parsedTarget.password = "";
             const extractUrl = parsedTarget.toString();
