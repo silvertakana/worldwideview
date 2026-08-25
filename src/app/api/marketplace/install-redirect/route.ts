@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         const rateLimited = installLimiter.check(getClientIp(request));
         if (rateLimited) return rateLimited;
 
-        // Auth: cloud edition uses Supabase session; local/demo uses NextAuth.
+        // Auth: cloud edition uses Supabase session; local/demo uses Better Auth.
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const isDummyUrl = !supabaseUrl || supabaseUrl.includes("dummy") || supabaseUrl.includes("xyz.supabase.co");
         const useSupabaseAuth = isCloud && !isDummyUrl;
