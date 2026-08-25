@@ -13,6 +13,7 @@ import { createFilterSlice, type FilterSlice } from "./filterSlice";
 import { createDataSlice, type DataSlice } from "./dataSlice";
 import { createConfigSlice, type ConfigSlice } from "./configSlice";
 import { createFavoritesSlice, type FavoritesSlice } from "./favoritesSlice";
+import { createAlertsSlice, type AlertsSlice } from "./alertsSlice";
 
 /**
  * Re-exporting slice types for easier access from components and utilities.
@@ -28,7 +29,8 @@ export type AppStore = GlobeSlice &
     FilterSlice &
     DataSlice &
     ConfigSlice &
-    FavoritesSlice;
+    FavoritesSlice &
+    AlertsSlice;
 
 /**
  * The primary hook for accessing and modifying the application state.
@@ -45,4 +47,5 @@ export const useStore = create<AppStore>((...args) => ({
     ...createDataSlice(...args),
     ...createConfigSlice(...args),
     ...createFavoritesSlice(...args),
+    ...createAlertsSlice(...args),
 }));
