@@ -2,7 +2,7 @@
 
 CI probe — asserts plugin/seeder integration health for the WorldWideView ecosystem.
 
-Used by the smoke-test workflows in [`wwv-plugins`](https://github.com/silvertakana/wwv-plugins), [`wwv-seeders-community`](https://github.com/silvertakana/wwv-seeders-community), and [`wwv-seeders-private`](https://github.com/silvertakana/wwv-seeders-private).
+Used by the smoke-test workflows in [`wwv-plugins`](https://github.com/silvertakana/wwv-plugins) and [`wwv-seeders-community`](https://github.com/silvertakana/wwv-seeders-community), and by internal seeders that are not public.
 
 ## Install
 

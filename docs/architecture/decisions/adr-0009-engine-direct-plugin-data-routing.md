@@ -60,6 +60,6 @@ Live evidence settled the question: the engine (`dataenginev2.worldwideview.dev`
 - `getEngineUrl()` (server-side `@/lib/data-query/service`) is a local-dev resolver (`http://localhost:5001`) and must NOT be used in globe route handlers; server-side engine calls use the env-chain pattern.
 
 ## References
-- Review doc: `C:\dev\wwv\.agents\research\wwv-engine-direct-routing-review-2026-08-24.md`
+- Review doc: internal research note `wwv-engine-direct-routing-review-2026-08-24.md` (maintainer-only, not tracked in this repo)
 - Migration: wwv-plugins PRs #62/#63, worldwideview PRs #449/#450 (batch dynamic-2026-08-24)
-- Skill doctrine: `C:\dev\wwv\.agents\skills\plugin-mass-production\SKILL.md` §1 dynamic + §6-6f
+- Skill doctrine: internal `plugin-mass-production` skill §1 (dynamic plugins) + §6-6f (maintainer-only, not tracked in this repo)

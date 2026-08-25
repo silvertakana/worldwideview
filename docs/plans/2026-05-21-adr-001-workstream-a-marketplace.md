@@ -8,7 +8,7 @@ The Marketplace already ships two stubbed JWT endpoints from a prior attempt:
 
 Both are functional but wrong in production-critical ways: the JWKS cache is set to 24h (mismatched against the 5-min ticket lifetime), the API-key check is a hardcoded string, and the JWT claims (`sub`, `aud`, `tier`, `scope`) are stubs.
 
-ADR-001 (`C:\dev\worldwideview\docs\architecture\decisions\adr-0001-decentralized-plugin-auth-and-ssrf-mitigation.md`) makes this the foundation of decentralized plugin auth: each Data Engine verifies tickets offline via JWKS, with no Marketplace DB roundtrip per frame. A wrong cache TTL or missing `kid` silently breaks every consumer.
+ADR-001 (`docs/architecture/decisions/adr-0001-decentralized-plugin-auth-and-ssrf-mitigation.md`) makes this the foundation of decentralized plugin auth: each Data Engine verifies tickets offline via JWKS, with no Marketplace DB roundtrip per frame. A wrong cache TTL or missing `kid` silently breaks every consumer.
 
 This plan delivers **A1 + A2 + A3 only** — the bounded hardening of the two existing endpoints, plus the minimum schema needed to back A3 with real DB lookups. **A4 (PKCE token endpoint + API-Key issuance UI) is deferred** to its own branch/PR per the master plan's explicit instruction: *"Treat it as its own workstream with its own sub-plan; do not bundle it into the A1–A3 deploy."*
 
