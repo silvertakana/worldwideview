@@ -12,6 +12,7 @@ describe("useSessionId", () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.unstubAllGlobals();
     });
 
     it("returns a non-empty string after mount", async () => {
@@ -33,6 +34,20 @@ describe("useSessionId", () => {
         const stored = sessionStorage.getItem(SESSION_ID_KEY);
         expect(stored).not.toBeNull();
         expect(result.current).toBe(stored);
+    });
+
+    it("falls back to getRandomValues when randomUUID is unavailable", async () => {
+        const getRandomValues = vi.fn(globalThis.crypto.getRandomValues.bind(globalThis.crypto));
+        vi.stubGlobal("crypto", { getRandomValues });
+
+        const { result } = renderHook(() => useSessionId());
+        await act(async () => {});
+
+        expect(getRandomValues).toHaveBeenCalledOnce();
+        expect(result.current).toMatch(
+            /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+        );
+        expect(sessionStorage.getItem(SESSION_ID_KEY)).toBe(result.current);
     });
 
     it("reuses the existing sessionStorage value without calling randomUUID", async () => {
