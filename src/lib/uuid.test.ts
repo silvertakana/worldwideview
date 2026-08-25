@@ -27,7 +27,7 @@ describe("generateUUID", () => {
         }
     });
 
-    it("falls back to Math.random when entire Web Crypto is unavailable", () => {
+    it("throws instead of degrading to Math.random when Web Crypto is unavailable", () => {
         const originalRandomUUID = crypto.randomUUID;
         const originalGetRandomValues = crypto.getRandomValues;
         // @ts-expect-error test mock
@@ -36,8 +36,7 @@ describe("generateUUID", () => {
         crypto.getRandomValues = undefined;
 
         try {
-            const id = generateUUID();
-            expect(id).toMatch(UUID_V4_REGEX);
+            expect(() => generateUUID()).toThrow(/Web Crypto/);
         } finally {
             crypto.randomUUID = originalRandomUUID;
             crypto.getRandomValues = originalGetRandomValues;
