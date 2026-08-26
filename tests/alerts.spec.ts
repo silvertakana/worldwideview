@@ -88,8 +88,28 @@ async function createRuleViaUi(page: Page, name: string): Promise<void> {
   await expect(page.getByTestId('alerts-list').getByText(name)).toBeVisible({ timeout: 20000 });
 }
 
+/**
+ * Delete every rule for the mock plugin so each test (and each CI retry)
+ * starts from an empty rules list. global.setup only cleans installed plugins
+ * and global.teardown only runs once after the whole suite, so without this
+ * a leftover rule from test 1 (or a failed retry) would make the toggle
+ * locator in test 2 resolve to multiple switches.
+ */
+async function cleanupMockRules(page: Page): Promise<void> {
+  const res = await page.request.get('/api/alerts');
+  if (!res.ok) throw new Error(`cleanup: GET /api/alerts -> ${res.status()}`);
+  const { rules } = (await res.json()) as { rules?: { id: string; pluginId: string }[] };
+  for (const rule of rules ?? []) {
+    if (rule.pluginId === MOCK_ID) {
+      const del = await page.request.delete(`/api/alerts/${rule.id}`);
+      if (!del.ok) throw new Error(`cleanup: DELETE /api/alerts/${rule.id} -> ${del.status()}`);
+    }
+  }
+}
+
 test.describe('Alert UI', () => {
   test.beforeEach(async ({ page }) => {
+    await cleanupMockRules(page);
     await page.goto('/');
     await openAlertsPanel(page);
   });
@@ -107,7 +127,8 @@ test.describe('Alert UI', () => {
     // Inject a MATCHING payload (magnitude 6.5 > 5) -> toast + badge.
     await injectPayload(page, [matchingPayload({})]);
     await expect(page.getByTestId('alert-toasts')).toBeVisible({ timeout: 20000 });
-    await expect(page.getByText('Magnitude over five')).toBeVisible({ timeout: 20000 });
+    // Scope to the toasts stack: the rule row in the list carries the same name.
+    await expect(page.getByTestId('alert-toasts').getByText('Magnitude over five')).toBeVisible({ timeout: 20000 });
     await expect(page.getByTestId('alerts-tab-badge')).toHaveText('1');
 
     // Inject a NON-matching payload (magnitude 2, different entity) -> no new

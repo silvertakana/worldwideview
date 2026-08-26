@@ -8,7 +8,7 @@
   "format": "bundle",
   "trust": "unverified",
   "entry": "/e2e-fixtures/alert-mock-plugin.js",
-  "capabilities": [],
+  "capabilities": ["ui:sidebar"],
   "category": "utility",
-  "extends": []
+  "extends": ["sidebar"]
 }
