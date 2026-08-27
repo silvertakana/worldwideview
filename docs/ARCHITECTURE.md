@@ -106,9 +106,9 @@ The `DataBus` is a custom typed pub/sub singleton (see [`src/core/data/DataBus.t
 
 The data engine ([`wwv-data-engine`](https://github.com/silvertakana/wwv-data-engine), public) is a **content-agnostic runner**. It discovers and executes seeder scripts from a configurable directory; the engine itself knows nothing about specific data sources.
 
-- **Local development**: The engine runs via Docker Compose on port 5001, reading seeders dynamically from `local-seeders/` (split into `community` and `private` tiers).
+- **Local development**: The engine runs via Docker Compose on port 5000, reading seeders dynamically from `local-seeders/` (split into `community` and `private` tiers).
 - **Production**: The engine container on Coolify downloads release bundles from `wwv-seeders-community` and an internal seeders package on startup, unzipping them into `/app/seeders`.
-- **Split-routing**: `resolveEngineUrl` prioritises the local dev engine (`ws://localhost:5001/stream`) for local testing — 12-Factor App methodology — and falls back to cloud-hosted endpoints (e.g. `wss://dataenginev2.worldwideview.dev/stream`) when nothing local is available.
+- **Split-routing**: `resolveEngineUrl` prioritises the local dev engine (`ws://localhost:5000/stream`) for local testing — 12-Factor App methodology — and falls back to cloud-hosted endpoints (e.g. `wss://dataenginev2.worldwideview.dev/stream`) when nothing local is available.
 
 ### Agnostic Frontend
 

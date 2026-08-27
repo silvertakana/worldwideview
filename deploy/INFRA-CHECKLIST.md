@@ -54,11 +54,11 @@ are unenforceable.
   # WWV_DATA_ENGINE_URL=https://dataenginev2.worldwideview.dev/stream
   ```
   The engine listens on internal port 5000 (`PORT=5000` in
-  `deploy/production/docker-compose.engine.yml`) and publishes ports 5000/5001 on the
+  `deploy/production/docker-compose.engine.yml`) and publishes port 5000 on the
   host. The public URL `https://dataenginev2.worldwideview.dev` is reverse-proxied and
   needs no port. The code reads `WWV_DATA_ENGINE_URL` first in `getEngineUrl()`
   (`src/lib/data-query/service.ts`) and falls back to
-  `http://localhost:5001` when it is unset.
+  `http://localhost:5000` when it is unset.
   Replace `<engine-host-ip>` with the actual engine host IP or hostname visible from
   the `wwv` container.
 - [ ] If the app and engine containers share a Docker network, use the service name:

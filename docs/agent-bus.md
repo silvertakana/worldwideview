@@ -103,7 +103,7 @@ Edit `~/.claude/settings.json`:
       "args": ["/absolute/path/to/wwv-mcp/dist/index.js"],
       "env": {
         "WWV_BASE_URL": "https://your-wwv-host.example",
-        "WWV_ENGINE_URL": "http://localhost:5001"
+        "WWV_ENGINE_URL": "http://localhost:5000"
       }
     }
   }
@@ -120,7 +120,7 @@ Or, with Docker:
       "args": [
         "run", "-i", "--rm",
         "-e", "WWV_BASE_URL=http://host.docker.internal:3000",
-        "-e", "WWV_ENGINE_URL=http://host.docker.internal:5001",
+        "-e", "WWV_ENGINE_URL=http://host.docker.internal:5000",
         "szski/wwv-mcp:latest"
       ]
     }

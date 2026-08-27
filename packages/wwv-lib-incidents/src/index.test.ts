@@ -59,7 +59,7 @@ class MinimalIncidentPlugin extends BaseIncidentPlugin {
             apiBasePath: "/api/test-incident-plugin",
             // Test fixture: the plugin DECLARES its own streamUrl (agnostic-frontend
             // invariant). The literal is arbitrary — this suite never asserts on it.
-            streamUrl: "ws://localhost:5001/stream",
+            streamUrl: "ws://localhost:5000/stream",
             pollingIntervalMs: 0,
         };
     }

@@ -167,7 +167,7 @@ const ANTI_PATTERNS = [
     globs: ['*.ts', '*.tsx'],
     pattern: 'localhost:500',
     excludePrefix: 'scripts/',
-    desc: 'hardcoded engine URL (localhost:5001/5000) — use env var or plugin streamUrl instead',
+    desc: 'hardcoded engine URL (localhost:5000) — use env var or plugin streamUrl instead',
   },
   {
     id: 'deprecated',

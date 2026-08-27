@@ -41,7 +41,7 @@ Seeders within `local-seeders/` are strictly orchestrated within the pnpm worksp
 > [!TIP]
 > **Debugging WebSockets:** If your frontend isn't receiving data from your backend seeder:
 > 1. Check the `wwv-data-engine-v2` logs to ensure your seeder is publishing to Redis successfully.
-> 2. Verify the frontend is connected to the correct WebSocket endpoint. Local instances default to `ws://localhost:5001/stream`, while unrecognized plugins should explicitly define their own `streamUrl`, or fallback to the cloud at `wss://dataenginev2.worldwideview.dev/stream`.
+> 2. Verify the frontend is connected to the correct WebSocket endpoint. Local instances default to `ws://localhost:5000/stream`, while unrecognized plugins should explicitly define their own `streamUrl`, or fallback to the cloud at `wss://dataenginev2.worldwideview.dev/stream`.
 
 ## Advanced Cesium Rendering
 

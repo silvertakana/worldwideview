@@ -57,7 +57,7 @@ Live evidence settled the question: the engine (`dataenginev2.worldwideview.dev`
   - Per-plugin ticket scoping unimplemented (exchange drops `plugin_id`; JWT has no plugin claim; engine never checks scope).
   - No `Cache-Control` on `/api/<id>` (Cloudflare fronts but can't cache); rate limit mis-keyed (`fastify` no `trustProxy`).
 - Self-hosted globes can't yet redirect a plugin's WS `streamUrl` via env (hardcoded streamUrl outranks env in `resolveEngineUrl` resolution order) — unification is a follow-up.
-- `getEngineUrl()` (server-side `@/lib/data-query/service`) is a local-dev resolver (`http://localhost:5001`) and must NOT be used in globe route handlers; server-side engine calls use the env-chain pattern.
+- `getEngineUrl()` (server-side `@/lib/data-query/service`) is a local-dev resolver (`http://localhost:5000`) and must NOT be used in globe route handlers; server-side engine calls use the env-chain pattern.
 
 ## References
 - Review doc: internal research note `wwv-engine-direct-routing-review-2026-08-24.md` (maintainer-only, not tracked in this repo)

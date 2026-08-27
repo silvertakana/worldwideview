@@ -125,7 +125,7 @@ describe("DeclarativePlugin", () => {
             edition: "local",
             // Host-injected value (PluginContext.getEngineUrl) — arbitrary for this test;
             // the plugin never consumes it. The address comes from the host, not the plugin.
-            getEngineUrl: () => "http://localhost:5001",
+            getEngineUrl: () => "http://localhost:5000",
         });
 
         const entities = await plugin.fetch({ start: new Date(), end: new Date() });

@@ -55,10 +55,10 @@ services:
       REDIS_URL: "redis://:${REDIS_PASSWORD}@wwv-redis:6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       # REST base URL for server-side MCP data queries (NOT the WebSocket /stream path).
-      # The engine publishes ports 5000/5001 on the host; the public URL
+      # The engine publishes port 5000 on the host; the public URL
       # https://dataenginev2.worldwideview.dev is reverse-proxied and needs no port.
       # Set to the actual engine host IP/hostname visible from this container.
-      WWV_DATA_ENGINE_URL: ${WWV_DATA_ENGINE_URL:-http://<engine-host-ip>:5001}
+      WWV_DATA_ENGINE_URL: ${WWV_DATA_ENGINE_URL:-http://<engine-host-ip>:5000}
     ports:
       - "3001:3000"
     labels:

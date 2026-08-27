@@ -28,7 +28,7 @@ When unsure of the tier, escalate to Tier B. Never attempt a refactor that requi
 | `anti-pattern` (console-log) | A | Stray `console.log(` in `.ts`/`.tsx` files |
 | `anti-pattern` (ts-ignore) | A | `@ts-ignore` suppressing a real type error |
 | `anti-pattern` (ts-nocheck) | A | `@ts-nocheck` disabling all type checking |
-| `anti-pattern` (hardcoded-url) | B | Hardcoded `localhost:5001`/`5000` engine URL |
+| `anti-pattern` (hardcoded-url) | B | Hardcoded `localhost:5000` engine URL |
 | `anti-pattern` (deprecated) | B | `@deprecated` symbol still active in production code |
 | `oversized-file` | B | Source file exceeding ~350 lines |
 | `orphaned-rule-ref` | B | Rule file references a path that no longer exists |
