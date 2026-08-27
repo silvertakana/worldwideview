@@ -56,7 +56,7 @@ export interface UISlice {
     /** List of active floating stream windows. */
     floatingStreams: FloatingStream[];
     /** The active sub-tab within the configuration panel. */
-    activeConfigTab: "intel" | "filters" | "cache" | "overlay" | "apikeys";
+    activeConfigTab: "intel" | "filters" | "cache" | "overlay" | "apikeys" | "alerts";
     /** The ID of a layer currently being highlighted/flashed in the UI. */
     highlightLayerId: string | null;
     /** Active panel in mobile view layout. */
@@ -92,7 +92,7 @@ export interface UISlice {
     /** Updates properties (position, size, state) of an existing stream window. */
     updateFloatingStream: (id: string, updates: Partial<FloatingStream>) => void;
     /** Switches between configuration tabs. */
-    setActiveConfigTab: (tab: "intel" | "filters" | "cache" | "overlay" | "apikeys") => void;
+    setActiveConfigTab: (tab: "intel" | "filters" | "cache" | "overlay" | "apikeys" | "alerts") => void;
     /** Triggers a visual highlight on a specific layer in the layer list. */
     setHighlightLayerId: (id: string | null) => void;
     /** Explicitly sets the configuration panel visibility. */

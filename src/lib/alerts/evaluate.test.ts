@@ -197,6 +197,36 @@ describe("evaluateCondition — entities and robustness", () => {
         )).toBe(true);
     });
 
+    it("resolves plugin-mapped fields from a realistic earthquake entity (properties bag)", () => {
+        // The earthquakes plugin maps magnitude/place/depth into entity.properties
+        // (mirroring FilterDefinition.propertyKey); the evaluator must see them there.
+        const quake: GeoEntity = {
+            id: "quakeml:us7000xyz",
+            pluginId: "earthquakes",
+            latitude: 63.1,
+            longitude: -151.5,
+            timestamp: new Date("2026-08-25T04:32:10Z"),
+            label: "M6.9 - Central Alaska",
+            properties: {
+                magnitude: 6.9,
+                place: "Central Alaska",
+                depth_km: 12,
+                felt: true,
+                status: "reviewed",
+            },
+        };
+
+        expect(evaluateCondition({ field: "magnitude", op: "gt", value: 6 }, quake)).toBe(true);
+        expect(evaluateCondition({ field: "magnitude", op: "lt", value: 6 }, quake)).toBe(false);
+        expect(evaluateCondition({ field: "place", op: "contains", value: "alaska" }, quake)).toBe(true);
+        expect(evaluateCondition({ field: "place", op: "eq", value: "Central Alaska" }, quake)).toBe(true);
+        expect(evaluateCondition({ field: "felt", op: "eq", value: true }, quake)).toBe(true);
+        expect(evaluateCondition({ field: "depth_km", op: "gt", value: 11 }, quake)).toBe(true);
+        expect(evaluateCondition({ field: "tsunami", op: "exists" }, quake)).toBe(false);
+        // A top-level-only field still resolves.
+        expect(evaluateCondition({ field: "latitude", op: "gt", value: 60 }, quake)).toBe(true);
+    });
+
     it("malformed condition object -> false", () => {
         expect(evaluateCondition({ field: "", op: "gt", value: 1 }, MAG_ENTITY)).toBe(false);
         expect(evaluateCondition({ field: "magnitude", op: "bogus" as never, value: 1 }, MAG_ENTITY)).toBe(false);

@@ -37,7 +37,10 @@ export async function GET(request: Request) {
 
     try {
         const [records, verifiedIds] = await Promise.all([
-            prisma.installedPlugin.findMany(),
+            // Only enabled plugins belong in the runtime bootstrap. Disabled
+            // records (enabled: false) must stay out of the payload, otherwise
+            // a plugin the operator disabled reloads on the next refresh (#409).
+            prisma.installedPlugin.findMany({ where: { enabled: true } }),
             getVerifiedPluginIds(),
         ]);
 

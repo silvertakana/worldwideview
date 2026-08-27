@@ -1,0 +1,12 @@
+{
+  "id": "e2e-alert-mock",
+  "name": "E2E Alert Mock",
+  "version": "1.0.0",
+  "localData": [
+    {
+      "name": "placeholder",
+      "type": "geojson",
+      "path": "plugins-local/e2e-alert-mock/data.json"
+    }
+  ]
+}

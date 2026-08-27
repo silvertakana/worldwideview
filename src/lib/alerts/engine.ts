@@ -18,6 +18,20 @@ import { evaluateRule } from "./evaluate";
 export const DEDUPE_WINDOW_MS = 60_000;
 export const RULES_REFRESH_MS = 60_000;
 
+/**
+ * Engine refresh registry (UI integration): the alerts UI calls
+ * `requestAlertRulesRefresh()` after create/toggle/delete so the attached
+ * engine picks new/changed rules up immediately instead of waiting for the
+ * periodic refresh timer. SSR-safe: the handler is only registered inside
+ * `attachAlertEngine` (browser effect).
+ */
+type RefreshHandler = () => void;
+let refreshHandler: RefreshHandler | null = null;
+
+export function requestAlertRulesRefresh(): void {
+    refreshHandler?.();
+}
+
 /** Rule as loaded from the API (snapshot + server flags). */
 export interface RuleRecord extends AlertRuleSnapshot {
     enabled: boolean;
@@ -124,10 +138,13 @@ export function attachAlertEngine(
     void refreshRules();
     refreshTimer = setInterval(() => void refreshRules(), RULES_REFRESH_MS);
 
+    refreshHandler = refreshRules;
+
     return () => {
         unsubscribe();
         if (refreshTimer !== null) clearInterval(refreshTimer);
         lastFired.clear();
+        if (refreshHandler === refreshRules) refreshHandler = null;
     };
 }
 

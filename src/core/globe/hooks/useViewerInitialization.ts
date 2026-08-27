@@ -115,7 +115,6 @@ export function useViewerInitialization(sceneSettings: any) {
                     googleLoaded = true;
                 } catch (err: any) {
                     console.error("[GlobeView] Failed to initialize Google 3D Tiles:", err);
-                    useStore.getState().showErrorToast?.("3D terrain requires a Google Maps API key. Falling back to 2D imagery.");
                 }
             }
 
@@ -125,9 +124,6 @@ export function useViewerInitialization(sceneSettings: any) {
                        // -> Ion (needs a token) -> OSM but never verifies tile loading, so with
                        // no Google key / no ion token / no Bing key the viewport stays dark.
                        useStore.getState().updateMapConfig({ fallbackLayerId: "osm" });
-                 }
-                 if (!activeKey || activeKey.length < 20) {
-                     useStore.getState().showErrorToast?.("Google Maps 3D is not available. No valid API key configured.");
                  }
                  clearTimeout(globalTimeout);
                  fireGlobeReady();

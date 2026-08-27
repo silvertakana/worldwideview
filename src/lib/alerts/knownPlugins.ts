@@ -7,9 +7,13 @@
  *      (graceful — unreachable engine degrades to the built-ins).
  *   3. Local-registry plugin ids (public/plugins-local manifests, see
  *      data-query/localSources).
+ *   4. Installed marketplace plugins (installed_plugins rows) — the same set
+ *      the client loads via /api/marketplace/load, so a rule can be created
+ *      for any plugin the user has installed.
  */
 
 import { getEngineUrl } from "@/lib/data-query/service";
+import { prisma } from "@/lib/db";
 
 /** Built-in plugin ids shipped in src/plugins (channel names are folder ids). */
 const BUILTIN_ALERTABLE_PLUGIN_IDS = ["earthquakes", "geojson", "iss", "weather"];
@@ -46,6 +50,13 @@ export async function getKnownPluginIds(
         }
     } catch {
         // Local registry unavailable (e.g. test env without public/plugins-local).
+    }
+
+    try {
+        const rows = await prisma.installedPlugin.findMany({ select: { pluginId: true } });
+        for (const row of rows) ids.add(row.pluginId);
+    } catch {
+        // DB unavailable — the other sources still validate.
     }
 
     return ids;

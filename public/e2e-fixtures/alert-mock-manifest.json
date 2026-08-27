@@ -1,0 +1,14 @@
+{
+  "id": "e2e-alert-mock",
+  "name": "E2E Alert Mock",
+  "version": "1.0.0",
+  "description": "A mock plugin declaring alert definitions, used for the alerts Playwright E2E tests.",
+  "author": "WorldWideView Automated Tests",
+  "type": "extension",
+  "format": "bundle",
+  "trust": "unverified",
+  "entry": "/e2e-fixtures/alert-mock-plugin.js",
+  "capabilities": ["ui:sidebar"],
+  "category": "utility",
+  "extends": ["sidebar"]
+}

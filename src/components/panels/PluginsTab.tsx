@@ -214,6 +214,21 @@ export function PluginsTab() {
         if (state.selectedEntity?.pluginId === pluginId) state.setSelectedEntity(null);
         setNeedsReload(true);
         trackEvent("plugin-disable", { plugin: pluginId });
+
+        // Persist the disabled state in the installed_plugins row as well,
+        // so the disabled plugin is also excluded from the bootstrap payload
+        // (/api/marketplace/load only returns enabled rows). Best-effort:
+        // the localStorage guard above still protects this browser.
+        try {
+            await fetch("/api/marketplace/disable", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pluginId }),
+            });
+        } catch {
+            /* non-critical — localStorage state already applied */
+        }
+
         await loadPlugins();
         setRemoving(null);
     };
@@ -222,6 +237,19 @@ export function PluginsTab() {
         setRemoving(pluginId);
         setPluginDisabled(pluginId, false);
         setNeedsReload(false);
+
+        // Flip the DB flag before hot-loading: the load API only returns
+        // enabled plugins, so a disabled-at-startup plugin must be enabled
+        // server-side first or its manifest won't come back.
+        try {
+            await fetch("/api/marketplace/enable", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pluginId }),
+            });
+        } catch {
+            /* non-critical — localStorage guard already cleared */
+        }
 
         const alreadyRegistered = pluginManager.getPlugin(pluginId);
         if (!alreadyRegistered) {
