@@ -54,6 +54,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_WWV_EDITION=${{ vars.NEXT_PUBLIC_WWV_EDITION || 'local' }}
+            NEXT_PUBLIC_SENTRY_DSN=https://fe938b72990e47609929a94eeed1c6da@sentry.worldwideview.dev/2
             NEXT_PUBLIC_CESIUM_ION_TOKEN=${{ secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN }}
             NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
             NEXT_PUBLIC_BING_MAPS_KEY=${{ secrets.NEXT_PUBLIC_BING_MAPS_KEY }}
@@ -146,6 +147,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_WWV_EDITION=${{ vars.NEXT_PUBLIC_WWV_EDITION || 'local' }}
+            NEXT_PUBLIC_SENTRY_DSN=https://fe938b72990e47609929a94eeed1c6da@sentry.worldwideview.dev/2
             NEXT_PUBLIC_CESIUM_ION_TOKEN=${{ secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN }}
             NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
             NEXT_PUBLIC_BING_MAPS_KEY=${{ secrets.NEXT_PUBLIC_BING_MAPS_KEY }}
@@ -238,6 +240,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_WWV_EDITION=cloud
+            NEXT_PUBLIC_SENTRY_DSN=https://fe938b72990e47609929a94eeed1c6da@sentry.worldwideview.dev/2
             NEXT_PUBLIC_WWV_TENANT_DOMAIN=.cloud-wwv.dev
             NEXT_PUBLIC_CESIUM_ION_TOKEN=${{ secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN }}
             NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
@@ -402,6 +405,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_WWV_EDITION=demo
+            NEXT_PUBLIC_SENTRY_DSN=https://fe938b72990e47609929a94eeed1c6da@sentry.worldwideview.dev/2
             NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS=iranwarlive,satellite,gps-jamming
             NEXT_PUBLIC_CESIUM_ION_TOKEN=${{ secrets.NEXT_PUBLIC_CESIUM_ION_TOKEN }}
             NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
