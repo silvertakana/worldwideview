@@ -34,6 +34,7 @@ ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 ARG NEXT_PUBLIC_WWV_AGENT_BUS_ENABLED
 ARG NEXT_PUBLIC_WWV_BUILD_ID
 ARG NEXT_PUBLIC_WWV_BUILD_AT
+ARG NEXT_PUBLIC_SENTRY_DSN
 
 # Run our pregenerate schema swap script and then generate Prisma client
 RUN NEXT_PUBLIC_WWV_EDITION=$NEXT_PUBLIC_WWV_EDITION pnpm run generate
@@ -75,6 +76,7 @@ RUN set +e ; { \
         if [ -n "$NEXT_PUBLIC_SUPABASE_URL" ]; then echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" ; fi ; \
         if [ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" ; fi ; \
         if [ -n "$NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS" ]; then echo "NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS=$NEXT_PUBLIC_DEMO_DEFAULT_PLUGINS" ; fi ; \
+        if [ -n "$NEXT_PUBLIC_SENTRY_DSN" ]; then echo "NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN" ; fi ; \
     } > /app/.env.production.local
 
 # Run Next.js build with Webpack cache mounted
