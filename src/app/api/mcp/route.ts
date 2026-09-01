@@ -48,6 +48,7 @@ import { registerFavoritesTools } from "./favoritesTools";
 import { registerFilterTools } from "./filterTools";
 import { registerDiscoveryTools } from "./discoveryTools";
 import { registerProximityTools } from "./proximityTools";
+import { registerRegionalAnalyticsTools } from "./regionalAnalyticsTools";
 
 // ---------------------------------------------------------------------------
 // Route segment config (TRANS-03)
@@ -181,6 +182,8 @@ async function handleMcpRequest(request: Request): Promise<Response> {
     registerDiscoveryTools(server, { userId: authResult.userId });
     // PR 1: proximity tool (find_nearby_entities -- server-side haversine search)
     registerProximityTools(server, { userId: authResult.userId });
+    // Regional spatial analytics & clustering (Gap 2)
+    registerRegionalAnalyticsTools(server, { userId: authResult.userId });
     // Phase 26: orientation prompts (INST-03, INST-04)
     await registerOrientationPrompts(server, { userId: authResult.userId });
 
