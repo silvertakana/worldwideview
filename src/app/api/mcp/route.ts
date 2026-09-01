@@ -47,6 +47,7 @@ import { registerGeocodingTools } from "./geocodingTools";
 import { registerFavoritesTools } from "./favoritesTools";
 import { registerFilterTools } from "./filterTools";
 import { registerDiscoveryTools } from "./discoveryTools";
+import { registerProximityTools } from "./proximityTools";
 
 // ---------------------------------------------------------------------------
 // Route segment config (TRANS-03)
@@ -178,6 +179,8 @@ async function handleMcpRequest(request: Request): Promise<Response> {
     registerFilterTools(server, { userId: authResult.userId });
     // Phase 29: discovery tools (list_available_plugins, get_globe_context, investigate_area)
     registerDiscoveryTools(server, { userId: authResult.userId });
+    // PR 1: proximity tool (find_nearby_entities -- server-side haversine search)
+    registerProximityTools(server, { userId: authResult.userId });
     // Phase 26: orientation prompts (INST-03, INST-04)
     await registerOrientationPrompts(server, { userId: authResult.userId });
 
