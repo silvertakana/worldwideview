@@ -41,14 +41,14 @@ MENTAL MODEL
 
 CAPABILITIES
 - Globe command tools (require a live browser session): pan_globe, focus_entity, toggle_layer, set_timeline.
-- Data query tools (server-side, NO session required): search_entities, get_entities_in_region, get_entity_details, get_plugin_data.
+- Data query tools (server-side, NO session required): search_entities, get_entities_in_region, get_entity_details, get_plugin_data, find_nearby_entities.
 - Discovery tools: list_available_plugins, get_globe_context, investigate_area.
 - Filter tools: set_filter, clear_filter, get_plugin_filters.
 - Resources (read): globe://sessions, globe://state/{sessionId}, globe://layers.
 - Plugin tools (dynamic): extra tools named "<pluginId>__<toolName>" appear after a browser tab loads that plugin. This server is stateless; re-call tools/list to discover them after enabling a plugin.
 
 TWO TOOL CATEGORIES
-1. Data query tools (search_entities, get_entities_in_region, get_entity_details, get_plugin_data) run on the server and return real data WITHOUT a browser session. emptyReason values: "plugin_not_streaming" (plugin not active), "no_data_matches" (query ran, nothing matched).
+1. Data query tools (search_entities, get_entities_in_region, get_entity_details, get_plugin_data, find_nearby_entities) run on the server and return real data WITHOUT a browser session. emptyReason values: "plugin_not_streaming" (plugin not active), "no_data_matches" (query ran, nothing matched).
 2. Command tools (pan_globe, focus_entity, toggle_layer, set_timeline, set_filter, clear_filter) enqueue browser commands. They require an active globe session and return "no active globe session to control" when none exists.
 
 DATA AVAILABILITY
