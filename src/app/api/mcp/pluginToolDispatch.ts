@@ -2,12 +2,17 @@
  * @file pluginToolDispatch.ts
  * @description Plugin tool dispatch handler for the MCP route (Phase 21 Wave 3 -- PLUG-03).
  *
- * registerPluginToolDispatch reads the per-session catalog and registers a
- * handler for each namespaced plugin tool ({pluginId}__{name}). Each handler:
- *   1. Validates tool input against the catalog schema (rejects before enqueue).
- *   2. Enqueues the invocation for the browser to execute.
- *   3. Waits for the browser to post a result (10-second deadline).
- *   4. Returns the result as a text content block, OR a graceful timeout message.
+ * registerPluginToolDispatch discovers statically-declared plugin tools (from DB /
+ * manifests) and active session tools (from Redis catalog), registering a deterministic
+ * handler for each namespaced plugin tool ({pluginId}__{name}).
+ *
+ * When invoked:
+ *   1. If no active browser session exists or the plugin is inactive in the current
+ *      session, returns an honest error { error: 'Plugin not active in session', reason: 'no_active_session' }.
+ *   2. Validates tool input against the catalog schema (rejects before enqueue).
+ *   3. Enqueues the invocation for the browser to execute.
+ *   4. Waits for the browser to post a result (10-second deadline).
+ *   5. Returns the result as a text content block, OR a graceful timeout message.
  *
  * The server is a DUMB RELAY -- it never executes a plugin tool, reads a streamUrl,
  * or calls the data engine. Execution happens in the browser via plugin.executeMcpTool.
@@ -23,9 +28,11 @@ import { randomUUID } from "crypto";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { readSessionCatalog } from "@/lib/mcpSessionCatalog";
+import type { CatalogTool, SessionCatalog } from "@/lib/mcpSessionCatalog";
 import { enqueueToolInvocation, waitForToolResult } from "@/lib/mcpRelay";
 import { validateToolArgs } from "@/lib/mcp/pluginTools";
 import type { ToolInputSchema } from "@/lib/mcp/pluginTools";
+import { getStaticPluginTools } from "@/lib/mcp/staticPluginCatalog";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -48,28 +55,68 @@ export interface DispatchContext {
 // ---------------------------------------------------------------------------
 
 /**
- * Reads the per-session catalog and registers a relay handler for each
- * namespaced plugin tool. Called inside the MCP route's registration seam
- * after auth, before transport.handleRequest().
- *
- * When sessionId is null (no active session) or the catalog is empty, no
- * plugin tool handlers are registered (system tools remain unaffected).
+ * Discovers plugin tools from static manifests (DB/filesystem) and the active
+ * per-session catalog (Redis), registering a deterministic relay handler for each.
+ * Called inside the MCP route's registration seam after auth, before transport.handleRequest().
  */
 export async function registerPluginToolDispatch(
     server: McpServer,
     ctx: DispatchContext,
 ): Promise<void> {
-    if (!ctx.sessionId) return;
+    // 1. Read static tools catalog (installed plugins / filesystem manifests)
+    let staticTools: CatalogTool[] = [];
+    try {
+        staticTools = await getStaticPluginTools();
+    } catch (err) {
+        console.error("[pluginToolDispatch] Error reading static plugin tools:", err);
+    }
 
-    const catalog = await readSessionCatalog(ctx.userId, ctx.sessionId);
-    if (!catalog || !Array.isArray(catalog.tools) || catalog.tools.length === 0) return;
+    // 2. Read live dynamic catalog if an active session exists
+    let dynamicCatalog: SessionCatalog | null = null;
+    if (ctx.sessionId) {
+        try {
+            dynamicCatalog = await readSessionCatalog(ctx.userId, ctx.sessionId);
+        } catch (err) {
+            console.error("[pluginToolDispatch] Error reading session catalog:", err);
+        }
+    }
 
-    for (const tool of catalog.tools) {
-        const namespacedName = tool.namespacedName;
-        if (!namespacedName) continue;
+    const dynamicToolsMap = new Map<string, CatalogTool>();
+    if (dynamicCatalog && Array.isArray(dynamicCatalog.tools)) {
+        for (const t of dynamicCatalog.tools) {
+            if (t.namespacedName) {
+                dynamicToolsMap.set(t.namespacedName, t);
+            }
+        }
+    }
 
-        // Capture loop variables for the closure.
+    // Combine tools: static tools + dynamic tools (dynamic overrides static if same name)
+    const combinedTools = new Map<string, { tool: CatalogTool; isActive: boolean }>();
+
+    for (const st of staticTools) {
+        if (st.namespacedName) {
+            const isActive = dynamicToolsMap.has(st.namespacedName);
+            combinedTools.set(st.namespacedName, {
+                tool: dynamicToolsMap.get(st.namespacedName) ?? st,
+                isActive,
+            });
+        }
+    }
+
+    for (const [name, dt] of dynamicToolsMap) {
+        if (!combinedTools.has(name)) {
+            combinedTools.set(name, {
+                tool: dt,
+                isActive: true,
+            });
+        }
+    }
+
+    if (combinedTools.size === 0) return;
+
+    for (const [namespacedName, { tool, isActive }] of combinedTools) {
         const capturedTool = tool;
+        const isCurrentlyActive = isActive;
         const capturedCtx = ctx;
 
         server.registerTool(
@@ -80,6 +127,24 @@ export async function registerPluginToolDispatch(
                 inputSchema: { args: z.record(z.string(), z.unknown()).optional() },
             },
             async (input) => {
+                // If there is no active session or the plugin is not active in this session:
+                if (!capturedCtx.sessionId || !isCurrentlyActive) {
+                    return {
+                        content: [
+                            {
+                                type: "text" as const,
+                                text: JSON.stringify({
+                                    error: "Plugin not active in session",
+                                    reason: "no_active_session",
+                                    pluginId: capturedTool.pluginId,
+                                    tool: namespacedName,
+                                }),
+                            },
+                        ],
+                        isError: true,
+                    };
+                }
+
                 // Build the args object from whatever the MCP client passed.
                 // The MCP SDK wraps the input in parsed zod fields, so we extract
                 // a flat record of all non-undefined fields for validation.
@@ -115,7 +180,7 @@ export async function registerPluginToolDispatch(
                 const requestId = randomUUID();
                 const enqueueResult = await enqueueToolInvocation(
                     capturedCtx.userId,
-                    capturedCtx.sessionId!,
+                    capturedCtx.sessionId,
                     {
                         requestId,
                         tool: namespacedName,
@@ -140,7 +205,7 @@ export async function registerPluginToolDispatch(
                 // SEC-02 / MCP-QA-04: Wait for browser result with a bounded deadline.
                 const resultOrTimeout = await waitForToolResult(
                     capturedCtx.userId,
-                    capturedCtx.sessionId!,
+                    capturedCtx.sessionId,
                     requestId,
                     RELAY_DEADLINE_MS,
                 );

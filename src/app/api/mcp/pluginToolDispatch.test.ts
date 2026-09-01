@@ -1,10 +1,5 @@
 /**
- * RED tests for the namespaced plugin-tool dispatch handler (Phase 21 Wave 0).
- *
- * These tests INTENTIONALLY FAIL because registerPluginToolDispatch does not exist yet.
- * Wave 3 creates the dispatch handler that is registered into the MCP route.
- *
- * Mirrors globeCommandTools.test.ts in structure and mock style.
+ * Tests for the namespaced plugin-tool dispatch handler (Phase 21 Wave 3 + Gap 1 deterministic static discovery).
  *
  * Security invariants encoded:
  *   MCP-QA-01  Request with no/invalid API key is rejected with auth error
@@ -22,12 +17,13 @@ import { registerPluginToolDispatch } from "@/app/api/mcp/pluginToolDispatch";
 // Mocks
 // ---------------------------------------------------------------------------
 
-const { mockEnqueueInvocation, mockWaitForResult, mockReadCatalog, mockValidateArgs } =
+const { mockEnqueueInvocation, mockWaitForResult, mockReadCatalog, mockValidateArgs, mockGetStaticPluginTools } =
     vi.hoisted(() => ({
         mockEnqueueInvocation: vi.fn().mockResolvedValue({ rejected: false }),
         mockWaitForResult: vi.fn().mockResolvedValue({ timedOut: false, value: { ok: true } }),
         mockReadCatalog: vi.fn().mockResolvedValue(null),
         mockValidateArgs: vi.fn().mockReturnValue({ valid: true, errors: [] }),
+        mockGetStaticPluginTools: vi.fn().mockResolvedValue([]),
     }));
 
 vi.mock("@/lib/mcpRelay", () => ({
@@ -42,6 +38,10 @@ vi.mock("@/lib/mcpSessionCatalog", () => ({
 vi.mock("@/lib/mcp/pluginTools", () => ({
     validateToolArgs: mockValidateArgs,
     getNamespacedTools: vi.fn().mockReturnValue([]),
+}));
+
+vi.mock("@/lib/mcp/staticPluginCatalog", () => ({
+    getStaticPluginTools: mockGetStaticPluginTools,
 }));
 
 // ---------------------------------------------------------------------------
@@ -63,7 +63,7 @@ function makeFakeServer() {
 }
 
 // ---------------------------------------------------------------------------
-// Fixture catalog with one known tool
+// Fixture catalog with known tools
 // ---------------------------------------------------------------------------
 
 const FIXTURE_CATALOG = {
@@ -83,20 +83,33 @@ const FIXTURE_CATALOG = {
     capabilities: ["point-layer"],
 };
 
+const STATIC_TOOL_FIXTURE = {
+    namespacedName: "maritime__lookup_mmsi",
+    pluginId: "maritime",
+    description: "Lookup vessel by MMSI.",
+    inputSchema: {
+        type: "object" as const,
+        properties: { mmsi: { type: "string" } },
+        required: ["mmsi"],
+    },
+    mcpCapabilities: ["point-layer"],
+};
+
 beforeEach(() => {
     vi.resetAllMocks();
     mockEnqueueInvocation.mockResolvedValue({ rejected: false });
     mockWaitForResult.mockResolvedValue({ timedOut: false, value: { ok: true } });
     mockReadCatalog.mockResolvedValue(FIXTURE_CATALOG);
     mockValidateArgs.mockReturnValue({ valid: true, errors: [] });
+    mockGetStaticPluginTools.mockResolvedValue([]);
 });
 
 // ---------------------------------------------------------------------------
-// Registration: the dispatch handler is registered for each catalog tool
+// Registration & Deterministic Discovery
 // ---------------------------------------------------------------------------
 
 describe("registerPluginToolDispatch registration", () => {
-    it("registers a handler for each namespaced tool in the catalog", async () => {
+    it("registers a handler for each namespaced tool in the dynamic session catalog", async () => {
         const { server, tools } = makeFakeServer();
 
         await registerPluginToolDispatch(
@@ -107,8 +120,23 @@ describe("registerPluginToolDispatch registration", () => {
         expect(tools.has("aviation__decode_squawk")).toBe(true);
     });
 
-    it("registers no plugin tools when the catalog is null (no active session)", async () => {
+    it("registers static plugin tools even when no active session exists (headless)", async () => {
         mockReadCatalog.mockResolvedValue(null);
+        mockGetStaticPluginTools.mockResolvedValue([STATIC_TOOL_FIXTURE]);
+
+        const { server, tools } = makeFakeServer();
+
+        await registerPluginToolDispatch(
+            server as unknown as import("@modelcontextprotocol/sdk/server/mcp.js").McpServer,
+            { userId: "u1", sessionId: null },
+        );
+
+        expect(tools.has("maritime__lookup_mmsi")).toBe(true);
+    });
+
+    it("registers no plugin tools when both static and dynamic catalogs are empty", async () => {
+        mockReadCatalog.mockResolvedValue(null);
+        mockGetStaticPluginTools.mockResolvedValue([]);
         const { server } = makeFakeServer();
 
         await registerPluginToolDispatch(
@@ -116,8 +144,69 @@ describe("registerPluginToolDispatch registration", () => {
             { userId: "u1", sessionId: null },
         );
 
-        // Only system tools are registered -- no plugin tool handlers added
         expect(server.registerTool).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Headless / Inactive Session Invocation
+// ---------------------------------------------------------------------------
+
+describe("dispatch handler -- headless / inactive session invocation", () => {
+    it("returns honest no_active_session error when invoked with null sessionId", async () => {
+        mockReadCatalog.mockResolvedValue(null);
+        mockGetStaticPluginTools.mockResolvedValue([STATIC_TOOL_FIXTURE]);
+
+        const { server, tools } = makeFakeServer();
+
+        await registerPluginToolDispatch(
+            server as unknown as import("@modelcontextprotocol/sdk/server/mcp.js").McpServer,
+            { userId: "u1", sessionId: null },
+        );
+
+        const handler = tools.get("maritime__lookup_mmsi")!;
+        const result = await handler({ mmsi: "123456789" });
+
+        expect(result.isError).toBe(true);
+        const parsed = JSON.parse(result.content[0].text);
+        expect(parsed).toEqual({
+            error: "Plugin not active in session",
+            reason: "no_active_session",
+            pluginId: "maritime",
+            tool: "maritime__lookup_mmsi",
+        });
+        expect(mockEnqueueInvocation).not.toHaveBeenCalled();
+    });
+
+    it("returns honest no_active_session error when plugin is statically known but not active in session catalog", async () => {
+        // Session catalog only has aviation, but static has maritime
+        mockReadCatalog.mockResolvedValue(FIXTURE_CATALOG);
+        mockGetStaticPluginTools.mockResolvedValue([STATIC_TOOL_FIXTURE]);
+
+        const { server, tools } = makeFakeServer();
+
+        await registerPluginToolDispatch(
+            server as unknown as import("@modelcontextprotocol/sdk/server/mcp.js").McpServer,
+            { userId: "u1", sessionId: "s1" },
+        );
+
+        // Aviation is active in session
+        expect(tools.has("aviation__decode_squawk")).toBe(true);
+        // Maritime is registered statically
+        expect(tools.has("maritime__lookup_mmsi")).toBe(true);
+
+        const maritimeHandler = tools.get("maritime__lookup_mmsi")!;
+        const result = await maritimeHandler({ mmsi: "123456789" });
+
+        expect(result.isError).toBe(true);
+        const parsed = JSON.parse(result.content[0].text);
+        expect(parsed).toEqual({
+            error: "Plugin not active in session",
+            reason: "no_active_session",
+            pluginId: "maritime",
+            tool: "maritime__lookup_mmsi",
+        });
+        expect(mockEnqueueInvocation).not.toHaveBeenCalled();
     });
 });
 
@@ -129,13 +218,11 @@ describe("dispatch handler -- unknown tool (MCP-QA-02)", () => {
     it("returns a tool-not-found error for an unrecognised namespaced tool name", async () => {
         const { server, tools } = makeFakeServer();
 
-        // Register with a catalog that has ONE known tool
         await registerPluginToolDispatch(
             server as unknown as import("@modelcontextprotocol/sdk/server/mcp.js").McpServer,
             { userId: "u1", sessionId: "s1" },
         );
 
-        // No handler should exist for an unregistered name
         expect(tools.has("unknown__tool")).toBe(false);
     });
 
@@ -147,13 +234,11 @@ describe("dispatch handler -- unknown tool (MCP-QA-02)", () => {
             { userId: "u1", sessionId: "s1" },
         );
 
-        // If somehow a handler is invoked for an unknown tool, it must not enqueue
         const handler = tools.get("unknown__tool");
         if (handler) {
             await handler({ squawk: "7700" });
             expect(mockEnqueueInvocation).not.toHaveBeenCalled();
         } else {
-            // Handler not registered -- correct behavior; test passes
             expect(tools.has("unknown__tool")).toBe(false);
         }
     });
@@ -262,20 +347,12 @@ describe("userId source invariant (SEC-06)", () => {
 
 // ---------------------------------------------------------------------------
 // SEC-01: isDemo gate is tested at the route level (route.test.ts).
-// Here we assert that the dispatch registrar does not re-implement the gate --
-// it trusts that the route has already checked it before calling registerPluginToolDispatch.
 // ---------------------------------------------------------------------------
 
 describe("SEC-01 gate ordering (documented assertion)", () => {
     it("registerPluginToolDispatch does not check isDemo internally", async () => {
-        // The isDemo check lives in route.ts BEFORE auth. The dispatch handler
-        // assumes it runs AFTER the gate has already fired. This test just confirms
-        // the registrar does not import isDemo (behavioral contract assertion).
-        // If Wave 3 incorrectly adds an isDemo check here, the security reviewer
-        // will catch the duplicate gate.
         const { server } = makeFakeServer();
 
-        // Should not throw even if we don't pass isDemo-related context
         await expect(
             registerPluginToolDispatch(
                 server as unknown as import("@modelcontextprotocol/sdk/server/mcp.js").McpServer,
