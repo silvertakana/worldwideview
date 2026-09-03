@@ -17,7 +17,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v9
+      - uses: actions/stale@v11
         with:
           only-labels: 'gc-bot'
           days-before-stale: 30
