@@ -58,7 +58,7 @@ function fakeManifest(id: string) {
         name: id,
         version: "1.0.0",
         format: "bundle",
-        entry: `https://unpkg.com/wwv-plugin-${id}@1.0.0/dist/frontend.mjs`,
+        entry: `https://cdn.jsdelivr.net/npm/wwv-plugin-${id}@1.0.0/+esm`,
         npmPackage: `wwv-plugin-${id}`,
         rendering: { type: "point", color: "#ff0000", size: 6 },
     };
@@ -208,5 +208,37 @@ describe("seedDefaultPlugins", () => {
             const manifest = JSON.parse(call[2]);
             expect(manifest.trust).toBe("verified");
         }
+    });
+
+    it("seeds a plugin without an entry field using the jsdelivr +esm resolution", async () => {
+        // Non-conforming bundle layout: the marketplace manifest has no `entry`
+        // field and the package ships its bundle under a different name
+        // (wwv-plugin-opencorporates ships dist/index.esm.js). The seeder must
+        // reconstruct the CDN entry via jsdelivr's +esm endpoint.
+        const nonConformingId = "opencorporates";
+        mockGetRegistryPluginList.mockResolvedValue([
+            { id: nonConformingId, autoSeed: true },
+        ]);
+        mockFetch.mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                id: nonConformingId,
+                name: nonConformingId,
+                version: "1.0.0",
+                format: "bundle",
+                npmPackage: `wwv-plugin-${nonConformingId}`,
+                rendering: { type: "point", color: "#ff0000", size: 6 },
+            }),
+        });
+
+        await seedDefaultPlugins();
+
+        expect(mockUpsertPlugin).toHaveBeenCalledTimes(1);
+        const manifest = JSON.parse(mockUpsertPlugin.mock.calls[0][2]);
+        expect(manifest.entry).toBe(
+            `https://cdn.jsdelivr.net/npm/wwv-plugin-${nonConformingId}@1.0.0/+esm`,
+        );
+        expect(manifest.npmPackage).toBe(`wwv-plugin-${nonConformingId}`);
+        expect(manifest.format).toBe("bundle");
     });
 });
