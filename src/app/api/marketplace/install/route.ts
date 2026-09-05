@@ -54,12 +54,16 @@ export async function POST(request: Request) {
                     finalManifest = { ...card };
 
                     // Reconstruct entry URL for plugins that are distributed via NPM.
+                    // Resolve the package's real module entry through jsdelivr's +esm
+                    // endpoint (reads package.json "module"/"exports"), matching the
+                    // marketplace install flow. Hardcoding dist/frontend.mjs 404s for
+                    // packages that ship their bundle under a different name.
                     // We also forcefully coerce format to "bundle" here because
                     // the marketplace cache might still return "static" for plugins we recently converted.
                     if (finalManifest.npmPackage) {
                         const targetVersion = version || finalManifest.version || "1.0.0";
                         finalManifest.format = "bundle";
-                        finalManifest.entry = `https://unpkg.com/${finalManifest.npmPackage}@${targetVersion}/dist/frontend.mjs`;
+                        finalManifest.entry = `https://cdn.jsdelivr.net/npm/${finalManifest.npmPackage}@${targetVersion}/+esm`;
                     }
                 }
             } catch (e) {

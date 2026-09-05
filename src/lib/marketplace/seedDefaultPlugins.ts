@@ -84,11 +84,15 @@ export async function seedDefaultPlugins(): Promise<void> {
                 // Every plugin in the verified set is by definition verified.
                 manifest.trust = "verified";
 
-                // Reconstruct CDN entry for npm-distributed plugins
+                // Reconstruct CDN entry for npm-distributed plugins. Resolve the package's
+                // real module entry via jsdelivr's +esm endpoint (reads package.json
+                // "module"/"exports"), matching the marketplace install flow. Hardcoding
+                // dist/frontend.mjs 404s for packages that ship their bundle under a
+                // different name (e.g. dist/index.esm.js or dist/index.mjs).
                 if (manifest.npmPackage) {
                     const ver = manifest.version || "1.0.0";
                     manifest.format = "bundle";
-                    manifest.entry = `https://unpkg.com/${manifest.npmPackage}@${ver}/dist/frontend.mjs`;
+                    manifest.entry = `https://cdn.jsdelivr.net/npm/${manifest.npmPackage}@${ver}/+esm`;
                 }
 
                 const validation = validateManifest(manifest);
