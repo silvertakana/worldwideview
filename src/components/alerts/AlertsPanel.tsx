@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { Bell, Plus, Trash2 } from "lucide-react";
 import { useStore } from "@/core/state/store";
+import { isDemo } from "@/core/edition";
 import { getAlertDefinitionsFor } from "@/lib/alerts/alertablePlugins";
 import { formatCondition } from "@/lib/alerts/format";
 import { AlertRuleForm } from "./AlertRuleForm";
@@ -34,6 +35,9 @@ export function AlertsPanel() {
     const [creating, setCreating] = useState(false);
 
     useEffect(() => {
+        // Demo edition has no alerts backend (route 403s by design). Never
+        // fetch on demo so we don't spam the console with 403 noise.
+        if (isDemo) return;
         void fetchAlerts();
         clearAlertUnread();
     }, [fetchAlerts, clearAlertUnread]);

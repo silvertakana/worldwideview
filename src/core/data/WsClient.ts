@@ -51,8 +51,71 @@ function extractEnvelopeFetchedAt(payload: WsStreamPayload["payload"]): string |
   return typeof fetchedAt === "string" ? fetchedAt : undefined;
 }
 
+/** Guards against duplicate page-lifecycle listener registration (module singleton). */
+let windowLifecycleAttached = false;
+
 class WebSocketClient {
   private engines = new Map<string, EngineConnection>();
+
+  /** True while the page is frozen in the BFCache (pagehide persisted to pageshow/visible). */
+  private pageFrozen = false;
+
+  constructor() {
+    if (typeof window === "undefined") return;
+    if (windowLifecycleAttached) return;
+    windowLifecycleAttached = true;
+    window.addEventListener("pagehide", this.handlePageHide);
+    window.addEventListener("pageshow", this.handlePageShow);
+    document.addEventListener("visibilitychange", this.handleVisibilityChange);
+  }
+
+  /**
+   * BFCache freeze (`pagehide` with `persisted === true`): the browser
+   * suspends the page and forcibly tears down half-open WebSockets. Close
+   * them cleanly and drop the pending reconnect timer so nothing fires while
+   * frozen; the restore path reconnects immediately with a reset backoff.
+   */
+  private handlePageHide = (event: PageTransitionEvent) => {
+    if (!event.persisted) return;
+    this.pageFrozen = true;
+    for (const engine of this.engines.values()) {
+      if (engine.reconnectTimer) { clearTimeout(engine.reconnectTimer); engine.reconnectTimer = null; }
+      if (engine.stableConnectionTimer) { clearTimeout(engine.stableConnectionTimer); engine.stableConnectionTimer = null; }
+      if (engine.authTimeoutTimer) { clearTimeout(engine.authTimeoutTimer); engine.authTimeoutTimer = null; }
+      engine.awaitingWelcome = false;
+      if (engine.ws && (engine.ws.readyState === WebSocket.CONNECTING || engine.ws.readyState === WebSocket.OPEN)) {
+        engine.ws.close();
+      }
+    }
+  };
+
+  /** BFCache restore (`pageshow` with `persisted === true`): reconnect now. */
+  private handlePageShow = (event: PageTransitionEvent) => {
+    if (!event.persisted) return;
+    this.pageFrozen = false;
+    this.reconnectImmediately();
+  };
+
+  /** Tab became visible again: reconnect now instead of waiting out the timer. */
+  private handleVisibilityChange = () => {
+    if (document.visibilityState !== "visible") return;
+    this.pageFrozen = false;
+    this.reconnectImmediately();
+  };
+
+  /**
+   * Reconnect every engine with active subscriptions immediately, with a
+   * reset backoff. `connectEngine` no-ops when a socket is already
+   * CONNECTING/OPEN, so this is safe on every restore/visibility event.
+   */
+  private reconnectImmediately = () => {
+    for (const [engineUrl, engine] of this.engines.entries()) {
+      if (engine.subscriptions.size === 0) continue;
+      engine.reconnectAttempts = 0;
+      if (engine.reconnectTimer) { clearTimeout(engine.reconnectTimer); engine.reconnectTimer = null; }
+      this.connectEngine(engineUrl);
+    }
+  };
 
   private getOrCreateEngine(engineUrl: string): EngineConnection {
     let engine = this.engines.get(engineUrl);
@@ -80,7 +143,8 @@ class WebSocketClient {
     }
 
     const wsStart = performance.now();
-    engine.ws = new WebSocket(engineUrl);
+    const ws = new WebSocket(engineUrl);
+    engine.ws = ws;
 
     engine.ws.onopen = () => {
       console.debug(`[WSClient] 🟢 Connected to ${engineUrl}. WS Handshake took ${(performance.now() - wsStart).toFixed(2)}ms`);
@@ -164,11 +228,14 @@ class WebSocketClient {
     };
 
     engine.ws.onerror = () => {
-      console.warn(`[WSClient] Connection to ${engineUrl} failed. Retrying in background...`);
+      console.warn(`[WSClient] WebSocket error on ${engineUrl} - reconnect is handled on close`);
     };
 
     engine.ws.onclose = () => {
-      engine.ws = null;
+      // BFCache restore can reconnect and swap in a fresh socket before a
+      // deferred close event from the frozen socket lands. Only clear the
+      // reference when this close belongs to the current socket.
+      if (engine.ws === ws) engine.ws = null;
       engine.awaitingWelcome = false;
       if (engine.authTimeoutTimer) { clearTimeout(engine.authTimeoutTimer); engine.authTimeoutTimer = null; }
       if (engine.stableConnectionTimer) {
@@ -176,6 +243,12 @@ class WebSocketClient {
         engine.stableConnectionTimer = null;
       }
       if (engine.reconnectTimer) clearTimeout(engine.reconnectTimer);
+      // While the page is frozen in the BFCache, don't schedule a reconnect.
+      // The pageshow/visibilitychange restore path reconnects immediately.
+      if (this.pageFrozen) return;
+      // A deferred close from a superseded socket must not schedule a reconnect
+      // when the restore path already swapped in a fresh connection.
+      if (engine.ws && (engine.ws.readyState === WebSocket.CONNECTING || engine.ws.readyState === WebSocket.OPEN)) return;
       // Only reconnect if there are still active subscriptions
       if (engine.subscriptions.size > 0) {
         // Exponential backoff with jitter to prevent thundering herd on engine restart.

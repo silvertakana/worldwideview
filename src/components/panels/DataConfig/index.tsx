@@ -19,6 +19,7 @@ import { CacheTab } from "./CacheTab";
 import { OverlayTab } from "./OverlayTab";
 import { AlertsPanel } from "@/components/alerts/AlertsPanel";
 import { AlertsTabButton } from "@/components/alerts/AlertsTabButton";
+import { isDemo } from "@/core/edition";
 import { sectionHeaderStyle } from "./sharedStyles";
 
 import "./index.css";
@@ -101,7 +102,7 @@ export function DataConfigPanel() {
           >
             <Cog size="20" style={{ margin: 5, maxHeight: "20%" }} />
           </button>
-          <AlertsTabButton />
+          {!isDemo && <AlertsTabButton />}
         </div>
 
         <div style={{
@@ -122,7 +123,7 @@ export function DataConfigPanel() {
           </div>
                 )}
           {activeTab === "overlay" && <OverlayTab />}
-          {activeTab === "alerts" && (
+          {activeTab === "alerts" && !isDemo && (
           <div style={{ marginBottom: "var(--space-lg)" }}>
             <div style={sectionHeaderStyle}>Alerts</div>
             <AlertsPanel />

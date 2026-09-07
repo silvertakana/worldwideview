@@ -13,6 +13,7 @@
 import { useEffect } from "react";
 import type { AlertRuleSnapshot, DataBusEvents, GeoEntity } from "@worldwideview/wwv-plugin-sdk";
 import { dataBus } from "@/core/data/DataBus";
+import { isDemo } from "@/core/edition";
 import { evaluateRule } from "./evaluate";
 
 export const DEDUPE_WINDOW_MS = 60_000;
@@ -156,6 +157,9 @@ export function attachAlertEngine(
 export function useAlertEngine(): void {
     useEffect(() => {
         if (typeof window === "undefined") return;
+        // Demo edition has no alerts backend (route 403s by design). Never
+        // attach the engine so it doesn't poll /api/alerts every 60s.
+        if (isDemo) return;
         return attachAlertEngine(dataBus);
     }, []);
 }
