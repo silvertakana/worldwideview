@@ -88,7 +88,7 @@
     "@typescript-eslint/eslint-plugin": "^8.65.0",
     "@typescript-eslint/parser": "^8.65.0",
     "@vitejs/plugin-react": "^6.0.5",
-    "@vitest/coverage-v8": "4.1.10",
+    "@vitest/coverage-v8": "5.0.0",
     "concurrently": "^10.0.5",
     "copy-webpack-plugin": "^14.0.0",
     "eslint": "^9.39.4",
