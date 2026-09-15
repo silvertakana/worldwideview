@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 import { signCrossServiceRequest } from "./sign";
 import { verifyCrossServiceSignature } from "./verify";
 
-const SECRET = "test-secret-12345678901234567890123456789012";
+const SECRET = "test-secret-at-least-32-chars-long!!";
 
 // The store's durability is proved in nonceCache.test.ts; here the store is
 // replaced so these tests stay about the signature path.

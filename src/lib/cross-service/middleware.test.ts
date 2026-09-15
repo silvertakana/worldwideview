@@ -3,7 +3,7 @@ import type { NextResponse } from "next/server";
 import { crossServiceAuth } from "./middleware";
 import { signCrossServiceRequest } from "./sign";
 
-const SECRET = "test-secret-12345678901234567890123456789012";
+const SECRET = "test-secret-at-least-32-chars-long!!";
 
 // The store's durability is proved in nonceCache.test.ts; here it is replaced so
 // these tests stay about the rejection surface.

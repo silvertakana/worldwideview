@@ -1,0 +1,8 @@
+# Fingerprint-level allowlist for gitleaks. One entry per already-published
+# finding; move real credentials to environment variables instead of adding here.
+#
+# commit 4d5c1453 added a dummy 32-char fixture secret to a test file. The value
+# was rotated to a non-matching fixture in the following commit, but the PR scan
+# range still includes the commit that introduced it, so the finding is reported
+# again on every push. Suppressing that exact fingerprint (and nothing else).
+4d5c145397d9bb5e83767c36b52bf17d042d2338:src/lib/cross-service/middleware.test.ts:generic-api-key:6
