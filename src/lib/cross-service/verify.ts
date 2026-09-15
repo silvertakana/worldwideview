@@ -4,10 +4,16 @@ import { nonceCache } from "./nonceCache";
 
 export type { CrossServiceSignature } from "./types";
 
-export function verifyCrossServiceSignature(
+/**
+ * Verify a hub-to-globe request's HMAC signature.
+ *
+ * Async because replay protection is recorded in the shared database, so a
+ * nonce cannot be replayed against a sibling instance or across a restart.
+ */
+export async function verifyCrossServiceSignature(
     request: Request,
     rawBody: string,
-): CrossServiceSignature {
+): Promise<CrossServiceSignature> {
     const secret = process.env.CROSS_SERVICE_SECRET;
     if (!secret) {
         return { valid: false, reason: "server_configuration_error" };
@@ -51,7 +57,9 @@ export function verifyCrossServiceSignature(
         return { valid: false, reason: "signature_mismatch" };
     }
 
-    if (!nonceCache.checkAndRecord(nonce)) {
+    // Recorded only after the signature verifies, so an unauthenticated caller
+    // cannot fill the nonce store with junk.
+    if (!(await nonceCache.checkAndRecord(nonce))) {
         return { valid: false, reason: "replay" };
     }
 

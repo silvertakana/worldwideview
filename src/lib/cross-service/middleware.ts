@@ -47,7 +47,7 @@ export async function crossServiceAuth(request: Request): Promise<NextResponse |
     }
 
     const rawBody = await request.clone().text();
-    const result = verifyCrossServiceSignature(request, rawBody);
+    const result = await verifyCrossServiceSignature(request, rawBody);
     if (!result.valid) {
         reportRejection(result.reason, request);
         return unauthorized();
