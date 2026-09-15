@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 import { GET } from "./route";
 import { prisma } from "@/lib/db";
+import { getActiveOrgId } from "@/lib/ba-org";
 
 vi.mock("@/lib/db", () => ({
     prisma: {
@@ -23,6 +24,10 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/cross-service/verify", () => ({
     verifyCrossServiceSignature: vi.fn().mockReturnValue({ valid: true }),
+}));
+
+vi.mock("@/lib/ba-org", () => ({
+    getActiveOrgId: vi.fn(),
 }));
 
 function mockServiceRequest(url: string): NextRequest {
@@ -146,5 +151,90 @@ describe("GET /api/service/tier", () => {
             instanceCount: 0,
         });
         expect(typeof data.trialEndsAt).toBe("string");
+    });
+});
+
+/**
+ * A session caller sends no service signature, so crossServiceAuth rejects it
+ * and the route takes the session branch. Its organization comes from the
+ * session alone: organizationId and email belong to the signed hub-to-globe
+ * contract, and a signed-in user must not be able to name another
+ * organization's tier and instance count with them.
+ */
+describe("GET /api/service/tier (session caller)", () => {
+    it("returns 403 instead of another organization's billing data", async () => {
+        vi.mocked(getActiveOrgId).mockResolvedValue("org-session");
+
+        const req = new NextRequest("http://localhost/api/service/tier?organizationId=org-other");
+        const res = await GET(req);
+
+        expect(res.status).toBe(403);
+        expect(prisma.orgTier.findUnique).not.toHaveBeenCalled();
+        expect(prisma.pluginMember.findMany).not.toHaveBeenCalled();
+        expect(prisma.workspace.count).not.toHaveBeenCalled();
+    });
+
+    it("answers a session caller about its own organization when the parameter matches", async () => {
+        vi.mocked(getActiveOrgId).mockResolvedValue("org-session");
+        vi.mocked(prisma.orgTier.findUnique).mockResolvedValue(
+            mockOrgTier({ organizationId: "org-session" }) as never,
+        );
+        vi.mocked(prisma.pluginMember.findMany).mockResolvedValue([{ userId: "u1" }] as never);
+        vi.mocked(prisma.workspace.count).mockResolvedValue(1);
+
+        const req = new NextRequest("http://localhost/api/service/tier?organizationId=org-session");
+        const res = await GET(req);
+        const data = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(data.instanceCount).toBe(1);
+        expect(prisma.pluginMember.findMany).toHaveBeenCalledWith({
+            where: { organizationId: "org-session", role: "owner" },
+            select: { userId: true },
+        });
+    });
+
+    it("ignores an email parameter from a session caller", async () => {
+        vi.mocked(getActiveOrgId).mockResolvedValue("org-session");
+        vi.mocked(prisma.orgTier.findUnique).mockResolvedValue(
+            mockOrgTier({ organizationId: "org-session" }) as never,
+        );
+        vi.mocked(prisma.pluginMember.findMany).mockResolvedValue([] as never);
+
+        const req = new NextRequest("http://localhost/api/service/tier?email=someone@else.com");
+        const res = await GET(req);
+
+        expect(res.status).toBe(200);
+        expect(prisma.orgTier.findUnique).toHaveBeenCalledWith({
+            where: { organizationId: "org-session" },
+        });
+        expect(prisma.betterAuthUser.findUnique).not.toHaveBeenCalled();
+        expect(prisma.pluginMember.findFirst).not.toHaveBeenCalled();
+    });
+
+    it("resolves the caller's own organization when no parameters are given", async () => {
+        vi.mocked(getActiveOrgId).mockResolvedValue("org-session");
+        vi.mocked(prisma.orgTier.findUnique).mockResolvedValue(
+            mockOrgTier({ organizationId: "org-session" }) as never,
+        );
+        vi.mocked(prisma.pluginMember.findMany).mockResolvedValue([] as never);
+
+        const req = new NextRequest("http://localhost/api/service/tier");
+        const res = await GET(req);
+
+        expect(res.status).toBe(200);
+        expect(prisma.orgTier.findUnique).toHaveBeenCalledWith({
+            where: { organizationId: "org-session" },
+        });
+    });
+
+    it("returns 401 when the session is not authenticated", async () => {
+        vi.mocked(getActiveOrgId).mockResolvedValue(null);
+
+        const req = new NextRequest("http://localhost/api/service/tier");
+        const res = await GET(req);
+
+        expect(res.status).toBe(401);
+        expect(prisma.orgTier.findUnique).not.toHaveBeenCalled();
     });
 });

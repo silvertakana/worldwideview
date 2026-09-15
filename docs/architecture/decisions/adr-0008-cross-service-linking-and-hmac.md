@@ -120,7 +120,7 @@ The canonical string signed is: `{METHOD}\n{PATH}\n{TIMESTAMP}\n{SHA256(BODY)}`
 **Verification** (`src/lib/cross-service/verify.ts`):
 
 1. **Timestamp window:** Reject if `|now - timestamp| > 300_000` (5 minutes)
-2. **Nonce replay:** Reject if nonce has been seen before (in-memory `NonceCache`, 5-min TTL)
+2. **Nonce replay:** Reject if nonce has been seen before (a `CrossServiceNonce` row, 5-min TTL, unique on `nonce`)
 3. **Signature:** Rebuild canonical string, compute HMAC-SHA256, compare with `crypto.timingSafeEqual`
 
 **Why HMAC, not a static API key:**
@@ -160,6 +160,20 @@ All hub-to-globe calls use the HMAC mechanism. The following endpoints are prote
 | GET | `/api/internal/account` | Read internal account details |
 | POST | `/api/access-code` | Redeem access code |
 
+### ADR-008E: Durable Nonce Replay Protection
+
+The nonce replay guard is durable rather than process-local. A verified nonce is
+inserted into `cross_service_nonces` with a 5-minute `expiresAt`; the unique index
+on `nonce` makes the check atomic, and expired rows are swept opportunistically
+on write (at most once per minute).
+
+**Why the globe's PostgreSQL rather than Redis:** the globe already owns this
+database, so the guard adds a table rather than a dependency, a deployment
+configuration value, or a service to keep healthy. `wwv-redis` is defined under
+the compose `engine` profile and `REDIS_URL` is set only on the
+`wwv-data-engine` service, so a globe-only deployment has no Redis at all. The
+rejected alternatives are recorded below.
+
 ---
 
 ## Implementation Details
@@ -182,7 +196,25 @@ For routes that need `request.json()` after auth, the request body must be clone
 
 ### Nonce replay protection
 
-The `NonceCache` (`src/lib/cross-service/nonceCache.ts`) is an in-memory `Map<string, number>` with an expiry-based cleanup interval (every 60 seconds). It is scoped to a single process — if the globe runs multiple instances behind a load balancer, a nonce could be replayed against a different instance. At current scale (single-instance Coolify deployment), this is acceptable. A Redis-backed nonce store is the follow-up if horizontal scaling is introduced.
+A verified nonce is inserted into the `cross_service_nonces` table
+(`CrossServiceNonce` in `prisma/schema.prisma`) with a 5-minute `expiresAt`. The
+unique index on `nonce` is what makes the check atomic: the insert either succeeds
+(the nonce is fresh) or fails with Prisma's `P2002` unique violation (the nonce is
+a replay). Because the record lives in the globe's own PostgreSQL instead of in
+process memory, a replay is rejected after a restart and by a sibling instance
+behind a load balancer. Expired rows are swept opportunistically on write, at
+most once per minute, so the table stays bounded without a scheduled job.
+
+A nonce is recorded only after the signature verifies, so an unauthenticated
+caller cannot fill the table with junk nonces.
+
+If the database is unreachable the store degrades to a process-local guard and
+logs a warning rather than rejecting the request. Replay protection is defence in
+depth behind the HMAC signature, and every route behind this middleware reads the
+same database, so an outage already fails the request further down.
+
+`verifyCrossServiceSignature` is async as a result, because the nonce check is a
+database round trip.
 
 ---
 
@@ -196,7 +228,7 @@ The `NonceCache` (`src/lib/cross-service/nonceCache.ts`) is an in-memory `Map<st
 
 **Negative / accepted tradeoffs:**
 - Two linking paths means two code paths to maintain and test. The provisioning flag (whether the instance was cloud-provisioned) gates which path is active, so only one path executes per deployment.
-- The HMAC nonce cache is process-local — a horizontally scaled globe would need a shared nonce store (Redis). This is deferred.
+- Nonce replay protection costs one `INSERT` per verified cross-service request, and the `cross_service_nonces` table grows with cross-service traffic until a sweep removes the expired rows. Both costs scale with hub-to-globe call volume rather than user traffic, and the sweep is driven by that same traffic. The process-local cache this replaces is gone, along with the restart and cross-instance replay window it left open.
 - `CROSS_SERVICE_SECRET` and `MARKETPLACE_CONNECT_SECRET` must be identical between hub and globe, and globe and marketplace, respectively. No automated rotation mechanism exists. Manual rotation requires a brief overlap window during which both old and new secrets are accepted (not yet implemented).
 - PKCE requires the browser to complete a redirect chain. If the user closes the browser during the flow, the code verifier is lost and the flow must restart.
 - The auto-link JWT runs during provisioning — if the marketplace is unreachable at instance creation time, the API key injection fails. The provisioning flow must handle this gracefully (retry or deferred linking).
@@ -222,3 +254,9 @@ The `NonceCache` (`src/lib/cross-service/nonceCache.ts`) is an in-memory `Map<st
 
 ### "Use mTLS for hub-to-globe instead of HMAC"
 **Rejected.** Mutual TLS provides transport-level authentication but requires certificate management infrastructure (CA, issuance, rotation, revocation). At current scale (two services on a private network), the operational burden of mTLS outweighs its benefits. HMAC over HTTPS provides application-level integrity that survives TLS termination at reverse proxies. mTLS can be reconsidered if the ecosystem grows to 10+ services.
+
+### "Keep the nonce cache in process memory"
+**Rejected.** A per-process `Map` loses every recorded nonce on restart and cannot see nonces recorded by a sibling instance, so a captured request can be replayed after a deploy or against another instance. The 5-minute timestamp window is wide enough for that to matter.
+
+### "Back the nonce store with Redis"
+**Rejected.** Redis is not a dependency of the globe app: `wwv-redis` sits under the compose `engine` profile and `REDIS_URL` is set only on the `wwv-data-engine` service. On a globe-only deployment the store would silently fall back on exactly the deployments it is meant to protect, while adding an operational dependency to the provisioning and billing path. PostgreSQL is always present for the globe.

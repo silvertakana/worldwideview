@@ -342,3 +342,13 @@ model AlertEvent {
   @@index([ruleId])
   @@map("alert_events")
 }
+
+model CrossServiceNonce {
+  id        String   @id @default(uuid())
+  nonce     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("cross_service_nonces")
+}
