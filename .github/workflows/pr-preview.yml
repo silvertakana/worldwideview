@@ -45,6 +45,18 @@ jobs:
       contains(github.event.comment.body, '/preview') &&
       github.event.issue.pull_request != null &&
       contains('["OWNER","MEMBER","COLLABORATOR"]', github.event.comment.author_association)
+    # A called workflow may only keep or reduce the caller's GITHUB_TOKEN
+    # permissions, never elevate them. shared-docker.yml declares
+    # contents/packages/id-token/attestations/security-events at job level, so
+    # the caller must grant at least the same set; otherwise the run aborts as a
+    # startup_failure with zero jobs and no log. pull-requests:write stays on
+    # post-comment, which is the only job here that writes to the PR.
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      security-events: write
     uses: ./.github/workflows/shared-docker.yml
     with:
       ref: ${{ needs.resolve-ref.outputs.head_sha }}
