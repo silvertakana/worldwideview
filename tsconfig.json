@@ -49,6 +49,7 @@
     "local-seeders",
     "local-plugins",
     "packages/*/backend",
+    "packages/wwv-plugin-lightning",
     "worldmonitor",
     ".worktrees",
     "tests",

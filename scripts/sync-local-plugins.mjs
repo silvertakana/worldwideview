@@ -52,6 +52,7 @@ const CONFIG_HASH = crypto
 const HOST_MODULE_SYNTHETICS = {
     "@/core/state/store": `export const useStore = globalThis.__WWV_HOST__.useStore;`,
     "@/core/plugins/PluginManager": `export const pluginManager = globalThis.__WWV_HOST__.pluginManager;`,
+    "@/core/data/DataBus": `export const dataBus = globalThis.__WWV_HOST__.dataBus;`,
     "@/components/video/CameraStream": `export const CameraStream = globalThis.__WWV_HOST__.CameraStream;`,
     "zustand": `
         const zustand = globalThis.__WWV_HOST__.zustand || {};

@@ -1,0 +1,21 @@
+{
+  "id": "lightning",
+  "name": "Lightning Strikes",
+  "version": "1.0.0",
+  "description": "Real-time global lightning strikes streamed from the Blitzortung.org network, rendered as fading point flashes on the globe.",
+  "type": "data-layer",
+  "format": "bundle",
+  "trust": "built-in",
+  "capabilities": ["data:own", "globe:overlay", "ui:toolbar"],
+  "category": "weather",
+  "icon": "Zap",
+  "entry": "dist/frontend.mjs",
+  "compatibility": { "worldwideview": ">=1.0.0" },
+  "dataSource": {
+    "url": "",
+    "method": "GET",
+    "pollInterval": 0,
+    "format": "json",
+    "streamUrl": "ws://localhost:5005/stream"
+  }
+}

@@ -1,11 +1,12 @@
 /**
  * @file viteGlobals.ts
  * @description Build-time utility for externalizing shared host dependencies.
- * Provides a Vite plugin that maps 10 core libraries to globalThis.__WWV_HOST__,
+ * Provides a Vite plugin that maps 11 core libraries to globalThis.__WWV_HOST__,
  * ensuring singleton stability for dynamically loaded plugin bundles:
  *   react, react-dom, react/jsx-runtime, cesium, resium, zustand,
  *   @worldwideview/wwv-plugin-sdk, @/core/state/store,
- *   @/core/plugins/PluginManager, @/components/video/CameraStream
+ *   @/core/plugins/PluginManager, @/core/data/DataBus,
+ *   @/components/video/CameraStream
  *
  * Everything else (e.g. wwv-lib-aviation, wwv-lib-incidents, recharts) must be
  * bundled per-plugin — the host does not provide small utility libs.
@@ -38,6 +39,7 @@ export function wwvPluginGlobals(): any {
         "@worldwideview/wwv-plugin-sdk": "WWVPluginSDK",
         "@/core/state/store": "useStore",
         "@/core/plugins/PluginManager": "pluginManager",
+        "@/core/data/DataBus": "dataBus",
         "@/components/video/CameraStream": "CameraStream"
     };
 
@@ -114,6 +116,9 @@ export function wwvPluginGlobals(): any {
             }
             if (originalId === "@/core/plugins/PluginManager") {
                 return `export const pluginManager = globalThis.__WWV_HOST__.pluginManager;`;
+            }
+            if (originalId === "@/core/data/DataBus") {
+                return `export const dataBus = globalThis.__WWV_HOST__.dataBus;`;
             }
             if (originalId === "@/components/video/CameraStream") {
                 return `export const CameraStream = globalThis.__WWV_HOST__.CameraStream;`;

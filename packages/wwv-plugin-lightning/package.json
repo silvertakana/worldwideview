@@ -1,0 +1,59 @@
+{
+  "name": "@worldwideview/wwv-plugin-lightning",
+  "version": "1.0.0",
+  "description": "Real-time global lightning strikes from the Blitzortung.org community network",
+  "type": "module",
+  "main": "dist/frontend.mjs",
+  "module": "dist/frontend.mjs",
+  "types": "src/index.ts",
+  "files": [
+    "dist",
+    "src",
+    "manifest.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/silvertakana/worldwideview.git",
+    "directory": "packages/wwv-plugin-lightning"
+  },
+  "keywords": [
+    "worldwideview",
+    "wwv-plugin",
+    "lightning",
+    "blitzortung",
+    "weather"
+  ],
+  "author": "WorldWideView",
+  "license": "ISC",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "worldwideview": {
+    "id": "lightning",
+    "type": "data-layer",
+    "format": "bundle",
+    "category": "weather",
+    "icon": "Zap",
+    "capabilities": [
+      "data:own",
+      "globe:overlay",
+      "ui:toolbar"
+    ]
+  },
+  "peerDependencies": {
+    "@worldwideview/wwv-plugin-sdk": "workspace:*",
+    "cesium": "^1.142.0",
+    "lucide-react": "^1.17.0",
+    "react": ">=19"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@worldwideview/wwv-plugin-sdk": "workspace:*",
+    "cesium": "^1.142.0",
+    "lucide-react": "^1.17.0",
+    "react": "19.2.7",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.16"
+  }
+}

@@ -254,6 +254,30 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(jsdom@28.1.0(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))
 
+  local-plugins/wwv-plugin-lightning:
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
+      '@worldwideview/wwv-plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/wwv-plugin-sdk
+      cesium:
+        specifier: ^1.142.0
+        version: 1.142.0
+      lucide-react:
+        specifier: ^1.17.0
+        version: 1.17.0(react@19.2.7)
+      react:
+        specifier: 19.2.7
+        version: 19.2.7
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.4)
+
   packages/wwv-ci-probe:
     dependencies:
       commander:
@@ -306,6 +330,36 @@ importers:
       '@worldwideview/wwv-plugin-sdk':
         specifier: workspace:*
         version: link:../wwv-plugin-sdk
+
+  packages/wwv-plugin-lightning:
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
+      '@worldwideview/wwv-plugin-sdk':
+        specifier: workspace:*
+        version: link:../wwv-plugin-sdk
+      cesium:
+        specifier: ^1.142.0
+        version: 1.142.0
+      lucide-react:
+        specifier: ^1.17.0
+        version: 1.17.0(react@19.2.7)
+      react:
+        specifier: 19.2.7
+        version: 19.2.7
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.4)
+
+  packages/wwv-plugin-lightning/backend:
+    dependencies:
+      ws:
+        specifier: ^8.21.0
+        version: 8.21.0
 
   packages/wwv-plugin-sdk:
     dependencies:
@@ -1453,6 +1507,9 @@ packages:
     os: [darwin, linux, win32]
     hasBin: true
 
+  '@pact-foundation/pact-core@15.2.1':
+    resolution: {integrity: sha512-IhWwc026bqffjHAVjOfVnDzmhRlr7FBVrLeg/pKjhrcIi0Z/bWahU0u3LEKKctnMkICSH4nAVTYZEg3kUNTxag==}
+    engines: {node: '>=16'}
   '@pact-foundation/pact-core-darwin-arm64@19.2.0':
     resolution: {integrity: sha512-cQvvWfJKS7iMzkunzh/kdgmyVLhAxyr/BQ8fOnMco2M/1+GHR+sOXvhrR1tes+NAYd1xjE3fbg1K2Flno8aDBw==}
     cpu: [arm64]

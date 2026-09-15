@@ -1,0 +1,17 @@
+{
+  "name": "@worldwideview/wwv-plugin-lightning-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Seeder backend for the Lightning Strikes plugin — bridges the Blitzortung.org network to a WWV-compatible WebSocket stream.",
+  "main": "index.mjs",
+  "bin": {
+    "wwv-lightning-seeder": "index.mjs"
+  },
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.21.0"
+  }
+}

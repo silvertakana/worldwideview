@@ -25,7 +25,7 @@ export interface IconUrlOptions extends Record<string, unknown> {
  */
 export declare function createSvgIconUrl(Icon: ComponentType<any>, opts?: IconUrlOptions): string;
 export type { PluginManifest, PluginFormat, PluginType, TrustTier, PluginCapability, DataSourceConfig, FieldMapping, RenderingConfig, McpToolDeclaration, LocalDataSourceDeclaration } from "./manifest";
-export type PluginCategory = "aviation" | "maritime" | "military" | "conflict" | "natural-disaster" | "infrastructure" | "space" | "cyber" | "economic" | "intelligence" | "custom";
+export type PluginCategory = "aviation" | "maritime" | "military" | "conflict" | "natural-disaster" | "weather" | "infrastructure" | "space" | "cyber" | "economic" | "intelligence" | "custom";
 export interface TimeRange {
     start: Date;
     end: Date;
@@ -351,6 +351,14 @@ export type DataBusEvents = {
         pluginId: string;
         loading: boolean;
     };
+} & {
+    /**
+     * Namespaced custom events emitted by plugins, of the form `"<domain>:<event>"`
+     * (e.g. `"lightning:strike"`). The payload is plugin-defined, so it is typed as
+     * `unknown` — subscribers narrow it to their own contract at the boundary. The
+     * core events above keep their precise payload types (none contain a colon).
+     */
+    [event: `${string}:${string}`]: unknown;
     alertFired: {
         rule: AlertRuleSnapshot;
         entity: GeoEntity;

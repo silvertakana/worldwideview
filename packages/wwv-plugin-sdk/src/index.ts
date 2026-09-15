@@ -75,6 +75,7 @@ export type PluginCategory =
     | "military"
     | "conflict"
     | "natural-disaster"
+    | "weather"
     | "infrastructure"
     | "space"
     | "cyber"
@@ -370,6 +371,14 @@ export type DataBusEvents = {
     globeReady: Record<string, never>;
     pluginError: { pluginId?: string; message: string; error?: Error };
     layerLoadingChanged: { pluginId: string; loading: boolean };
+} & {
+    /**
+     * Namespaced custom events emitted by plugins, of the form `"<domain>:<event>"`
+     * (e.g. `"lightning:strike"`). The payload is plugin-defined, so it is typed as
+     * `unknown` — subscribers narrow it to their own contract at the boundary. The
+     * core events above keep their precise payload types (none contain a colon).
+     */
+    [event: `${string}:${string}`]: unknown;
     alertFired: { rule: AlertRuleSnapshot; entity: GeoEntity; pluginId: string };
 };
 

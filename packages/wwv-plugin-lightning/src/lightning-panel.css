@@ -1,0 +1,59 @@
+/*
+ * Plain, prefixed CSS for the Lightning panel. Imported as a string via `?inline` and
+ * injected in a <style> tag at runtime — the CSP-safe pattern for single-file plugin
+ * bundles (a separate emitted .css would never be loaded by the host). Class names are
+ * namespaced with `wwv-lightning-` to avoid collisions with host or peer-plugin styles.
+ */
+.wwv-lightning-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 20px;
+    font-family: inherit;
+    color: #e7ecf3;
+}
+
+.wwv-lightning-headline {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.wwv-lightning-count {
+    font-size: 2.6rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ffd633;
+    text-shadow: 0 0 12px rgba(255, 214, 51, 0.45);
+    font-variant-numeric: tabular-nums;
+}
+
+.wwv-lightning-unit {
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9aa6b5;
+}
+
+.wwv-lightning-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #8b97a6;
+}
+
+.wwv-lightning-pulse {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #ffd633;
+    box-shadow: 0 0 0 0 rgba(255, 214, 51, 0.6);
+    animation: wwv-lightning-pulse-kf 1.6s ease-out infinite;
+}
+
+@keyframes wwv-lightning-pulse-kf {
+    0% { box-shadow: 0 0 0 0 rgba(255, 214, 51, 0.55); }
+    70% { box-shadow: 0 0 0 8px rgba(255, 214, 51, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 214, 51, 0); }
+}

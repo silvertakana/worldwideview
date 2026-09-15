@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "types": ["react"],
+    "baseUrl": ".",
+    "paths": {
+      "@worldwideview/wwv-plugin-sdk": ["../wwv-plugin-sdk/src"],
+      "@/*": ["../../src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["dist", "backend", "node_modules"]
+}

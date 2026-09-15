@@ -1,9 +1,9 @@
 /* eslint-disable no-console */
 /**
  * @file hostGlobals.ts
- * @description Exposes 10 core libraries and utilities on globalThis.__WWV_HOST__:
+ * @description Exposes 11 core libraries and utilities on globalThis.__WWV_HOST__:
  * React, ReactDOM, react/jsx-runtime, Cesium, Resium, Zustand, WWVPluginSDK,
- * useStore, pluginManager, and CameraStream. Plugins reference these instead of
+ * useStore, pluginManager, CameraStream, and dataBus. Plugins reference these instead of
  * bundling their own copies, preventing version conflicts and reducing bundle size.
  * Small utility libs (e.g. wwv-lib-aviation, wwv-lib-incidents) are NOT on the
  * pantry and must be bundled per-plugin via the plugin's own dependencies.
@@ -19,6 +19,7 @@ import * as zustand from "zustand";
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { CameraStream } from "@/components/video/CameraStream";
+import { dataBus } from "@/core/data/DataBus";
 
 export interface WWVHostGlobals {
     React: typeof React;
@@ -31,6 +32,7 @@ export interface WWVHostGlobals {
     useStore: typeof useStore;
     pluginManager: typeof pluginManager;
     CameraStream: typeof CameraStream;
+    dataBus: typeof dataBus;
 }
 
 declare global {
@@ -39,9 +41,9 @@ declare global {
 }
 
 /**
- * Injects 10 core libraries onto globalThis.__WWV_HOST__:
+ * Injects 11 core libraries onto globalThis.__WWV_HOST__:
  * React, ReactDOM, jsxRuntime, Cesium, Resium, Zustand, WWVPluginSDK,
- * useStore, pluginManager, and CameraStream.
+ * useStore, pluginManager, CameraStream, and dataBus.
  * Also sets globalThis.__WWV_ENGINE_URL__ and globalThis.__WWV_WS_ENGINE_URL__
  * from NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL or falls back to the cloud engine.
  *
@@ -67,6 +69,7 @@ export async function injectHostGlobals(): Promise<void> {
         useStore,
         pluginManager,
         CameraStream,
+        dataBus,
     };
 
     // REST Engine URL (Fallback)
