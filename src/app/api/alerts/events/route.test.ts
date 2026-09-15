@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { BetterAuthSession } from "@/lib/ba-session";
-import { POST, DEDUPE_WINDOW_MS } from "./route";
+import { POST } from "./route";
 import { getServerSession } from "@/lib/ba-session";
 import { prisma } from "@/lib/db";
 
@@ -121,7 +121,61 @@ describe("POST /api/alerts/events", () => {
         });
     });
 
-    it("declares a 60s dedupe window", () => {
-        expect(DEDUPE_WINDOW_MS).toBe(60_000);
+    it("dedupes a repeat inside the 60s window and persists one just outside it", async () => {
+        vi.mocked(prisma.alertRule.findFirst).mockResolvedValue({ id: "rule-1" } as never);
+
+        // Minimal in-memory stand-in for the AlertEvent table. `findFirst`
+        // honours the route's own `matchedAt: { gte }` cutoff, so the window
+        // under test is the one the route computes, not a stubbed answer.
+        const store: { id: string; ruleId: string; entityId: string | null; matchedAt: Date }[] = [];
+        vi.mocked(prisma.alertEvent.create).mockImplementation(((
+            args: { data: { ruleId: string; entityId: string | null } },
+        ) => {
+            const row = {
+                id: `evt-${store.length + 1}`,
+                ruleId: args.data.ruleId,
+                entityId: args.data.entityId,
+                matchedAt: new Date(),
+            };
+            store.push(row);
+            return row;
+        }) as never);
+        vi.mocked(prisma.alertEvent.findFirst).mockImplementation(((
+            args: { where: { ruleId: string; entityId: string | null; matchedAt: { gte: Date } } },
+        ) => {
+            const cutoff = args.where.matchedAt.gte;
+            const hit = store.find(
+                (row) =>
+                    row.ruleId === args.where.ruleId &&
+                    row.entityId === args.where.entityId &&
+                    row.matchedAt.getTime() >= cutoff.getTime(),
+            );
+            return hit ? { id: hit.id } : null;
+        }) as never);
+
+        vi.useFakeTimers();
+        try {
+            // Fired once at T0: persisted.
+            vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+            const first = await POST(eventRequest(validBody));
+            expect(first.status).toBe(201);
+
+            // Same rule+entity 30s later: inside the window, so deduped.
+            vi.setSystemTime(new Date("2026-01-01T00:00:30.000Z"));
+            const second = await POST(eventRequest(validBody));
+            expect(second.status).toBe(200);
+            expect((await second.json()).deduped).toBe(true);
+
+            // Same rule+entity 61s after the first: outside the window, persisted.
+            vi.setSystemTime(new Date("2026-01-01T00:01:01.000Z"));
+            const third = await POST(eventRequest(validBody));
+            expect(third.status).toBe(201);
+            expect((await third.json()).event.id).toBe("evt-2");
+        } finally {
+            vi.useRealTimers();
+        }
+
+        expect(prisma.alertEvent.create).toHaveBeenCalledTimes(2);
+        expect(store).toHaveLength(2);
     });
 });

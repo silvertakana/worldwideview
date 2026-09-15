@@ -22,6 +22,9 @@ export const MAX_RULE_NAME_LENGTH = 120;
 export const MAX_FIELD_NAME_LENGTH = 100;
 export const MAX_SUMMARY_LENGTH = 500;
 
+/** Window in which a repeat of the same rule+entity is treated as a duplicate. */
+export const DEDUPE_WINDOW_MS = 60_000;
+
 /** Channel names are safe URL/engine identifiers (mirrors data-query/service.ts). */
 export const PLUGIN_ID_RE = /^[a-zA-Z0-9_-]+$/;
 
