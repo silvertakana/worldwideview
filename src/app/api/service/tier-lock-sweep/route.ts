@@ -12,7 +12,13 @@ import { sweepTierLockDeadlines } from "@/lib/org-tier-lock-sweep";
  * armed by a downgrade would otherwise never be evaluated again.
  *
  * Safe to call as often as the scheduler likes - enforcement is idempotent and
- * returns a summary the caller can log.
+ * returns a per-run summary: `due`, `locked`, `unapplied` (the deadline fired
+ * but the organization has no owner-role member, so the deadline stayed armed
+ * for a later run), `failed` (enforcement threw even after its retry) and
+ * `hasMore`. `success` reports whether every due organization was enforced, not
+ * whether the request was served: a partial run still answers 200 with its
+ * counts, because answering 500 would throw away the organizations it did lock
+ * and tell the caller nothing about progress.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const authError = await crossServiceAuth(request);
@@ -21,7 +27,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const result = await sweepTierLockDeadlines();
 
-    return NextResponse.json({ success: true, ...result });
+    return NextResponse.json({ success: result.failed === 0, ...result });
   } catch (e) {
     console.error("[tier-lock-sweep] Failed to enforce tier lock deadlines:", e);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -212,6 +212,33 @@ function isRetryableConflict(error: unknown): boolean {
   );
 }
 
+/**
+ * Run a Serializable evaluation, retrying the transaction when Postgres aborts
+ * it with a serialization conflict.
+ *
+ * The conflict is the transaction's own optimistic guard doing its job - another
+ * evaluation touched the same row first - so the whole evaluation is simply
+ * replayed against the newer row. Anything that is not a P2034 is a real
+ * failure and propagates immediately: retrying it would only delay the report.
+ * Shared by the webhook sync and the deadline sweep, so neither can end up with
+ * a weaker retry policy than the other.
+ */
+async function withSerializationRetry<T>(operation: () => Promise<T>): Promise<T> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= MAX_TIER_SYNC_ATTEMPTS; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      const isLastAttempt = attempt === MAX_TIER_SYNC_ATTEMPTS;
+      if (isLastAttempt || !isRetryableConflict(error)) throw error;
+    }
+  }
+
+  throw lastError;
+}
+
 export async function setOrgTier(orgId: string, data: TierInput): Promise<void> {
   const next: NextTierState = {
     tier: data.tier,
@@ -220,15 +247,7 @@ export async function setOrgTier(orgId: string, data: TierInput): Promise<void> 
     periodEndsAt: data.periodEndsAt,
   };
 
-  for (let attempt = 1; attempt <= MAX_TIER_SYNC_ATTEMPTS; attempt += 1) {
-    try {
-      await runTierEvaluation(orgId, () => next);
-      return;
-    } catch (error) {
-      const isLastAttempt = attempt === MAX_TIER_SYNC_ATTEMPTS;
-      if (isLastAttempt || !isRetryableConflict(error)) throw error;
-    }
-  }
+  await withSerializationRetry(() => runTierEvaluation(orgId, () => next));
 }
 
 /**
@@ -264,15 +283,18 @@ export type TierLockEnforcement = "locked" | "unapplied" | "noop";
  * The stored tier is re-evaluated rather than a payload, so the rank is
  * unchanged by construction and the only possible outcomes are "the workspaces
  * lock" or "nothing to do" - a sweep can never arm a new deferral or release
- * access.
+ * access. Carries the same serialization-conflict retry as the webhook sync, so
+ * a conflict on one organization cannot cost a whole sweep its remaining work.
  */
 export async function enforceTierLockDeadline(orgId: string): Promise<TierLockEnforcement> {
-  const { decision, affected, applied } = await runTierEvaluation(orgId, (stored) => ({
-    tier: stored?.tier ?? "free",
-    status: stored?.status ?? "active",
-    trialEndsAt: stored?.trialEndsAt ?? null,
-    periodEndsAt: undefined,
-  }));
+  const { decision, affected, applied } = await withSerializationRetry(() =>
+    runTierEvaluation(orgId, (stored) => ({
+      tier: stored?.tier ?? "free",
+      status: stored?.status ?? "active",
+      trialEndsAt: stored?.trialEndsAt ?? null,
+      periodEndsAt: undefined,
+    })),
+  );
 
   if (decision.workspaceEffect !== "locked") return "noop";
 
