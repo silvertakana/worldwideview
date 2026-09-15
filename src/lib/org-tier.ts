@@ -10,6 +10,7 @@ export {
   TIER_RANK,
   TIER_DOWNGRADE_GRACE_MS,
   DUNNING_STATUSES,
+  NO_ENTITLEMENT_STATUSES,
   effectiveTierForLock,
   rankForLock,
   decideTierLock,
