@@ -1,8 +1,10 @@
-export default function LockedPage({
+export default async function LockedPage({
     searchParams,
 }: {
-    searchParams: { reason?: string };
+    searchParams: Promise<{ reason?: string }>;
 }) {
+    const { reason } = await searchParams;
+
     return (
         <div
             style={{
@@ -19,7 +21,7 @@ export default function LockedPage({
                 Workspace Locked
             </h1>
             <p style={{ color: "#666", maxWidth: "400px" }}>
-                {searchParams.reason ||
+                {reason ||
                     "This workspace is locked. Contact the workspace owner."}
             </p>
         </div>

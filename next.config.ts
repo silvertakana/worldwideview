@@ -20,7 +20,10 @@ const nextConfig: NextConfig = {
     "/*": ["./scripts/**/*"],
   },
   typescript: {
-    ignoreBuildErrors: true,
+    // Keep this armed. The build is the only step that both generates and
+    // checks the per-route validators under .next/types/app; a standalone
+    // `tsc --noEmit` on a checkout with no .next cannot see them at all.
+    ignoreBuildErrors: false,
   },
   async headers() {
     return [

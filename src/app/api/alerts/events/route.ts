@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession, requireSession } from "@/lib/ba-session";
 import { prisma } from "@/lib/db";
 import { isDemo } from "@/core/edition";
-import { MAX_SUMMARY_LENGTH, PLUGIN_ID_RE } from "@/lib/alerts/validation";
-
-export const DEDUPE_WINDOW_MS = 60_000;
+import { DEDUPE_WINDOW_MS, MAX_SUMMARY_LENGTH, PLUGIN_ID_RE } from "@/lib/alerts/validation";
 
 // ---------------------------------------------------------------------------
 // POST /api/alerts/events — persist a fired alert (fire-and-forget from the
