@@ -1,6 +1,14 @@
+export type CrossServiceFailureReason =
+    | "expired"
+    | "replay"
+    | "signature_mismatch"
+    | "missing_header"
+    | "malformed_header"
+    | "server_configuration_error";
+
 export interface CrossServiceSignature {
     valid: boolean;
-    reason?: "expired" | "replay" | "signature_mismatch" | "missing_header" | "malformed_header" | "server_configuration_error";
+    reason?: CrossServiceFailureReason;
 }
 
 export interface SignOptions {
