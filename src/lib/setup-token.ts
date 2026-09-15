@@ -2,6 +2,13 @@ import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 
 /**
+ * Client surface needed to persist a setup token: the global client, or the
+ * interactive-transaction client when the token has to be written atomically
+ * with the account it belongs to.
+ */
+type SetupTokenClient = Pick<Parameters<Parameters<typeof prisma.$transaction>[0]>[0], "setupToken">;
+
+/**
  * Generate a raw setup token and store its SHA-256 hash.
  *
  * Returns the raw token (to be sent to the user) and the database record.
@@ -10,12 +17,13 @@ import { prisma } from "@/lib/db";
 export async function generateSetupToken(
     userId: string,
     organizationId?: string,
+    client: SetupTokenClient = prisma,
 ): Promise<{ rawToken: string; record: { id: string; tokenHash: string; userId: string; organizationId: string | null; expiresAt: Date; usedAt: Date | null; createdAt: Date } }> {
     const rawToken = crypto.randomBytes(32).toString("hex");
     const tokenHash = crypto.createHash("sha256").update(rawToken, "utf8").digest("hex");
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    const record = await prisma.setupToken.create({
+    const record = await client.setupToken.create({
         data: {
             tokenHash,
             userId,

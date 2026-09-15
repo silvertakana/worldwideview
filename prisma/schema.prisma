@@ -241,6 +241,7 @@ model PluginMember {
   role           String
   createdAt      DateTime @default(now())
 
+  @@unique([organizationId, userId])
   @@index([organizationId])
   @@index([userId])
   @@map("member")
