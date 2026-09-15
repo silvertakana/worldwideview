@@ -41,6 +41,7 @@ import {
   effectiveTierForLock,
   rankForLock,
   DUNNING_STATUSES,
+  NO_ENTITLEMENT_STATUSES,
   TIER_RANK,
   enforceTierLockDeadline,
   findDueTierLockOrganizations,
@@ -397,6 +398,17 @@ describe("rankForLock", () => {
   it("classifies past_due as a dunning status", () => {
     expect(DUNNING_STATUSES.has("past_due")).toBe(true);
   });
+
+  it("counts a suspended subscription as free whatever tier it names", () => {
+    expect(effectiveTierForLock("pro", "suspended")).toBe("free");
+    expect(rankForLock("pro", "suspended")).toBe(TIER_RANK.free);
+  });
+
+  it("keeps suspended out of the dunning set, so it starts the clock instead of stopping it", () => {
+    expect(DUNNING_STATUSES.has("suspended")).toBe(false);
+    expect(NO_ENTITLEMENT_STATUSES.has("suspended")).toBe(true);
+    expect(NO_ENTITLEMENT_STATUSES.has("past_due")).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -596,6 +608,58 @@ describe("setOrgTier", () => {
     expect(mockWorkspaceUpdateMany).not.toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ locked: true }) }),
     );
+  });
+
+  it("arms the grace window when the hub reports the subscription suspended", async () => {
+    mockFindUnique.mockResolvedValue(makeOrgTier({ tier: "pro", status: "active" }));
+    mockUpsert.mockResolvedValue({});
+    mockPluginMemberFindMany.mockResolvedValue([{ userId: "user-1" }]);
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    const before = Date.now();
+    await setOrgTier("org-1", { tier: "pro", status: "suspended" });
+
+    const armed = lastUpsertUpdate().pendingLockAt;
+    expect(armed).toBeInstanceOf(Date);
+    expect(armed!.getTime()).toBeGreaterThanOrEqual(before + GRACE_WINDOW_MS);
+    expect(lastUpsertUpdate().status).toBe("suspended");
+    expect(lastUpsertUpdate().pendingLockReason).toContain(
+      "Tier downgraded from pro (active) to pro (suspended)",
+    );
+  });
+
+  it("locks the workspace once a suspended subscription's grace window has elapsed", async () => {
+    mockFindUnique.mockResolvedValue(makeOrgTier({ tier: "pro", status: "active" }));
+    mockUpsert.mockResolvedValue({});
+    mockPluginMemberFindMany.mockResolvedValue([{ userId: "user-1" }]);
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    await setOrgTier("org-1", { tier: "pro", status: "suspended" });
+
+    const armed = lastUpsertUpdate().pendingLockAt;
+    const reason = lastUpsertUpdate().pendingLockReason;
+    expect(armed).toBeInstanceOf(Date);
+    expect(mockWorkspaceUpdateMany).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ locked: true }) }),
+    );
+
+    // The same stored row, seen by the sweep two weeks later: the deadline the
+    // suspension armed (armed == now + grace) is now in the past.
+    mockFindUnique.mockResolvedValue(
+      makeOrgTier({
+        tier: "pro",
+        status: "suspended",
+        pendingLockAt: new Date(armed!.getTime() - GRACE_WINDOW_MS - 1000),
+        pendingLockReason: reason,
+      }),
+    );
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(true);
+    expect(mockWorkspaceUpdateMany).toHaveBeenCalledWith({
+      where: { ownerId: { in: ["user-1"] }, locked: false },
+      data: { locked: true, lockedReason: reason, lockedAt: expect.any(Date) },
+    });
   });
 
   it("defers past the grace window when the period end is still ahead", async () => {
