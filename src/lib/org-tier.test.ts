@@ -655,7 +655,7 @@ describe("setOrgTier", () => {
     );
     mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
 
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(true);
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("locked");
     expect(mockWorkspaceUpdateMany).toHaveBeenCalledWith({
       where: { ownerId: { in: ["user-1"] }, locked: false },
       data: { locked: true, lockedReason: reason, lockedAt: expect.any(Date) },
@@ -915,6 +915,9 @@ describe("setOrgTier", () => {
     await setOrgTier("org-1", { tier: "free", status: "active" });
 
     expect(mockWorkspaceUpdateMany).not.toHaveBeenCalled();
+    // No owner means nobody to release for today, but the downgrade still arms
+    // the deadline: the lock path must not depend on a member row existing now.
+    expect(lastUpsertUpdate().pendingLockAt).toBeInstanceOf(Date);
   });
 
   it("never reads a missing tier row as a downgrade", async () => {
@@ -967,7 +970,7 @@ describe("enforceTierLockDeadline", () => {
     );
     mockWorkspaceUpdateMany.mockResolvedValue({ count: 2 });
 
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(true);
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("locked");
 
     expect(mockWorkspaceUpdateMany).toHaveBeenCalledWith({
       where: { ownerId: { in: ["user-1"] }, locked: false },
@@ -989,7 +992,7 @@ describe("enforceTierLockDeadline", () => {
       }),
     );
 
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(false);
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("noop");
     expect(mockWorkspaceUpdateMany).not.toHaveBeenCalled();
   });
 
@@ -1005,7 +1008,7 @@ describe("enforceTierLockDeadline", () => {
       }),
     );
 
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(false);
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("noop");
     expect(lastUpsertUpdate().pendingLockAt).toEqual(paidThrough);
     expect(mockWorkspaceUpdateMany).not.toHaveBeenCalled();
   });
@@ -1021,8 +1024,8 @@ describe("enforceTierLockDeadline", () => {
     );
     mockWorkspaceUpdateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
 
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(true);
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(false);
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("locked");
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("noop");
 
     // Both runs carry the same guard, so the second matched no unlocked workspace.
     expect(mockWorkspaceUpdateMany).toHaveBeenCalledTimes(2);
@@ -1035,8 +1038,69 @@ describe("enforceTierLockDeadline", () => {
   it("never locks anything for an organization with no tier row", async () => {
     mockFindUnique.mockResolvedValue(null);
 
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(false);
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("noop");
     expect(mockWorkspaceUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("keeps the fired deadline armed when there is no owner to lock for", async () => {
+    const firedAt = new Date(Date.now() - 60_000);
+    mockFindUnique.mockResolvedValue(
+      makeOrgTier({
+        tier: "free",
+        status: "active",
+        pendingLockAt: firedAt,
+        pendingLockReason: "Tier downgraded from pro (active) to free (active).",
+      }),
+    );
+    mockPluginMemberFindMany.mockResolvedValue([]);
+
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("unapplied");
+
+    expect(mockWorkspaceUpdateMany).not.toHaveBeenCalled();
+    // Consuming the deadline here would leave the organization with nothing
+    // locked and nothing armed: arming needs a fresh rank decrease.
+    expect(lastUpsertUpdate().pendingLockAt).toEqual(firedAt);
+    expect(lastUpsertUpdate().pendingLockReason).toBe(
+      "Tier downgraded from pro (active) to free (active).",
+    );
+  });
+
+  it("locks on a later sweep once the organization gains an owner", async () => {
+    const reason = "Tier downgraded from pro (active) to free (active).";
+    mockFindUnique.mockResolvedValue(
+      makeOrgTier({
+        tier: "free",
+        status: "active",
+        pendingLockAt: new Date(Date.now() - 60_000),
+        pendingLockReason: reason,
+      }),
+    );
+    mockPluginMemberFindMany.mockResolvedValue([]);
+
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("unapplied");
+    const stillArmed = lastUpsertUpdate().pendingLockAt;
+    expect(stillArmed).toBeInstanceOf(Date);
+
+    // An owner shows up before the next sweep; the deadline never left the row.
+    mockPluginMemberFindMany.mockResolvedValue([{ userId: "user-1" }]);
+    mockFindUnique.mockResolvedValue(
+      makeOrgTier({
+        tier: "free",
+        status: "active",
+        pendingLockAt: stillArmed,
+        pendingLockReason: reason,
+      }),
+    );
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("locked");
+
+    expect(mockWorkspaceUpdateMany).toHaveBeenCalledWith({
+      where: { ownerId: { in: ["user-1"] }, locked: false },
+      data: { locked: true, lockedReason: reason, lockedAt: expect.any(Date) },
+    });
+    // Applied this time, so the deadline it fired is consumed.
+    expect(lastUpsertUpdate().pendingLockAt).toBeNull();
   });
 });
 

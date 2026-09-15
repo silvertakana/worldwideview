@@ -24,7 +24,9 @@ export interface TierLockSweepResult {
  * Idempotent by construction: enforcement consumes the deadline it fires, and
  * the lock only targets workspaces that are not locked yet, so a second run
  * finds nothing due and a re-run over an already-locked organization changes
- * nothing (in particular it does not rewrite `lockedAt`).
+ * nothing (in particular it does not rewrite `lockedAt`). The one deadline that
+ * survives a run is an enforcement that could not be applied, which is simply
+ * revisited.
  */
 export async function sweepTierLockDeadlines(
   options: { now?: Date; limit?: number } = {},
@@ -37,7 +39,7 @@ export async function sweepTierLockDeadlines(
   let locked = 0;
 
   for (const organizationId of dueOrganizations) {
-    if (await enforceTierLockDeadline(organizationId)) locked += 1;
+    if ((await enforceTierLockDeadline(organizationId)) === "locked") locked += 1;
   }
 
   return {

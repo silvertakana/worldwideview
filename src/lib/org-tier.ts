@@ -71,25 +71,38 @@ function toPriorState(record: StoredTierRecord | null): PriorTierState | null {
 }
 
 /**
+ * What one workspace-effect attempt resolved to.
+ *
+ * `applied` is false in exactly one case: the organization has no owner-role
+ * member, so the effect has nowhere to land. A lock that matched zero workspaces
+ * still counts as applied, because the workspaces it targets are already locked
+ * and there was simply nothing left to write.
+ */
+interface EffectOutcome {
+  applied: boolean;
+  affected: number;
+}
+
+/**
  * Apply the decision to the organization's workspaces.
  *
- * Returns how many workspaces were actually changed. The lock branch only
- * targets workspaces that are not locked yet, which is what makes a repeated
- * evaluation a no-op instead of a rewrite that churns `lockedAt`.
+ * The lock branch only targets workspaces that are not locked yet, which is what
+ * makes a repeated evaluation a no-op instead of a rewrite that churns
+ * `lockedAt`.
  */
 async function applyWorkspaceEffect(
   tx: TierTransaction,
   orgId: string,
   decision: TierLockDecision,
-): Promise<number> {
-  if (decision.workspaceEffect === "unchanged") return 0;
+): Promise<EffectOutcome> {
+  if (decision.workspaceEffect === "unchanged") return { applied: true, affected: 0 };
 
   const ownerMembers = await tx.pluginMember.findMany({
     where: { organizationId: orgId, role: "owner" },
     select: { userId: true },
   });
 
-  if (ownerMembers.length === 0) return 0;
+  if (ownerMembers.length === 0) return { applied: false, affected: 0 };
 
   const ownerIds = ownerMembers.map((member) => member.userId);
 
@@ -103,7 +116,7 @@ async function applyWorkspaceEffect(
       },
     });
 
-    return result.count;
+    return { applied: true, affected: result.count };
   }
 
   const result = await tx.workspace.updateMany({
@@ -111,7 +124,7 @@ async function applyWorkspaceEffect(
     data: { locked: false, lockedReason: null, lockedAt: null },
   });
 
-  return result.count;
+  return { applied: true, affected: result.count };
 }
 
 /**
@@ -127,11 +140,20 @@ async function applyWorkspaceEffect(
  * exists inside the transaction. The webhook path passes the hub's payload; the
  * deadline sweep passes the stored row back unchanged, which keeps the sweep on
  * exactly the same decision path instead of a parallel implementation.
+ *
+ * The workspace effect runs BEFORE the tier row is written, and the deadline a
+ * lock fired is only consumed once that effect has been applied. A fired lock
+ * whose effect cannot land - the organization has no owner-role member for the
+ * cascade to reach - keeps its deadline armed, because the alternative is an
+ * organization with nothing locked and nothing left to try again: arming only
+ * happens on a fresh rank decrease, so a dropped deadline is permanent free
+ * access rather than a delay. Keeping it armed costs a retry on the next sweep
+ * and heals itself the moment the organization gains an owner.
  */
 async function runTierEvaluation(
   orgId: string,
   resolveNext: (stored: StoredTierRecord | null, now: Date) => NextTierState,
-): Promise<{ decision: TierLockDecision; affected: number }> {
+): Promise<{ decision: TierLockDecision; affected: number; applied: boolean }> {
   return prisma.$transaction(
     async (tx) => {
       const stored = await tx.orgTier.findUnique({
@@ -148,6 +170,12 @@ async function runTierEvaluation(
         now,
       );
 
+      const effect = await applyWorkspaceEffect(tx, orgId, decision);
+
+      // A lock consumes the deadline it fired; anything else persists the
+      // decision's own deadline. Only the lock branch can be "not applied".
+      const deadlineConsumed = decision.workspaceEffect !== "locked" || effect.applied;
+
       const tierFields = {
         tier: next.tier,
         status: next.status,
@@ -156,7 +184,7 @@ async function runTierEvaluation(
         // keep the date we already have rather than erasing it.
         periodEndsAt:
           next.periodEndsAt === undefined ? (previous?.periodEndsAt ?? null) : next.periodEndsAt,
-        pendingLockAt: decision.pendingLockAt,
+        pendingLockAt: deadlineConsumed ? decision.pendingLockAt : (previous?.pendingLockAt ?? null),
         pendingLockReason: decision.pendingLockReason,
       };
 
@@ -166,9 +194,7 @@ async function runTierEvaluation(
         update: tierFields,
       });
 
-      const affected = await applyWorkspaceEffect(tx, orgId, decision);
-
-      return { decision, affected };
+      return { decision, affected: effect.affected, applied: effect.applied };
     },
     { isolationLevel: "Serializable" },
   );
@@ -222,22 +248,44 @@ export async function findDueTierLockOrganizations(now: Date, limit: number): Pr
 }
 
 /**
+ * What one enforcement call actually did.
+ *
+ * `"locked"` means this call wrote the lock. `"unapplied"` means the deadline
+ * fired but the organization has no owner-role member for the lock to land on,
+ * so the deadline was deliberately left armed for a later sweep. `"noop"` means
+ * there was nothing to enforce: the deadline had not elapsed, or the workspaces
+ * it targets were already locked.
+ */
+export type TierLockEnforcement = "locked" | "unapplied" | "noop";
+
+/**
  * Enforce one organization's armed deadline against the current time.
  *
  * The stored tier is re-evaluated rather than a payload, so the rank is
  * unchanged by construction and the only possible outcomes are "the workspaces
  * lock" or "nothing to do" - a sweep can never arm a new deferral or release
- * access. Returns true only when workspaces were locked by this call.
+ * access.
  */
-export async function enforceTierLockDeadline(orgId: string): Promise<boolean> {
-  const { decision, affected } = await runTierEvaluation(orgId, (stored) => ({
+export async function enforceTierLockDeadline(orgId: string): Promise<TierLockEnforcement> {
+  const { decision, affected, applied } = await runTierEvaluation(orgId, (stored) => ({
     tier: stored?.tier ?? "free",
     status: stored?.status ?? "active",
     trialEndsAt: stored?.trialEndsAt ?? null,
     periodEndsAt: undefined,
   }));
 
-  return decision.workspaceEffect === "locked" && affected > 0;
+  if (decision.workspaceEffect !== "locked") return "noop";
+
+  if (!applied) {
+    console.warn(
+      `[org-tier] Tier-lock deadline for organization ${orgId} fired but could not be applied: ` +
+        "the organization has no owner-role member to lock for. The deadline stays armed for a later sweep.",
+    );
+
+    return "unapplied";
+  }
+
+  return affected > 0 ? "locked" : "noop";
 }
 
 export async function getOrgTier(orgId: string): Promise<OrgTierData> {
