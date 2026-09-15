@@ -218,15 +218,19 @@ model PluginOrganization {
 }
 
 model OrgTier {
-  id             String             @id @default(uuid())
-  organizationId String             @unique
-  organization   PluginOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  tier           String             @default("free")
-  status         String             @default("active")
-  trialEndsAt    DateTime?
-  updatedAt      DateTime           @updatedAt
-  createdAt      DateTime           @default(now())
+  id                String             @id @default(uuid())
+  organizationId    String             @unique
+  organization      PluginOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tier              String             @default("free")
+  status            String             @default("active")
+  trialEndsAt       DateTime?
+  periodEndsAt      DateTime?
+  pendingLockAt     DateTime?
+  pendingLockReason String?
+  updatedAt         DateTime           @updatedAt
+  createdAt         DateTime           @default(now())
 
+  @@index([pendingLockAt])
   @@map("org_tiers")
 }
 

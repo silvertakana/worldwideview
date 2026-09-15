@@ -43,6 +43,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
   }
 
+  // Optional and backwards compatible: omit it and the deferred-lock grace
+  // window applies instead; send it and a workspace may not lock before the
+  // date the customer has already paid for.
+  let periodEndsAt: Date | null | undefined;
+  if (body.periodEndsAt === null) {
+    periodEndsAt = null;
+  } else if (body.periodEndsAt) {
+    periodEndsAt = new Date(body.periodEndsAt as string);
+    if (isNaN(periodEndsAt.getTime())) {
+      return NextResponse.json({ error: "Invalid periodEndsAt date" }, { status: 400 });
+    }
+  }
+
   const orgId = await resolveOrgIdByEmail(email);
   if (!orgId) {
     return NextResponse.json({ error: "Organization not found for email" }, { status: 404 });
@@ -53,6 +66,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       tier: tier as string,
       status: (status as string) || "active",
       trialEndsAt,
+      periodEndsAt,
     });
   } catch (e) {
     console.error("[tier-sync] Failed to upsert tier:", e);
