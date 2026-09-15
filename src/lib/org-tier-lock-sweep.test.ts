@@ -13,7 +13,7 @@ import { sweepTierLockDeadlines, TIER_LOCK_SWEEP_LIMIT } from "./org-tier-lock-s
 beforeEach(() => {
   vi.clearAllMocks();
   mockFindDue.mockResolvedValue([]);
-  mockEnforce.mockResolvedValue(false);
+  mockEnforce.mockResolvedValue("noop");
 });
 
 describe("sweepTierLockDeadlines", () => {
@@ -28,7 +28,7 @@ describe("sweepTierLockDeadlines", () => {
 
   it("enforces every due organization and counts the ones it locked", async () => {
     mockFindDue.mockResolvedValue(["org-1", "org-2"]);
-    mockEnforce.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    mockEnforce.mockResolvedValueOnce("locked").mockResolvedValueOnce("noop");
 
     await expect(sweepTierLockDeadlines()).resolves.toEqual({
       due: 2,
@@ -57,7 +57,7 @@ describe("sweepTierLockDeadlines", () => {
     // First run picks up two organizations; enforcement consumes their
     // deadlines, so the second run finds nothing left to do.
     mockFindDue.mockResolvedValueOnce(["org-1", "org-2"]).mockResolvedValueOnce([]);
-    mockEnforce.mockResolvedValue(true);
+    mockEnforce.mockResolvedValue("locked");
 
     const first = await sweepTierLockDeadlines();
     const second = await sweepTierLockDeadlines();
