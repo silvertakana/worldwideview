@@ -23,12 +23,12 @@ function makeRequest(): NextRequest {
 beforeEach(() => {
   vi.clearAllMocks();
   mockAuth.mockResolvedValue(null);
-  mockSweep.mockResolvedValue({ due: 0, locked: 0, hasMore: false });
+  mockSweep.mockResolvedValue({ due: 0, locked: 0, unapplied: 0, failed: 0, hasMore: false });
 });
 
 describe("POST /api/service/tier-lock-sweep", () => {
   it("returns the sweep summary", async () => {
-    mockSweep.mockResolvedValue({ due: 3, locked: 2, hasMore: false });
+    mockSweep.mockResolvedValue({ due: 3, locked: 2, unapplied: 1, failed: 0, hasMore: false });
 
     const res = await POST(makeRequest());
 
@@ -37,6 +37,26 @@ describe("POST /api/service/tier-lock-sweep", () => {
       success: true,
       due: 3,
       locked: 2,
+      unapplied: 1,
+      failed: 0,
+      hasMore: false,
+    });
+  });
+
+  it("reports a partial run as it happened instead of as an error", async () => {
+    mockSweep.mockResolvedValue({ due: 3, locked: 2, unapplied: 0, failed: 1, hasMore: false });
+
+    const res = await POST(makeRequest());
+
+    // 200 on purpose: the organizations this run did lock stay visible to the
+    // caller, and `success` carries the shortfall rather than hiding it.
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      success: false,
+      due: 3,
+      locked: 2,
+      unapplied: 0,
+      failed: 1,
       hasMore: false,
     });
   });

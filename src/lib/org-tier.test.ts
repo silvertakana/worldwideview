@@ -1102,6 +1102,45 @@ describe("enforceTierLockDeadline", () => {
     // Applied this time, so the deadline it fired is consumed.
     expect(lastUpsertUpdate().pendingLockAt).toBeNull();
   });
+
+  it("retries the enforcement when the transaction hits a serialization conflict", async () => {
+    const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
+    let attempts = 0;
+
+    mockFindUnique.mockResolvedValue(
+      makeOrgTier({
+        tier: "free",
+        status: "active",
+        pendingLockAt: new Date(Date.now() - 60_000),
+        pendingLockReason: "Tier downgraded from pro (active) to free (active).",
+      }),
+    );
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    // A real conflict aborts at COMMIT, after the body has run, so the retry
+    // replays the whole evaluation rather than resuming it.
+    mockTransaction.mockImplementation(
+      ((fn: (tx: typeof prisma) => unknown) => {
+        attempts += 1;
+        const attempt = attempts;
+        return Promise.resolve(fn(prisma)).then((result) => {
+          if (attempt === 1) throw conflict;
+          return result;
+        });
+      }) as never,
+    );
+
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("locked");
+    expect(mockTransaction).toHaveBeenCalledTimes(2);
+  });
+
+  it("gives up on the enforcement after three serialization conflicts", async () => {
+    const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
+    mockTransaction.mockImplementation(((() => Promise.reject(conflict)) as never));
+
+    await expect(enforceTierLockDeadline("org-1")).rejects.toThrow("could not serialize access");
+    expect(mockTransaction).toHaveBeenCalledTimes(3);
+  });
 });
 
 describe("findDueTierLockOrganizations", () => {
