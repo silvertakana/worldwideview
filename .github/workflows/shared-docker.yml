@@ -39,6 +39,10 @@ jobs:
       packages: write
       id-token: write
       attestations: write
+      # upload-sarif writes to the repo's code-scanning dashboard and needs its
+      # own scope. That step runs unconditionally (if: always()), so without
+      # this the build fails whenever Trivy produces a SARIF file.
+      security-events: write
     steps:
       - uses: actions/checkout@v7
         with:
