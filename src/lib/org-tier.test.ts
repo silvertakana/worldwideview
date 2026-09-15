@@ -45,6 +45,7 @@ import {
   TIER_RANK,
   enforceTierLockDeadline,
   findDueTierLockOrganizations,
+  TierSyncContentionError,
   type PriorTierState,
 } from "./org-tier";
 
@@ -803,14 +804,109 @@ describe("setOrgTier", () => {
     expect(mockFindUnique).toHaveBeenCalledTimes(2);
   });
 
-  it("gives up after three serialization conflicts", async () => {
+  it("succeeds on the fourth attempt, which a budget of three would have refused", async () => {
+    mockFindUnique.mockResolvedValue(null);
+    mockUpsert.mockResolvedValue({});
+    const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
+    let attempts = 0;
+
+    // Three conflicts in a row is the worst round the old budget of three could
+    // absorb; the fourth attempt is the one it used to refuse and report as a 500.
+    mockTransaction.mockImplementation(
+      ((fn: (tx: typeof prisma) => unknown) => {
+        attempts += 1;
+        const attempt = attempts;
+        return Promise.resolve(fn(prisma)).then(() => {
+          if (attempt <= 3) throw conflict;
+          return undefined;
+        });
+      }) as never,
+    );
+
+    await expect(setOrgTier("org-1", { tier: "pro", status: "active" })).resolves.toBeUndefined();
+
+    expect(mockTransaction).toHaveBeenCalledTimes(4);
+    // Every attempt replays the whole evaluation, so the successful one is the
+    // fourth upsert rather than a resumed write.
+    expect(mockUpsert).toHaveBeenCalledTimes(4);
+  });
+
+  it("gives up once the whole retry budget is spent on serialization conflicts", async () => {
     const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
     mockTransaction.mockImplementation(((() => Promise.reject(conflict)) as never));
 
-    await expect(setOrgTier("org-1", { tier: "pro", status: "active" })).rejects.toThrow(
-      "could not serialize access",
+    const failure = await setOrgTier("org-1", { tier: "pro", status: "active" }).catch(
+      (error: unknown) => error,
     );
-    expect(mockTransaction).toHaveBeenCalledTimes(3);
+
+    // The exhaustion is self-describing rather than a bare Prisma error, so the
+    // route boundary can tell contention from a genuine fault.
+    expect(failure).toBeInstanceOf(TierSyncContentionError);
+    expect((failure as TierSyncContentionError).attempts).toBe(5);
+    expect((failure as TierSyncContentionError).organizationId).toBe("org-1");
+    expect((failure as TierSyncContentionError).message).toContain("could not serialize access");
+    expect(mockTransaction).toHaveBeenCalledTimes(5);
+  });
+
+  it("leaves the row and the workspaces untouched when the budget is exhausted", async () => {
+    const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
+    const insideTransaction: string[] = [];
+    const outsideTransaction: string[] = [];
+
+    // A transaction client kept apart from the top-level one, so a write that
+    // escaped the transaction would land in the wrong list and be visible here.
+    const txClient = {
+      orgTier: {
+        findUnique: mockFindUnique,
+        upsert: () => {
+          insideTransaction.push("orgTier.upsert");
+          return Promise.resolve({});
+        },
+      },
+      pluginMember: { findMany: mockPluginMemberFindMany },
+      workspace: {
+        updateMany: () => {
+          insideTransaction.push("workspace.updateMany");
+          return Promise.resolve({ count: 1 });
+        },
+      },
+    } as unknown as typeof prisma;
+
+    mockFindUnique.mockResolvedValue(makeOrgTier({ tier: "pro", status: "active" }));
+    mockPluginMemberFindMany.mockResolvedValue([{ userId: "user-1" }]);
+    mockUpsert.mockImplementation(() => {
+      outsideTransaction.push("orgTier.upsert");
+      return Promise.resolve({});
+    });
+    mockWorkspaceUpdateMany.mockImplementation(() => {
+      outsideTransaction.push("workspace.updateMany");
+      return Promise.resolve({ count: 1 });
+    });
+
+    // The body runs to completion and the attempt aborts at COMMIT, which is where
+    // a real Serializable conflict surfaces: after everything has been written.
+    mockTransaction.mockImplementation(
+      ((fn: (tx: typeof prisma) => unknown) =>
+        Promise.resolve(fn(txClient)).then(() => {
+          throw conflict;
+        })) as never,
+    );
+
+    await expect(setOrgTier("org-1", { tier: "free", status: "active" })).rejects.toBeInstanceOf(
+      TierSyncContentionError,
+    );
+
+    // Five attempts, each writing the workspace cascade and then the tier row on
+    // its own transaction, and none of them through the client itself. That is the
+    // state Postgres discards on rollback, so an exhausted budget is a no-op for
+    // the tier row and the workspaces: nothing is half-applied, and the deadline
+    // the downgrade would have armed never lands. A write that escaped the
+    // transaction would survive the rollback and is what this test would catch.
+    expect(insideTransaction).toEqual(
+      Array.from({ length: 5 }, () => ["workspace.updateMany", "orgTier.upsert"]).flat(),
+    );
+    expect(outsideTransaction).toEqual([]);
+    expect(mockTransaction).toHaveBeenCalledTimes(5);
   });
 
   it("does not retry a non-conflict failure", async () => {
@@ -1134,12 +1230,12 @@ describe("enforceTierLockDeadline", () => {
     expect(mockTransaction).toHaveBeenCalledTimes(2);
   });
 
-  it("gives up on the enforcement after three serialization conflicts", async () => {
+  it("gives up on the enforcement once the whole retry budget is spent", async () => {
     const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
     mockTransaction.mockImplementation(((() => Promise.reject(conflict)) as never));
 
-    await expect(enforceTierLockDeadline("org-1")).rejects.toThrow("could not serialize access");
-    expect(mockTransaction).toHaveBeenCalledTimes(3);
+    await expect(enforceTierLockDeadline("org-1")).rejects.toBeInstanceOf(TierSyncContentionError);
+    expect(mockTransaction).toHaveBeenCalledTimes(5);
   });
 });
 
