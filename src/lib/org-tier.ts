@@ -202,7 +202,25 @@ async function runTierEvaluation(
 
 /** Prisma's code for a transaction aborted by a serialization conflict. */
 const SERIALIZATION_FAILURE = "P2034";
-const MAX_TIER_SYNC_ATTEMPTS = 3;
+
+/**
+ * How many times one evaluation may lose the serialization lottery before it
+ * gives up.
+ *
+ * The budget is a fixed count, so it scales poorly with concurrency: it does not
+ * grow with the number of evaluations in flight, and every extra same-organization
+ * writer is another chance for one request to lose every round in a row. Three was
+ * chosen when the worst observed burst was three concurrent requests, which is not
+ * a bound anything enforces - a wider burst just fails, and the failure used to be
+ * indistinguishable in logs from a broken code path.
+ *
+ * Five covers the realistic worst case for this path: a handful of Stripe webhooks
+ * for one organization landing within a few hundred milliseconds of each other,
+ * which is a small single-digit burst rather than an unbounded one. It stays well
+ * short of the point where repeated retries would hide a genuine defect, and every
+ * attempt is cheap because a conflicted transaction rolled back without writing.
+ */
+const MAX_TIER_SYNC_ATTEMPTS = 5;
 
 function isRetryableConflict(error: unknown): boolean {
   return (
@@ -210,6 +228,38 @@ function isRetryableConflict(error: unknown): boolean {
     error !== null &&
     (error as { code?: unknown }).code === SERIALIZATION_FAILURE
   );
+}
+
+/**
+ * Raised when an evaluation spent its whole retry budget on serialization
+ * conflicts and still lost.
+ *
+ * What it describes is contention, not a fault: every attempt was rolled back by
+ * Postgres, so nothing was half-applied and replaying the same sync can still
+ * succeed. It carries its own type so the boundary that talks to the caller can
+ * answer "busy, retry" instead of the opaque 500 that used to read exactly like
+ * broken code. Only this case gets the type - a non-conflict error keeps
+ * propagating as itself.
+ */
+export class TierSyncContentionError extends Error {
+  /** The organization whose evaluation never got through. */
+  readonly organizationId: string;
+  /** How many serialization attempts were spent before giving up. */
+  readonly attempts: number;
+
+  constructor(organizationId: string, attempts: number, lastConflict: unknown) {
+    const conflictMessage =
+      lastConflict instanceof Error ? lastConflict.message : String(lastConflict);
+
+    super(
+      `Tier sync for organization ${organizationId} exhausted ${attempts} serialization ` +
+        `attempts without committing (last conflict: ${conflictMessage})`,
+    );
+
+    this.name = "TierSyncContentionError";
+    this.organizationId = organizationId;
+    this.attempts = attempts;
+  }
 }
 
 /**
@@ -222,17 +272,31 @@ function isRetryableConflict(error: unknown): boolean {
  * failure and propagates immediately: retrying it would only delay the report.
  * Shared by the webhook sync and the deadline sweep, so neither can end up with
  * a weaker retry policy than the other.
+ *
+ * Running out of attempts is the one outcome with a type of its own: every
+ * attempt rolled back, so the caller can be told "contended, try again" instead
+ * of being handed the last conflict and left to guess whether the code or the
+ * crowd was at fault.
  */
-async function withSerializationRetry<T>(operation: () => Promise<T>): Promise<T> {
+async function withSerializationRetry<T>(
+  organizationId: string,
+  operation: () => Promise<T>,
+): Promise<T> {
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= MAX_TIER_SYNC_ATTEMPTS; attempt += 1) {
     try {
       return await operation();
     } catch (error) {
+      // A real failure propagates untouched on every attempt, so the retry can
+      // never absorb something it did not cause.
+      if (!isRetryableConflict(error)) throw error;
+
       lastError = error;
-      const isLastAttempt = attempt === MAX_TIER_SYNC_ATTEMPTS;
-      if (isLastAttempt || !isRetryableConflict(error)) throw error;
+
+      if (attempt === MAX_TIER_SYNC_ATTEMPTS) {
+        throw new TierSyncContentionError(organizationId, attempt, error);
+      }
     }
   }
 
@@ -247,7 +311,7 @@ export async function setOrgTier(orgId: string, data: TierInput): Promise<void> 
     periodEndsAt: data.periodEndsAt,
   };
 
-  await withSerializationRetry(() => runTierEvaluation(orgId, () => next));
+  await withSerializationRetry(orgId, () => runTierEvaluation(orgId, () => next));
 }
 
 /**
@@ -287,7 +351,7 @@ export type TierLockEnforcement = "locked" | "unapplied" | "noop";
  * a conflict on one organization cannot cost a whole sweep its remaining work.
  */
 export async function enforceTierLockDeadline(orgId: string): Promise<TierLockEnforcement> {
-  const { decision, affected, applied } = await withSerializationRetry(() =>
+  const { decision, affected, applied } = await withSerializationRetry(orgId, () =>
     runTierEvaluation(orgId, (stored) => ({
       tier: stored?.tier ?? "free",
       status: stored?.status ?? "active",
