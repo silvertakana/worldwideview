@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { crossServiceAuth } from "@/lib/cross-service/middleware";
-import { resolveOrgIdByEmail, setOrgTier } from "@/lib/org-tier";
+import { resolveOrgIdByEmail, setOrgTier, TierSyncContentionError } from "@/lib/org-tier";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const authError = await crossServiceAuth(request);
@@ -69,6 +69,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       periodEndsAt,
     });
   } catch (e) {
+    // Contention is the one failure here that is not a fault: every attempt rolled
+    // back, so nothing was half-applied and re-sending the same sync can still
+    // succeed. Say so with a retryable status, because the 500 it used to share
+    // with genuine faults made a lost serialization lottery look like broken code.
+    if (e instanceof TierSyncContentionError) {
+      console.error(
+        `[tier-sync] Retry budget exhausted for organization ${orgId} after ${e.attempts} ` +
+          "serialization attempts; reporting contention instead of a failure.",
+      );
+
+      return NextResponse.json(
+        { error: "Tier sync temporarily unavailable", reason: "concurrency" },
+        { status: 503, headers: { "Retry-After": "1" } },
+      );
+    }
+
     console.error("[tier-sync] Failed to upsert tier:", e);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
