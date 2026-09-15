@@ -41,9 +41,11 @@ import {
   effectiveTierForLock,
   rankForLock,
   DUNNING_STATUSES,
+  NO_ENTITLEMENT_STATUSES,
   TIER_RANK,
   enforceTierLockDeadline,
   findDueTierLockOrganizations,
+  TierSyncContentionError,
   type PriorTierState,
 } from "./org-tier";
 
@@ -397,6 +399,17 @@ describe("rankForLock", () => {
   it("classifies past_due as a dunning status", () => {
     expect(DUNNING_STATUSES.has("past_due")).toBe(true);
   });
+
+  it("counts a suspended subscription as free whatever tier it names", () => {
+    expect(effectiveTierForLock("pro", "suspended")).toBe("free");
+    expect(rankForLock("pro", "suspended")).toBe(TIER_RANK.free);
+  });
+
+  it("keeps suspended out of the dunning set, so it starts the clock instead of stopping it", () => {
+    expect(DUNNING_STATUSES.has("suspended")).toBe(false);
+    expect(NO_ENTITLEMENT_STATUSES.has("suspended")).toBe(true);
+    expect(NO_ENTITLEMENT_STATUSES.has("past_due")).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -598,6 +611,58 @@ describe("setOrgTier", () => {
     );
   });
 
+  it("arms the grace window when the hub reports the subscription suspended", async () => {
+    mockFindUnique.mockResolvedValue(makeOrgTier({ tier: "pro", status: "active" }));
+    mockUpsert.mockResolvedValue({});
+    mockPluginMemberFindMany.mockResolvedValue([{ userId: "user-1" }]);
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    const before = Date.now();
+    await setOrgTier("org-1", { tier: "pro", status: "suspended" });
+
+    const armed = lastUpsertUpdate().pendingLockAt;
+    expect(armed).toBeInstanceOf(Date);
+    expect(armed!.getTime()).toBeGreaterThanOrEqual(before + GRACE_WINDOW_MS);
+    expect(lastUpsertUpdate().status).toBe("suspended");
+    expect(lastUpsertUpdate().pendingLockReason).toContain(
+      "Tier downgraded from pro (active) to pro (suspended)",
+    );
+  });
+
+  it("locks the workspace once a suspended subscription's grace window has elapsed", async () => {
+    mockFindUnique.mockResolvedValue(makeOrgTier({ tier: "pro", status: "active" }));
+    mockUpsert.mockResolvedValue({});
+    mockPluginMemberFindMany.mockResolvedValue([{ userId: "user-1" }]);
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    await setOrgTier("org-1", { tier: "pro", status: "suspended" });
+
+    const armed = lastUpsertUpdate().pendingLockAt;
+    const reason = lastUpsertUpdate().pendingLockReason;
+    expect(armed).toBeInstanceOf(Date);
+    expect(mockWorkspaceUpdateMany).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ locked: true }) }),
+    );
+
+    // The same stored row, seen by the sweep two weeks later: the deadline the
+    // suspension armed (armed == now + grace) is now in the past.
+    mockFindUnique.mockResolvedValue(
+      makeOrgTier({
+        tier: "pro",
+        status: "suspended",
+        pendingLockAt: new Date(armed!.getTime() - GRACE_WINDOW_MS - 1000),
+        pendingLockReason: reason,
+      }),
+    );
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("locked");
+    expect(mockWorkspaceUpdateMany).toHaveBeenCalledWith({
+      where: { ownerId: { in: ["user-1"] }, locked: false },
+      data: { locked: true, lockedReason: reason, lockedAt: expect.any(Date) },
+    });
+  });
+
   it("defers past the grace window when the period end is still ahead", async () => {
     mockFindUnique.mockResolvedValue(makeOrgTier({ tier: "pro", status: "active" }));
     mockUpsert.mockResolvedValue({});
@@ -739,14 +804,109 @@ describe("setOrgTier", () => {
     expect(mockFindUnique).toHaveBeenCalledTimes(2);
   });
 
-  it("gives up after three serialization conflicts", async () => {
+  it("succeeds on the fourth attempt, which a budget of three would have refused", async () => {
+    mockFindUnique.mockResolvedValue(null);
+    mockUpsert.mockResolvedValue({});
+    const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
+    let attempts = 0;
+
+    // Three conflicts in a row is the worst round the old budget of three could
+    // absorb; the fourth attempt is the one it used to refuse and report as a 500.
+    mockTransaction.mockImplementation(
+      ((fn: (tx: typeof prisma) => unknown) => {
+        attempts += 1;
+        const attempt = attempts;
+        return Promise.resolve(fn(prisma)).then(() => {
+          if (attempt <= 3) throw conflict;
+          return undefined;
+        });
+      }) as never,
+    );
+
+    await expect(setOrgTier("org-1", { tier: "pro", status: "active" })).resolves.toBeUndefined();
+
+    expect(mockTransaction).toHaveBeenCalledTimes(4);
+    // Every attempt replays the whole evaluation, so the successful one is the
+    // fourth upsert rather than a resumed write.
+    expect(mockUpsert).toHaveBeenCalledTimes(4);
+  });
+
+  it("gives up once the whole retry budget is spent on serialization conflicts", async () => {
     const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
     mockTransaction.mockImplementation(((() => Promise.reject(conflict)) as never));
 
-    await expect(setOrgTier("org-1", { tier: "pro", status: "active" })).rejects.toThrow(
-      "could not serialize access",
+    const failure = await setOrgTier("org-1", { tier: "pro", status: "active" }).catch(
+      (error: unknown) => error,
     );
-    expect(mockTransaction).toHaveBeenCalledTimes(3);
+
+    // The exhaustion is self-describing rather than a bare Prisma error, so the
+    // route boundary can tell contention from a genuine fault.
+    expect(failure).toBeInstanceOf(TierSyncContentionError);
+    expect((failure as TierSyncContentionError).attempts).toBe(5);
+    expect((failure as TierSyncContentionError).organizationId).toBe("org-1");
+    expect((failure as TierSyncContentionError).message).toContain("could not serialize access");
+    expect(mockTransaction).toHaveBeenCalledTimes(5);
+  });
+
+  it("leaves the row and the workspaces untouched when the budget is exhausted", async () => {
+    const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
+    const insideTransaction: string[] = [];
+    const outsideTransaction: string[] = [];
+
+    // A transaction client kept apart from the top-level one, so a write that
+    // escaped the transaction would land in the wrong list and be visible here.
+    const txClient = {
+      orgTier: {
+        findUnique: mockFindUnique,
+        upsert: () => {
+          insideTransaction.push("orgTier.upsert");
+          return Promise.resolve({});
+        },
+      },
+      pluginMember: { findMany: mockPluginMemberFindMany },
+      workspace: {
+        updateMany: () => {
+          insideTransaction.push("workspace.updateMany");
+          return Promise.resolve({ count: 1 });
+        },
+      },
+    } as unknown as typeof prisma;
+
+    mockFindUnique.mockResolvedValue(makeOrgTier({ tier: "pro", status: "active" }));
+    mockPluginMemberFindMany.mockResolvedValue([{ userId: "user-1" }]);
+    mockUpsert.mockImplementation(() => {
+      outsideTransaction.push("orgTier.upsert");
+      return Promise.resolve({});
+    });
+    mockWorkspaceUpdateMany.mockImplementation(() => {
+      outsideTransaction.push("workspace.updateMany");
+      return Promise.resolve({ count: 1 });
+    });
+
+    // The body runs to completion and the attempt aborts at COMMIT, which is where
+    // a real Serializable conflict surfaces: after everything has been written.
+    mockTransaction.mockImplementation(
+      ((fn: (tx: typeof prisma) => unknown) =>
+        Promise.resolve(fn(txClient)).then(() => {
+          throw conflict;
+        })) as never,
+    );
+
+    await expect(setOrgTier("org-1", { tier: "free", status: "active" })).rejects.toBeInstanceOf(
+      TierSyncContentionError,
+    );
+
+    // Five attempts, each writing the workspace cascade and then the tier row on
+    // its own transaction, and none of them through the client itself. That is the
+    // state Postgres discards on rollback, so an exhausted budget is a no-op for
+    // the tier row and the workspaces: nothing is half-applied, and the deadline
+    // the downgrade would have armed never lands. A write that escaped the
+    // transaction would survive the rollback and is what this test would catch.
+    expect(insideTransaction).toEqual(
+      Array.from({ length: 5 }, () => ["workspace.updateMany", "orgTier.upsert"]).flat(),
+    );
+    expect(outsideTransaction).toEqual([]);
+    expect(mockTransaction).toHaveBeenCalledTimes(5);
   });
 
   it("does not retry a non-conflict failure", async () => {
@@ -851,6 +1011,9 @@ describe("setOrgTier", () => {
     await setOrgTier("org-1", { tier: "free", status: "active" });
 
     expect(mockWorkspaceUpdateMany).not.toHaveBeenCalled();
+    // No owner means nobody to release for today, but the downgrade still arms
+    // the deadline: the lock path must not depend on a member row existing now.
+    expect(lastUpsertUpdate().pendingLockAt).toBeInstanceOf(Date);
   });
 
   it("never reads a missing tier row as a downgrade", async () => {
@@ -903,7 +1066,7 @@ describe("enforceTierLockDeadline", () => {
     );
     mockWorkspaceUpdateMany.mockResolvedValue({ count: 2 });
 
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(true);
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("locked");
 
     expect(mockWorkspaceUpdateMany).toHaveBeenCalledWith({
       where: { ownerId: { in: ["user-1"] }, locked: false },
@@ -925,7 +1088,7 @@ describe("enforceTierLockDeadline", () => {
       }),
     );
 
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(false);
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("noop");
     expect(mockWorkspaceUpdateMany).not.toHaveBeenCalled();
   });
 
@@ -941,7 +1104,7 @@ describe("enforceTierLockDeadline", () => {
       }),
     );
 
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(false);
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("noop");
     expect(lastUpsertUpdate().pendingLockAt).toEqual(paidThrough);
     expect(mockWorkspaceUpdateMany).not.toHaveBeenCalled();
   });
@@ -957,8 +1120,8 @@ describe("enforceTierLockDeadline", () => {
     );
     mockWorkspaceUpdateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
 
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(true);
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(false);
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("locked");
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("noop");
 
     // Both runs carry the same guard, so the second matched no unlocked workspace.
     expect(mockWorkspaceUpdateMany).toHaveBeenCalledTimes(2);
@@ -971,8 +1134,108 @@ describe("enforceTierLockDeadline", () => {
   it("never locks anything for an organization with no tier row", async () => {
     mockFindUnique.mockResolvedValue(null);
 
-    await expect(enforceTierLockDeadline("org-1")).resolves.toBe(false);
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("noop");
     expect(mockWorkspaceUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("keeps the fired deadline armed when there is no owner to lock for", async () => {
+    const firedAt = new Date(Date.now() - 60_000);
+    mockFindUnique.mockResolvedValue(
+      makeOrgTier({
+        tier: "free",
+        status: "active",
+        pendingLockAt: firedAt,
+        pendingLockReason: "Tier downgraded from pro (active) to free (active).",
+      }),
+    );
+    mockPluginMemberFindMany.mockResolvedValue([]);
+
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("unapplied");
+
+    expect(mockWorkspaceUpdateMany).not.toHaveBeenCalled();
+    // Consuming the deadline here would leave the organization with nothing
+    // locked and nothing armed: arming needs a fresh rank decrease.
+    expect(lastUpsertUpdate().pendingLockAt).toEqual(firedAt);
+    expect(lastUpsertUpdate().pendingLockReason).toBe(
+      "Tier downgraded from pro (active) to free (active).",
+    );
+  });
+
+  it("locks on a later sweep once the organization gains an owner", async () => {
+    const reason = "Tier downgraded from pro (active) to free (active).";
+    mockFindUnique.mockResolvedValue(
+      makeOrgTier({
+        tier: "free",
+        status: "active",
+        pendingLockAt: new Date(Date.now() - 60_000),
+        pendingLockReason: reason,
+      }),
+    );
+    mockPluginMemberFindMany.mockResolvedValue([]);
+
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("unapplied");
+    const stillArmed = lastUpsertUpdate().pendingLockAt;
+    expect(stillArmed).toBeInstanceOf(Date);
+
+    // An owner shows up before the next sweep; the deadline never left the row.
+    mockPluginMemberFindMany.mockResolvedValue([{ userId: "user-1" }]);
+    mockFindUnique.mockResolvedValue(
+      makeOrgTier({
+        tier: "free",
+        status: "active",
+        pendingLockAt: stillArmed,
+        pendingLockReason: reason,
+      }),
+    );
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("locked");
+
+    expect(mockWorkspaceUpdateMany).toHaveBeenCalledWith({
+      where: { ownerId: { in: ["user-1"] }, locked: false },
+      data: { locked: true, lockedReason: reason, lockedAt: expect.any(Date) },
+    });
+    // Applied this time, so the deadline it fired is consumed.
+    expect(lastUpsertUpdate().pendingLockAt).toBeNull();
+  });
+
+  it("retries the enforcement when the transaction hits a serialization conflict", async () => {
+    const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
+    let attempts = 0;
+
+    mockFindUnique.mockResolvedValue(
+      makeOrgTier({
+        tier: "free",
+        status: "active",
+        pendingLockAt: new Date(Date.now() - 60_000),
+        pendingLockReason: "Tier downgraded from pro (active) to free (active).",
+      }),
+    );
+    mockWorkspaceUpdateMany.mockResolvedValue({ count: 1 });
+
+    // A real conflict aborts at COMMIT, after the body has run, so the retry
+    // replays the whole evaluation rather than resuming it.
+    mockTransaction.mockImplementation(
+      ((fn: (tx: typeof prisma) => unknown) => {
+        attempts += 1;
+        const attempt = attempts;
+        return Promise.resolve(fn(prisma)).then((result) => {
+          if (attempt === 1) throw conflict;
+          return result;
+        });
+      }) as never,
+    );
+
+    await expect(enforceTierLockDeadline("org-1")).resolves.toBe("locked");
+    expect(mockTransaction).toHaveBeenCalledTimes(2);
+  });
+
+  it("gives up on the enforcement once the whole retry budget is spent", async () => {
+    const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
+    mockTransaction.mockImplementation(((() => Promise.reject(conflict)) as never));
+
+    await expect(enforceTierLockDeadline("org-1")).rejects.toBeInstanceOf(TierSyncContentionError);
+    expect(mockTransaction).toHaveBeenCalledTimes(5);
   });
 });
 

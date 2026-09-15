@@ -13,7 +13,7 @@ import { sweepTierLockDeadlines, TIER_LOCK_SWEEP_LIMIT } from "./org-tier-lock-s
 beforeEach(() => {
   vi.clearAllMocks();
   mockFindDue.mockResolvedValue([]);
-  mockEnforce.mockResolvedValue(false);
+  mockEnforce.mockResolvedValue("noop");
 });
 
 describe("sweepTierLockDeadlines", () => {
@@ -21,6 +21,8 @@ describe("sweepTierLockDeadlines", () => {
     await expect(sweepTierLockDeadlines()).resolves.toEqual({
       due: 0,
       locked: 0,
+      unapplied: 0,
+      failed: 0,
       hasMore: false,
     });
     expect(mockEnforce).not.toHaveBeenCalled();
@@ -28,15 +30,57 @@ describe("sweepTierLockDeadlines", () => {
 
   it("enforces every due organization and counts the ones it locked", async () => {
     mockFindDue.mockResolvedValue(["org-1", "org-2"]);
-    mockEnforce.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    mockEnforce.mockResolvedValueOnce("locked").mockResolvedValueOnce("noop");
 
     await expect(sweepTierLockDeadlines()).resolves.toEqual({
       due: 2,
       locked: 1,
+      unapplied: 0,
+      failed: 0,
       hasMore: false,
     });
     expect(mockEnforce).toHaveBeenNthCalledWith(1, "org-1");
     expect(mockEnforce).toHaveBeenNthCalledWith(2, "org-2");
+  });
+
+  it("keeps enforcing the organizations behind one that fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const conflict = Object.assign(new Error("could not serialize access"), { code: "P2034" });
+
+    mockFindDue.mockResolvedValue(["org-1", "org-2", "org-3"]);
+    mockEnforce
+      .mockResolvedValueOnce("locked")
+      .mockRejectedValueOnce(conflict)
+      .mockResolvedValueOnce("locked");
+
+    await expect(sweepTierLockDeadlines()).resolves.toEqual({
+      due: 3,
+      locked: 2,
+      unapplied: 0,
+      failed: 1,
+      hasMore: false,
+    });
+
+    // The failure used to escape the loop and abandon every organization behind
+    // it, taking their locks with it.
+    expect(mockEnforce).toHaveBeenCalledTimes(3);
+    expect(mockEnforce).toHaveBeenNthCalledWith(3, "org-3");
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("org-2"), conflict);
+
+    errorSpy.mockRestore();
+  });
+
+  it("counts an unapplied lock apart from a locked one", async () => {
+    mockFindDue.mockResolvedValue(["org-1", "org-2"]);
+    mockEnforce.mockResolvedValueOnce("unapplied").mockResolvedValueOnce("locked");
+
+    await expect(sweepTierLockDeadlines()).resolves.toEqual({
+      due: 2,
+      locked: 1,
+      unapplied: 1,
+      failed: 0,
+      hasMore: false,
+    });
   });
 
   it("queries the due organizations with the supplied clock and page size", async () => {
@@ -57,13 +101,13 @@ describe("sweepTierLockDeadlines", () => {
     // First run picks up two organizations; enforcement consumes their
     // deadlines, so the second run finds nothing left to do.
     mockFindDue.mockResolvedValueOnce(["org-1", "org-2"]).mockResolvedValueOnce([]);
-    mockEnforce.mockResolvedValue(true);
+    mockEnforce.mockResolvedValue("locked");
 
     const first = await sweepTierLockDeadlines();
     const second = await sweepTierLockDeadlines();
 
-    expect(first).toEqual({ due: 2, locked: 2, hasMore: false });
-    expect(second).toEqual({ due: 0, locked: 0, hasMore: false });
+    expect(first).toEqual({ due: 2, locked: 2, unapplied: 0, failed: 0, hasMore: false });
+    expect(second).toEqual({ due: 0, locked: 0, unapplied: 0, failed: 0, hasMore: false });
     expect(mockEnforce).toHaveBeenCalledTimes(2);
   });
 
@@ -73,6 +117,8 @@ describe("sweepTierLockDeadlines", () => {
     await expect(sweepTierLockDeadlines({ limit: 2 })).resolves.toEqual({
       due: 2,
       locked: 0,
+      unapplied: 0,
+      failed: 0,
       hasMore: true,
     });
   });

@@ -25,8 +25,37 @@ export const TIER_RANK: Record<string, number> = {
  * it must never be read as a downgrade and must never arm or fire a lock. Think
  * of a cheque that has been deposited but has not cleared yet: the money is not
  * in the account, but nobody has torn the cheque up either.
+ *
+ * `suspended` is deliberately NOT in this set even though it is also a
+ * non-payment state: see `NO_ENTITLEMENT_STATUSES` for why the two point in
+ * opposite directions.
  */
 export const DUNNING_STATUSES: ReadonlySet<string> = new Set(["past_due"]);
+
+/**
+ * Subscription states that grant no entitlement, whatever tier the row names.
+ *
+ * `canceled` is the end of the subscription. `suspended` is where the hub funnels
+ * Stripe's `unpaid` and `paused` (and where it falls back for a status it does
+ * not recognise): `unpaid` is where a subscription lands once every collection
+ * retry has failed, and `paused` is where the customer parked it on purpose, so
+ * in neither case is collection going to resume without a deliberate human
+ * action. Reading them as `free` is what turns them into a rank decrease, which
+ * arms the ordinary grace window instead of leaving the organization entitled
+ * forever.
+ *
+ * The distinction from `DUNNING_STATUSES` is the whole point, because the two
+ * have opposite effects on a customer: dunning RELEASES and DISARMS a deadline,
+ * on the expectation that a failed collection there resolves by itself. Applying
+ * that treatment to a terminal state would hand out permanent free access, which
+ * is exactly the failure this deferral exists to prevent, whereas treating a
+ * terminal state as a downgrade at worst grants the same grace window every
+ * other downgrade already gets.
+ */
+export const NO_ENTITLEMENT_STATUSES: ReadonlySet<string> = new Set([
+  "canceled",
+  "suspended",
+]);
 
 /**
  * How long an organization may sit on a lower effective tier before its
@@ -79,9 +108,9 @@ export interface IncomingTierState {
   periodEndsAt?: Date | null;
 }
 
-/** A `canceled` subscription counts as `free`, whatever tier it names. */
+/** A subscription that grants no entitlement counts as `free`, whatever tier it names. */
 export function effectiveTierForLock(tier: string, status: string): string {
-  if (status === "canceled") return "free";
+  if (NO_ENTITLEMENT_STATUSES.has(status)) return "free";
   return tier;
 }
 

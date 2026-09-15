@@ -135,9 +135,12 @@ elif echo "$MIGRATE_OUT" | grep -q "P3005"; then
   echo "[entrypoint] P3005: schema exists without migration history."
   echo "[entrypoint] Verifying schema matches migrations before auto-baselining..."
   set +e
+  # Prisma 7 removed --from-url and --to-schema-datamodel; the replacements are
+  # --from-config-datasource (reads prisma.config.ts, which Dockerfile copies in)
+  # and --to-schema.
   DIFF_OUT=$(prisma migrate diff \
-    --from-url "$DATABASE_URL" \
-    --to-schema-datamodel prisma/schema.prisma \
+    --from-config-datasource \
+    --to-schema prisma/schema.prisma \
     --script 2>&1)
   DIFF_CODE=$?
   set -e
