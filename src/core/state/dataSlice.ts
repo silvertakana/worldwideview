@@ -42,6 +42,8 @@ export const createDataSlice: StateCreator<AppStore, [], [], DataSlice> = (set, 
         }),
     getAllEntities: () => {
         const state = get();
-        return Object.values(state.entitiesByPlugin).flat();
+        return Object.entries(state.entitiesByPlugin)
+            .filter(([pluginId]) => state.layers?.[pluginId]?.enabled)
+            .flatMap(([, entities]) => entities);
     },
 });

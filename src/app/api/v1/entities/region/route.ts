@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     const pluginId = searchParams.get("pluginId") ?? undefined;
     const rawLimit = searchParams.get("limit");
     const parsedLimit = rawLimit !== null ? parseInt(rawLimit, 10) : NaN;
-    const limit = Math.min(Number.isNaN(parsedLimit) ? 100 : parsedLimit, 1000);
+    const limit = Math.min(Math.max(Number.isNaN(parsedLimit) ? 100 : parsedLimit, 1), 1000);
 
     try {
         const result = await getEntitiesInRegion({ north, south, east, west, pluginId, limit });
