@@ -158,7 +158,6 @@ All hub-to-globe calls use the HMAC mechanism. The following endpoints are prote
 | POST | `/api/instance/{id}/invite` | Create invitation |
 | POST | `/api/internal/account/update` | Push billing changes from Stripe webhooks |
 | GET | `/api/internal/account` | Read internal account details |
-| POST | `/api/access-code` | Redeem access code |
 
 ### ADR-008E: Durable Nonce Replay Protection
 

@@ -41,7 +41,6 @@ function isStaticAssetPath(path: string): boolean {
 //    before their own auth runs, breaking install/manage from the marketplace origin.
 //  - glitchtip-tunnel/build/dev: telemetry/diagnostics (dev/* is NODE_ENV-gated to 403 in prod).
 const PUBLIC_API_PREFIXES = [
-    "/api/access-code",
     "/api/auth",
     "/api/ba",
     "/api/billing/webhook",

@@ -59,7 +59,8 @@ Use `.nvmrc` (at project root) for Node version management -- run `nvm use` in t
 
 [Docker Desktop](https://www.docker.com/products/docker-desktop/) or a Docker installation is required to run the full development stack (PostgreSQL, Redis, data engine, Caddy reverse proxy) via `docker compose`.
 
-See [`docs/SETUP.md`](docs/SETUP.md) for detailed environment setup, including Cesium Ion token configuration.
+See [`README.md`](README.md#quick-start-local-development) for the local setup walkthrough, and
+[`.env.example`](.env.example) for every supported environment variable, including the Cesium Ion token.
 
 ---
 
@@ -102,7 +103,7 @@ The core extension point of WorldWideView is its **plugin system**. Each plugin 
 2. Transforms raw data into Cesium-ready primitives
 3. Registers itself with the `PluginRegistry`
 
-See [`docs/PLUGIN_GUIDE.md`](docs/PLUGIN_GUIDE.md) for a full walkthrough. New plugins are very welcome — if you have access to a live geospatial data feed, a plugin is the best way to contribute.
+See [`docs/plugin-quickstart.md`](docs/plugin-quickstart.md) for a full walkthrough. New plugins are very welcome — if you have access to a live geospatial data feed, a plugin is the best way to contribute.
 
 ---
 

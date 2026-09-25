@@ -125,4 +125,4 @@ export class MyFirstPlugin implements WorldPlugin {
 
 Congratulations! You've successfully built and linked your first plugin.
 
-For advanced features—like real-time WebSocket streaming, creating backend seeders using the `local-seeders` sandbox, or publishing your plugin to the global Marketplace—proceed to the **[Advanced Plugin Guide](docs/plugin-advanced.md)**.
+For advanced features—like real-time WebSocket streaming, creating backend seeders using the `local-seeders` sandbox, or publishing your plugin to the global Marketplace—proceed to the **[Advanced Plugin Guide](plugin-advanced.md)**.
