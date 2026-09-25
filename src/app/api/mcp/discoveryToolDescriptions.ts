@@ -47,10 +47,10 @@ export const GLOBE_CONTEXT_DESCRIPTION =
 
 /** investigate_area -- the default answer to "what is happening in or around X?". */
 export const INVESTIGATE_AREA_DESCRIPTION =
-    'THE DEFAULT tool for "what is happening in, near, or around X?" -- reach for it whenever the user names a place. It geocodes the place name, finds every streaming plugin matching entity_type, queries the entities inside radius_km of the geocoded centre, and pans the open globe to the area. ' +
+    'THE DEFAULT tool for "what is happening in, near, or around X?" -- reach for it whenever the user names a place. It geocodes the place name, finds every streaming plugin matching entity_type -- or scans EVERY streaming layer when entity_type is omitted -- queries the entities inside radius_km of the geocoded centre, and pans the open globe to the area. ' +
     "NO SESSION REQUIRED: with no browser tab attached the data still comes back and the summary states that the camera pan was skipped. " +
     "Use query_entities instead when you already have coordinates or a bounding box, when you need a field projection or server-side filters, or when you need aggregates rather than entities (that is get_regional_analytics). " +
     "Returns { ok: true, data: { entities[], summary }, meta: { count, truncated?, totalMatched? } }. summary is deterministic prose naming the place, the matched plugin, and the count. totalMatched is the sum of per-plugin results before the global 200-entity cap, so treat it as a lower bound, not the true global count. " +
     "When nothing matched, ok is STILL true: read meta.emptyReason -- plugin_not_streaming means no layer matched or none is live, no_data_matches means the layer is live and the region is genuinely empty. " +
-    "Parameters: place_name (required, free-text), entity_type (required, case-insensitive substring matched against streaming plugin ids/names), radius_km (optional, > 0, default 50). " +
-    'Example: investigate_area({place_name:"Auckland",entity_type:"flights",radius_km:100})';
+    "Parameters: place_name (required, free-text), entity_type (OPTIONAL -- case-insensitive substring matched against streaming plugin ids/names; omit it to scan every streaming layer, ideal on a cold start), radius_km (optional, > 0, default 50). " +
+    'Cold start with no vocabulary needed (Example: investigate_area({place_name:"Auckland"})); targeted (Example: investigate_area({place_name:"Auckland",entity_type:"flights",radius_km:100}))';

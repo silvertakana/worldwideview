@@ -225,6 +225,29 @@ describe("buildInvestigateProse", () => {
         expect(prose).toContain("camera pan skipped");
     });
 
+    it("untyped cold start with nothing streaming: explains the scan found nothing", () => {
+        const prose = buildInvestigateProse({
+            displayName: "Auckland",
+            matchedPlugin: null,
+            entityCount: 0,
+            sessionPresent: false,
+        });
+        expect(prose).toContain("nothing could be scanned near Auckland");
+        expect(prose).not.toContain('""');
+    });
+
+    it("untyped scan finds entities: prose names every scanned layer", () => {
+        const prose = buildInvestigateProse({
+            displayName: "Auckland",
+            matchedPlugin: "flights",
+            scannedPluginIds: ["flights", "maritime"],
+            entityCount: 3,
+            sessionPresent: false,
+        });
+        expect(prose).toContain("Found 3 entities near Auckland");
+        expect(prose).toContain("streaming layers: flights, maritime");
+    });
+
     it("no-matching-plugin: explains entity_type not found", () => {
         const prose = buildInvestigateProse({
             displayName: "Auckland, NZ",

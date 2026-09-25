@@ -43,7 +43,6 @@ export interface QueryEntitiesInput {
 /** Case-insensitive full-text match on an entity's name (mirrors the service's rule). */
 function matchesQuery(entity: SearchResult, query: string): boolean {
     const needle = query.trim().toLowerCase();
-    if (needle === "") return true;
     return (entity.name ?? entity.id).toLowerCase().includes(needle);
 }
 

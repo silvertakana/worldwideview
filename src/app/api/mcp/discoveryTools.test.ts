@@ -430,4 +430,65 @@ describe("investigate_area", () => {
         expect(parsed.meta?.truncated).toBe(true);
         expect(parsed.meta?.totalMatched).toBe(220);
     });
+
+    it("omitted entity_type: scans EVERY streaming plugin and merges their entities (cold start)", async () => {
+        mockGetAllSnapshots.mockResolvedValue([snapshot("flights"), snapshot("maritime")]);
+        mockGetEntitiesInRegion
+            .mockResolvedValueOnce({ entities: [{ id: "f1", pluginId: "flights", latitude: -36.8, longitude: 174.7 }] })
+            .mockResolvedValueOnce({ entities: [] });
+
+        const parsed = envelopeOf(
+            await handlers["investigate_area"]({ place_name: "Auckland" }),
+        );
+
+        expect(parsed.ok).toBe(true);
+        expect(parsed.data?.entities).toHaveLength(1);
+        expect(mockGetEntitiesInRegion).toHaveBeenCalledTimes(2);
+        expect(String(parsed.data?.summary)).toContain("streaming layers: flights, maritime");
+    });
+
+    it("omitted entity_type: scans EVERY streaming plugin and merges their entities (cold start)", async () => {
+        mockGetAllSnapshots.mockResolvedValue([snapshot("flights"), snapshot("maritime")]);
+        mockGetEntitiesInRegion
+            .mockResolvedValueOnce({ entities: [{ id: "f1", pluginId: "flights", latitude: -36.8, longitude: 174.7 }] })
+            .mockResolvedValueOnce({ entities: [] });
+
+        const parsed = envelopeOf(
+            await handlers["investigate_area"]({ place_name: "Auckland" }),
+        );
+
+        expect(parsed.ok).toBe(true);
+        expect(parsed.data?.entities).toHaveLength(1);
+        expect(mockGetEntitiesInRegion).toHaveBeenCalledTimes(2);
+        expect(String(parsed.data?.summary)).toContain("streaming layers: flights, maritime");
+    });
+
+    it("omitted entity_type, engine up but idle: empty SUCCESS whose prose never quotes a type", async () => {
+        mockGetAllSnapshots.mockResolvedValue([]);
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+
+        const parsed = envelopeOf(
+            await handlers["investigate_area"]({ place_name: "Auckland" }),
+        );
+
+        expect(parsed.ok).toBe(true);
+        expect(parsed.data?.entities).toEqual([]);
+        const summary = String(parsed.data?.summary);
+        expect(summary).toContain("nothing could be scanned near Auckland");
+        expect(summary).not.toContain('""');
+        expect(mockEnqueueGlobeCommand).not.toHaveBeenCalled();
+    });
+
+    it("omitted entity_type during an outage: honest engine_unreachable FAILURE, not silence", async () => {
+        mockGetAllSnapshots.mockResolvedValue([]);
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
+
+        const result = await handlers["investigate_area"]({ place_name: "Auckland" });
+        const parsed = envelopeOf(result);
+
+        expect(isErrorResult(result)).toBe(true);
+        expect(parsed.error).toBe("engine_unreachable");
+        expect(String(parsed.hint ?? parsed.message)).toMatch(/outage/i);
+        expect(mockEnqueueGlobeCommand).not.toHaveBeenCalled();
+    });
 });

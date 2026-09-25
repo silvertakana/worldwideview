@@ -416,6 +416,27 @@ describe("getPluginData", () => {
         expect(result.data?.entities).toHaveLength(1);
     });
 
+    it("maps seeder lat/lon spellings and label fallbacks onto GeoEntity", async () => {
+        vi.mocked(global.fetch).mockResolvedValue(
+            new Response(JSON.stringify({
+                source: "earthquakes",
+                totalCount: 2,
+                items: [
+                    { id: "q1", lat: -7.4, lon: 125.7, place: "Timor Leste" },
+                    { id: "q2", latitude: 4.52, longitude: -76.98, title: "Sipi quake" },
+                ],
+            }), { status: 200 }),
+        );
+        const snap = await fetchPluginSnapshot("earthquakes");
+        expect(snap).not.toBeNull();
+        expect(snap?.entities).toHaveLength(2);
+        expect(snap?.entities[0].latitude).toBe(-7.4);
+        expect(snap?.entities[0].longitude).toBe(125.7);
+        expect(snap?.entities[0].label).toBe("Timor Leste");
+        expect(snap?.entities[1].label).toBe("Sipi quake");
+        expect(snap?.pluginId).toBe("earthquakes");
+    });
+
     it("returns PluginDataSnapshot when engine returns flat array []", async () => {
         const entity = makeEntity({ id: "e1", pluginId: "test-plugin" });
         vi.mocked(global.fetch).mockResolvedValue(

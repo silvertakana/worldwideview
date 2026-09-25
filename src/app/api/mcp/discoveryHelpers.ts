@@ -162,8 +162,11 @@ export async function listStreamingPlugins(): Promise<ListStreamingPluginsResult
 
 export interface InvestigateProseArgs {
     displayName: string;
-    entityType: string;
+    /** Omitted when the scan covered every streaming layer (no entity_type given). */
+    entityType?: string;
     matchedPlugin: string | null;
+    /** Present only alongside an omitted entity_type: every layer that was scanned. */
+    scannedPluginIds?: string[];
     entityCount: number;
     sessionPresent: boolean;
     emptyReason?: string;
@@ -178,9 +181,16 @@ export interface InvestigateProseArgs {
  *   - No session: data queried but camera pan skipped
  */
 export function buildInvestigateProse(args: InvestigateProseArgs): string {
-    const { displayName, entityType, matchedPlugin, entityCount, sessionPresent, emptyReason } = args;
+    const { displayName, entityType, matchedPlugin, entityCount, sessionPresent, emptyReason, scannedPluginIds } = args;
+    const untyped = entityType === undefined;
 
     if (matchedPlugin === null) {
+        if (untyped) {
+            return (
+                `No plugins are currently streaming, so nothing could be scanned near ${displayName}. ` +
+                "Call orient to see which feeds are live, then retry shortly."
+            );
+        }
         return (
             `No active plugin streams "${entityType}". ` +
             `Use list_available_plugins to see which entity types are currently streaming, ` +
@@ -192,6 +202,12 @@ export function buildInvestigateProse(args: InvestigateProseArgs): string {
         const cameraNote = sessionPresent
             ? "Camera has been panned to the area."
             : "No active globe session -- camera pan skipped.";
+        if (untyped) {
+            return (
+                `Found ${entityCount} entities near ${displayName} ` +
+                `(streaming layers: ${scannedPluginIds?.join(", ") ?? matchedPlugin}). ${cameraNote}`
+            );
+        }
         return (
             `Found ${entityCount} ${entityType} ${entityCount === 1 ? "entity" : "entities"} ` +
             `near ${displayName} (plugin: ${matchedPlugin}). ${cameraNote}`
@@ -200,6 +216,12 @@ export function buildInvestigateProse(args: InvestigateProseArgs): string {
 
     // Empty result -- explain why.
     if (emptyReason === "plugin_not_streaming") {
+        if (untyped) {
+            return (
+                "The matched streaming layers are not currently serving data. " +
+                "The engine may be loading or the layers may be offline."
+            );
+        }
         return (
             `Plugin "${matchedPlugin}" matched your entity_type "${entityType}" but is not ` +
             `currently streaming data. The engine may be loading or the plugin may be offline.`
@@ -209,6 +231,14 @@ export function buildInvestigateProse(args: InvestigateProseArgs): string {
     const cameraNote = sessionPresent
         ? "Camera was panned to the area."
         : "No active globe session -- camera pan skipped.";
+    if (untyped) {
+        return (
+            `No entities found near ${displayName} ` +
+            `(streaming layers: ${scannedPluginIds?.join(", ") ?? matchedPlugin}). ` +
+            "The layers are streaming but returned no data for this region and radius. " +
+            cameraNote
+        );
+    }
     return (
         `No ${entityType} entities found near ${displayName} (plugin: ${matchedPlugin}). ` +
         `The plugin is streaming but returned no data for this region and radius. ` +

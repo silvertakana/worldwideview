@@ -55,7 +55,7 @@ export const toolGuides: Readonly<Record<string, ToolGuide>> = {
         useWhen: [
             'The user asks what is happening in, near, or around a named place -- this is THE default for that question.',
             "You want one call to geocode, query the matching live layers, and move the open globe to the result.",
-            "You do not know which plugin carries the data: entity_type is a substring match across every streaming plugin.",
+            "You do not yet know which plugin carries the data: entity_type is a substring match across streaming plugins, and it is OPTIONAL -- omit it to scan every streaming layer.",
         ],
         avoidWhen: [
             "You already have coordinates or a bounding box: call query_entities with bbox or near instead of geocoding a name.",

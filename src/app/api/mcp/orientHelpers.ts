@@ -36,7 +36,7 @@ export interface IntentGuidance {
 export const INTENT_GUIDANCE: readonly IntentGuidance[] = [
     {
         intent: "What is happening in or around a named place?",
-        call: "investigate_area({ place_name, entity_type, radius_km? })",
+        call: "investigate_area({ place_name, entity_type?, radius_km? }) -- omit entity_type to scan every streaming layer",
         note: "The default for this question. Needs no session; pans the globe when a tab is attached.",
     },
     {

@@ -1,0 +1,1 @@
+const { handleMcpRequest } = await import("./.mcp-eval-setup.mjs");

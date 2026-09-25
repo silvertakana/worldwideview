@@ -190,7 +190,7 @@ export function registerDiscoveryTools(
             description: INVESTIGATE_AREA_DESCRIPTION,
             inputSchema: {
                 place_name: z.string().min(1).describe("Place name to geocode (free-text, e.g. 'Auckland', 'Tokyo Bay')"),
-                entity_type: z.string().min(1).describe("Entity type to look for -- case-insensitive substring matched against streaming plugin ids/names"),
+                entity_type: z.string().min(1).optional().describe("OPTIONAL. Case-insensitive substring matched against streaming plugin ids/names. Omit it to scan EVERY streaming layer -- the designed cold-start call."),
                 radius_km: z.number().positive().optional().describe("Search radius in kilometres around the geocoded centre (default 50)"),
             },
         },
@@ -215,12 +215,14 @@ export function registerDiscoveryTools(
                 // streaming" when nothing matches below.
                 const vocabulary = await listStreamingPlugins();
                 const { plugins } = vocabulary;
-                const lower = entity_type.toLowerCase();
-                const matched = plugins.filter(
-                    (p) =>
-                        p.pluginId.toLowerCase().includes(lower) ||
-                        p.pluginName.toLowerCase().includes(lower),
-                );
+                const lower = entity_type?.toLowerCase();
+                const matched = lower === undefined
+                    ? plugins // no entity_type given: the cold-start scan covers every streaming layer
+                    : plugins.filter(
+                          (p) =>
+                              p.pluginId.toLowerCase().includes(lower) ||
+                              p.pluginName.toLowerCase().includes(lower),
+                      );
 
                 if (matched.length === 0) {
                     return escalateWithVocabulary(
@@ -230,7 +232,7 @@ export function registerDiscoveryTools(
                                 availablePlugins: plugins.map((p) => p.pluginId),
                                 summary: buildInvestigateProse({
                                     displayName: geo.display_name,
-                                    entityType: entity_type,
+                                    ...(entity_type !== undefined && { entityType: entity_type }),
                                     matchedPlugin: null,
                                     entityCount: 0,
                                     sessionPresent: false,
@@ -278,8 +280,9 @@ export function registerDiscoveryTools(
                 // Step 6: deterministic prose, first match as representative.
                 const summary = buildInvestigateProse({
                     displayName: geo.display_name,
-                    entityType: entity_type,
-                    matchedPlugin: matched[0].pluginId,
+                    ...(entity_type !== undefined && { entityType: entity_type }),
+                    matchedPlugin: matched[0]?.pluginId ?? null,
+                    ...(entity_type === undefined && { scannedPluginIds: matched.map((p) => p.pluginId) }),
                     entityCount: entities.length,
                     sessionPresent,
                     emptyReason: lastEmptyReason,
@@ -296,7 +299,7 @@ export function registerDiscoveryTools(
             } catch (err) {
                 return mcpCatch("internal_error", "investigate_area failed for the requested place.", err, {
                     hint: "Retry shortly. Call orient to check whether the engine is healthy before retrying.",
-                    details: { place_name, entity_type },
+                    details: { place_name, ...(entity_type !== undefined && { entity_type }) },
                 });
             }
         },

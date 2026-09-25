@@ -112,7 +112,8 @@ describe("GET /.well-known/mcp/server-card.json", () => {
         }
 
         const investigate = toolNamed(card, "investigate_area");
-        expect(investigate.inputSchema.required).toEqual(["place_name", "entity_type"]);
+        // entity_type is optional on investigate_area: omitting it scans every streaming layer.
+        expect(investigate.inputSchema.required).toEqual(["place_name"]);
         expect(Object.keys(investigate.inputSchema.properties)).toContain("radius_km");
 
         const pan = toolNamed(card, "pan_globe");

@@ -65,7 +65,7 @@ export const catalog: readonly CatalogTool[] = [
         purpose: 'THE DEFAULT for "what is happening in or around X": geocodes a place, queries every matching streaming layer inside a radius, and pans the open globe to the result.',
         parameters: {
             place_name: "string (required) -- free-text place name, geocoded server-side",
-            entity_type: "string (required) -- case-insensitive substring matched against streaming plugin ids/names",
+            entity_type: "string (optional) -- case-insensitive substring matched against streaming plugin ids/names; omit to scan every streaming layer",
             radius_km: "number (optional, > 0, default 50) -- search radius around the geocoded centre",
         },
         sessionNote: "Works without a tab; the camera pan is skipped and the summary says so.",
