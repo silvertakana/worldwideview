@@ -191,14 +191,19 @@ test.describe('MCP connect flow', () => {
             }, { message: 'the key the panel issued must be persisted for this user', timeout: 15000 })
             .toContain(prefix);
 
-        // Let the page register its command stream before asking the server about it.
-        await page.waitForTimeout(2500);
-
         const before = await mcpCall(page, issuedToken, 'get_globe_context');
         expect(before.status, `MCP rejected the panel's own key: ${before.text}`).toBe(200);
-        // Shape, not a success wrapper: this tool answers with the live context itself.
-        const context = JSON.parse(before.text) as { sessionCount?: number };
-        expect(context.sessionCount, 'the context must show the signed-in tab attached').toBeGreaterThan(0);
+
+        // The tab registers its globe session asynchronously through Redis, so wait for
+        // the registry to show it rather than guessing at a fixed delay.
+        let context = JSON.parse(before.text) as { sessionCount?: number };
+        await expect
+            .poll(async () => {
+                const latest = await mcpCall(page, issuedToken, 'get_globe_context');
+                context = JSON.parse(latest.text) as { sessionCount?: number };
+                return context.sessionCount ?? 0;
+            }, { message: 'the context must show the signed-in tab attached', timeout: 20000 })
+            .toBeGreaterThan(0);
         expect(findCameraLatLon(context), 'the context must report a camera position').not.toBeNull();
 
         // alt is a framing altitude: the globe parks the camera roughly

@@ -100,6 +100,20 @@ jobs:
     name: Playwright (chromium)
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # The globe's session registry and the agent command queue live in Redis. Without
+    # one the app still boots and serves, but no tab registers and the MCP control
+    # tools (pan_globe, toggle_layer, ...) have nothing to deliver to - which is why
+    # tests/mcp-connect-flow.spec.ts needs a live Redis to cover them.
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - uses: actions/checkout@v7
 
@@ -158,6 +172,20 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # The globe's session registry and the agent command queue live in Redis. Without
+    # one the app still boots and serves, but no tab registers and the MCP control
+    # tools (pan_globe, toggle_layer, ...) have nothing to deliver to - which is why
+    # tests/mcp-connect-flow.spec.ts needs a live Redis to cover them.
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - uses: actions/checkout@v7
 
@@ -220,6 +248,20 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # The globe's session registry and the agent command queue live in Redis. Without
+    # one the app still boots and serves, but no tab registers and the MCP control
+    # tools (pan_globe, toggle_layer, ...) have nothing to deliver to - which is why
+    # tests/mcp-connect-flow.spec.ts needs a live Redis to cover them.
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - uses: actions/checkout@v7
 
