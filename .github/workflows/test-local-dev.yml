@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - "scripts/setup.mjs"
+      - "scripts/boot-db.mjs"
       - ".env.example"
       - "package.json"
       - ".github/workflows/test-local-dev.yml"
@@ -134,3 +135,86 @@ jobs:
           fi
           echo "PASS: dev server responded on :3000"
           kill $DEV_PID
+
+  # Linux-only: guards the boot-db.mjs startup failure paths. Needs no dependencies
+  # and starts no container: the compose case fails while reading a COMPOSE_FILE that
+  # does not exist, so Docker never creates anything.
+  test-boot-db-failures:
+    name: boot-db failure paths (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Docker CLI unavailable — stops with a clear reason and non-zero exit
+        shell: bash
+        run: |
+          set -u
+          workdir="$(mktemp -d)"
+          cp .env.example "$workdir/.env.example"
+          mkdir -p "$workdir/shim"
+          {
+            echo '#!/bin/sh'
+            echo 'echo "docker-shim: no docker on this host" >&2'
+            echo 'exit 127'
+          } > "$workdir/shim/docker"
+          chmod +x "$workdir/shim/docker"
+
+          # Prepend the shim rather than rewriting PATH with external tools: it wins
+          # over any real docker, and grep/sed stay usable for later assertions. The
+          # COMPOSE_FILE guard means a shim that was ever bypassed still aborts before
+          # compose can create a container.
+          status=0
+          output="$(cd "$workdir" && PATH="$workdir/shim:${PATH}" COMPOSE_FILE="$workdir/does-not-exist.yml" node "$GITHUB_WORKSPACE/scripts/boot-db.mjs" 2>&1)" || status=$?
+          printf '%s\n' "$output"
+
+          if [ "$status" -eq 0 ]; then
+            echo "FAIL: boot-db.mjs exited 0 with no usable Docker CLI"
+            exit 1
+          fi
+          if [[ "$output" != *"Docker is unreachable"* ]]; then
+            echo "FAIL: boot-db.mjs did not report that Docker is unreachable"
+            exit 1
+          fi
+          if [[ "$output" != *"docker-shim: no docker on this host"* ]]; then
+            echo "FAIL: boot-db.mjs did not quote the real docker error"
+            exit 1
+          fi
+          echo "PASS: exit $status with a real diagnostic"
+
+      - name: Compose cannot start the database — stops with a non-zero exit
+        shell: bash
+        run: |
+          set -u
+          workdir="$(mktemp -d)"
+          cp .env.example "$workdir/.env.example"
+
+          if ! docker --version; then
+            echo "FAIL: docker CLI unavailable on this runner, so the compose path cannot be exercised"
+            exit 1
+          fi
+
+          # COMPOSE_FILE points at a path that does not exist, so compose aborts while
+          # reading the file and never creates a container.
+          status=0
+          output="$(cd "$workdir" && COMPOSE_FILE="$workdir/does-not-exist.yml" node "$GITHUB_WORKSPACE/scripts/boot-db.mjs" 2>&1)" || status=$?
+          printf '%s\n' "$output"
+
+          if [ "$status" -eq 0 ]; then
+            echo "FAIL: boot-db.mjs exited 0 after compose failed to start the database"
+            exit 1
+          fi
+          if [[ "$output" != *"Failed to start"* ]]; then
+            echo "FAIL: boot-db.mjs did not report the compose failure"
+            exit 1
+          fi
+          if [[ "$output" == *"Local PostgreSQL database is ready"* ]]; then
+            echo "FAIL: boot-db.mjs claimed the database was ready"
+            exit 1
+          fi
+          echo "PASS: exit $status after compose failed"
+

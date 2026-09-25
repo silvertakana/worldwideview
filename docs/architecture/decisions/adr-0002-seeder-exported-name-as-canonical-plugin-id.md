@@ -35,7 +35,7 @@ The engine's TypeScript source (`seeder-loader.ts`) also had a `toKebabCase()` h
 
 ### Problem 2 — Fresh-install plugin set hard-coded
 
-The marketplace auto-seeder ([src/lib/marketplace/seedDefaultPlugins.ts](../../../src/lib/marketplace/seedDefaultPlugins.ts)) writes a starter set of plugins to the database on first boot so the globe isn't empty on day one. The list of plugins to seed lived in a hard-coded constant `DEFAULT_PLUGIN_IDS` ([src/lib/marketplace/defaultPlugins.ts](../../../src/lib/marketplace/defaultPlugins.ts)).
+The marketplace auto-seeder ([src/lib/marketplace/seedDefaultPlugins.ts](../../../src/lib/marketplace/seedDefaultPlugins.ts)) writes a starter set of plugins to the database on first boot so the globe isn't empty on day one. The list of plugins to seed lived in a hard-coded constant `DEFAULT_PLUGIN_IDS` (`src/lib/marketplace/defaultPlugins.ts`, since removed).
 
 Two failure modes followed from the static list:
 
