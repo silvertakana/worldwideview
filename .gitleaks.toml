@@ -1,0 +1,17 @@
+# gitleaks configuration.
+#
+# The agent-brief tests carry an obviously fake bearer key so they can assert the
+# brief prints a token exactly once. gitleaks' generic-api-key rule matches it by
+# shape, and an inline `gitleaks:allow` only covers the commit it is added in -
+# the scan walks every commit in a pull request, so a finding introduced earlier
+# keeps failing the check until the allowlist covers it here.
+#
+# Exempted by path only, deliberately: putting the literal key in a regex would
+# re-introduce the very finding this file exists to silence.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Test fixtures with obviously fake bearer keys"
+paths = ['''src/lib/mcp/agentBrief\.test\.ts''']
