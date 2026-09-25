@@ -142,13 +142,18 @@ if (!fs.existsSync(envPath)) {
 console.log('🚀 Checking local PostgreSQL database...');
 
 try {
-  // Check if docker is installed
+  // Check that docker is reachable, and report WHY it is not. stdio:'ignore' hid the real
+  // error (a broken credential helper, an unreadable PATH entry, a stopped engine) behind a
+  // single wrong diagnosis.
   try {
-    execSync('docker --version', { stdio: 'ignore' });
-  } catch (e) {
-    console.log('⚠️ Docker is not installed or not in PATH. Skipping local database startup.');
-    console.log('💡 If you want to run a local database automatically, please install Docker Desktop.');
-    process.exit(0);
+    execSync('docker --version', { stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (dockerError) {
+    const detail = (dockerError.stderr?.toString().trim() || dockerError.message || '').split('\n')[0];
+    console.error('❌ Docker is unreachable, so the local PostgreSQL container cannot start.');
+    if (detail) console.error('   ' + detail);
+    console.log('💡 Start Docker Desktop, then confirm that `docker --version` works in this shell.');
+    console.log('💡 Using your own database instead? Set WWV_SKIP_LOCAL_DB=true in .env and re-run.');
+    process.exit(1);
   }
 
   // Start the db service and wait for it to be healthy
@@ -158,7 +163,10 @@ try {
   console.log('✅ Local PostgreSQL database is ready!');
 
 } catch (error) {
-  console.error('❌ Failed to start local database:', error.message);
-  console.log('💡 Ensure that docker is running and try again');
-  console.log('💡 You may need to start it manually or set WWV_SKIP_LOCAL_DB=true to use an external database.');
+  // DATABASE_URL above already points at this container, so continuing past a failure here
+  // only moves the error somewhere less obvious (prisma db push via the predev chain).
+  console.error('❌ Failed to start the local database:', error.message);
+  console.log('💡 Ensure that docker is running and try again.');
+  console.log('💡 Or start a database yourself and set WWV_SKIP_LOCAL_DB=true in .env.');
+  process.exit(1);
 }
