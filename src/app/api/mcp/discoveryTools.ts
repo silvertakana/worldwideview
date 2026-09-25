@@ -1,44 +1,59 @@
 /**
- * MCP Discovery Tool registrar (Phase 29 -- 29-01).
+ * MCP discovery registrar (Phase 29 -- 29-01; v2 AX overhaul, 2026-09-25).
  *
- * Registers three compound/discovery MCP tools:
- *   list_available_plugins  -- list all streaming plugins with entity counts + types
- *   get_globe_context       -- full orientation snapshot in one call
- *   investigate_area        -- geocode + query + camera pan in one call
+ * Registers five tools:
+ *   orient                  -- THE FRONT DOOR: feed health, session state, what to call next
+ *   describe_tool           -- full semantics for any tool; carries the detail the v2
+ *                              server instructions block deliberately no longer restates
+ *   investigate_area        -- the default for "what is happening in or around X"
+ *   list_available_plugins  -- LEGACY, superseded by orient
+ *   get_globe_context       -- LEGACY, superseded by orient
  *
- * Security:
- *   - userId comes ONLY from ctx (verified auth result); never from tool args.
- *   - place_name / entity_type / radius_km are untrusted; place_name is passed
- *     exclusively via URLSearchParams in fetchGeocode (no string concat into URL).
- *   - entity_type is matched only against the in-memory streaming plugin set;
- *     never embedded in an engine URL (T-29-01, T-29-02, T-29-03).
+ * Descriptions live in ./discoveryToolDescriptions so this file stays a thin
+ * wiring layer. Every handler answers in the v2 envelope: one `ok` field to
+ * branch on, an EMPTY result carrying a reason instead of being flattened into
+ * "no data", and vocabulary failures returning the valid values.
+ *
+ * Security: userId comes ONLY from ctx (the verified auth result), never from
+ * tool args. place_name is passed exclusively via URLSearchParams inside
+ * fetchGeocode -- never concatenated into a URL. entity_type is matched only
+ * against the in-memory streaming plugin set, never embedded in an engine URL
+ * (T-29-01, T-29-02, T-29-03).
  */
 
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getEntitiesInRegion } from "@/lib/data-query/service";
+import type { EmptyReason } from "@/lib/data-query/types";
 import { fetchGeocode, normalizeNominatimResult } from "@/lib/nominatim";
 import { enqueueGlobeCommand } from "@/lib/globeCommandQueue";
 import type { GlobeCommand } from "@/core/globe/types/GlobeCommand";
+import { MCP_SERVER_VERSION } from "@/lib/mcp/server";
 import {
-    listStreamingPlugins,
-    radiusKmToBbox,
+    mcpCatch,
+    mcpEmpty,
+    mcpFail,
+    mcpOk,
+    resolveEmptyReason,
+} from "@/lib/mcp/responseEnvelope";
+import { allKnownToolNames, findTool } from "@/lib/mcp/toolCatalog";
+import { toolGuides } from "@/lib/mcp/toolDetails";
+import {
     buildInvestigateProse,
     composeGlobeContext,
+    listStreamingPlugins,
+    radiusKmToBbox,
     resolveActiveSessionId,
 } from "./discoveryHelpers";
-
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
-
-type McpTextResult = { content: [{ type: "text"; text: string }] };
-
-function textResult(payload: unknown): McpTextResult {
-    return {
-        content: [{ type: "text", text: JSON.stringify(payload) }],
-    };
-}
+import { escalateWithVocabulary } from "@/lib/mcp/outageResponse";
+import { NO_ACTIVE_PLUGINS_HINT, composeOrient, mapEngineReason } from "./orientHelpers";
+import {
+    DESCRIBE_TOOL_DESCRIPTION,
+    GLOBE_CONTEXT_DESCRIPTION,
+    INVESTIGATE_AREA_DESCRIPTION,
+    LIST_AVAILABLE_PLUGINS_DESCRIPTION,
+    ORIENT_DESCRIPTION,
+} from "./discoveryToolDescriptions";
 
 /** Default investigation radius when the caller does not specify one. */
 const DEFAULT_RADIUS_KM = 50;
@@ -49,9 +64,8 @@ const INVESTIGATE_PAN_ALT = 300_000;
 /** Maximum total entities returned across all plugins by investigate_area (TOOL-04). */
 const INVESTIGATE_AREA_CAP = 200;
 
-// ---------------------------------------------------------------------------
-// Public registrar
-// ---------------------------------------------------------------------------
+/** Shared trailing note for the two legacy tools. */
+const LEGACY_NOTE = "This tool is kept for backward compatibility; call orient instead, which reports feed health, session state, and next-step guidance together.";
 
 export function registerDiscoveryTools(
     server: McpServer,
@@ -60,77 +74,120 @@ export function registerDiscoveryTools(
     const { userId } = ctx;
 
     // ------------------------------------------------------------------
-    // TOOL-01: list_available_plugins
+    // orient -- the front door
     // ------------------------------------------------------------------
     server.registerTool(
-        "list_available_plugins",
-        {
-            description:
-                "List all plugins currently streaming live data from the engine. Returns pluginId, pluginName, entityCount, and entityTypes (queryable field names) for each active plugin. " +
-                "Use this tool BEFORE search_entities or get_entities_in_region to verify the target plugin is actually streaming -- calling those tools with a non-streaming plugin always returns plugin_not_streaming. " +
-                "When the data engine is unreachable the result contains an empty plugins array and a reason field. " +
-                "No parameters required. " +
-                "Example: list_available_plugins({})",
-            inputSchema: {},
-        },
+        "orient",
+        { description: ORIENT_DESCRIPTION, inputSchema: {} },
         async () => {
             try {
-                const result = await listStreamingPlugins();
-                return textResult(result);
+                const { payload, emptyReason } = await composeOrient(userId, MCP_SERVER_VERSION);
+                if (emptyReason === undefined) return mcpOk(payload, { count: payload.feeds.count });
+                return mcpEmpty(payload, emptyReason, {
+                    count: 0,
+                    ...(emptyReason === "plugin_not_streaming" && { hint: NO_ACTIVE_PLUGINS_HINT }),
+                });
             } catch (err) {
-                console.error("[discoveryTools] list_available_plugins failed:", err);
-                return textResult({ plugins: [], reason: "unexpected error" });
-            }
-        },
-    );
-
-    // ------------------------------------------------------------------
-    // TOOL-02: get_globe_context
-    // ------------------------------------------------------------------
-    server.registerTool(
-        "get_globe_context",
-        {
-            description:
-                "Retrieve the full current globe context in one call: sessionCount, camera viewport, active layers, filter definitions (note: applied values are NOT server-tracked), and streaming plugin list. " +
-                "Use this tool at the start of a session to orient yourself without reading multiple globe:// resources separately. " +
-                "When no browser session is active, returns sessionCount:0 and camera:null without error -- open the app in a browser tab first to create a session. " +
-                "Filters field shows definitions (field names/types) only; applied filter values are browser-side and not tracked by the server. " +
-                "No parameters required. " +
-                "Example: get_globe_context({})",
-            inputSchema: {},
-        },
-        async () => {
-            try {
-                const payload = await composeGlobeContext(userId);
-                return textResult(payload);
-            } catch (err) {
-                console.error("[discoveryTools] get_globe_context failed:", err);
-                return textResult({
-                    sessionCount: 0,
-                    camera: null,
-                    layers: {},
-                    filters: { note: "context unavailable" },
-                    plugins: [],
-                    reason: "unexpected error",
+                return mcpCatch("internal_error", "orient could not read the server state.", err, {
+                    hint: "Retry shortly. If it keeps failing, the engine or the session store is degraded.",
                 });
             }
         },
     );
 
     // ------------------------------------------------------------------
-    // TOOL-03: investigate_area
+    // describe_tool -- the detail the trimmed instructions block dropped
+    // ------------------------------------------------------------------
+    server.registerTool(
+        "describe_tool",
+        {
+            description: DESCRIBE_TOOL_DESCRIPTION,
+            inputSchema: {
+                name: z.string().min(1).describe("Exact tool name, e.g. 'investigate_area' or 'query_entities'"),
+            },
+        },
+        async (args) => {
+            const entry = findTool(args.name);
+            const guide = toolGuides[args.name];
+            if (entry === undefined || guide === undefined) {
+                return mcpFail("not_found", "describe_tool does not know the tool " + args.name + ".", {
+                    hint: "Retry with one of validValues. Call orient to see the whole surface this server exposes.",
+                    validValues: allKnownToolNames(),
+                });
+            }
+            return mcpOk({
+                name: entry.name,
+                category: entry.category,
+                requiresSession: entry.requiresSession,
+                purpose: entry.purpose,
+                whenToUse: guide.useWhen,
+                whenNotToUse: guide.avoidWhen,
+                parameters: entry.parameters,
+                returns: guide.returns,
+                example: guide.example,
+                ...(entry.sessionNote !== undefined && { sessionNote: entry.sessionNote }),
+            });
+        },
+    );
+
+    // ------------------------------------------------------------------
+    // TOOL-01 (legacy): list_available_plugins
+    // ------------------------------------------------------------------
+    server.registerTool(
+        "list_available_plugins",
+        { description: LIST_AVAILABLE_PLUGINS_DESCRIPTION, inputSchema: {} },
+        async () => {
+            try {
+                const { plugins, reason } = await listStreamingPlugins();
+                if (plugins.length === 0) {
+                    const emptyReason = mapEngineReason(reason);
+                    return mcpEmpty({ plugins: [] }, emptyReason, {
+                        count: 0,
+                        ...(emptyReason === "plugin_not_streaming" && { hint: NO_ACTIVE_PLUGINS_HINT }),
+                    });
+                }
+                return mcpOk({ plugins }, { count: plugins.length });
+            } catch (err) {
+                return mcpCatch("engine_unreachable", "Could not read the streaming plugin list.", err, {
+                    hint: "The data engine may be unreachable. Retry shortly. " + LEGACY_NOTE,
+                });
+            }
+        },
+    );
+
+    // ------------------------------------------------------------------
+    // TOOL-02 (legacy): get_globe_context
+    // ------------------------------------------------------------------
+    server.registerTool(
+        "get_globe_context",
+        { description: GLOBE_CONTEXT_DESCRIPTION, inputSchema: {} },
+        async () => {
+            try {
+                const { plugins, reason, ...context } = await composeGlobeContext(userId);
+                const data = { ...context, plugins };
+                if (plugins.length === 0) {
+                    const emptyReason = mapEngineReason(reason);
+                    return mcpEmpty(data, emptyReason, {
+                        count: 0,
+                        ...(emptyReason === "plugin_not_streaming" && { hint: NO_ACTIVE_PLUGINS_HINT }),
+                    });
+                }
+                return mcpOk(data, { count: plugins.length });
+            } catch (err) {
+                return mcpCatch("engine_unreachable", "Could not read the globe context.", err, {
+                    hint: "The engine or the session store may be unreachable. Retry shortly. " + LEGACY_NOTE,
+                });
+            }
+        },
+    );
+
+    // ------------------------------------------------------------------
+    // TOOL-03: investigate_area -- the default question answerer
     // ------------------------------------------------------------------
     server.registerTool(
         "investigate_area",
         {
-            description:
-                "Investigate what is happening near a named place for a given entity type. Geocodes the place, finds a matching streaming plugin, queries entities in the bounding region, pans the camera when a session is active, and returns entities + a human-readable summary. " +
-                "Use this tool when an agent asks 'what is near X?' or 'show me Y around Z'. Prefer this over manual geocode + search_entities sequences. " +
-                "When no matching plugin streams the given entity_type, the summary explains this and suggests list_available_plugins. " +
-                "When no active session is found, entities are still returned but the summary notes the camera pan was skipped. " +
-                "Response is capped at 200 entities total across all matched plugins. When 'truncated' is true, 'cappedTotal' holds the sum of per-plugin results before the global cap (not the true global count, because each plugin is itself queried with its own 100-entity limit). " +
-                "Parameters: place_name (required), entity_type (required, case-insensitive substring match against plugin ids/names), radius_km (optional, default 50). " +
-                "Example: investigate_area({place_name:\"Auckland\",entity_type:\"flights\",radius_km:100})",
+            description: INVESTIGATE_AREA_DESCRIPTION,
             inputSchema: {
                 place_name: z.string().min(1).describe("Place name to geocode (free-text, e.g. 'Auckland', 'Tokyo Bay')"),
                 entity_type: z.string().min(1).describe("Entity type to look for -- case-insensitive substring matched against streaming plugin ids/names"),
@@ -142,18 +199,22 @@ export function registerDiscoveryTools(
             const radius = radius_km ?? DEFAULT_RADIUS_KM;
 
             try {
-                // Step 1: Geocode the place name (limit 1 result).
+                // Step 1: geocode the place name (single best match).
                 const rawItems = await fetchGeocode({ query: place_name, limit: 1 });
                 if (rawItems.length === 0) {
-                    return textResult({
-                        entities: [],
-                        summary: `Could not geocode "${place_name}". Try a more specific or differently spelled place name.`,
+                    return mcpFail("not_found", "Could not geocode " + place_name + ".", {
+                        hint: "Retry with a more specific or differently spelled place name, or call geocode_location to see candidate matches.",
+                        details: { place_name },
                     });
                 }
                 const geo = normalizeNominatimResult(rawItems[0]);
 
-                // Step 2: Find matching streaming plugins by case-insensitive substring.
-                const { plugins } = await listStreamingPlugins();
+                // Step 2: match streaming plugins by case-insensitive substring.
+                // The whole vocabulary is kept, not just the plugin list: its reason
+                // is what tells an outage apart from "these layers are simply not
+                // streaming" when nothing matches below.
+                const vocabulary = await listStreamingPlugins();
+                const { plugins } = vocabulary;
                 const lower = entity_type.toLowerCase();
                 const matched = plugins.filter(
                     (p) =>
@@ -162,73 +223,80 @@ export function registerDiscoveryTools(
                 );
 
                 if (matched.length === 0) {
-                    return textResult({
-                        entities: [],
-                        summary: buildInvestigateProse({
-                            displayName: geo.display_name,
-                            entityType: entity_type,
-                            matchedPlugin: null,
-                            entityCount: 0,
-                            sessionPresent: false,
-                        }),
-                    });
+                    return escalateWithVocabulary(
+                        mcpEmpty(
+                            {
+                                entities: [],
+                                availablePlugins: plugins.map((p) => p.pluginId),
+                                summary: buildInvestigateProse({
+                                    displayName: geo.display_name,
+                                    entityType: entity_type,
+                                    matchedPlugin: null,
+                                    entityCount: 0,
+                                    sessionPresent: false,
+                                }),
+                            },
+                            "plugin_not_streaming",
+                            {
+                                count: 0,
+                                hint:
+                                    "No streaming plugin matches entity_type " + entity_type + ". Call orient to see which layers are live, then retry with one of data.availablePlugins.",
+                            },
+                        ),
+                        "The data engine is unreachable, so nothing could be scanned around " + place_name + ".",
+                        vocabulary,
+                    );
                 }
 
-                // Step 3: Compute bbox and query region for each matched plugin.
+                // Step 3: query every matched plugin inside the radius bbox.
                 const bbox = radiusKmToBbox(geo.lat, geo.lng, radius);
                 type SearchResult = { id: string; pluginId: string; name?: string; latitude: number; longitude: number };
                 const allEntities: SearchResult[] = [];
-                let lastEmptyReason: string | undefined;
-
+                let lastEmptyReason: EmptyReason | undefined;
                 for (const plugin of matched) {
                     const result = await getEntitiesInRegion({ ...bbox, pluginId: plugin.pluginId });
                     allEntities.push(...result.entities);
                     if (result.emptyReason) lastEmptyReason = result.emptyReason;
                 }
 
-                // Step 4: Pan camera when a session is active.
+                // Step 4: pan the camera when a tab is live. Its absence is NOT a
+                // failure: the entities are the answer, the pan is a bonus.
                 const sessionId = await resolveActiveSessionId(userId);
                 const sessionPresent = sessionId !== null;
                 if (sessionId !== null) {
-                    const cmd: GlobeCommand = {
-                        type: "pan",
-                        lat: geo.lat,
-                        lon: geo.lng,
-                        alt: INVESTIGATE_PAN_ALT,
-                    };
+                    const cmd: GlobeCommand = { type: "pan", lat: geo.lat, lon: geo.lng, alt: INVESTIGATE_PAN_ALT };
                     await enqueueGlobeCommand(userId, sessionId, cmd);
                 }
 
-                // Step 5: Apply overall cap and record truncation metadata.
-                // cappedTotal is the sum of per-plugin results before the global cap.
-                // It is NOT the true global count because each plugin is queried with
-                // its own 100-entity limit before reaching here.
-                const cappedTotal = allEntities.length;
-                const truncated = cappedTotal > INVESTIGATE_AREA_CAP;
+                // Step 5: apply the global cap. totalMatched is the sum of per-plugin
+                // results BEFORE the cap -- a lower bound, since each plugin was itself
+                // queried with its own entity limit.
+                const totalMatched = allEntities.length;
+                const truncated = totalMatched > INVESTIGATE_AREA_CAP;
                 const entities = truncated ? allEntities.slice(0, INVESTIGATE_AREA_CAP) : allEntities;
 
-                // Step 6: Build prose summary using first matched plugin as representative.
-                const representativePlugin = matched[0].pluginId;
+                // Step 6: deterministic prose, first match as representative.
                 const summary = buildInvestigateProse({
                     displayName: geo.display_name,
                     entityType: entity_type,
-                    matchedPlugin: representativePlugin,
+                    matchedPlugin: matched[0].pluginId,
                     entityCount: entities.length,
                     sessionPresent,
                     emptyReason: lastEmptyReason,
                 });
 
-                return textResult({
-                    entities,
-                    count: entities.length,
-                    ...(truncated && { truncated: true, cappedTotal }),
-                    summary,
-                });
+                if (entities.length === 0) {
+                    return mcpEmpty({ entities, summary }, resolveEmptyReason(lastEmptyReason), { count: 0 });
+                }
+
+                return mcpOk(
+                    { entities, summary },
+                    { count: entities.length, ...(truncated && { truncated: true, totalMatched }) },
+                );
             } catch (err) {
-                console.error("[discoveryTools] investigate_area failed:", err);
-                return textResult({
-                    entities: [],
-                    summary: `investigate_area encountered an unexpected error for "${place_name}". Please retry shortly.`,
+                return mcpCatch("internal_error", "investigate_area failed for the requested place.", err, {
+                    hint: "Retry shortly. Call orient to check whether the engine is healthy before retrying.",
+                    details: { place_name, entity_type },
                 });
             }
         },

@@ -29,56 +29,34 @@ const SERVER_NAME = "worldwideview" as const;
 // The MCP server's own protocol-advertised version. Bump this when the
 // server's self-description or tool surface changes in a meaningful way.
 // This is NOT package.json -- do not keep them in sync automatically.
-export const MCP_SERVER_VERSION = "1.3.0" as const;
+export const MCP_SERVER_VERSION = "2.0.0" as const;
 
 export const MCP_SERVER_INSTRUCTIONS = `\
-You are a geospatial intelligence assistant connected to WorldWideView, a live 3D globe that streams real-world data in real time. You control the globe and query its data on behalf of the authenticated user. All state is scoped to your API key: you only ever see and control your own sessions and data.
+WorldWideView is a live geospatial intelligence engine: real-world data streams onto a 3D globe that a human can watch while you work. You query that data, and when a browser tab is open you can steer the globe so the human sees what you found. All state is scoped to your API key; you only ever see your own sessions and data.
 
-MENTAL MODEL
-- Globe: a 3D interactive viewer running in the user's browser. Think of it as a live map you can steer.
-- Plugins: data layers loaded onto the globe (e.g. flights, earthquakes, shipping). Each plugin streams its own live data.
-- Sessions: open browser tabs showing the globe. Each tab is an independent session identified by a UUID.
+START HERE
+Call orient. In one call it tells you which data feeds are live right now, whether a browser tab is attached, and which tool to call for the task in front of you. Do not guess plugin names -- orient returns them.
 
-CAPABILITIES
-- Globe command tools (require a live browser session): pan_globe, focus_entity, toggle_layer, set_timeline.
-- Data query tools (server-side, NO session required): search_entities, get_entities_in_region, get_entity_details, get_plugin_data, find_nearby_entities.
-- Discovery tools: list_available_plugins, get_globe_context, investigate_area.
-- Filter tools: set_filter, clear_filter, get_plugin_filters.
-- Resources (read): globe://sessions, globe://state/{sessionId}, globe://layers.
-- Plugin tools (dynamic): extra tools named "<pluginId>__<toolName>" appear after a browser tab loads that plugin. This server is stateless; re-call tools/list to discover them after enabling a plugin.
+TWO KINDS OF TOOL
+1. Data tools -- run server-side, need no browser, always available: investigate_area (THE default for "what is happening in or around X"), query_entities, get_entity_details, get_plugin_data, geocode_location, get_regional_analytics.
+2. Cockpit tools -- control the live globe and have no visible effect without an open tab: pan_globe, focus_entity, toggle_layer, set_timeline, and the filter tools set_filter, clear_filter, get_plugin_filters. Each takes an optional sessionId; omit it to target the most recently active tab.
 
-TWO TOOL CATEGORIES
-1. Data query tools (search_entities, get_entities_in_region, get_entity_details, get_plugin_data, find_nearby_entities) run on the server and return real data WITHOUT a browser session. emptyReason values: "plugin_not_streaming" (plugin not active), "no_data_matches" (query ran, nothing matched).
-2. Command tools (pan_globe, focus_entity, toggle_layer, set_timeline, set_filter, clear_filter) enqueue browser commands. They require an active globe session and return "no active globe session to control" when none exists.
+READING A RESULT
+Success is {"ok": true, "data": ..., "meta": ...}. Failure is {"ok": false, "error": ..., "message": ..., "hint": ...}, plus "validValues" when the fix is a vocabulary you could not have known. Branch on "ok", and read "hint" before retrying.
+An empty result is a SUCCESS, not an error. "meta.emptyReason" says why: "no_data_matches" (the feed is live and nothing matched -- normal), "plugin_not_streaming" (that layer is not running), "engine_unreachable" (an OUTAGE -- say so plainly; never report it as an absence of data), "unknown". Never describe an outage as "no data".
+Capped results carry "meta.truncated": true and "meta.totalMatched" for the full count.
 
-DATA AVAILABILITY
-- list_available_plugins returns { "plugins": [] } with reason "engine_unreachable" when the data engine is down, or reason "no_active_plugins" when the engine is up but no plugins are streaming.
-- Data query tools return emptyReason "plugin_not_streaming" when the plugin is not loaded, and "no_data_matches" when the plugin is streaming but no entities matched.
-- Large result sets from get_entities_in_region or get_plugin_data are capped and return "truncated": true plus "totalMatched" for the full count.
-- investigate_area uses "cappedTotal" instead of "totalMatched" because each matched plugin is itself capped at 100 entities, so the summed value is not the true global total.
+SESSIONS AND RESOURCES
+A session is one open browser tab, identified by a UUID, and it is live only while that tab is open. Read globe://sessions to list them, globe://state/{sessionId} to see what a tab is showing, globe://layers for layer definitions.
 
-RESPONSE SHAPES
-- Data tool success: { "success": true, "entities": [...], "count": N }
-- Data tool empty: { "success": true, "entities": [], "count": 0, "emptyReason": "..." }
-- Truncated result (region/snapshot capped): adds "truncated": true, "totalMatched": N
-- investigate_area truncated: adds "truncated": true, "cappedTotal": N (sum of per-plugin capped results)
-- Discovery (list_available_plugins): { "plugins": [...] } or { "plugins": [], "reason": "engine_unreachable" | "no_active_plugins" }
-- Command success: plain text confirmation
-- Command no-session: plain text "no active globe session to control"
-- Command unknown id: plain text warning including "is not a recognized plugin"
+PLUGIN TOOLS
+Extra tools named "<pluginId>__<toolName>" appear in tools/list once a browser tab has loaded that plugin. This server is stateless: re-call tools/list to discover them.
 
-WORKFLOWS (follow these sequences, order matters)
-Rule 1: Before any command tool, READ globe://sessions to discover active sessions. Calling a command without knowing the active session may target the wrong tab.
-Rule 2: Before calling get_plugin_data or get_entities_in_region, call list_available_plugins to confirm the plugin is active.
-Rule 3: Before focus_entity or pan_globe for a named place, geocode the place name first.
-
-SESSIONS
-- To discover sessions, READ globe://sessions. It returns tabs active in the last ~45 seconds.
-- Every command tool takes an optional sessionId. Omit to target the most-recently-active tab.
-- To see what a tab currently shows, read globe://state/{sessionId}.
+MORE DETAIL
+Call describe_tool({ name }) for the full contract of any tool, including when NOT to use it. Machine-readable discovery lives at /llms.txt and /.well-known/mcp/server-card.json.
 
 COORDINATES
-- latitude in [-90, 90], longitude in [-180, 180], altitude greater than 0 metres.`;
+latitude in [-90, 90], longitude in [-180, 180], altitude in metres above the ellipsoid.`;
 
 /**
  * Returns a fresh, empty-capability McpServer per call.
@@ -227,31 +205,25 @@ export async function registerOrientationPrompts(
             const text = [
                 `INVESTIGATION WORKFLOW${place ? `: ${place.toUpperCase()}` : ""}`,
                 "",
-                `Step 1 -- Geocode the target`,
-                `  Call: geocode_location({ query: "${target}" })`,
-                `  Result: latitude, longitude, display name.`,
-                `  Stop if no result is returned -- the place name may be misspelled or too ambiguous.`,
+                `Fastest path -- one call`,
+                `  investigate_area({ place_name: "${target}", entity_type: "<layer>" })`,
+                `  It geocodes the place, queries every matching streaming plugin in one region`,
+                `  query, and pans the open globe to the area when a browser tab is attached.`,
+                `  entity_type is a case-insensitive substring of a plugin id or name -- call`,
+                `  orient first if you do not know which feeds are live.`,
                 "",
-                `Step 2 -- Check plugin availability`,
-                `  Call: tools/list`,
-                `  Look for "<pluginId>__<toolName>" entries relevant to your investigation.`,
-                `  If the tools you need are absent, ask the user to load the relevant plugin in their browser tab, then re-call tools/list.`,
+                `Manual path -- when you need control`,
+                `  Step 1  orient -- which feeds are live, and is a browser tab attached?`,
+                `  Step 2  query_entities({ bbox }) or query_entities({ near }), or`,
+                `          geocode_location({ query: "${target}" }) for exact coordinates.`,
+                `  Step 3  get_entity_details({ pluginId, entityId }) to drill into one entity.`,
+                `  Step 4  Cockpit, needs an open tab: toggle_layer, pan_globe, focus_entity, set_timeline.`,
                 "",
-                `Step 3 -- Orient the globe`,
-                `  Call: orient-globe (this prompt) or READ globe://sessions to find the active sessionId.`,
-                `  Then call: pan_globe({ lat, lon, alt: 500000 }) to fly to the geocoded coordinates.`,
-                "",
-                `Step 4 -- Toggle relevant layers`,
-                `  Call: toggle_layer({ layerId: "<layerId>", enabled: true }) for each plugin layer relevant to your query.`,
-                `  Wait a moment for the plugin to stream data before querying.`,
-                "",
-                `Step 5 -- Query entities in the region`,
-                `  Call: get_entities_in_region({ north, south, east, west }) -- a bounding box around the geocoded coordinates -- or the plugin-specific tool if available.`,
-                `  An empty result means the plugin is not streaming data for this region right now -- that is normal.`,
-                "",
-                `Step 6 -- Drill into specific entities`,
-                `  Call: get_entity_details({ pluginId: "<pluginId>", entityId: "<id>" }) for any entity of interest.`,
-                `  Call: focus_entity({ entityId: "<id>" }) to centre the camera on it.`,
+                `READING RESULTS`,
+                `  Success is {"ok":true,"data":...,"meta":...}. An empty result is still a success:`,
+                `  read meta.emptyReason. "no_data_matches" is normal; "engine_unreachable" is an`,
+                `  outage and must be reported as one, never as "no data".`,
+                `  Call describe_tool({ name }) for any tool's full contract.`,
             ].join("\n");
 
             return {

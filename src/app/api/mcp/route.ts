@@ -44,10 +44,8 @@ import { registerGlobeCommandTools } from "./globeCommandTools";
 import { resolveActiveSessionId } from "@/lib/globeCommandQueue";
 import { registerPluginToolDispatch } from "./pluginToolDispatch";
 import { registerGeocodingTools } from "./geocodingTools";
-import { registerFavoritesTools } from "./favoritesTools";
 import { registerFilterTools } from "./filterTools";
 import { registerDiscoveryTools } from "./discoveryTools";
-import { registerProximityTools } from "./proximityTools";
 import { registerRegionalAnalyticsTools } from "./regionalAnalyticsTools";
 
 // ---------------------------------------------------------------------------
@@ -170,18 +168,22 @@ async function handleMcpRequest(request: Request): Promise<Response> {
     // Phase 19: globe command tools
     // Phase 20: data query tools
     // Phase 21: dynamic per-session plugin tools (below)
-    //   Phase 22: registerGeocodingTools, registerFavoritesTools
+    //   Phase 22: registerGeocodingTools (geocode_location)
     //   Phase 23: registerFilterTools (set_filter, clear_filter, get_plugin_filters)
+    //
+    // v2 (AX overhaul): the four favorites-CRUD tools were unregistered -- human
+    // bookmarking is not an agent capability and it was 17% of the tool list.
+    // find_nearby_entities folded into query_entities' `near` mode, and fly_to
+    // folded into pan_globe's optional bbox. Do not re-add a parallel finder or
+    // a second camera tool; the ambiguity that created was the audit's D1/D5.
     registerGlobeResources(server, { userId: authResult.userId });
     registerDataQueryTools(server, { userId: authResult.userId });
     registerGlobeCommandTools(server, { userId: authResult.userId });
     registerGeocodingTools(server, { userId: authResult.userId });
-    registerFavoritesTools(server, { userId: authResult.userId });
     registerFilterTools(server, { userId: authResult.userId });
-    // Phase 29: discovery tools (list_available_plugins, get_globe_context, investigate_area)
+    // Phase 29 + v2 discovery: list_available_plugins, get_globe_context,
+    // investigate_area, orient (the front door), describe_tool
     registerDiscoveryTools(server, { userId: authResult.userId });
-    // PR 1: proximity tool (find_nearby_entities -- server-side haversine search)
-    registerProximityTools(server, { userId: authResult.userId });
     // Regional spatial analytics & clustering (Gap 2)
     registerRegionalAnalyticsTools(server, { userId: authResult.userId });
     // Phase 26: orientation prompts (INST-03, INST-04)

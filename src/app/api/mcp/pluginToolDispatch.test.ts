@@ -48,9 +48,11 @@ vi.mock("@/lib/mcp/staticPluginCatalog", () => ({
 // Fake MCP server -- records registered tool handlers
 // ---------------------------------------------------------------------------
 
-type ToolHandler = (
-    input: Record<string, unknown>,
-) => Promise<{ content: [{ type: "text"; text: string }]; isError?: boolean }>;
+type ToolHandler = (input: Record<string, unknown>) => Promise<{
+    content: [{ type: "text"; text: string }];
+    structuredContent?: Record<string, unknown>;
+    isError?: boolean;
+}>;
 
 function makeFakeServer() {
     const tools = new Map<string, ToolHandler>();
@@ -153,7 +155,7 @@ describe("registerPluginToolDispatch registration", () => {
 // ---------------------------------------------------------------------------
 
 describe("dispatch handler -- headless / inactive session invocation", () => {
-    it("returns honest no_active_session error when invoked with null sessionId", async () => {
+    it("returns the no_active_session envelope when invoked with null sessionId", async () => {
         mockReadCatalog.mockResolvedValue(null);
         mockGetStaticPluginTools.mockResolvedValue([STATIC_TOOL_FIXTURE]);
 
@@ -168,17 +170,18 @@ describe("dispatch handler -- headless / inactive session invocation", () => {
         const result = await handler({ mmsi: "123456789" });
 
         expect(result.isError).toBe(true);
-        const parsed = JSON.parse(result.content[0].text);
-        expect(parsed).toEqual({
-            error: "Plugin not active in session",
-            reason: "no_active_session",
-            pluginId: "maritime",
-            tool: "maritime__lookup_mmsi",
-        });
+        const parsed = JSON.parse(result.content[0].text) as {
+            ok: boolean;
+            error: string;
+            hint: string;
+        };
+        expect(parsed.ok).toBe(false);
+        expect(parsed.error).toBe("no_active_session");
+        expect(parsed.hint).toMatch(/globe/i);
         expect(mockEnqueueInvocation).not.toHaveBeenCalled();
     });
 
-    it("returns honest no_active_session error when plugin is statically known but not active in session catalog", async () => {
+    it("returns a plugin_offline envelope naming the active tools when a static plugin is not active in the session catalog", async () => {
         // Session catalog only has aviation, but static has maritime
         mockReadCatalog.mockResolvedValue(FIXTURE_CATALOG);
         mockGetStaticPluginTools.mockResolvedValue([STATIC_TOOL_FIXTURE]);
@@ -199,13 +202,16 @@ describe("dispatch handler -- headless / inactive session invocation", () => {
         const result = await maritimeHandler({ mmsi: "123456789" });
 
         expect(result.isError).toBe(true);
-        const parsed = JSON.parse(result.content[0].text);
-        expect(parsed).toEqual({
-            error: "Plugin not active in session",
-            reason: "no_active_session",
-            pluginId: "maritime",
-            tool: "maritime__lookup_mmsi",
-        });
+        const parsed = JSON.parse(result.content[0].text) as {
+            ok: boolean;
+            error: string;
+            hint: string;
+            validValues: string[];
+        };
+        expect(parsed.ok).toBe(false);
+        expect(parsed.error).toBe("plugin_offline");
+        expect(parsed.validValues).toContain("aviation__decode_squawk");
+        expect(parsed.hint).toMatch(/browser session|plugin/i);
         expect(mockEnqueueInvocation).not.toHaveBeenCalled();
     });
 });
@@ -320,6 +326,52 @@ describe("dispatch handler -- relay timeout graceful result (MCP-QA-04)", () => 
 
         const handler = tools.get("aviation__decode_squawk")!;
         await expect(handler({ squawk: "7700" })).resolves.toBeDefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// ENV-07: the RELAYED SUCCESS path also carries the shared v2 envelope.
+// Regression guard: this path used to return a bare content block, leaving
+// "ok" undefined for every plugin-authored tool -- which is most of tools/list
+// in a live session. There was no success-path test at all, which is how it hid.
+// ---------------------------------------------------------------------------
+
+describe("dispatch handler -- relayed result uses the v2 envelope (ENV-07)", () => {
+    async function callSquawk(value: unknown) {
+        mockEnqueueInvocation.mockResolvedValue({ rejected: false });
+        mockWaitForResult.mockResolvedValue({ timedOut: false, value });
+
+        const { server, tools } = makeFakeServer();
+        await registerPluginToolDispatch(
+            server as unknown as import("@modelcontextprotocol/sdk/server/mcp.js").McpServer,
+            { userId: "u1", sessionId: "s1" },
+        );
+        return tools.get("aviation__decode_squawk")!({ squawk: "7700" });
+    }
+
+    it("answers ok:true with the plugin payload under data.result", async () => {
+        const result = await callSquawk({ mentions: 3, label: "PAN PAN" });
+
+        expect(result.structuredContent?.ok).toBe(true);
+        expect(result.structuredContent?.data).toEqual({
+            tool: "aviation__decode_squawk",
+            result: { mentions: 3, label: "PAN PAN" },
+        });
+        expect(JSON.parse(result.content[0].text)).toEqual({
+            ok: true,
+            data: { tool: "aviation__decode_squawk", result: { mentions: 3, label: "PAN PAN" } },
+        });
+    });
+
+    it("does not reshape the relayed payload, and reports a missing value as null", async () => {
+        const result = await callSquawk(undefined);
+
+        // The server is a dumb relay: plugin payloads keep their own shape.
+        expect(result.structuredContent?.ok).toBe(true);
+        expect(result.structuredContent?.data).toEqual({
+            tool: "aviation__decode_squawk",
+            result: null,
+        });
     });
 });
 

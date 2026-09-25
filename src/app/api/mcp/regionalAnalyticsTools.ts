@@ -1,12 +1,24 @@
 /**
  * @file regionalAnalyticsTools.ts
  * @description MCP Tool registrar for regional spatial analytics and density clustering (Gap 2 / Tier 2).
+ *
+ * v2 envelope: success is { ok: true, data }, an empty region is a SUCCESS with
+ * meta.emptyReason (+ the hint that explains how to read it), and a throw is a
+ * failure envelope. An empty reason the service did not state resolves to
+ * "unknown" -- never to no_data_matches.
  */
 
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { latSchema, lonSchema } from "@/lib/mcp/coordinateSchemas";
 import { getRegionalAnalytics } from "@/lib/mcp/regionalAnalyticsService";
+import { escalateEngineOutage } from "@/lib/mcp/outageResponse";
+import {
+    mcpCatch,
+    mcpEmpty,
+    mcpOk,
+    resolveEmptyReason,
+} from "@/lib/mcp/responseEnvelope";
 
 export function registerRegionalAnalyticsTools(
     server: McpServer,
@@ -17,8 +29,9 @@ export function registerRegionalAnalyticsTools(
         {
             description:
                 "Compute aggregated geospatial statistics, category/type distributions, and density clusters within a bounding box. " +
-                "Returns totalCount, per-plugin entity counts, optional property breakdown (groupBy), and spatial density clusters without dumping raw entity lists. " +
+                "Use this instead of query_entities when you want COUNTS and shape rather than the entities themselves -- it returns totalCount, per-plugin counts, an optional property breakdown (groupBy) and density clusters without dumping raw entity lists. " +
                 "This is a READ-ONLY data tool -- it does not require an active browser session. " +
+                "On an empty result meta.emptyReason says why: 'plugin_not_streaming' means the layers are not streaming (nothing was countable -- check tools/list or call orient), 'no_data_matches' means they are live and the box is genuinely empty. " +
                 "Example: get_regional_analytics({ north: 55, south: 50, east: 5, west: -5, groupBy: 'type', clusterResolution: 4 })",
             inputSchema: {
                 north: latSchema.describe("Northern latitude bound (-90 to 90)"),
@@ -46,28 +59,21 @@ export function registerRegionalAnalyticsTools(
                     topN: input.topN,
                 });
 
-                return {
-                    content: [
-                        {
-                            type: "text" as const,
-                            text: JSON.stringify({
-                                success: true,
-                                ...result,
-                            }),
-                        },
-                    ],
-                };
+                // emptyReason belongs in meta, not in the payload.
+                const { emptyReason, ...payload } = result;
+                if (result.totalCount === 0) {
+                    // Nothing countable can mean "these layers are not streaming" or
+                    // "the engine is down"; the vocabulary tells them apart.
+                    return escalateEngineOutage(
+                        mcpEmpty(payload, resolveEmptyReason(emptyReason)),
+                        "The data engine is unreachable, so nothing could be counted in this box.",
+                    );
+                }
+                return mcpOk(payload);
             } catch (err) {
-                const message = err instanceof Error ? err.message : "Failed to compute regional analytics";
-                return {
-                    content: [
-                        {
-                            type: "text" as const,
-                            text: JSON.stringify({ error: message }),
-                        },
-                    ],
-                    isError: true,
-                };
+                return mcpCatch("internal_error", "get_regional_analytics failed", err, {
+                    hint: "Check that north/south/east/west describe a real box (north above south), then retry once.",
+                });
             }
         },
     );
