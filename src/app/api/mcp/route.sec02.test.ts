@@ -6,6 +6,16 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+// The per-IP limiter is a module-level singleton with a 60-per-minute budget, so
+// it is stubbed here rather than exhausted for real: the test drives Gate 0
+// directly and asserts it runs before auth.
+const { mockIpCheck } = vi.hoisted(() => ({ mockIpCheck: vi.fn() }));
+
+vi.mock("@/lib/rateLimiters", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/lib/rateLimiters")>();
+    return { ...actual, mcpLimiter: { check: mockIpCheck } };
+});
+
 // ---------------------------------------------------------------------------
 // Top-level mocks (same surface as route.test.ts)
 // ---------------------------------------------------------------------------
@@ -83,6 +93,22 @@ describe("SEC-02: per-key Redis rate limit gate", () => {
     beforeEach(() => {
         vi.resetAllMocks();
         vi.mocked(authenticateApiKey).mockResolvedValue({ userId: "u1", keyId: "k1" });
+        mockIpCheck.mockReturnValue(null);
+    });
+
+    it("returns the per-IP rejection before auth or the key window is touched", async () => {
+        const limited = new Response("Too Many Requests", {
+            status: 429,
+            headers: { "Retry-After": "60" },
+        });
+        mockIpCheck.mockReturnValue(limited);
+
+        const res = await POST(makePost("Bearer wwv_valid.token"));
+
+        expect(mockIpCheck).toHaveBeenCalledWith(expect.any(String));
+        expect(res).toBe(limited);
+        expect(vi.mocked(authenticateApiKey)).not.toHaveBeenCalled();
+        expect(vi.mocked(redisSlidingWindow)).not.toHaveBeenCalled();
     });
 
     it("passes through when Redis allows the request", async () => {

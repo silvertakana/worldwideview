@@ -191,6 +191,17 @@ describe("list_available_plugins", () => {
         expect(String(parsed.meta?.hint)).toMatch(/outage/i);
     });
 
+    it("maps an unreachable engine to its own reason, never to a data condition", async () => {
+        mockGetAllSnapshots.mockResolvedValue([]);
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503 }));
+
+        const parsed = envelopeOf(await handlers["orient"]({}));
+
+        expect(parsed.ok).toBe(true);
+        expect(parsed.meta?.emptyReason).toBe("engine_unreachable");
+        expect(String(parsed.meta?.hint)).toMatch(/outage/i);
+    });
+
     it("reports an idle engine as plugin_not_streaming -- a different reason", async () => {
         mockGetAllSnapshots.mockResolvedValue([]);
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
@@ -243,6 +254,64 @@ describe("get_globe_context", () => {
         expect(parsed.data?.sessionCount).toBe(1);
         expect(camera?.lat).toBeCloseTo(-36.8);
         expect(parsed.data?.layers).toHaveProperty("maritime");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// service failures -- every data tool answers on the envelope, never by throwing
+// ---------------------------------------------------------------------------
+describe("discovery tools -- unexpected service failures", () => {
+    it("orient fails with internal_error when the session store is unavailable", async () => {
+        mockGetAllSnapshots.mockResolvedValue([]);
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
+        mockResolveActiveSessionId.mockRejectedValue(new Error("redis down"));
+
+        const result = await handlers["orient"]({});
+        const parsed = envelopeOf(result);
+
+        expect(isErrorResult(result)).toBe(true);
+        expect(parsed.ok).toBe(false);
+        expect(parsed.error).toBe("internal_error");
+        expect(parsed.message).toContain("orient");
+        expect(parsed.hint).toContain("engine");
+    });
+
+    it("list_available_plugins fails with engine_unreachable when the snapshot read throws", async () => {
+        mockGetAllSnapshots.mockRejectedValue(new Error("ECONNREFUSED"));
+
+        const result = await handlers["list_available_plugins"]({});
+        const parsed = envelopeOf(result);
+
+        expect(isErrorResult(result)).toBe(true);
+        expect(parsed.error).toBe("engine_unreachable");
+        expect(parsed.message).toContain("streaming plugin list");
+    });
+
+    it("get_globe_context fails with engine_unreachable when the globe state read throws", async () => {
+        mockReadActiveSessions.mockResolvedValue([{ sessionId: "sess-1", lastSeen: Date.now() }]);
+        mockReadGlobeState.mockRejectedValue(new Error("redis down"));
+
+        const result = await handlers["get_globe_context"]({});
+        const parsed = envelopeOf(result);
+
+        expect(isErrorResult(result)).toBe(true);
+        expect(parsed.error).toBe("engine_unreachable");
+        expect(parsed.message).toContain("globe context");
+    });
+
+    it("investigate_area fails with internal_error when the region query throws", async () => {
+        mockGetAllSnapshots.mockResolvedValue([snapshot("flights")]);
+        mockGetEntitiesInRegion.mockRejectedValue(new Error("engine exploded"));
+
+        const result = await handlers["investigate_area"]({
+            place_name: "Auckland",
+            entity_type: "flights",
+        });
+        const parsed = envelopeOf(result);
+
+        expect(isErrorResult(result)).toBe(true);
+        expect(parsed.error).toBe("internal_error");
+        expect(parsed.message).toContain("investigate_area");
     });
 });
 

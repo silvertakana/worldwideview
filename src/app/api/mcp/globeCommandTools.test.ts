@@ -404,6 +404,81 @@ describe("coordinate schema bounds", () => {
 });
 
 // ---------------------------------------------------------------------------
+// ENV-07: an enqueue failure and a missing tab on every cockpit tool
+// ---------------------------------------------------------------------------
+
+describe("set_timeline success envelope", () => {
+    it("echoes only the timeline fields the caller actually set", async () => {
+        const { tools } = register();
+        const result = await tools.get("set_timeline")!({
+            currentTime: "2026-09-25T00:00:00.000Z",
+            timeWindow: "24h",
+            isPlaybackMode: true,
+        });
+
+        expect(envelope(result)).toMatchObject({
+            ok: true,
+            data: {
+                command: "setTimeline",
+                currentTime: "2026-09-25T00:00:00.000Z",
+                timeWindow: "24h",
+                isPlaybackMode: true,
+            },
+        });
+        expect(mockEnqueue).toHaveBeenCalledWith(
+            "u1",
+            "resolved-session",
+            expect.objectContaining({ type: "setTimeline", timeWindow: "24h" }),
+        );
+    });
+
+    it("omits the fields the caller left unset rather than echoing undefined", async () => {
+        const { tools } = register();
+        const result = await tools.get("set_timeline")!({ timeWindow: "6h" });
+        const data = (result as { structuredContent: { data: Record<string, unknown> } }).structuredContent.data;
+
+        expect(data).toMatchObject({ command: "setTimeline", timeWindow: "6h" });
+        expect(Object.keys(data)).not.toContain("currentTime");
+        expect(Object.keys(data)).not.toContain("isPlaybackMode");
+    });
+});
+
+describe("cockpit commands -- failures on every cockpit tool", () => {
+    const COCKPIT_TOOLS: string[] = ["pan_globe", "focus_entity", "toggle_layer", "set_timeline"];
+
+    /** The registered handler, or a throw -- so a missing tool fails as itself. */
+    function handlerFor(tools: Map<string, ToolHandler>, name: string): ToolHandler {
+        const handler = tools.get(name);
+        if (handler === undefined) throw new Error("tool not registered: " + name);
+        return handler;
+    }
+
+    it.each(COCKPIT_TOOLS)(
+        "%s fails with internal_error when the command cannot be enqueued",
+        async (name: string) => {
+            const { tools } = register();
+            mockEnqueue.mockRejectedValue(new Error("redis down"));
+
+            const body = envelope(await handlerFor(tools, name)({ lat: 35.68, lon: 139.69 }));
+
+            expect(body.ok).toBe(false);
+            expect(body.error).toBe("internal_error");
+            expect(String(body.hint).length).toBeGreaterThan(0);
+        },
+    );
+
+    it.each(COCKPIT_TOOLS)("%s answers no_active_session when no tab is attached", async (name: string) => {
+        const { tools } = register();
+        mockResolveSessionId.mockResolvedValue(null);
+
+        const body = envelope(await handlerFor(tools, name)({ lat: 35.68, lon: 139.69 }));
+
+        expect(body.ok).toBe(false);
+        expect(body.error).toBe("no_active_session");
+    });
+});
+
+// ---------------------------------------------------------------------------
 // isValidGlobeCommand still rejects out-of-range coordinates
 // ---------------------------------------------------------------------------
 

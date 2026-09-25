@@ -9,6 +9,7 @@ import {
     sessionModel,
 } from "@/lib/mcp/toolCatalog";
 import { MCP_SERVER_VERSION } from "@/lib/mcp/server";
+import { MCP_APP_URL } from "@/lib/mcp/responseEnvelope";
 import { GET } from "./route";
 
 const ORIGIN = "https://cloud-wwv.dev";
@@ -180,5 +181,15 @@ describe("GET /.well-known/mcp/server-card.json", () => {
         const card = JSON.parse(await response.text()) as ServerCard;
 
         expect(card.documentationUrl).toBe(other + "/llms.txt");
+    });
+
+    it("falls back to the configured app URL when the request URL is unparseable", async () => {
+        const response = await GET({
+            url: "https:////",
+        } as unknown as Request);
+        const card = JSON.parse(await response.text()) as ServerCard;
+
+        expect(response.status).toBe(200);
+        expect(card.documentationUrl).toBe(MCP_APP_URL + "/llms.txt");
     });
 });

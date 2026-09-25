@@ -172,6 +172,28 @@ describe("orient-globe handler", () => {
         expect(msg.content.text).toContain("51.5");
     });
 
+    it("picks the genuinely most-recent session, whatever order Redis returned", async () => {
+        // readActiveSessions returns zrange order (oldest first), so the first
+        // entry is NOT the live tab: the prompt must sort by lastSeen itself.
+        mockReadSessions.mockResolvedValue([
+            { sessionId: "sess-old", lastSeen: Date.now() - 600_000 },
+            { sessionId: "sess-new", lastSeen: Date.now() - 1_000 },
+        ]);
+        mockReadState.mockResolvedValue({ layers: { flights: { visible: true } } } as never);
+
+        const server = makeFakeServer();
+        await registerOrientationPrompts(server as never, { userId: "u1" });
+
+        const handler = server._getHandler("orient-globe");
+        const result = await (handler as () => Promise<unknown>)();
+
+        const msg = (result as { messages: Array<{ content: { text: string } }> }).messages[0];
+        expect(msg.content.text).toContain("1. sessionId=sess-new");
+        expect(msg.content.text).toContain("2. sessionId=sess-old");
+        // The newest session is the one whose state is read.
+        expect(mockReadState).toHaveBeenCalledWith("u1", "sess-new");
+    });
+
     it("gracefully handles no active sessions", async () => {
         mockReadSessions.mockResolvedValue([]);
 

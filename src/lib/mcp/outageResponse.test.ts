@@ -14,7 +14,7 @@ vi.mock("@/app/api/mcp/discoveryHelpers", async (importOriginal) => {
 });
 
 import { listStreamingPlugins } from "@/app/api/mcp/discoveryHelpers";
-import { mcpEmpty, mcpFail, mcpOk } from "@/lib/mcp/responseEnvelope";
+import { isMcpFailure, mcpEmpty, mcpFail, mcpOk, resolveEmptyReason } from "@/lib/mcp/responseEnvelope";
 import {
     ENGINE_UNREACHABLE_HINT,
     engineOutageFailure,
@@ -39,6 +39,46 @@ const notStreamingEmpty = mcpEmpty({ entities: [] }, "plugin_not_streaming");
 beforeEach(() => {
     vi.clearAllMocks();
     mockPlugins.mockResolvedValue({ plugins: [] });
+});
+
+describe("resolveEmptyReason", () => {
+    it("passes the two reasons the service can state through unchanged", () => {
+        expect(resolveEmptyReason("plugin_not_streaming")).toBe("plugin_not_streaming");
+        expect(resolveEmptyReason("no_data_matches")).toBe("no_data_matches");
+    });
+
+    it("maps a session reason to unknown, NEVER to no_data_matches", () => {
+        // v1 reported this as "no data found", which is a different claim.
+        expect(resolveEmptyReason("no_session_active")).toBe("unknown");
+    });
+
+    it("maps a missing reason to unknown rather than guessing a data condition", () => {
+        expect(resolveEmptyReason(undefined)).toBe("unknown");
+    });
+});
+
+describe("isMcpFailure", () => {
+    it("is true for a failure envelope", () => {
+        expect(isMcpFailure(mcpFail("not_found", "nope"))).toBe(true);
+    });
+
+    it("is true for an error flagged only by isError", () => {
+        expect(
+            isMcpFailure({
+                content: [{ type: "text", text: "{}" }],
+                structuredContent: { ok: true },
+                isError: true,
+            }),
+        ).toBe(true);
+    });
+
+    it("is false for a success envelope", () => {
+        expect(isMcpFailure(mcpOk({ entities: [] }))).toBe(false);
+    });
+
+    it("is false for an empty-but-successful envelope", () => {
+        expect(isMcpFailure(mcpEmpty({ entities: [] }, "unknown"))).toBe(false);
+    });
 });
 
 describe("vocabularySaysEngineIsDown", () => {
@@ -117,6 +157,19 @@ describe("escalateWithVocabulary", () => {
         expect(body.ok).toBe(false);
         expect(body.error).toBe("engine_unreachable");
         expect(mockPlugins).not.toHaveBeenCalled();
+    });
+
+    it("returns a result that is not a not-streaming empty untouched", () => {
+        const noMatch = mcpEmpty({ entities: [] }, "no_data_matches");
+
+        const body = envelope(
+            escalateWithVocabulary(noMatch, "Down.", { reason: "engine_unreachable" }),
+        );
+
+        // "no_data_matches" is a claim the service made, not an outage shape.
+        expect(body.ok).toBe(true);
+        expect(body.error).toBeUndefined();
+        expect(body.meta?.emptyReason).toBe("no_data_matches");
     });
 
     it("leaves the empty alone when the held vocabulary says the engine is up", () => {

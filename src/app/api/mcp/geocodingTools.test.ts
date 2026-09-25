@@ -9,6 +9,14 @@ vi.mock("@/lib/nominatim", async (importOriginal) => {
 });
 vi.mock("@/lib/geocodingRateLimit");
 
+// The Redis cache is mocked rather than left to a live server: without this the
+// suite reads and writes whatever 24h entries the machine's Redis happens to
+// hold, so results depend on the host, not on the code.
+const { mockRedis } = vi.hoisted(() => ({
+    mockRedis: { get: vi.fn(), set: vi.fn() },
+}));
+vi.mock("@/lib/redis", () => ({ redis: mockRedis }));
+
 import { registerGeocodingTools } from "./geocodingTools";
 import { fetchGeocode } from "@/lib/nominatim";
 import type { RawNominatimItem } from "@/lib/nominatim";
@@ -61,6 +69,9 @@ beforeEach(() => {
     Object.keys(handlers).forEach((k) => delete handlers[k]);
     Object.keys(schemas).forEach((k) => delete schemas[k]);
     mockCheckRateLimit.mockResolvedValue(undefined);
+    // Cold cache by default; individual tests seed a hit or a failure.
+    mockRedis.get.mockResolvedValue(null);
+    mockRedis.set.mockResolvedValue("OK");
     registerGeocodingTools(mockServer as never, ctx);
 });
 
@@ -179,6 +190,113 @@ describe("geocode_location failure envelope", () => {
         expect(payload.hint).toContain("OUTAGE");
         expect(payload.hint).toContain("NOT a missing place");
         expect(payload.error).not.toBe("not_found");
+    });
+});
+
+describe("geocode_location cache (GEO-03)", () => {
+    const KEY = "geocode:london:5";
+
+    it("answers from a warm cache without calling Nominatim, carrying capturedAt", async () => {
+        mockRedis.get.mockResolvedValue(
+            JSON.stringify({
+                capturedAt: "2026-09-25T10:00:00.000Z",
+                results: [
+                    {
+                        lat: 51.5074,
+                        lng: -0.1278,
+                        displayName: "London, UK",
+                        name: "London",
+                        nameEn: "London",
+                        type: "city",
+                        addresstype: "place",
+                        country: "United Kingdom",
+                        bbox: [-0.5103, 51.2868, 0.334, 51.6919],
+                        importance: 0.9,
+                    },
+                ],
+            }),
+        );
+
+        const result = await handlers["geocode_location"]({ query: "London" });
+        const payload = envelopeOf(result);
+
+        expect(mockRedis.get).toHaveBeenCalledWith(KEY);
+        expect(mockFetchGeocode).not.toHaveBeenCalled();
+        expect(payload).toMatchObject({ ok: true, data: { query: "London", lat: 51.5074 } });
+        expect(payload.meta).toMatchObject({ count: 1, capturedAt: "2026-09-25T10:00:00.000Z" });
+    });
+
+    it("ignores a cache value that is not the entry shape and geocodes again", async () => {
+        mockRedis.get.mockResolvedValue("[]");
+        mockFetchGeocode.mockResolvedValue([LONDON]);
+
+        const result = await handlers["geocode_location"]({ query: "London" });
+
+        expect(mockFetchGeocode).toHaveBeenCalled();
+        expect(envelopeOf(result)).toMatchObject({ ok: true, data: { displayName: "London, UK" } });
+    });
+
+    it("ignores a cached primitive (JSON '5') instead of trusting its shape", async () => {
+        mockRedis.get.mockResolvedValue("5");
+        mockFetchGeocode.mockResolvedValue([LONDON]);
+
+        const result = await handlers["geocode_location"]({ query: "London" });
+
+        expect(mockFetchGeocode).toHaveBeenCalled();
+        expect(envelopeOf(result)).toMatchObject({ ok: true, data: { displayName: "London, UK" } });
+    });
+
+    it("ignores a non-JSON cache value instead of failing the tool", async () => {
+        mockRedis.get.mockResolvedValue("not-json");
+        mockFetchGeocode.mockResolvedValue([LONDON]);
+
+        const result = await handlers["geocode_location"]({ query: "London" });
+
+        expect(mockFetchGeocode).toHaveBeenCalled();
+        expect(envelopeOf(result).ok).toBe(true);
+    });
+
+    it("writes a fresh result to the cache for the normalized query and limit, with a 24h TTL", async () => {
+        mockFetchGeocode.mockResolvedValue([LONDON]);
+
+        await handlers["geocode_location"]({ query: "  London  " });
+
+        expect(mockRedis.set).toHaveBeenCalledWith(
+            "geocode:london:5",
+            expect.any(String),
+            "EX",
+            86_400,
+        );
+        const cached = JSON.parse(mockRedis.set.mock.calls[0][1] as string) as {
+            capturedAt: string;
+            results: unknown[];
+        };
+        expect(cached.results).toHaveLength(1);
+        expect(Number.isNaN(Date.parse(cached.capturedAt))).toBe(false);
+    });
+
+    it("still answers ok:true when the cache read throws (Redis outage degrades to a miss)", async () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        mockRedis.get.mockRejectedValue(new Error("ECONNREFUSED"));
+        mockFetchGeocode.mockResolvedValue([LONDON]);
+
+        const result = await handlers["geocode_location"]({ query: "London" });
+
+        expect(envelopeOf(result)).toMatchObject({ ok: true, data: { displayName: "London, UK" } });
+        expect(warn).toHaveBeenCalled();
+        warn.mockRestore();
+    });
+
+    it("still answers ok:true when the cache write throws (a failed write is not a failed geocode)", async () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        mockRedis.set.mockRejectedValue(new Error("ECONNREFUSED"));
+        mockFetchGeocode.mockResolvedValue([LONDON]);
+
+        const result = await handlers["geocode_location"]({ query: "London" });
+
+        expect(envelopeOf(result)).toMatchObject({ ok: true, data: { displayName: "London, UK" } });
+        expect(warn).toHaveBeenCalled();
+        warn.mockRestore();
     });
 });
 

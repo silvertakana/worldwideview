@@ -22,6 +22,10 @@ vi.mock("@/app/api/mcp/discoveryHelpers", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@/app/api/mcp/discoveryHelpers")>();
     return { ...actual, listStreamingPlugins: vi.fn() };
 });
+vi.mock("@/lib/mcp/proximitySearch", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/lib/mcp/proximitySearch")>();
+    return { ...actual, filterEntityIdsByProperty: vi.fn() };
+});
 
 import { registerDataQueryTools } from "./tools";
 import {
@@ -31,8 +35,12 @@ import {
     searchEntities,
 } from "@/lib/data-query/service";
 import { listStreamingPlugins } from "@/app/api/mcp/discoveryHelpers";
+import { filterEntityIdsByProperty } from "@/lib/mcp/proximitySearch";
 
 const mockRegion = vi.mocked(getEntitiesInRegion);
+// query_entities' inline filters intersect a layer's region results with its
+// snapshot's matching ids; the snapshot read is not what these tests are about.
+const mockFilterIds = vi.mocked(filterEntityIdsByProperty);
 const mockDetails = vi.mocked(getEntityDetails);
 const mockPluginData = vi.mocked(getPluginData);
 const mockSearch = vi.mocked(searchEntities);
@@ -81,6 +89,9 @@ function resetHarness(): void {
 
     mockRegion.mockResolvedValue({ entities: [] });
     mockSearch.mockResolvedValue({ entities: [] });
+    // Snapshot intersection for query_entities' inline filters. Default: every
+    // fixture entity matches; each test narrows it.
+    mockFilterIds.mockResolvedValue(new Set(["BA1", "AF1", "DH1", "MA1"]));
     mockDetails.mockResolvedValue({ data: null, emptyReason: "no_data_matches" });
     mockPluginData.mockResolvedValue({ data: null, emptyReason: "plugin_not_streaming" });
     mockPlugins.mockResolvedValue({
@@ -201,6 +212,154 @@ describe("query_entities -- mode routing", () => {
         await call("query_entities", { bbox: BOX, limit: 5000 });
 
         expect(mockRegion).toHaveBeenCalledWith(expect.objectContaining({ limit: 200 }));
+    });
+});
+
+describe("query_entities -- bbox + filters across several layers", () => {
+    const STATUS_FILTER = { status: { type: "select" as const, values: ["airborne"] } };
+
+    it("intersects each layer's region results with its snapshot's matching ids", async () => {
+        mockRegion.mockImplementation(async (bounds) =>
+            bounds.pluginId === "flights"
+                ? {
+                      entities: [
+                          hit("BA1", "flights", LONDON.lat, LONDON.lon),
+                          hit("AF1", "flights", PARIS.lat, PARIS.lon),
+                      ],
+                  }
+                : { entities: [hit("MA1", "maritime", 51.49, -0.1)] },
+        );
+        mockFilterIds.mockImplementation(async (pluginId: string) =>
+            pluginId === "flights" ? new Set(["BA1"]) : new Set<string>(),
+        );
+
+        const body = envelope(
+            await call("query_entities", {
+                bbox: BOX,
+                pluginIds: ["flights", "maritime"],
+                filters: STATUS_FILTER,
+            }),
+        );
+
+        expect(mockFilterIds).toHaveBeenCalledWith("flights", STATUS_FILTER);
+        expect(mockFilterIds).toHaveBeenCalledWith("maritime", STATUS_FILTER);
+        expect(body.data?.entities).toEqual([
+            { id: "BA1", pluginId: "flights", name: "BA1", latitude: LONDON.lat, longitude: LONDON.lon },
+        ]);
+    });
+
+    it("drops a layer whose snapshot cannot be read rather than widening the result", async () => {
+        mockRegion.mockImplementation(async (bounds) =>
+            bounds.pluginId === "flights"
+                ? { entities: [hit("BA1", "flights", LONDON.lat, LONDON.lon)] }
+                : { entities: [hit("MA1", "maritime", 51.49, -0.1)] },
+        );
+        mockFilterIds.mockImplementation(async (pluginId: string) =>
+            pluginId === "flights" ? null : new Set(["MA1"]),
+        );
+
+        const body = envelope(
+            await call("query_entities", {
+                bbox: BOX,
+                pluginIds: ["flights", "maritime"],
+                filters: STATUS_FILTER,
+            }),
+        );
+
+        expect(body.ok).toBe(true);
+        expect(body.data?.entities).toEqual([
+            { id: "MA1", pluginId: "maritime", name: "MA1", latitude: 51.49, longitude: -0.1 },
+        ]);
+    });
+
+    it("reports no_data_matches when the live layers stated exactly that", async () => {
+        mockRegion.mockResolvedValue({ entities: [], emptyReason: "no_data_matches" as const });
+
+        const body = envelope(
+            await call("query_entities", { bbox: BOX, pluginIds: ["flights", "maritime"] }),
+        );
+
+        expect(body.ok).toBe(true);
+        expect(body.data?.entities).toEqual([]);
+        expect(body.meta?.emptyReason).toBe("no_data_matches");
+    });
+
+    it("lets a live layer's statement win over an offline one", async () => {
+        mockRegion.mockImplementation(async (bounds) =>
+            bounds.pluginId === "flights"
+                ? { entities: [], emptyReason: "plugin_not_streaming" as const }
+                : { entities: [], emptyReason: "no_data_matches" as const },
+        );
+
+        const body = envelope(
+            await call("query_entities", { bbox: BOX, pluginIds: ["flights", "maritime"] }),
+        );
+
+        expect(body.meta?.emptyReason).toBe("no_data_matches");
+    });
+
+    it("keeps a missing reason missing when no layer stated one at all", async () => {
+        mockRegion.mockResolvedValue({ entities: [] });
+
+        const body = envelope(
+            await call("query_entities", { bbox: BOX, pluginIds: ["flights", "maritime"] }),
+        );
+
+        expect(body.ok).toBe(true);
+        expect(body.data?.entities).toEqual([]);
+        // Never "no_data_matches": nothing proved the data was absent.
+        expect(body.meta?.emptyReason).toBe("unknown");
+    });
+
+    it("sums the layers' own totals when a source reported a truncated list", async () => {
+        mockRegion.mockImplementation(async (bounds) =>
+            bounds.pluginId === "flights"
+                ? { entities: [hit("BA1", "flights", LONDON.lat, LONDON.lon)], totalMatched: 400 }
+                : { entities: [hit("MA1", "maritime", 51.49, -0.1)], totalMatched: 120 },
+        );
+
+        const body = envelope(
+            await call("query_entities", { bbox: BOX, pluginIds: ["flights", "maritime"] }),
+        );
+
+        expect(body.data?.entities).toHaveLength(2);
+        expect(body.meta?.totalMatched).toBe(520);
+    });
+
+    it("stops gathering once the caller's limit is reached, across layers", async () => {
+        mockRegion.mockImplementation(async (bounds) =>
+            bounds.pluginId === "flights"
+                ? {
+                      entities: [
+                          hit("BA1", "flights", LONDON.lat, LONDON.lon),
+                          hit("AF1", "flights", PARIS.lat, PARIS.lon),
+                          hit("LH1", "flights", BERLIN.lat, BERLIN.lon),
+                      ],
+                  }
+                : { entities: [hit("MA1", "maritime", 51.49, -0.1)] },
+        );
+
+        const body = envelope(
+            await call("query_entities", { bbox: BOX, pluginIds: ["flights", "maritime"], limit: 2 }),
+        );
+
+        expect(body.data?.entities).toHaveLength(2);
+    });
+
+    it("states no reason for a multi-layer sweep where no layer stated one", async () => {
+        mockRegion.mockImplementation(async (bounds) =>
+            bounds.pluginId === "flights"
+                ? { entities: [] }
+                : { entities: [], emptyReason: "plugin_not_streaming" as const },
+        );
+
+        const body = envelope(
+            await call("query_entities", { bbox: BOX, pluginIds: ["flights", "maritime"] }),
+        );
+
+        expect(body.ok).toBe(true);
+        expect(body.data?.entities).toEqual([]);
+        expect(body.meta?.emptyReason).toBe("plugin_not_streaming");
     });
 });
 

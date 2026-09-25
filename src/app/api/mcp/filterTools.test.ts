@@ -31,6 +31,7 @@ type Envelope = {
     ok: boolean;
     data?: Record<string, unknown>;
     error?: string;
+    message?: string;
     hint?: string;
     validValues?: string[];
 };
@@ -50,6 +51,53 @@ beforeEach(() => {
     mockResolveActiveSessionId.mockResolvedValue("sess-abc");
     mockListStreamingPlugins.mockResolvedValue({ plugins: [{ pluginId: "flights", pluginName: "flights", entityCount: 0, entityTypes: [], source: "engine" }] } as never);
     registerFilterTools(mockServer as never, ctx);
+});
+
+describe("filterTools -- explicit sessionId and enqueue failures", () => {
+    it("set_filter targets the sessionId the caller passed, without resolving the active one", async () => {
+        const result = await handlers["set_filter"]({
+            pluginId: "flights",
+            filters: { status: { type: "select", values: ["airborne"] } },
+            sessionId: "sess-explicit",
+        });
+
+        expect(mockResolveActiveSessionId).not.toHaveBeenCalled();
+        expect(mockEnqueue).toHaveBeenCalledWith(
+            "u1",
+            "sess-explicit",
+            expect.objectContaining({ type: "setFilter" }),
+        );
+        expect(envelopeOf(result)).toMatchObject({ ok: true, data: { sessionId: "sess-explicit" } });
+    });
+
+    it("set_filter fails with internal_error when the command cannot be enqueued", async () => {
+        mockEnqueue.mockRejectedValueOnce(new Error("redis down"));
+
+        const result = await handlers["set_filter"]({ pluginId: "flights", filters: {} });
+
+        expect(envelopeOf(result)).toMatchObject({ ok: false, error: "internal_error" });
+        expect(envelopeOf(result).message).toContain("set_filter");
+        expect(envelopeOf(result).hint).toContain("Redis");
+    });
+
+    it("clear_filter fails with internal_error when the command cannot be enqueued", async () => {
+        mockEnqueue.mockRejectedValueOnce(new Error("redis down"));
+
+        const result = await handlers["clear_filter"]({});
+
+        expect(envelopeOf(result)).toMatchObject({ ok: false, error: "internal_error" });
+        expect(envelopeOf(result).message).toContain("clear_filter");
+    });
+
+    it("get_plugin_filters fails with internal_error when the session catalog read throws", async () => {
+        mockReadSessionCatalog.mockRejectedValueOnce(new Error("redis down"));
+
+        const result = await handlers["get_plugin_filters"]({ pluginId: "flights" });
+
+        expect(envelopeOf(result)).toMatchObject({ ok: false, error: "internal_error" });
+        expect(envelopeOf(result).message).toContain("get_plugin_filters");
+        expect(envelopeOf(result).hint).toContain("globe tab");
+    });
 });
 
 describe("filterTools tool descriptions (DESC-03)", () => {
