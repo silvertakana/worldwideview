@@ -85,6 +85,7 @@ function KeyRow({
 }) {
     return (
       <div
+        data-testid="api-key-row"
         style={{
             display: "flex",
             alignItems: "center",
@@ -106,6 +107,7 @@ function KeyRow({
           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)" }}>
             <button
               type="button"
+              data-testid="api-key-revoke-confirm"
               onClick={onConfirmRevoke}
               style={{ ...iconBtn, color: "#ef4444", fontSize: 11, gap: "var(--space-xs)" }}
             >
@@ -123,6 +125,7 @@ function KeyRow({
         ) : (
           <button
             type="button"
+            data-testid="api-key-revoke"
             onClick={onAskRevoke}
             aria-label="Revoke key"
             title="Revoke key"
@@ -220,7 +223,7 @@ export function PersonalApiKeysSection() {
     }
 
     return (
-      <div style={{ marginBottom: "var(--space-lg)" }}>
+      <div data-testid="api-keys-section" style={{ marginBottom: "var(--space-lg)" }}>
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
         <div style={sectionHeaderStyle}>
@@ -272,6 +275,7 @@ export function PersonalApiKeysSection() {
             <input
               type="text"
               value={name}
+              data-testid="api-key-name"
               placeholder="Name this key (optional)"
               onChange={(e) => setName(e.target.value)}
               style={{ ...inputStyle, fontFamily: "inherit", marginBottom: "var(--space-sm)" }}
@@ -282,6 +286,7 @@ export function PersonalApiKeysSection() {
             />
             <button
               type="button"
+              data-testid="api-key-generate"
               onClick={handleGenerate}
               disabled={atLimit || generating}
               style={{
@@ -305,7 +310,7 @@ export function PersonalApiKeysSection() {
         )}
 
         {revealToken && (
-          <div style={{ marginTop: "var(--space-md)" }}>
+          <div data-testid="api-key-reveal" style={{ marginTop: "var(--space-md)" }}>
             <div style={{
                 display: "flex", alignItems: "flex-start", gap: "var(--space-xs)",
                 background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)",

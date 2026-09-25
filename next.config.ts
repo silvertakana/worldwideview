@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
     "wwv.local",
     "app.wwv.local",
     "localhost",
+    // The dev server refuses the browser's module-script requests (403) unless
+    // their Origin is listed here. 127.0.0.1 is the same machine as localhost
+    // but a different origin to the browser, so omitting it served the page and
+    // then blocked every chunk that would hydrate it: the sign-in form rendered
+    // and silently did nothing.
+    "127.0.0.1",
+    "[::1]",
     ...(process.env.ALLOWED_DEV_ORIGIN ? process.env.ALLOWED_DEV_ORIGIN.split(",") : []),
   ],
   experimental: {

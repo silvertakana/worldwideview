@@ -2,7 +2,26 @@
 
 ## 1. Project Identity
 
-WorldWideView is a **real-time geospatial intelligence engine** visualizing live global data on an interactive 3D globe. Built with **Next.js 16**, **CesiumJS**, **React 19**, and **Zustand**. Design/feature target: `www.worldmonitor.app` ([reference repo](https://github.com/koala73/worldmonitor)).
+WorldWideView is a **real-time geospatial intelligence engine** visualizing live global data on an interactive 3D globe, and the **Globe App + Headless MCP Server** of the WorldWideView ecosystem. Built with **Next.js 16**, **CesiumJS**, **React 19**, and **Zustand**.
+
+**The design target is the WorldWideView ecosystem itself - not a third-party project.** This repository is the globe product: it streams live data onto the 3D globe and exposes the same data to AI agents over MCP at `/api/mcp`. It is one of several independent WorldWideView repositories (see the workspace-root `AGENTS.md` for the full ecosystem map).
+
+### Canonical hosts
+
+| Surface | Canonical host |
+|---|---|
+| Cloud globe instance | `https://<name>.cloud-wwv.dev` (per-tenant; the live entry today is `https://cloud-wwv.dev`) |
+| Cloud MCP endpoint | `https://<name>.cloud-wwv.dev/api/mcp` - the instance's own origin + `/api/mcp` |
+| Local / self-hosted | `http://localhost:<port>/api/mcp` - the page origin + `/api/mcp` |
+| Hub (landing + sign-in) | `https://worldwideview.dev` |
+| Public demo globe | `https://demo.worldwideview.dev` |
+| Plugin marketplace | `https://marketplace.worldwideview.dev` |
+| Data engine | `https://dataenginev2.worldwideview.dev` (serves `/api/<layer>`; its root is 404 by design) |
+
+> [!IMPORTANT]
+> **Never hardcode a host.** The app derives its own MCP endpoint from the page origin at runtime, so every cloud tenant advertises its own URL. No edition may fall back to a host this project does not own. `app.worldwideview.dev` is **not live** and must not be used, even as a placeholder.
+
+The verified domain map, probe evidence, and the history of the foreign domain that used to sit in the line above: [ADR-0010](docs/architecture/decisions/adr-0010-ecosystem-domain-map-and-tenant-endpoints.md).
 
 ---
 

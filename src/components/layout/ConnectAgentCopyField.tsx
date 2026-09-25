@@ -54,9 +54,11 @@ interface CopyFieldProps {
     value: string;
     label: string;
     multiline?: boolean;
+    /** Test handle for the rendered control, so E2E specs never match on copy. */
+    testId?: string;
 }
 
-export function CopyField({ value, label, multiline = false }: CopyFieldProps) {
+export function CopyField({ value, label, multiline = false, testId }: CopyFieldProps) {
     const [copied, setCopied] = useState(false);
 
     async function handleCopy() {
@@ -87,6 +89,7 @@ export function CopyField({ value, label, multiline = false }: CopyFieldProps) {
               data-lpignore="true"
               data-form-type="other"
               spellCheck={false}
+              data-testid={testId}
             />
           ) : (
             <input
@@ -98,6 +101,7 @@ export function CopyField({ value, label, multiline = false }: CopyFieldProps) {
               data-lpignore="true"
               data-form-type="other"
               spellCheck={false}
+              data-testid={testId}
             />
           )}
           <button
@@ -109,6 +113,7 @@ export function CopyField({ value, label, multiline = false }: CopyFieldProps) {
                 flexShrink: 0,
                 alignSelf: "flex-start",
             }}
+            data-testid={testId ? `${testId}-copy` : undefined}
             title={copied ? "Copied!" : `Copy ${label}`}
           >
             {copied ? <Check size={12} /> : <Copy size={12} />}

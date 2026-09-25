@@ -78,7 +78,7 @@ export default function UnverifiedPluginBatchDialog({
         </p>
 
         <div className={styles.actions}>
-          <button className={styles.denyBtn} onClick={onDenyAll}>
+          <button className={styles.denyBtn} data-testid="deny-all-plugins" onClick={onDenyAll}>
             Deny All
           </button>
           <button

@@ -276,6 +276,7 @@ export function Header() {
               />
               <button
                 type="button"
+                data-testid="open-api-keys"
                 className="btn btn--glow"
                 onClick={() => setShowApiKeys(true)}
                 title="API Keys"

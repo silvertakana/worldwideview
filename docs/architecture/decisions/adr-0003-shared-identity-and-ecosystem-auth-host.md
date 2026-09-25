@@ -21,6 +21,7 @@ Accepted *(Phase 2A-D implementation complete 2026-05-25)*
 
 ## Related
 - **Builds on:** ADR-001 (Decentralized Plugin Auth & SSRF Mitigation) — specifically the PKCE flow that lets the Local App acquire tokens from the Marketplace
+- **Cloud App host corrected by:** ADR-0010 (Ecosystem Domain Map & Per-Tenant MCP Endpoints) — `app.worldwideview.dev` does not resolve and is not live; cloud instances live at `<name>.cloud-wwv.dev`. The auth-host decision in this ADR is unaffected.
 - **Supersedes:** `.agents/rules/cloud-auth-architecture.md` (which incorrectly states that `app.worldwideview.dev` owns all login UI — this ADR reverses that)
 
 ---

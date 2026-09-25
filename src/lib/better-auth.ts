@@ -6,8 +6,9 @@
  *
  * Key decisions:
  *  - cookiePrefix "better-auth" avoids collision with other auth cookies
- *  - trustedOrigins: static list from env vars + localhost defaults, with
- *    dynamic origin trust in local edition (single-tenant, no CSRF risk)
+ *  - trustedOrigins: static list from env vars + local dev defaults (both the
+ *    localhost and 127.0.0.1 spellings), with dynamic origin trust in local
+ *    edition (single-tenant, no CSRF risk)
  *  - basePath: "/api/ba" for the Better Auth API handler
  *  - All 5 plugins configured: organization, admin, jwt, oneTimeToken, apiKey
  */
@@ -21,9 +22,29 @@ import { apiKey } from "@better-auth/api-key";
 import { jwtPlugin } from "@/lib/auth/jwt-plugin";
 import { evaluatePasswordStrength, MIN_PASSWORD_SCORE } from "@/lib/password-strength";
 
+/** Ports the local dev servers listen on: globe 3000, hub 3001, marketplace 3002. */
+const LOCAL_DEV_PORTS = [3000, 3001, 3002] as const;
+
+/**
+ * Origin spellings for the local dev servers.
+ *
+ * `localhost` is always trusted, matching the previous hardcoded list. The
+ * `127.0.0.1` alias names the same machine, and a developer who opens
+ * http://127.0.0.1:3000 sends that spelling as the request Origin — Better Auth
+ * then rejects it as an untrusted origin and sign-in never issues a session
+ * cookie. The alias is added only outside production, so a cloud/demo
+ * deployment keeps exactly the origin rule it had before. A local-edition
+ * production build (self-host) needs no alias here: resolveTrustedOrigins
+ * already trusts the origin the operator's browser actually sends.
+ */
+export function buildLocalDevOrigins(trustLoopbackAlias: boolean): string[] {
+    const hosts = trustLoopbackAlias ? ["localhost", "127.0.0.1"] : ["localhost"];
+    return hosts.flatMap((host) => LOCAL_DEV_PORTS.map((port) => `http://${host}:${port}`));
+}
+
 /**
  * Build the static base list of trusted origins from environment variables.
- * Includes configured app URLs and localhost dev defaults. Deduplicates.
+ * Includes configured app URLs and local dev defaults. Deduplicates.
  * Exported for unit testing.
  */
 export function buildTrustedOrigins(): string[] {
@@ -31,9 +52,7 @@ export function buildTrustedOrigins(): string[] {
         process.env.NEXT_PUBLIC_APP_URL,
         process.env.NEXT_PUBLIC_WEB_APP_URL,
         process.env.NEXT_PUBLIC_MARKETPLACE_URL,
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
+        ...buildLocalDevOrigins(process.env.NODE_ENV !== "production"),
     ].filter(Boolean) as string[];
 
     const extra = (process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "")

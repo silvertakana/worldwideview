@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { isDemo } from "@/core/edition";
 import { authClient } from "@/lib/auth-client";
 import { migrateLegacyUserIfNeeded } from "@/lib/auth/migrate-legacy-user";
 import styles from "../setup/setup.module.css";
+
+/** Every failure path resolves to one of these, so the user always sees a reason. */
+const CREDENTIALS_ERROR = "Sign in failed. Check your credentials and try again.";
+const MIGRATION_ERROR = "Sign in failed after migration. Try again.";
+const UNREACHABLE_ERROR = "Could not reach the sign-in service. Check your connection and try again.";
 
 /** Allow relative paths or same-origin URLs only (local edition is self-contained). */
 function getSafeRedirect(url: string | null): string {
@@ -18,8 +23,56 @@ function getSafeRedirect(url: string | null): string {
     return "/";
 }
 
+/**
+ * One sign-in attempt, plus the legacy-account migration retry.
+ *
+ * Returns null on success (Better Auth navigates to the callback URL), or
+ * human-readable copy for the user.
+ */
+async function signInWithMigration(
+    email: string,
+    password: string,
+    callbackURL: string,
+): Promise<string | null> {
+    const { error: signInError } = await authClient.signIn.email({ email, password, callbackURL });
+    if (!signInError) return null;
+
+    console.warn("[login] sign-in failed", { code: signInError.code, message: signInError.message });
+
+    // Try migrating legacy NextAuth user to Better Auth
+    const migrated = await migrateLegacyUserIfNeeded(email, password);
+    if (!migrated) return CREDENTIALS_ERROR;
+
+    // Retry sign-in — the BetterAuthUser + account now exist
+    const { error: retryError } = await authClient.signIn.email({ email, password, callbackURL });
+    if (!retryError) return null; // On retry success, Better Auth redirects
+
+    console.warn("[login] sign-in retry failed", { code: retryError.code, message: retryError.message });
+    return MIGRATION_ERROR;
+}
+
+/**
+ * Sign in, converting any failure into copy for the user.
+ *
+ * The request itself can reject — server down, offline, or a cross-origin call
+ * the auth server refuses. That rejection used to escape the submit handler and
+ * leave the button stuck on "Signing in..." with nothing to read, so it is
+ * caught here and reported like any other failure.
+ */
+async function attemptSignIn(
+    email: string,
+    password: string,
+    callbackURL: string,
+): Promise<string | null> {
+    try {
+        return await signInWithMigration(email, password, callbackURL);
+    } catch (cause) {
+        console.warn("[login] sign-in request failed", cause);
+        return UNREACHABLE_ERROR;
+    }
+}
+
 export default function LoginForm() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const next = searchParams.get("next");
     const [error, setError] = useState("");
@@ -31,38 +84,17 @@ export default function LoginForm() {
         setLoading(true);
 
         const formData = new FormData(e.currentTarget);
-        const email = formData.get("email") as string;
-        const password = formData.get("password") as string;
+        const email = String(formData.get("email") ?? "");
+        const password = String(formData.get("password") ?? "");
 
-        const { error: signInError } = await authClient.signIn.email({
-            email,
-            password,
-            callbackURL: getSafeRedirect(next),
-        });
+        const failure = await attemptSignIn(email, password, getSafeRedirect(next));
 
-        if (signInError) {
-            console.warn('[login] sign-in failed', { code: signInError.code, message: signInError.message });
-
-            // Try migrating legacy NextAuth user to Better Auth
-            const migrated = await migrateLegacyUserIfNeeded(email, password);
-            if (migrated) {
-                // Retry sign-in — the BetterAuthUser + account now exist
-                const { error: retryError } = await authClient.signIn.email({
-                    email,
-                    password,
-                    callbackURL: getSafeRedirect(next),
-                });
-                if (retryError) {
-                    console.warn('[login] sign-in retry failed', { code: retryError.code, message: retryError.message });
-                    setError("Sign in failed after migration. Try again.");
-                }
-                // On retry success, Better Auth redirects
-            } else {
-                setError("Sign in failed. Check your credentials and try again.");
-            }
+        // On success Better Auth is navigating — stay pending so the form cannot
+        // be submitted twice mid-redirect.
+        if (failure) {
+            setError(failure);
             setLoading(false);
         }
-        // On success, Better Auth redirects to callbackURL
     }
 
     return (
@@ -96,7 +128,7 @@ export default function LoginForm() {
               />
             </label>
 
-            {error && <p className={styles.error}>{error}</p>}
+            {error && <p className={styles.error} role="alert">{error}</p>}
 
             <button type="submit" disabled={loading} className={styles.button}>
               {loading ? "Signing in..." : "Sign In"}

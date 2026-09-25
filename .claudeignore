@@ -34,7 +34,6 @@ packages/*/data
 
 # Local Structural Repositories & Workspaces
 !local-plugins/*
-!/worldmonitor/
 !local-seeders/*
 
 # Complete Ecosystem Repositories (Allows Agent to Cross-Reference Layouts)

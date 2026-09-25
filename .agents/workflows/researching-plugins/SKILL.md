@@ -16,11 +16,15 @@ This skill defines the rigorous process for researching, evaluating, and plannin
 
 ## 1. Research & Evaluation Process
 
-### Step 1: Take Inspiration from WorldMonitor
-Before searching the web blindly, check if the `koala73/worldmonitor` repository already implements a similar feature.
-- Review their data sources, API endpoints, and polling intervals.
-- Analyze which data fields they map for visualization.
-- Use this as a baseline for what is possible and expected.
+### Step 1: Check the Ecosystem Before the Web
+
+Reuse beats re-derivation. Before searching the web, check whether the capability already exists inside WorldWideView:
+
+- **The ecosystem repository table** in `C:\dev\wwv\AGENTS.md` section 1 - the Globe App & MCP server, the Web Hub, the Marketplace, the Data Engine, community plugins, and the data seeders.
+- **Existing plugins and seeders** in `packages/`, `local-plugins/`, and `local-seeders/` - a data source we already poll is the cheapest possible starting point.
+- **The marketplace registry** at `marketplace.worldwideview.dev` - a published plugin may already cover the layer you are planning.
+
+Reading *other* projects for ideas is legitimate and encouraged: a good data-source list is a good data-source list, and naming an API someone else already vetted saves a day of the Step 2 validation below. What a reference may supply is bounded, though. It may give you **inspiration, data-source candidates, field lists, and polling intervals** - it may never supply a **hostname or endpoint**. Every domain in this repo comes from the canonical map in [ADR-0010](../../../docs/architecture/decisions/adr-0010-ecosystem-domain-map-and-tenant-endpoints.md), and at runtime an endpoint is derived from the deployment's own page origin. That ADR records what happened the last time a foreign domain was treated as a design target here: a third party's API URL shipped into our own connect panel.
 
 ### Step 2: Validate Data Sources
 Search for APIs that meet the following strict criteria. If an API fails these, keep searching or ask the user for guidance:
@@ -98,4 +102,5 @@ If you find yourself doing any of the following, delete your work and start over
 - Proposing an API with a 50 requests/day limit for real-time tracking.
 - Writing a plan step that says "Implement similar to Task 2."
 - Omitting exact file paths or complete code blocks in your tasks.
-- Failing to verify if WorldMonitor has already solved this problem.
+- Failing to check the ecosystem first (sibling repositories, existing plugins, seeders) before reaching for the web.
+- Copying a hostname, domain, or endpoint out of another project into a plan or a code block. Domains come from ADR-0010's canonical map and are derived from the page origin at runtime - never copied.

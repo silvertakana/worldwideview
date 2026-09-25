@@ -104,9 +104,6 @@ next-env.d.ts
 # Plugin build artifacts
 packages/*/dist/
 
-# Reference Reference Codebases
-/worldmonitor/
-
 # Developmental scripts & temporary sandbox
 /local-scripts/
 /public/plugins-local/

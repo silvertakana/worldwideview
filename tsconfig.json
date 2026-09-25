@@ -49,7 +49,6 @@
     "local-seeders",
     "local-plugins",
     "packages/*/backend",
-    "worldmonitor",
     ".worktrees",
     "tests",
     "playwright.config.ts"

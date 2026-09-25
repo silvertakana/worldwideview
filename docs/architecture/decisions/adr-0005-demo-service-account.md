@@ -10,6 +10,7 @@ Proposed
 - **Builds on:** ADR-001 (Decentralized Plugin Auth & SSRF Mitigation) — the PKCE → API Key → JWT token exchange this ADR extends with an alternative credential source
 - **Builds on:** ADR-003 (Shared Identity & Ecosystem Auth Host) — the user identity model this ADR reuses for non-human accounts
 - **Supersedes:** v1.6 deferred item "Demo instance service account — needs marketplace credential for anonymous visitor authentication"
+- **Amended by:** ADR-0010 (Ecosystem Domain Map & Per-Tenant MCP Endpoints) — the demo host in Context is `demo.worldwideview.dev`; a third-party host was named there in error
 
 ---
 
@@ -19,7 +20,7 @@ v1.6 (Phase 41) locked the wwv-data-engine to authenticated access. Every WebSoc
 
 But it leaves the demo deployment with no path for unauthenticated visitors:
 
-- The demo instance (`demo.worldmonitor.app`) is the public face of the product. Visitors should see the globe and its data without creating an account or logging in.
+- The demo instance (`demo.worldwideview.dev`) is the public face of the product. Visitors should see the globe and its data without creating an account or logging in.
 - The demo instance has no PKCE-connected marketplace account. There is no `MarketplaceCredential` in its local DB to exchange for JWTs.
 - The `WWV_SKIP_WS_AUTH` bypass flag exists but defeats the purpose of locking auth — enabling it on demo means the demo runs without any auth, which is a testing gap (the demo is not exercising the same code path as production).
 
