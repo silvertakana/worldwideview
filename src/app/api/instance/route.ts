@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { hashPassword } from "better-auth/crypto";
 import { generateSetupToken } from "@/lib/setup-token";
 import crypto from "node:crypto";
+import { resolveInstanceBaseUrl } from "@/lib/instanceUrl";
 
 export async function GET(request: Request) {
     const authError = await crossServiceAuth(request);
@@ -155,7 +156,12 @@ export async function POST(request: Request) {
         },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+    const baseUrl = resolveInstanceBaseUrl({
+        subdomain: workspace.subdomain,
+        forwardedHost: request.headers.get("x-forwarded-host"),
+        forwardedProto: request.headers.get("x-forwarded-proto"),
+        requestUrl: request.url,
+    });
     return NextResponse.json({
         id: workspace.id,
         name: workspace.name,
@@ -164,6 +170,6 @@ export async function POST(request: Request) {
         plan: workspace.plan,
         tier: workspace.tier,
         createdAt: workspace.createdAt,
-        ...(setupToken ? { setupToken, setupUrl: `${appUrl}/setup?token=${setupToken}` } : {}),
+        ...(setupToken ? { setupToken, setupUrl: `${baseUrl}/setup?token=${setupToken}` } : {}),
     });
 }

@@ -115,6 +115,8 @@ required.
 ### Read / query tools (no open tab required)
 
 These run server-side and return data using only your API key. You do not need the globe open.
+The server registers **22 tools**; `tools/list` on a running instance is the authority, and the
+"Connect your agent" panel prints that same list from the server's own registry.
 
 | Tool | What it does |
 |---|---|
@@ -129,6 +131,10 @@ These run server-side and return data using only your API key. You do not need t
 | `update_favorite` | Rename or annotate a bookmark |
 | `remove_favorite` | Delete a bookmark |
 | `get_plugin_filters` | List filterable fields a plugin declares |
+| `find_nearby_entities` | Find entities within a radius of a point |
+| `get_regional_analytics` | Aggregate entity counts per plugin across a region |
+| `investigate_area` | Summarise what is live in an area, plugin by plugin |
+| `get_globe_context` | Report the globe's live state: camera, layers, filters, attached tabs |
 
 ### Command / control tools (open globe tab required)
 
@@ -151,13 +157,21 @@ Redis (run `pnpm dev:all`).
 
 ## Recommended agent prompt
 
-Paste this into your agent's system prompt to give it immediate context:
+The **"Connect your agent" panel generates this brief for you**: your own MCP endpoint, the
+tool list the server really registers, and a `mcpServers` config block with your key already in
+the Authorization header. Use its **Copy** button - one click, one paste into your harness -
+rather than writing a prompt by hand; a hand-written prompt drifts from the server's real tool
+surface, which is how the panel came to advertise a tool that did not exist.
+
+If you want a starting prompt of your own, keep the two facts an agent cannot guess:
 
 ```
 You have access to WorldWideView (WWV) via MCP -- a live 3D globe streaming real-world data
 (aviation, shipping, earthquakes, weather, and more). Use the MCP tools to query entities,
-move the camera, toggle layers, and filter data. Command tools require the user to have the
-WWV globe open in a browser tab. Read/query tools work without a browser tab.
+move the camera, toggle layers, and filter data. The endpoint and the API key are in your
+mcpServers config; the key goes in the Authorization header, never in the URL. Command tools
+require the user to have the WWV globe open in a browser tab. Read/query tools work without
+a browser tab.
 ```
 
 ---

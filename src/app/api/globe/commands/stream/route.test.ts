@@ -302,3 +302,35 @@ describe("GET /api/globe/commands/stream -- keepalive comment every 15s (SSE-07)
         expect(text).toContain(":keepalive");
     });
 });
+
+// ---------------------------------------------------------------------------
+// SSE-08: a consumer that goes away mid-stream must not error the stream
+// ---------------------------------------------------------------------------
+
+describe("GET /api/globe/commands/stream -- cancelled consumer (SSE-08)", () => {
+    beforeEach(() => {
+        mockGetSession.mockResolvedValue({
+            user: { id: "u1", name: "Test User", email: "test@example.com" },
+            session: { id: "s1", token: "tok1" },
+        } as BetterAuthSession);
+        mockDrain.mockResolvedValue([]);
+    });
+
+    it("ends quietly when the client cancels mid-stream", async () => {
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        const res = await GET(makeRequest(VALID_SESSION_ID));
+        expect(res.status).toBe(200);
+
+        // Firefox closes the connection whenever its EventSource reconnects, and
+        // the route then tries to close an already-closed controller. That throw
+        // errored the response and starved the reconnect loop, so the command
+        // never reached the globe.
+        await res.body?.cancel();
+        await new Promise((resolve) => setTimeout(resolve, 400));
+
+        expect(errorSpy).not.toHaveBeenCalled();
+        errorSpy.mockRestore();
+    });
+
+});

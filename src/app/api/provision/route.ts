@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { crossServiceAuth } from "@/lib/cross-service/middleware";
 import { ProvisioningContentionError, provisionAccount, type ProvisionedAccount } from "@/lib/provisioning";
+import { resolveInstanceBaseUrl } from "@/lib/instanceUrl";
 
 interface ProvisionBody {
     email: string;
@@ -61,9 +62,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         );
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+    // This route runs before a workspace exists, so there is no subdomain to hang a
+    // tenant URL on; the proxy-reported host (or the pinned app URL) answers.
+    const baseUrl = resolveInstanceBaseUrl({
+        forwardedHost: request.headers.get("x-forwarded-host"),
+        forwardedProto: request.headers.get("x-forwarded-proto"),
+        requestUrl: request.url,
+    });
     return NextResponse.json({
         setupToken: account.rawToken,
-        setupUrl: `${appUrl}/setup?token=${account.rawToken}`,
+        setupUrl: `${baseUrl}/setup?token=${account.rawToken}`,
     });
 }

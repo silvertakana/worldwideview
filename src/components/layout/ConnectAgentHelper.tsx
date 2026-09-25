@@ -5,8 +5,10 @@
  * @description "Connect your agent" helper rendered inside the "API & MCP Access"
  * section. Shows this instance's /api/mcp URL, a copy-paste mcpServers JSON block
  * (Bearer token in Authorization HEADER -- never in the URL), a generic Manual
- * block, and a copy-paste agent-capabilities prompt. The Claude Code CLI snippet
- * is deferred ("coming soon").
+ * block, and ONE generated agent setup brief (buildAgentBrief) that replaces the
+ * old hand-written prompt: its client configs, curl check and tool list all come
+ * from this instance's own endpoint and its real MCP tool registry. The Claude
+ * Code CLI snippet is deferred ("coming soon").
  *
  * The endpoint comes from resolveMcpEndpoint (src/lib/mcp/endpoint.ts): an
  * explicit NEXT_PUBLIC_MCP_API_URL wins, otherwise the page's own origin is used
@@ -22,39 +24,15 @@
 import { Terminal, Info } from "lucide-react";
 import { edition, isCloud } from "@/core/edition";
 import { readBrowserOrigin, resolveMcpEndpoint } from "@/lib/mcp/endpoint";
+import { buildAgentBrief, mcpServersConfig } from "@/lib/mcp/agentBrief";
+import { MCP_TOOLS } from "@/lib/mcp/toolRegistry";
 import { CopyField, mutedMicro, subHeaderStyle } from "./ConnectAgentCopyField";
-import { AGENT_PROMPT } from "./connectAgentPrompt";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 const PLACEHOLDER_TOKEN = "wwv_<prefix>.<secret>";
-
-/**
- * mcpServers JSON for Claude Desktop / Cursor / VS Code (D-17-09, raw-SDK
- * Streamable HTTP form). Uses `headers.Authorization` -- NOT `type: "sse"` +
- * `env.AUTHORIZATION` (superseded research form).
- *
- * SECURITY (CONNECT-01 / T-17-04): the token is placed ONLY in the Authorization
- * header value -- never in the URL or a query parameter.
- */
-function buildMcpServersJson(url: string, token: string): string {
-    return JSON.stringify(
-        {
-            mcpServers: {
-                worldwideview: {
-                    url,
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                },
-            },
-        },
-        null,
-        2,
-    );
-}
 
 /**
  * Shown when the endpoint cannot be detected: plain explanatory text plus the
@@ -108,12 +86,24 @@ export function ConnectAgentHelper({ token }: ConnectAgentHelperProps) {
     // Only built for a detected endpoint; an undetected one must never render as
     // a copyable, dead URL. The block that consumes this is not rendered in the
     // undetected case.
+    // The same JSON the brief carries (mcpServersConfig), so the panel's block
+    // and the brief can never describe two different configs.
     const mcpServersJson =
         endpoint.kind === "undetected"
             ? ""
-            : buildMcpServersJson(endpoint.url, displayToken);
+            : mcpServersConfig(endpoint.url, displayToken);
 
     const authHeaderValue = `Bearer ${displayToken}`;
+
+    // Generated, never hand-written: the tool list comes from the registry the
+    // MCP server itself registers (src/lib/mcp/toolRegistry.ts), so this brief
+    // cannot advertise a tool that does not exist.
+    const agentBrief = buildAgentBrief({
+        endpoint,
+        token: displayToken,
+        edition,
+        tools: MCP_TOOLS,
+    });
 
     return (
       <div style={{ marginTop: "var(--space-lg)" }}>
@@ -203,12 +193,15 @@ export function ConnectAgentHelper({ token }: ConnectAgentHelperProps) {
           )}
           <CopyField label="Authorization header value" value={authHeaderValue} testId="mcp-authorization" />
 
-          {/* Section: Prompt for your agent (CONNECT-03) */}
-          <div style={subHeaderStyle}>Prompt for your agent</div>
+          {/* Section: generated agent setup brief (CONNECT-03). ONE copy action:
+              the brief carries this instance's endpoint, its real tool list, and
+              the client configs for Claude Desktop, Cursor and VS Code. */}
+          <div style={subHeaderStyle}>Agent setup brief</div>
           <div style={{ ...mutedMicro, marginBottom: "var(--space-sm)" }}>
-            Paste this into your agent&apos;s system prompt or first message to describe WWV.
+            One copy, one paste: endpoint, auth header, client configs, a connection check,
+            and the exact tools this instance exposes.
           </div>
-          <CopyField label="Capabilities prompt" value={AGENT_PROMPT} multiline testId="agent-prompt" />
+          <CopyField label="Agent setup brief" value={agentBrief} multiline testId="agent-prompt" />
           <div style={{ ...mutedMicro, marginTop: "var(--space-xs)" }}>
             Plugin authors: see docs/plugin-filter-guide.md to declare filterable fields for set_filter / get_plugin_filters.
           </div>

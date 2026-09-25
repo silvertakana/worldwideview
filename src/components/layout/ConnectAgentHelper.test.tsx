@@ -29,6 +29,8 @@ vi.mock("@/core/edition", () => ({
     get isDemo() { return mocks.edition === "demo"; },
 }));
 
+import { AGENT_BRIEF_MAX_CHARS } from "@/lib/mcp/agentBrief";
+import { mcpToolNames } from "@/lib/mcp/toolRegistry";
 import { ConnectAgentHelper } from "./ConnectAgentHelper";
 
 const CLOUD_ORIGIN = "https://acme.cloud-wwv.dev";
@@ -48,6 +50,23 @@ function fieldValues(): string[] {
     return Array.from(
         document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input, textarea"),
     ).map((el) => el.value);
+}
+
+/**
+ * A copy field may show a placeholder shape (`https://<your-instance>...`) or the
+ * loopback shape the local edition genuinely uses. Any other host is one the panel
+ * cannot vouch for -- exactly the defect this panel exists to prevent.
+ */
+function expectNoConcreteRemoteHost(values: string[]): void {
+    for (const value of values) {
+        expect(value).not.toContain("worldmonitor");
+        for (const match of value.matchAll(/https?:\/\/\S+/g)) {
+            const url = match[0];
+            const isPlaceholder = url.includes("<");
+            const isLoopback = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/)/.test(url);
+            expect(isPlaceholder || isLoopback, `copy field advertises an unverifiable host: ${url}`).toBe(true);
+        }
+    }
 }
 
 beforeEach(() => {
@@ -87,11 +106,12 @@ describe("ConnectAgentHelper endpoint states", () => {
         expect(screen.getByText(/open this panel from the running instance/)).toBeDefined();
         expect(screen.getByText(LOCAL_EXAMPLE)).toBeDefined();
 
-        // No copy field for a URL, and no dead URL anywhere on the page.
+        // No copy field for a URL, and no concrete host anywhere on the page. The
+        // brief may still print the edition's shape, which is a placeholder.
         expect(screen.queryByText("Endpoint URL")).toBeNull();
         expect(screen.queryByText("mcpServers config block")).toBeNull();
-        expect(fieldValues().some((value) => value.includes("/api/mcp"))).toBe(false);
         expect(document.body.innerHTML).not.toContain("worldmonitor");
+        expectNoConcreteRemoteHost(fieldValues());
     });
 
     it("uses the cloud shape when the cloud edition cannot detect the endpoint", () => {
@@ -121,14 +141,17 @@ describe("ConnectAgentHelper endpoint states", () => {
         expect(screen.getByText("MCP endpoint not detected")).toBeDefined();
         expect(screen.getByText(/not to an absolute http\(s\) URL/)).toBeDefined();
         expect(screen.queryByText("Endpoint URL")).toBeNull();
-        expect(fieldValues().some((value) => value.includes("/api/mcp"))).toBe(false);
+        expectNoConcreteRemoteHost(fieldValues());
     });
 
     it("keeps the token in the Authorization header and out of every URL", () => {
         mocks.readBrowserOrigin.mockReturnValue(CLOUD_ORIGIN);
         render(<ConnectAgentHelper token="wwv_abc.secret" />);
 
-        const block = screen.getByDisplayValue(/"mcpServers"/) as HTMLTextAreaElement;
+        // By testid, not by a regex over display values: the generated agent
+        // setup brief below also contains "mcpServers", so /"mcpServers"/ would
+        // match two textareas.
+        const block = screen.getByTestId("mcp-connect-block") as HTMLTextAreaElement;
         const parsed = JSON.parse(block.value) as McpServersBlock;
 
         expect(parsed.mcpServers.worldwideview.url).toBe(CLOUD_ORIGIN + "/api/mcp");
@@ -144,3 +167,46 @@ describe("ConnectAgentHelper endpoint states", () => {
         expect(endpointField.value).not.toContain("?");
     });
 });
+
+describe("ConnectAgentHelper agent setup brief", () => {
+    it("renders the generated brief behind one copy action", () => {
+        mocks.readBrowserOrigin.mockReturnValue(CLOUD_ORIGIN);
+        render(<ConnectAgentHelper token="wwv_abc.secret" />);
+
+        const brief = (screen.getByTestId("agent-prompt") as HTMLTextAreaElement).value;
+
+        expect(brief).toContain(CLOUD_ORIGIN + "/api/mcp");
+        expect(brief).toContain(".cursor/mcp.json");
+        expect(brief).toContain(".vscode/mcp.json");
+        expect(brief).toContain("tools/list");
+        expect(screen.getAllByTestId("agent-prompt-copy")).toHaveLength(1);
+    });
+
+    it("names the real registry tools and carries the token exactly once", () => {
+        mocks.readBrowserOrigin.mockReturnValue(CLOUD_ORIGIN);
+        render(<ConnectAgentHelper token="wwv_abc.secret" />);
+
+        const brief = (screen.getByTestId("agent-prompt") as HTMLTextAreaElement).value;
+
+        for (const name of mcpToolNames()) {
+            expect(brief, `brief should list ${name}`).toContain(name);
+        }
+        expect(brief).not.toContain("get_weather");
+        expect(brief.split("wwv_abc.secret").length - 1).toBe(1);
+        expect(brief.length).toBeLessThan(AGENT_BRIEF_MAX_CHARS);
+    });
+
+    it("hands over the expected URL shape, and no host, when the endpoint is undetected", () => {
+        mocks.readBrowserOrigin.mockReturnValue(null);
+        render(<ConnectAgentHelper />);
+
+        const brief = (screen.getByTestId("agent-prompt") as HTMLTextAreaElement).value;
+
+        // The reader is told what to fix, not left to guess: the brief carries the
+        // edition's shape (a placeholder on cloud) and never a live host.
+        expect(brief).toContain("Endpoint: NOT DETECTED");
+        expect(brief).toContain("http://localhost:3000/api/mcp");
+        expectNoConcreteRemoteHost([brief]);
+    });
+});
+

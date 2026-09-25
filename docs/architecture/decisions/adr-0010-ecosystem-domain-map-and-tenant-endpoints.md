@@ -111,6 +111,27 @@ The invariant this buys:
 
 Consequence for auditing: **counting the string is not a compliance check.** A `grep` for it must be read, not merely tallied, because the guard tests above are hits that must stay.
 
+### ADR-010E: A setup link is built from the tenant's own subdomain (2026-09-24)
+
+`NEXT_PUBLIC_APP_URL` names one host. On the shared cloud container that host is no tenant's
+address, so a setup link built from it pointed at the wrong place - and with the variable unset,
+at a bare relative `/setup?token=...`. Both provisioning routes now call
+`resolveInstanceBaseUrl()` (`src/lib/instanceUrl.ts`), which prefers
+`<subdomain>.<NEXT_PUBLIC_WWV_TENANT_DOMAIN>`, then `NEXT_PUBLIC_APP_URL`, then the
+proxy-reported host, then the request's own origin. A setup link is therefore always absolute
+and, on cloud, always the tenant's. The hub's `NEXT_PUBLIC_INSTANCE_URL_PATTERN` fallback
+still works but is no longer load-bearing.
+
+**Live reproduction of the defect this ADR closes.** On the deployed pre-fix build
+(`SOURCE_COMMIT 891d94e4`), a real signed-in cloud instance's Connect panel filled its copy
+fields with `https://api.worldmonitor.app/api/mcp` while that instance's own working endpoint
+was `https://wwv-verify.cloud-wwv.dev/api/mcp`. An agent given the panel's config block would
+have dialled the foreign host. The fixed panel derives the page origin; the live cloud still
+runs the pre-fix build, so this reproduction stays visible there until a merge and redeploy.
+
+**Doc drift found by the same pass.** `.env.example` described the tenant-suffix default as
+`.app.worldwideview.dev`, a host ADR-010A records as not live; corrected to `.cloud-wwv.dev`.
+
 ---
 
 ## Consequences
