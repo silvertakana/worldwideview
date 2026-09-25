@@ -224,15 +224,25 @@ jobs:
       # boots `pnpm start` (next start) instead of the dev server when CI=true.
       run: pnpm build
 
+    - name: Install software GL driver
+      # Headless Firefox cannot create a WebGL context (upstream bugzilla 1375585,
+      # still open), so Cesium never renders and the camera-flight assertion cannot
+      # pass. This project runs headed under xvfb-run below instead, which needs a
+      # software GL driver to rasterise the globe on a GPU-less runner.
+      run: sudo apt-get update && sudo apt-get install -y libgl1-mesa-dri libglx-mesa0
+
     - name: Run Playwright tests
       env:
         # Prevent Firefox from loading the AT-SPI/MSAA accessibility bridge on
         # Linux CI — without this, Firefox hangs for ~20 min waiting for a bus
         # that doesn't exist on ubuntu-latest runners.
         NO_AT_BRIDGE: '1'
+        # Force the software rasteriser: the runner has no GPU, so llvmpipe is the
+        # only route to a GL context for Cesium under Xvfb.
+        LIBGL_ALWAYS_SOFTWARE: '1'
         BETTER_AUTH_SECRET: test-better-auth-secret-at-least-32-chars!
         CROSS_SERVICE_SECRET: test-cross-service-secret-for-e2e
-      run: pnpm test:e2e --project=firefox
+      run: xvfb-run -a pnpm test:e2e --project=firefox
 
     - uses: actions/upload-artifact@v7
       if: ${{ !cancelled() }}

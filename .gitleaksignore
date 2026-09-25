@@ -6,3 +6,9 @@
 # range still includes the commit that introduced it, so the finding is reported
 # again on every push. Suppressing that exact fingerprint (and nothing else).
 4d5c145397d9bb5e83767c36b52bf17d042d2338:src/lib/cross-service/middleware.test.ts:generic-api-key:6
+
+# commit 1f29a0e8 added a fake bearer key literal to the agent-brief tests, so the
+# brief can be asserted to print a token exactly once. It is not a credential and
+# the fixture is now marked with an inline gitleaks:allow, but the PR scan range
+# still includes the commit that introduced it.
+1f29a0e806d65494c939f0868fa74bb7eab29824:src/lib/mcp/agentBrief.test.ts:generic-api-key:19

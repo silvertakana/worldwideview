@@ -79,18 +79,18 @@ export default defineConfig({
           firefoxUserPrefs: {
             // Disable MSAA/AT-SPI accessibility layer — causes hangs on Linux CI
             'accessibility.force_disabled': 1,
-            // Firefox headless on a GPU-less runner blocklists WebGL, so Cesium never
-            // gets a context and camera.flyTo never animates: the camera stays at its
-            // start position and mcp-connect-flow's "camera must fly" assertion times
-            // out. Chromium (SwiftShader) and WebKit render anyway, which is why only
-            // this project failed. Force a context and allow the software rasterizer.
+            // Firefox headless cannot create a WebGL context at all (upstream
+            // bugzilla 1375585, still open), so Cesium never renders there and
+            // camera.flyTo never animates: the camera stays at its start position and
+            // mcp-connect-flow's "camera must fly" assertion times out. Chromium
+            // (SwiftShader) and WebKit render anyway, which is why only this project
+            // failed. Accepting a software rasteriser does not help on its own; the
+            // firefox CI job runs headed under xvfb-run with one instead.
             'webgl.force-enabled': true,
-            'webgl.disabled': false,
             'webgl.forbid-software': false,
-            'gfx.webrender.software': true,
-            'layers.acceleration.disabled': true,
           },
         },
+        headless: process.env.CI ? false : undefined,
       },
     },
     {
