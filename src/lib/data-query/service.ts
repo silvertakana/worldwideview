@@ -43,19 +43,27 @@ export function getEngineUrl(): string {
     return `http://localhost:${port}`;
 }
 
+/**
+ * Seeders spell coordinates and labels inconsistently (latitude/longitude vs
+ * lat/lon; label/name/place/title). Fall back across the observed spellings so
+ * a feed's raw vocabulary never silently drops its entities headlessly.
+ */
 function normalizeEntity(raw: unknown): GeoEntity | null {
     if (typeof raw !== "object" || raw === null) return null;
     const e = raw as Record<string, unknown>;
+    const label = [e.label, e.name, e.place, e.title, e.eventname].find(
+        (v): v is string => typeof v === "string" && v !== "",
+    );
     return {
         id: e.id as string,
         pluginId: e.pluginId as string,
-        latitude: e.latitude as number,
-        longitude: e.longitude as number,
+        latitude: (typeof e.latitude === "number" ? e.latitude : e.lat) as number,
+        longitude: (typeof e.longitude === "number" ? e.longitude : e.lon) as number,
         altitude: e.altitude as number | undefined,
         heading: e.heading as number | undefined,
         speed: e.speed as number | undefined,
         timestamp: new Date((e.timestamp as string | Date | undefined) ?? Date.now()),
-        label: e.label as string | undefined,
+        label: label as string | undefined,
         properties: (e.properties as Record<string, unknown>) ?? {},
     };
 }

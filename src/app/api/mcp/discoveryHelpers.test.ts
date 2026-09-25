@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("@/lib/data-query/service");
 vi.mock("@/lib/globeStateStore");
@@ -34,8 +34,16 @@ vi.mocked(resolveActiveSessionId).mockResolvedValue(null);
 
 beforeEach(() => {
     vi.clearAllMocks();
+    // Default: engine probe cannot connect. Stubbed, never left to the real
+    // network: with a live data engine on this machine the probe would succeed
+    // and every outage assertion below would read "no_active_plugins" instead.
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
     // Default: no local sources; individual tests override as needed.
     mockGetLocalSourceIds.mockResolvedValue(new Set<string>());
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
 });
 
 // ---------------------------------------------------------------------------
@@ -163,7 +171,7 @@ describe("listStreamingPlugins", () => {
     });
 
     it("returns { plugins: [], reason: 'engine_unreachable' } when no snapshots and engine not reachable (TOOL-05)", async () => {
-        // In the test environment the probe fetch fails, so engineReachable=false -> engine_unreachable.
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
         mockGetAllSnapshots.mockResolvedValue([]);
         const result = await listStreamingPlugins();
         expect(result.plugins).toHaveLength(0);
@@ -171,19 +179,20 @@ describe("listStreamingPlugins", () => {
     });
 
     it("returns no_active_plugins when engine reachable but zero snapshots (TOOL-05)", async () => {
-        // Mock fetch to simulate engine responding OK (reachable, but no plugins).
-        const savedFetch = global.fetch;
-        global.fetch = vi.fn().mockResolvedValue(
-            new Response(JSON.stringify({ plugins: [] }), { status: 200 }),
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue(new Response(JSON.stringify({ plugins: [] }), { status: 200 })),
         );
-        try {
-            mockGetAllSnapshots.mockResolvedValue([]);
-            const result = await listStreamingPlugins();
-            expect(result.plugins).toHaveLength(0);
-            expect(result.reason).toBe("no_active_plugins");
-        } finally {
-            global.fetch = savedFetch;
-        }
+        mockGetAllSnapshots.mockResolvedValue([]);
+        const result = await listStreamingPlugins();
+        expect(result.plugins).toHaveLength(0);
+        expect(result.reason).toBe("no_active_plugins");
+    });
+
+    it("fails the call rather than inventing a reason when the snapshot read throws", async () => {
+        mockGetAllSnapshots.mockRejectedValue(new Error("ECONNREFUSED"));
+
+        await expect(listStreamingPlugins()).rejects.toThrow("ECONNREFUSED");
     });
 });
 
@@ -214,6 +223,29 @@ describe("buildInvestigateProse", () => {
             sessionPresent: false,
         });
         expect(prose).toContain("camera pan skipped");
+    });
+
+    it("untyped cold start with nothing streaming: explains the scan found nothing", () => {
+        const prose = buildInvestigateProse({
+            displayName: "Auckland",
+            matchedPlugin: null,
+            entityCount: 0,
+            sessionPresent: false,
+        });
+        expect(prose).toContain("nothing could be scanned near Auckland");
+        expect(prose).not.toContain('""');
+    });
+
+    it("untyped scan finds entities: prose names every scanned layer", () => {
+        const prose = buildInvestigateProse({
+            displayName: "Auckland",
+            matchedPlugin: "flights",
+            scannedPluginIds: ["flights", "maritime"],
+            entityCount: 3,
+            sessionPresent: false,
+        });
+        expect(prose).toContain("Found 3 entities near Auckland");
+        expect(prose).toContain("streaming layers: flights, maritime");
     });
 
     it("no-matching-plugin: explains entity_type not found", () => {
@@ -296,7 +328,7 @@ describe("listStreamingPlugins -- source tagging", () => {
     });
 
     it("engine-unreachable passthrough: empty snapshots returns engine_unreachable when probe fails (TOOL-05)", async () => {
-        // In the test environment the probe fetch fails, so reason becomes engine_unreachable.
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
         mockGetAllSnapshots.mockResolvedValue([]);
         mockGetLocalSourceIds.mockResolvedValue(new Set(["camera"]));
 

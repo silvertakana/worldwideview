@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("@/lib/data-query/service");
 vi.mock("@/lib/globeStateStore");
@@ -32,10 +32,14 @@ const mockFetchGeocode = vi.mocked(fetchGeocode);
 // Minimal fake server that captures handlers
 // ---------------------------------------------------------------------------
 const handlers: Record<string, (args: unknown) => unknown> = {};
-const schemas: Record<string, { description: string }> = {};
+const schemas: Record<string, { description: string; inputSchema: Record<string, unknown> }> = {};
 const mockServer = {
     registerTool: vi.fn(
-        (name: string, schema: { description: string }, handler: (args: unknown) => unknown) => {
+        (
+            name: string,
+            schema: { description: string; inputSchema: Record<string, unknown> },
+            handler: (args: unknown) => unknown,
+        ) => {
             handlers[name] = handler;
             schemas[name] = schema;
         },
@@ -44,12 +48,43 @@ const mockServer = {
 
 const ctx = { userId: "user-test-1" };
 
+/** The v2 envelope as the handlers emit it (text + structuredContent). */
+interface EnvelopeShape {
+    ok?: boolean;
+    data?: Record<string, unknown>;
+    meta?: Record<string, unknown>;
+    error?: string;
+    message?: string;
+    hint?: string;
+    validValues?: string[];
+}
+
 function textOf(result: unknown): string {
     return (result as { content: Array<{ text: string }> }).content[0].text;
 }
 
-function parsedOf(result: unknown): unknown {
-    return JSON.parse(textOf(result));
+function envelopeOf(result: unknown): EnvelopeShape {
+    return JSON.parse(textOf(result)) as EnvelopeShape;
+}
+
+function isErrorResult(result: unknown): boolean {
+    return (result as { isError?: boolean }).isError === true;
+}
+
+/** One streaming plugin, as getAllPluginSnapshots would report it. */
+function snapshot(pluginId: string, entityCount = 0) {
+    return {
+        pluginId,
+        entities: Array.from({ length: entityCount }, (_, i) => ({
+            id: pluginId + "-" + i,
+            pluginId,
+            latitude: 0,
+            longitude: 0,
+            properties: { status: "airborne" },
+            timestamp: new Date(),
+        })),
+        timestamp: new Date(),
+    };
 }
 
 // Re-usable geocode response fixture (Auckland, NZ)
@@ -84,99 +119,199 @@ beforeEach(() => {
     registerDiscoveryTools(mockServer as never, ctx);
 });
 
+afterEach(() => {
+    vi.unstubAllGlobals();
+});
 // ---------------------------------------------------------------------------
-// list_available_plugins
+// registration surface
 // ---------------------------------------------------------------------------
-describe("list_available_plugins", () => {
-    it("registers the tool with a non-empty description containing Example:", () => {
-        expect(schemas["list_available_plugins"].description.length).toBeGreaterThan(0);
-        expect(schemas["list_available_plugins"].description).toContain("Example:");
-    });
-
-    it("returns plugin list with counts and entityTypes when streaming", async () => {
-        mockGetAllSnapshots.mockResolvedValue([
-            {
-                pluginId: "flights",
-                entities: [
-                    { id: "e1", pluginId: "flights", latitude: 0, longitude: 0, timestamp: new Date(), properties: { status: "airborne" } },
-                    { id: "e2", pluginId: "flights", latitude: 1, longitude: 1, timestamp: new Date(), properties: { status: "landed" } },
-                ],
-                timestamp: new Date(),
-            },
+describe("registerDiscoveryTools", () => {
+    it("registers exactly the five discovery tools", () => {
+        expect(Object.keys(handlers).sort()).toEqual([
+            "describe_tool",
+            "get_globe_context",
+            "investigate_area",
+            "list_available_plugins",
+            "orient",
         ]);
-
-        const result = await handlers["list_available_plugins"]({});
-        const parsed = parsedOf(result) as { plugins: Array<{ pluginId: string; entityCount: number; entityTypes: string[] }> };
-
-        expect(parsed.plugins).toHaveLength(1);
-        expect(parsed.plugins[0].pluginId).toBe("flights");
-        expect(parsed.plugins[0].entityCount).toBe(2);
-        expect(parsed.plugins[0].entityTypes).toContain("status");
     });
 
-    it("returns { plugins: [], reason: 'engine_unreachable' } when engine is down (TOOL-05)", async () => {
-        // In the test environment the probe fetch fails, so reason becomes engine_unreachable.
-        mockGetAllSnapshots.mockResolvedValue([]);
+    it("gives every tool a description carrying an Example line", () => {
+        for (const name of Object.keys(schemas)) {
+            expect(schemas[name].description.length, name).toBeGreaterThan(0);
+            expect(schemas[name].description, name).toContain("Example:");
+        }
+    });
 
-        const result = await handlers["list_available_plugins"]({});
-        const parsed = parsedOf(result) as { plugins: unknown[]; reason: string };
-
-        expect(parsed.plugins).toHaveLength(0);
-        expect(parsed.reason).toBe("engine_unreachable");
+    it("names query_entities and never the removed v1 finders", () => {
+        const all = Object.values(schemas).map((s) => s.description).join(" ");
+        expect(all).toContain("query_entities");
+        for (const gone of ["search_entities", "get_entities_in_region", "find_nearby_entities", "fly_to", "save_favorite"]) {
+            expect(all, gone).not.toContain(gone);
+        }
     });
 });
 
 // ---------------------------------------------------------------------------
-// get_globe_context
+// list_available_plugins (legacy)
 // ---------------------------------------------------------------------------
-describe("get_globe_context", () => {
-    it("returns sessionCount:0 + camera:null when no active sessions", async () => {
-        mockReadActiveSessions.mockResolvedValue([]);
-        mockGetAllSnapshots.mockResolvedValue([]);
+describe("list_available_plugins", () => {
+    it("returns plugin list with counts and entityTypes when streaming", async () => {
+        mockGetAllSnapshots.mockResolvedValue([snapshot("flights", 2)]);
 
-        const result = await handlers["get_globe_context"]({});
-        const parsed = parsedOf(result) as { sessionCount: number; camera: null; layers: Record<string, unknown>; plugins: unknown[] };
+        const parsed = envelopeOf(await handlers["list_available_plugins"]({}));
+        const plugins = parsed.data?.plugins as Array<{
+            pluginId: string;
+            entityCount: number;
+            entityTypes: string[];
+        }>;
 
-        expect(parsed.sessionCount).toBe(0);
-        expect(parsed.camera).toBeNull();
-        expect(parsed.layers).toEqual({});
+        expect(parsed.ok).toBe(true);
+        expect(plugins).toHaveLength(1);
+        expect(plugins[0].pluginId).toBe("flights");
+        expect(plugins[0].entityCount).toBe(2);
+        expect(plugins[0].entityTypes).toContain("status");
+        expect(parsed.meta?.count).toBe(1);
     });
 
-    it("returns sessionCount + camera + layers when session active", async () => {
+    it("reports engine_unreachable as an empty SUCCESS, never an error (TOOL-05)", async () => {
+        // Nothing is streaming and the engine probe cannot connect. The probe is
+        // stubbed rather than left to the real network: this assertion used to
+        // depend on no data engine being up on localhost, so starting one broke it.
+        mockGetAllSnapshots.mockResolvedValue([]);
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
+
+        const result = await handlers["list_available_plugins"]({});
+        const parsed = envelopeOf(result);
+
+        expect(isErrorResult(result)).toBe(false);
+        expect(parsed.ok).toBe(true);
+        expect(parsed.data?.plugins).toEqual([]);
+        expect(parsed.meta?.emptyReason).toBe("engine_unreachable");
+        expect(String(parsed.meta?.hint)).toMatch(/outage/i);
+    });
+
+    it("maps an unreachable engine to its own reason, never to a data condition", async () => {
+        mockGetAllSnapshots.mockResolvedValue([]);
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503 }));
+
+        const parsed = envelopeOf(await handlers["orient"]({}));
+
+        expect(parsed.ok).toBe(true);
+        expect(parsed.meta?.emptyReason).toBe("engine_unreachable");
+        expect(String(parsed.meta?.hint)).toMatch(/outage/i);
+    });
+
+    it("reports an idle engine as plugin_not_streaming -- a different reason", async () => {
+        mockGetAllSnapshots.mockResolvedValue([]);
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+
+        const parsed = envelopeOf(await handlers["list_available_plugins"]({}));
+
+        expect(parsed.ok).toBe(true);
+        expect(parsed.meta?.emptyReason).toBe("plugin_not_streaming");
+        expect(String(parsed.meta?.hint)).toMatch(/NOT an outage/i);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// get_globe_context (legacy)
+// ---------------------------------------------------------------------------
+describe("get_globe_context", () => {
+    it("returns sessionCount:0 + camera:null + the filter caveat when no session", async () => {
+        const parsed = envelopeOf(await handlers["get_globe_context"]({}));
+        const filters = parsed.data?.filters as { note: string };
+
+        expect(parsed.ok).toBe(true);
+        expect(parsed.data?.sessionCount).toBe(0);
+        expect(parsed.data?.camera).toBeNull();
+        expect(parsed.data?.layers).toEqual({});
+        expect(filters.note).toBeTruthy();
+        expect(parsed.meta?.emptyReason).toBe("engine_unreachable");
+    });
+
+    it("returns sessionCount + camera + layers when a session is active", async () => {
         mockReadActiveSessions.mockResolvedValue([{ sessionId: "sess-1", lastSeen: Date.now() }]);
-        mockGetAllSnapshots.mockResolvedValue([
-            {
-                pluginId: "maritime",
-                entities: [],
-                timestamp: new Date(),
-            },
-        ]);
+        mockGetAllSnapshots.mockResolvedValue([snapshot("maritime")]);
         mockReadGlobeState.mockResolvedValue({
             viewport: { lat: -36.8, lon: 174.7, altitude: 500000, heading: 0, pitch: -45, roll: 0 },
             layers: { maritime: { enabled: true } as never },
-            timeline: { currentTime: "2026-01-01T00:00:00Z", timeWindow: "1h", isPlaybackMode: false, playbackTime: 0, playbackSpeed: 1 },
+            timeline: {
+                currentTime: "2026-01-01T00:00:00Z",
+                timeWindow: "1h",
+                isPlaybackMode: false,
+                playbackTime: 0,
+                playbackSpeed: 1,
+            },
             selectedEntity: null,
             lastUpdate: Date.now(),
         });
         mockReadSessionCatalog.mockResolvedValue({ tools: [], capabilities: [] });
 
-        const result = await handlers["get_globe_context"]({});
-        const parsed = parsedOf(result) as { sessionCount: number; camera: { lat: number } | null; layers: Record<string, unknown>; plugins: unknown[] };
+        const parsed = envelopeOf(await handlers["get_globe_context"]({}));
+        const camera = parsed.data?.camera as { lat: number } | null;
 
-        expect(parsed.sessionCount).toBe(1);
-        expect(parsed.camera).not.toBeNull();
-        expect(parsed.camera?.lat).toBeCloseTo(-36.8);
-        expect(parsed.layers).toHaveProperty("maritime");
+        expect(parsed.data?.sessionCount).toBe(1);
+        expect(camera?.lat).toBeCloseTo(-36.8);
+        expect(parsed.data?.layers).toHaveProperty("maritime");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// service failures -- every data tool answers on the envelope, never by throwing
+// ---------------------------------------------------------------------------
+describe("discovery tools -- unexpected service failures", () => {
+    it("orient fails with internal_error when the session store is unavailable", async () => {
+        mockGetAllSnapshots.mockResolvedValue([]);
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
+        mockResolveActiveSessionId.mockRejectedValue(new Error("redis down"));
+
+        const result = await handlers["orient"]({});
+        const parsed = envelopeOf(result);
+
+        expect(isErrorResult(result)).toBe(true);
+        expect(parsed.ok).toBe(false);
+        expect(parsed.error).toBe("internal_error");
+        expect(parsed.message).toContain("orient");
+        expect(parsed.hint).toContain("engine");
     });
 
-    it("includes a filters field with a note about server-tracking limitations", async () => {
-        mockReadActiveSessions.mockResolvedValue([]);
-        mockGetAllSnapshots.mockResolvedValue([]);
+    it("list_available_plugins fails with engine_unreachable when the snapshot read throws", async () => {
+        mockGetAllSnapshots.mockRejectedValue(new Error("ECONNREFUSED"));
+
+        const result = await handlers["list_available_plugins"]({});
+        const parsed = envelopeOf(result);
+
+        expect(isErrorResult(result)).toBe(true);
+        expect(parsed.error).toBe("engine_unreachable");
+        expect(parsed.message).toContain("streaming plugin list");
+    });
+
+    it("get_globe_context fails with engine_unreachable when the globe state read throws", async () => {
+        mockReadActiveSessions.mockResolvedValue([{ sessionId: "sess-1", lastSeen: Date.now() }]);
+        mockReadGlobeState.mockRejectedValue(new Error("redis down"));
 
         const result = await handlers["get_globe_context"]({});
-        const parsed = parsedOf(result) as { filters: { note: string } };
+        const parsed = envelopeOf(result);
 
-        expect(parsed.filters.note).toBeTruthy();
+        expect(isErrorResult(result)).toBe(true);
+        expect(parsed.error).toBe("engine_unreachable");
+        expect(parsed.message).toContain("globe context");
+    });
+
+    it("investigate_area fails with internal_error when the region query throws", async () => {
+        mockGetAllSnapshots.mockResolvedValue([snapshot("flights")]);
+        mockGetEntitiesInRegion.mockRejectedValue(new Error("engine exploded"));
+
+        const result = await handlers["investigate_area"]({
+            place_name: "Auckland",
+            entity_type: "flights",
+        });
+        const parsed = envelopeOf(result);
+
+        expect(isErrorResult(result)).toBe(true);
+        expect(parsed.error).toBe("internal_error");
+        expect(parsed.message).toContain("investigate_area");
     });
 });
 
@@ -184,14 +319,8 @@ describe("get_globe_context", () => {
 // investigate_area
 // ---------------------------------------------------------------------------
 describe("investigate_area", () => {
-    it("happy path: returns entities + summary with count when plugin matches and data found", async () => {
-        mockGetAllSnapshots.mockResolvedValue([
-            {
-                pluginId: "flights",
-                entities: [],
-                timestamp: new Date(),
-            },
-        ]);
+    it("happy path: entities + summary + count, and pans the camera", async () => {
+        mockGetAllSnapshots.mockResolvedValue([snapshot("flights")]);
         mockGetEntitiesInRegion.mockResolvedValue({
             entities: [
                 { id: "f1", pluginId: "flights", latitude: -36.8, longitude: 174.7 },
@@ -200,105 +329,166 @@ describe("investigate_area", () => {
         });
         mockResolveActiveSessionId.mockResolvedValue("sess-1");
 
-        const result = await handlers["investigate_area"]({ place_name: "Auckland", entity_type: "flights" });
-        const parsed = parsedOf(result) as { entities: unknown[]; summary: string };
+        const parsed = envelopeOf(
+            await handlers["investigate_area"]({ place_name: "Auckland", entity_type: "flights" }),
+        );
 
-        expect(parsed.entities).toHaveLength(2);
-        expect(parsed.summary.length).toBeGreaterThan(0);
-        expect(parsed.summary).toContain("2");
-        expect(mockEnqueueGlobeCommand).toHaveBeenCalledWith("user-test-1", "sess-1", expect.objectContaining({ type: "pan" }));
+        expect(parsed.ok).toBe(true);
+        expect(parsed.data?.entities).toHaveLength(2);
+        expect(parsed.meta?.count).toBe(2);
+        expect(String(parsed.data?.summary)).toContain("2");
+        expect(mockEnqueueGlobeCommand).toHaveBeenCalledWith(
+            "user-test-1",
+            "sess-1",
+            expect.objectContaining({ type: "pan" }),
+        );
     });
 
-    it("no-matching-plugin: returns empty entities + prose explaining missing entity_type", async () => {
-        mockGetAllSnapshots.mockResolvedValue([
-            { pluginId: "maritime", entities: [], timestamp: new Date() },
-        ]);
+    it("no matching plugin: empty SUCCESS naming the live plugins to retry with", async () => {
+        mockGetAllSnapshots.mockResolvedValue([snapshot("maritime")]);
 
-        const result = await handlers["investigate_area"]({ place_name: "Auckland", entity_type: "submarines" });
-        const parsed = parsedOf(result) as { entities: unknown[]; summary: string };
+        const parsed = envelopeOf(
+            await handlers["investigate_area"]({ place_name: "Auckland", entity_type: "submarines" }),
+        );
 
-        expect(parsed.entities).toHaveLength(0);
-        expect(parsed.summary).toContain("submarines");
-        expect(parsed.summary).toContain("list_available_plugins");
+        expect(parsed.ok).toBe(true);
+        expect(parsed.data?.entities).toEqual([]);
+        expect(parsed.data?.availablePlugins).toEqual(["maritime"]);
+        expect(parsed.meta?.emptyReason).toBe("plugin_not_streaming");
+        expect(String(parsed.meta?.hint)).toContain("orient");
+        expect(String(parsed.data?.summary)).toContain("submarines");
         expect(mockEnqueueGlobeCommand).not.toHaveBeenCalled();
     });
 
-    it("no-data-matches: returns empty entities + prose explaining empty result", async () => {
-        mockGetAllSnapshots.mockResolvedValue([
-            { pluginId: "flights", entities: [], timestamp: new Date() },
-        ]);
+    it("live plugin, empty region: empty SUCCESS with no_data_matches", async () => {
+        mockGetAllSnapshots.mockResolvedValue([snapshot("flights")]);
         mockGetEntitiesInRegion.mockResolvedValue({ entities: [], emptyReason: "no_data_matches" });
         mockResolveActiveSessionId.mockResolvedValue("sess-1");
 
-        const result = await handlers["investigate_area"]({ place_name: "Auckland", entity_type: "flights" });
-        const parsed = parsedOf(result) as { entities: unknown[]; summary: string };
+        const parsed = envelopeOf(
+            await handlers["investigate_area"]({ place_name: "Auckland", entity_type: "flights" }),
+        );
 
-        expect(parsed.entities).toHaveLength(0);
-        expect(parsed.summary.length).toBeGreaterThan(0);
+        expect(parsed.ok).toBe(true);
+        expect(parsed.data?.entities).toEqual([]);
+        expect(parsed.meta?.emptyReason).toBe("no_data_matches");
+        expect(String(parsed.data?.summary).length).toBeGreaterThan(0);
     });
 
-    it("no-session: returns entities but does NOT call enqueueGlobeCommand; summary notes skip", async () => {
-        mockGetAllSnapshots.mockResolvedValue([
-            { pluginId: "flights", entities: [], timestamp: new Date() },
-        ]);
+    it("no session: returns entities, skips the pan, and says so", async () => {
+        mockGetAllSnapshots.mockResolvedValue([snapshot("flights")]);
         mockGetEntitiesInRegion.mockResolvedValue({
             entities: [{ id: "f1", pluginId: "flights", latitude: -36.8, longitude: 174.7 }],
         });
-        mockResolveActiveSessionId.mockResolvedValue(null); // no active session
+        mockResolveActiveSessionId.mockResolvedValue(null);
 
-        const result = await handlers["investigate_area"]({ place_name: "Auckland", entity_type: "flights" });
-        const parsed = parsedOf(result) as { entities: unknown[]; summary: string };
+        const parsed = envelopeOf(
+            await handlers["investigate_area"]({ place_name: "Auckland", entity_type: "flights" }),
+        );
 
-        expect(parsed.entities).toHaveLength(1);
+        expect(parsed.data?.entities).toHaveLength(1);
         expect(mockEnqueueGlobeCommand).not.toHaveBeenCalled();
-        expect(parsed.summary).toContain("camera pan skipped");
+        expect(String(parsed.data?.summary)).toContain("camera pan skipped");
     });
 
-    it("geocode failure: returns empty entities + helpful summary", async () => {
+    it("geocode failure: fails with not_found and a retry hint", async () => {
         mockFetchGeocode.mockResolvedValue([]);
 
-        const result = await handlers["investigate_area"]({ place_name: "ZZZ_NONEXISTENT", entity_type: "flights" });
-        const parsed = parsedOf(result) as { entities: unknown[]; summary: string };
+        const result = await handlers["investigate_area"]({
+            place_name: "ZZZ_NONEXISTENT",
+            entity_type: "flights",
+        });
+        const parsed = envelopeOf(result);
 
-        expect(parsed.entities).toHaveLength(0);
-        expect(parsed.summary).toContain("ZZZ_NONEXISTENT");
+        expect(isErrorResult(result)).toBe(true);
+        expect(parsed.ok).toBe(false);
+        expect(parsed.error).toBe("not_found");
+        expect(parsed.message).toContain("ZZZ_NONEXISTENT");
+        expect(parsed.hint).toContain("geocode_location");
     });
 
-    it("truncation (TOOL-04/P33): returns truncated:true and cappedTotal when result exceeds 200 cap", async () => {
-        // Two plugins both named with "vessel" substring so entity_type:"vessel" matches both.
-        // Each returns 110 entities = 220 total, exceeding INVESTIGATE_AREA_CAP (200).
+    it("caps at 200 entities and reports totalMatched in meta (TOOL-04)", async () => {
         const makeEntities = (pluginId: string, count: number) =>
             Array.from({ length: count }, (_, i) => ({
-                id: `${pluginId}-${i}`,
+                id: pluginId + "-" + i,
                 pluginId,
                 latitude: 0,
                 longitude: 0,
             }));
 
-        mockGetAllSnapshots.mockResolvedValue([
-            { pluginId: "vessel-ais", entities: [], timestamp: new Date() },
-            { pluginId: "vessel-cargo", entities: [], timestamp: new Date() },
-        ]);
+        mockGetAllSnapshots.mockResolvedValue([snapshot("vessel-ais"), snapshot("vessel-cargo")]);
         mockGetEntitiesInRegion
             .mockResolvedValueOnce({ entities: makeEntities("vessel-ais", 110) })
             .mockResolvedValueOnce({ entities: makeEntities("vessel-cargo", 110) });
-        mockResolveActiveSessionId.mockResolvedValue(null);
 
-        const result = await handlers["investigate_area"]({
-            place_name: "Auckland",
-            entity_type: "vessel",
-        });
-        const parsed = parsedOf(result) as {
-            entities: unknown[];
-            count: number;
-            truncated?: boolean;
-            cappedTotal?: number;
-            summary: string;
-        };
+        const parsed = envelopeOf(
+            await handlers["investigate_area"]({ place_name: "Auckland", entity_type: "vessel" }),
+        );
 
-        expect(parsed.entities).toHaveLength(200);
-        expect(parsed.count).toBe(200);
-        expect(parsed.truncated).toBe(true);
-        expect(parsed.cappedTotal).toBe(220);
+        expect(parsed.data?.entities).toHaveLength(200);
+        expect(parsed.meta?.count).toBe(200);
+        expect(parsed.meta?.truncated).toBe(true);
+        expect(parsed.meta?.totalMatched).toBe(220);
+    });
+
+    it("omitted entity_type: scans EVERY streaming plugin and merges their entities (cold start)", async () => {
+        mockGetAllSnapshots.mockResolvedValue([snapshot("flights"), snapshot("maritime")]);
+        mockGetEntitiesInRegion
+            .mockResolvedValueOnce({ entities: [{ id: "f1", pluginId: "flights", latitude: -36.8, longitude: 174.7 }] })
+            .mockResolvedValueOnce({ entities: [] });
+
+        const parsed = envelopeOf(
+            await handlers["investigate_area"]({ place_name: "Auckland" }),
+        );
+
+        expect(parsed.ok).toBe(true);
+        expect(parsed.data?.entities).toHaveLength(1);
+        expect(mockGetEntitiesInRegion).toHaveBeenCalledTimes(2);
+        expect(String(parsed.data?.summary)).toContain("streaming layers: flights, maritime");
+    });
+
+    it("omitted entity_type: scans EVERY streaming plugin and merges their entities (cold start)", async () => {
+        mockGetAllSnapshots.mockResolvedValue([snapshot("flights"), snapshot("maritime")]);
+        mockGetEntitiesInRegion
+            .mockResolvedValueOnce({ entities: [{ id: "f1", pluginId: "flights", latitude: -36.8, longitude: 174.7 }] })
+            .mockResolvedValueOnce({ entities: [] });
+
+        const parsed = envelopeOf(
+            await handlers["investigate_area"]({ place_name: "Auckland" }),
+        );
+
+        expect(parsed.ok).toBe(true);
+        expect(parsed.data?.entities).toHaveLength(1);
+        expect(mockGetEntitiesInRegion).toHaveBeenCalledTimes(2);
+        expect(String(parsed.data?.summary)).toContain("streaming layers: flights, maritime");
+    });
+
+    it("omitted entity_type, engine up but idle: empty SUCCESS whose prose never quotes a type", async () => {
+        mockGetAllSnapshots.mockResolvedValue([]);
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+
+        const parsed = envelopeOf(
+            await handlers["investigate_area"]({ place_name: "Auckland" }),
+        );
+
+        expect(parsed.ok).toBe(true);
+        expect(parsed.data?.entities).toEqual([]);
+        const summary = String(parsed.data?.summary);
+        expect(summary).toContain("nothing could be scanned near Auckland");
+        expect(summary).not.toContain('""');
+        expect(mockEnqueueGlobeCommand).not.toHaveBeenCalled();
+    });
+
+    it("omitted entity_type during an outage: honest engine_unreachable FAILURE, not silence", async () => {
+        mockGetAllSnapshots.mockResolvedValue([]);
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
+
+        const result = await handlers["investigate_area"]({ place_name: "Auckland" });
+        const parsed = envelopeOf(result);
+
+        expect(isErrorResult(result)).toBe(true);
+        expect(parsed.error).toBe("engine_unreachable");
+        expect(String(parsed.hint ?? parsed.message)).toMatch(/outage/i);
+        expect(mockEnqueueGlobeCommand).not.toHaveBeenCalled();
     });
 });

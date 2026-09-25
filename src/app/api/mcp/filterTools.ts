@@ -24,19 +24,18 @@ import { filterValueSchema } from "@/lib/mcp/filterSchemas";
 import type { GlobeCommand } from "@/core/globe/types/GlobeCommand";
 import { pluginIdSchema } from "@/lib/mcp/identifierSchemas";
 import { listStreamingPlugins } from "@/app/api/mcp/discoveryHelpers";
-import { SESSION_REQUIRED_PREAMBLE } from "@/lib/mcp/toolDescriptionFragments";
+import { mcpCatch, mcpFail, mcpOk } from "@/lib/mcp/responseEnvelope";
+import { noActiveSessionResult } from "@/app/api/mcp/globeCommandTools";
 
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-type McpTextResult = { content: [{ type: "text"; text: string }] };
+const SESSION_ID_DESCRIPTION =
+    "Target globe session id; omit for your most-recently-active tab.";
 
-function textResult(text: string): McpTextResult {
-    return { content: [{ type: "text", text }] };
-}
-
-const NO_SESSION_RESULT = textResult("no active globe session to control");
+const ENQUEUE_HINT =
+    "The command could not be enqueued. Retry, and check that Redis is reachable if it keeps failing.";
 
 /**
  * Resolves the session to use: explicit arg takes precedence, falling back to
@@ -46,10 +45,14 @@ async function resolveSession(
     userId: string,
     argSessionId: string | undefined,
 ): Promise<string | null> {
-    if (argSessionId !== undefined && argSessionId !== "") {
-        return argSessionId;
-    }
+    if (argSessionId !== undefined && argSessionId !== "") return argSessionId;
     return resolveActiveSessionId(userId);
+}
+
+/** The plugin ids this server knows about: the validity set and validValues. */
+async function knownPluginIds(): Promise<string[]> {
+    const { plugins } = await listStreamingPlugins();
+    return plugins.map((p) => p.pluginId);
 }
 
 // ---------------------------------------------------------------------------
@@ -67,31 +70,33 @@ export function registerFilterTools(
         "set_filter",
         {
             description:
-                SESSION_REQUIRED_PREAMBLE +
                 "Apply one or more filters to a plugin's live globe layer (no page reload). " +
-                "Use after get_plugin_filters to discover valid filter ids; affects the live globe layer, not data query tools. " +
-                "Use list_available_plugins to confirm valid pluginIds before calling. " +
-                "Limitations: filter ids are plugin-specific; unknown pluginIds produce a warning in the response. " +
+                "Use after get_plugin_filters to discover valid filter ids; affects the live globe layer, not the data-query tools. " +
+                "Requires an active globe session (globe://sessions); without a live tab this fails with error no_active_session. " +
+                "Limits: filter ids are plugin-specific; an unrecognized pluginId fails with error unknown_plugin plus validValues. " +
                 "Parameters: pluginId (string, required); filters (object, required) -- filterId -> { type: 'text', value } | { type: 'select', values } | { type: 'range', min, max } | { type: 'boolean', value }; sessionId (optional). " +
-                "Output: 'set_filter command enqueued for <pluginId> (N filter(s))' or a warning when the pluginId is unrecognized. " +
                 "Example: set_filter({ pluginId: 'flights', filters: { status: { type: 'select', values: ['airborne'] } } }).",
             inputSchema: {
                 pluginId: pluginIdSchema.describe("Plugin whose layer to filter, e.g. 'flights'"),
                 filters: z
                     .record(z.string(), filterValueSchema)
                     .describe("Map of filterId -> filter value. Discover valid filter ids via get_plugin_filters."),
-                sessionId: z.string().optional().describe("Target globe session id. Omit to target most-recently-active tab."),
+                sessionId: z.string().optional().describe(SESSION_ID_DESCRIPTION),
             },
         },
         async (args) => {
             try {
                 const sessionId = await resolveSession(userId, args.sessionId);
-                if (sessionId === null) return NO_SESSION_RESULT;
+                if (sessionId === null) return await noActiveSessionResult(userId);
 
-                // Validate the pluginId against the live streaming plugin set.
-                const { plugins } = await listStreamingPlugins();
-                const knownIds = new Set(plugins.map((p) => p.pluginId));
-                const isKnown = knownIds.has(args.pluginId);
+                // Validate the pluginId against the plugins this server knows about.
+                const validPluginIds = await knownPluginIds();
+                if (validPluginIds.length > 0 && !validPluginIds.includes(args.pluginId)) {
+                    return mcpFail("unknown_plugin", `Unknown pluginId "${args.pluginId}".`, {
+                        hint: "Retry with one of validValues. Call list_available_plugins to see which plugins are live.",
+                        validValues: validPluginIds,
+                    });
+                }
 
                 const cmd: GlobeCommand = {
                     type: "setFilter",
@@ -99,18 +104,14 @@ export function registerFilterTools(
                     filters: args.filters,
                 };
                 await enqueueGlobeCommand(userId, sessionId, cmd);
-
-                if (!isKnown) {
-                    return textResult(
-                        `Command enqueued, but pluginId '${args.pluginId}' is not a recognized plugin. It may be ignored.`,
-                    );
-                }
-                return textResult(
-                    `set_filter command enqueued for '${args.pluginId}' (${Object.keys(args.filters).length} filter(s))`,
-                );
+                return mcpOk({
+                    command: cmd.type,
+                    sessionId,
+                    pluginId: args.pluginId,
+                    filterCount: Object.keys(args.filters).length,
+                });
             } catch (err) {
-                console.error("[filterTools] set_filter failed:", err);
-                return textResult("set_filter command failed");
+                return mcpCatch("internal_error", "set_filter command failed.", err, { hint: ENQUEUE_HINT });
             }
         },
     );
@@ -120,36 +121,34 @@ export function registerFilterTools(
         "clear_filter",
         {
             description:
-                SESSION_REQUIRED_PREAMBLE +
-                "Clear active filters on the live globe. " +
-                "Prefer clear_filter over re-setting filters to empty values; omit pluginId to clear ALL filters across every plugin at once. " +
-                "Limitations: requires an active globe session; returns 'no active globe session to control' when no tab is live. " +
+                "Clear active filters on the live globe. Omit pluginId to clear ALL filters across every plugin at once. " +
+                "Use when the user wants to reset the view rather than re-set filters to empty values. " +
+                "Requires an active globe session (globe://sessions); without a live tab this fails with error no_active_session. " +
+                "Limits: clears only the targeted tab's live filter state; nothing is persisted. " +
                 "Parameters: pluginId (string, optional) -- omit to clear all plugins; sessionId (optional). " +
-                "Output: 'clear_filter enqueued for <pluginId>' or 'clear_filter enqueued for ALL plugins'. " +
                 "Example: clear_filter({ pluginId: 'flights' }) or clear_filter({}).",
             inputSchema: {
                 pluginId: pluginIdSchema.optional().describe("Plugin whose filters to clear. Omit to clear ALL filters on the globe."),
-                sessionId: z.string().optional().describe("Target globe session id. Omit to target most-recently-active tab."),
+                sessionId: z.string().optional().describe(SESSION_ID_DESCRIPTION),
             },
         },
         async (args) => {
             try {
                 const sessionId = await resolveSession(userId, args.sessionId);
-                if (sessionId === null) return NO_SESSION_RESULT;
+                if (sessionId === null) return await noActiveSessionResult(userId);
 
                 const cmd: GlobeCommand = {
                     type: "clearFilter",
                     ...(args.pluginId !== undefined && { pluginId: args.pluginId }),
                 };
                 await enqueueGlobeCommand(userId, sessionId, cmd);
-                return textResult(
-                    args.pluginId
-                        ? `clear_filter enqueued for '${args.pluginId}'`
-                        : "clear_filter enqueued for ALL plugins",
-                );
+                return mcpOk({
+                    command: cmd.type,
+                    sessionId,
+                    cleared: args.pluginId ?? "all",
+                });
             } catch (err) {
-                console.error("[filterTools] clear_filter failed:", err);
-                return textResult("clear_filter command failed");
+                return mcpCatch("internal_error", "clear_filter command failed.", err, { hint: ENQUEUE_HINT });
             }
         },
     );
@@ -159,12 +158,12 @@ export function registerFilterTools(
         "get_plugin_filters",
         {
             description:
-                "Read-only discovery: list filterable fields a plugin has declared, so you can build a valid set_filter call. " +
+                "Read-only discovery: list the filterable fields a plugin has declared, so you can build a valid set_filter call. " +
                 "Use before set_filter to confirm filter ids and value types for a plugin. " +
-                "Limitations: returns { available: false, reason: 'no_session_active' } when no globe session is active (browser must be open); returns { available: false, reason: 'plugin not loaded' } when the plugin has not published its catalog. " +
+                "Limits: needs an active globe session (globe://sessions) because the catalog is browser-published; without a live tab this fails with error no_active_session. " +
                 "Parameters: pluginId (string, required) -- the plugin to inspect. " +
-                "Output: { available: true, filters: FilterDefinition[] } when the plugin is loaded, where each FilterDefinition is { id, label, type: 'text'|'select'|'range'|'boolean', propertyKey, options?, range? }; or { available: false, reason: 'plugin not loaded' | 'no_session_active' } when unavailable. " +
-                "Example: get_plugin_filters({ pluginId: 'flights' }) -> { available: true, filters: [{ id: 'status', label: 'Status', type: 'select', options: [...] }] }.",
+                "Output: { ok: true, data: { pluginId, available: true, filters: FilterDefinition[] } } where each FilterDefinition is { id, label, type: 'text'|'select'|'range'|'boolean', propertyKey, options?, range? }; when the plugin has published no catalog entry, data.available is false with a reason. " +
+                "Example: get_plugin_filters({ pluginId: 'flights' }) -> data: { available: true, filters: [{ id: 'status', label: 'Status', type: 'select', options: [...] }] }.",
             inputSchema: {
                 pluginId: pluginIdSchema.describe("Plugin to inspect for declared filterable fields"),
             },
@@ -172,19 +171,26 @@ export function registerFilterTools(
         async (args) => {
             try {
                 const sessionId = await resolveActiveSessionId(userId);
-                if (!sessionId) {
-                    return textResult(JSON.stringify({ available: false, reason: "no_session_active" }));
-                }
+                if (!sessionId) return await noActiveSessionResult(userId);
 
                 const catalog = await readSessionCatalog(userId, sessionId);
                 const filterDefs = catalog?.filterDefinitions;
                 if (!filterDefs || !(args.pluginId in filterDefs)) {
-                    return textResult(JSON.stringify({ available: false, reason: "plugin not loaded" }));
+                    return mcpOk({
+                        pluginId: args.pluginId,
+                        available: false,
+                        reason: "plugin_catalog_not_published",
+                    });
                 }
-                return textResult(JSON.stringify({ available: true, filters: filterDefs[args.pluginId] }));
+                return mcpOk({
+                    pluginId: args.pluginId,
+                    available: true,
+                    filters: filterDefs[args.pluginId],
+                });
             } catch (err) {
-                console.error("[filterTools] get_plugin_filters failed:", err);
-                return textResult(JSON.stringify({ available: false, reason: "plugin not loaded" }));
+                return mcpCatch("internal_error", "get_plugin_filters failed.", err, {
+                    hint: "The browser-published session catalog could not be read. Retry, and confirm the globe tab is still open.",
+                });
             }
         },
     );

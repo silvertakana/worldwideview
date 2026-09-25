@@ -1,10 +1,17 @@
 /**
  * MCP Geocoding Tool registrar (Phase 22 Wave 2, 22-02).
  *
- * Registers two MCP tools:
+ * Registers one MCP tool:
  *   geocode_location: resolve a place name/address to coordinates via Nominatim
  *                     (GEO-01), with a per-user rate limit + 24h Redis cache (GEO-03)
- *   fly_to: enqueue a flyTo GlobeCommand to move the browser camera (GEO-02)
+ *
+ * Answers on the v2 envelope. A miss is a REAL not_found failure, never an
+ * empty success, and a rate limit or upstream outage is reported as its own
+ * failure code -- "the place does not exist" and "we could not ask" are
+ * different answers and an agent must be able to tell them apart.
+ *
+ * Camera movement lives in globeCommandTools.ts: pan_globe takes the lat/lon or
+ * bbox a geocode result produces.
  *
  * Security: userId comes ONLY from ctx (verified auth result), never from tool
  * arguments. The Nominatim URL is hardcoded; the user query is injected via
@@ -13,31 +20,37 @@
 
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { enqueueGlobeCommand, resolveActiveSessionId } from "@/lib/globeCommandQueue";
-import type { GlobeCommand } from "@/core/globe/types/GlobeCommand";
 import { fetchGeocode, normalizeNominatimResult } from "@/lib/nominatim";
-import type { RawNominatimItem } from "@/lib/nominatim";
+import type { NominatimResult } from "@/lib/nominatim";
 import { checkRateLimit } from "@/lib/geocodingRateLimit";
 import { redis } from "@/lib/redis";
-import { latSchema, lonSchema } from "@/lib/mcp/coordinateSchemas";
-import { SESSION_REQUIRED_PREAMBLE } from "@/lib/mcp/toolDescriptionFragments";
+import { mcpCatch, mcpFail, mcpOk } from "@/lib/mcp/responseEnvelope";
 
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-type McpTextResult = { content: [{ type: "text"; text: string }] };
+const DEFAULT_LIMIT = 5;
+const MAX_LIMIT = 20;
+const CACHE_TTL_SECONDS = 86_400; // 24h
 
-function textResult(text: string): McpTextResult {
-    return { content: [{ type: "text", text }] };
+/** Cache payload: the normalized results plus when the upstream gave them. */
+interface GeocodeCacheEntry {
+    capturedAt: string;
+    results: NominatimResult[];
 }
 
-const NO_SESSION_RESULT = textResult("no active globe session to control");
-
-/** Best-effort cache read: a Redis outage degrades to a miss, never an error. */
-async function cacheGet(key: string): Promise<string | null> {
+/** Best-effort cache read: a Redis outage or a stale shape degrades to a miss. */
+async function cacheGet(key: string): Promise<GeocodeCacheEntry | null> {
     try {
-        return await redis.get(key);
+        const raw = await redis.get(key);
+        if (raw === null) return null;
+        const parsed: unknown = JSON.parse(raw);
+        if (typeof parsed !== "object" || parsed === null) return null;
+        const entry = parsed as Partial<GeocodeCacheEntry>;
+        return Array.isArray(entry.results) && typeof entry.capturedAt === "string"
+            ? { capturedAt: entry.capturedAt, results: entry.results }
+            : null;
     } catch (err) {
         console.warn("[geocodingTools] cache read failed (degrading to miss):", err);
         return null;
@@ -45,31 +58,31 @@ async function cacheGet(key: string): Promise<string | null> {
 }
 
 /** Best-effort cache write: a Redis outage is logged and ignored. */
-async function cacheSet(key: string, value: string, ttlSeconds: number): Promise<void> {
+async function cacheSet(key: string, entry: GeocodeCacheEntry): Promise<void> {
     try {
-        await redis.set(key, value, "EX", ttlSeconds);
+        await redis.set(key, JSON.stringify(entry), "EX", CACHE_TTL_SECONDS);
     } catch (err) {
         console.warn("[geocodingTools] cache write failed (ignored):", err);
     }
 }
 
-const DEFAULT_LIMIT = 5;
-const MAX_LIMIT = 20;
-const DEFAULT_ALTITUDE_M = 15_000;
-const CACHE_TTL_SECONDS = 86_400; // 24h
-
-/**
- * Resolves the session to use: explicit arg takes precedence, falling back to
- * the most-recently-active session for this user. Returns null if none is live.
- */
-async function resolveSession(
-    userId: string,
-    argSessionId: string | undefined,
-): Promise<string | null> {
-    if (argSessionId !== undefined && argSessionId !== "") {
-        return argSessionId;
-    }
-    return resolveActiveSessionId(userId);
+/** The geocode result payload: the best match first, then any alternatives. */
+function geocodeData(query: string, results: NominatimResult[]): Record<string, unknown> {
+    const [best, ...alternatives] = results;
+    return {
+        query,
+        lat: best.lat,
+        lng: best.lng,
+        displayName: best.display_name,
+        name: best.name,
+        nameEn: best.name_en,
+        type: best.type,
+        addresstype: best.addresstype,
+        country: best.country,
+        bbox: best.bbox,
+        importance: best.importance,
+        ...(alternatives.length > 0 && { alternatives }),
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -88,11 +101,11 @@ export function registerGeocodingTools(
         {
             description:
                 "Resolve a place name or address to coordinates and a bounding box via OpenStreetMap Nominatim. " +
-                "Use before fly_to to obtain lat/lng from a name; do not guess coordinates. " +
-                "Limitations: Nominatim is rate-limited per user; results are cached 24h; returns 'no results found' when nothing matches. " +
+                "Use before pan_globe to obtain lat/lon from a name; do not guess coordinates. " +
+                "Limitations: Nominatim is rate-limited to 1 request/sec per user (results are cached 24h, so a repeat query is free); a query that matches nothing fails with error not_found, which is NOT an outage. " +
                 "Parameters: query (string, required) - place name or address; limit (integer 1-20, optional, default 5). " +
-                "Output: JSON array sorted by importance, each { lat, lng, name, name_en, type, addresstype, country, display_name, bbox: [west,south,east,north], importance }. " +
-                "Example: geocode_location({ query: 'Paris', limit: 3 }) -> [{ lat: 48.85, lng: 2.35, name: 'Paris', bbox: [...] }].",
+                "Output: { ok: true, data: { query, lat, lng, displayName, name, nameEn, type, addresstype, country, bbox: [west,south,east,north], importance, alternatives? } }. " +
+                "Example: geocode_location({ query: 'Paris', limit: 3 }) -> data: { lat: 48.85, lng: 2.35, displayName: 'Paris, France', bbox: [...] }.",
             inputSchema: {
                 query: z.string().min(1).describe("Location name or address to geocode"),
                 limit: z
@@ -101,85 +114,51 @@ export function registerGeocodingTools(
                     .min(1)
                     .max(MAX_LIMIT)
                     .optional()
-                    .describe("Max results to return (default 5, max 20)"),
+                    .describe("Max matches to return (default 5, max 20); the best match is the top-level result"),
             },
         },
         async (args) => {
+            const query = args.query;
             try {
                 const limit = Math.min(args.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
-                const cacheKey = `geocode:${args.query.toLowerCase().trim()}:${limit}`;
+                const cacheKey = `geocode:${query.toLowerCase().trim()}:${limit}`;
 
                 const cached = await cacheGet(cacheKey);
-                if (cached) return textResult(cached);
+                if (cached !== null) {
+                    return mcpOk(geocodeData(query, cached.results), {
+                        count: cached.results.length,
+                        capturedAt: cached.capturedAt,
+                    });
+                }
 
-                const rateLimitResult = await checkRateLimit(userId);
-                if (rateLimitResult) return textResult(JSON.stringify(rateLimitResult));
+                const rateLimit = await checkRateLimit(userId);
+                if (rateLimit) {
+                    return mcpFail("rate_limited", "Nominatim allows 1 geocode request per second per user.", {
+                        hint: `Wait about ${rateLimit.retryAfterMs} ms, then retry the same query. Repeating a query you already asked is free -- results are cached 24h.`,
+                        details: { retryAfterMs: rateLimit.retryAfterMs, query },
+                    });
+                }
 
-                const raw = await fetchGeocode({ query: args.query, limit });
-                if (raw.length === 0) return textResult("no results found");
+                const raw = await fetchGeocode({ query, limit });
+                if (raw.length === 0) {
+                    return mcpFail("not_found", `Could not resolve "${query}" to a place.`, {
+                        hint: "Try a less ambiguous query, or add a country/region. If you already have coordinates, skip geocoding and use query_entities({near}) or pan_globe.",
+                        details: { query },
+                    });
+                }
 
-                const results = (raw as RawNominatimItem[]).map(normalizeNominatimResult);
-                const json = JSON.stringify(results);
-                await cacheSet(cacheKey, json, CACHE_TTL_SECONDS);
-                return textResult(json);
+                const producedAt = new Date().toISOString();
+                const results = raw.map(normalizeNominatimResult);
+                await cacheSet(cacheKey, { capturedAt: producedAt, results });
+                return mcpOk(geocodeData(query, results), {
+                    count: results.length,
+                    capturedAt: producedAt,
+                });
             } catch (err) {
-                console.error("[geocodingTools] geocode_location failed:", err);
-                return textResult("geocode_location command failed");
-            }
-        },
-    );
-
-    // GEO-02: fly_to
-    server.registerTool(
-        "fly_to",
-        {
-            description:
-                SESSION_REQUIRED_PREAMBLE +
-                "Fly the live globe camera to a geocoded coordinate, optionally fitting a bounding box in view. " +
-                "Requires an active globe session (read globe://sessions first); returns 'no active globe session to control' when no tab is live. " +
-                "Prefer pan_globe for relative panning or focus_entity to snap to a known entity; use fly_to when you have explicit lat/lng (e.g. from geocode_location). " +
-                "Parameters: lat (-90..90, required), lng (-180..180, required), altitude (metres, optional, default 15000), " +
-                "bbox ([west,south,east,north], optional - fit this region in view), sessionId (optional - omit for most-recently-active tab). " +
-                "Example: fly_to({ lat: 48.85, lng: 2.35 }) or fly_to({ lat: 0, lng: 0, bbox: [2.2,48.8,2.5,48.9] }).",
-            inputSchema: {
-                lat: latSchema.describe("Latitude [-90, 90]"),
-                lng: lonSchema.describe("Longitude [-180, 180]"),
-                altitude: z
-                    .number()
-                    .positive()
-                    .optional()
-                    .describe("Altitude in metres above ellipsoid (default 15000)"),
-                bbox: z
-                    .tuple([z.number(), z.number(), z.number(), z.number()])
-                    .optional()
-                    .describe("[west, south, east, north] bounding box to fit in view"),
-                sessionId: z
-                    .string()
-                    .optional()
-                    .describe("Target globe session id. Omit to target most-recently-active tab."),
-            },
-        },
-        async (args) => {
-            try {
-                const sessionId = await resolveSession(userId, args.sessionId);
-                if (sessionId === null) return NO_SESSION_RESULT;
-
-                const cmd: GlobeCommand = {
-                    type: "flyTo",
-                    lat: args.lat,
-                    lng: args.lng,
-                    alt: args.altitude ?? DEFAULT_ALTITUDE_M,
-                    ...(args.bbox ? { bbox: args.bbox } : {}),
-                };
-                await enqueueGlobeCommand(userId, sessionId, cmd);
-
-                const label = args.bbox
-                    ? `bbox=[${args.bbox.join(",")}]`
-                    : `lat=${args.lat}, lng=${args.lng}, alt=${args.altitude ?? DEFAULT_ALTITUDE_M}`;
-                return textResult(`fly_to command enqueued (${label})`);
-            } catch (err) {
-                console.error("[geocodingTools] fly_to failed:", err);
-                return textResult("fly_to command failed");
+                return mcpCatch("engine_unreachable", "Geocoding upstream (Nominatim) is unreachable.", err, {
+                    hint: "This is an OUTAGE, NOT a missing place -- do not report the location as nonexistent. Retry shortly, or tell the user geocoding is temporarily down.",
+                    details: { query },
+                });
             }
         },
     );

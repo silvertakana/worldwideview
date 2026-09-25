@@ -122,13 +122,14 @@ export function ConnectAgentHelper({ token }: ConnectAgentHelperProps) {
                   </li>
                 )}
                 <li>
-                  <strong>Read/query tools</strong> (search, geocode, favorites, plugin data) work with just
-                  your API key and do not require an open browser tab.
+                  <strong>Read/query tools</strong> (investigate, search, geocode, analytics, plugin data)
+                  work with just your API key and do not require an open browser tab.
                 </li>
                 <li>
-                  <strong>Command/control tools</strong> (pan_globe, fly_to, toggle_layer, set_filter, etc.)
-                  require this WorldWideView tab to stay open and signed in. Without an open globe tab the
-                  command is accepted but has no visible effect.
+                  <strong>Command/control tools</strong> (pan_globe, focus_entity, toggle_layer,
+                  set_timeline, set_filter, etc.) require this WorldWideView tab to stay open and signed in.
+                  Without an open globe tab they fail with a no-session error rather than silently doing
+                  nothing.
                 </li>
               </ul>
               <div style={mutedMicro}>

@@ -7,12 +7,19 @@
  * handler for each namespaced plugin tool ({pluginId}__{name}).
  *
  * When invoked:
- *   1. If no active browser session exists or the plugin is inactive in the current
- *      session, returns an honest error { error: 'Plugin not active in session', reason: 'no_active_session' }.
+ *   1. If no active browser session exists, or the plugin is inactive in the current
+ *      session, returns the v2 failure envelope (no_active_session / plugin_offline).
  *   2. Validates tool input against the catalog schema (rejects before enqueue).
  *   3. Enqueues the invocation for the browser to execute.
  *   4. Waits for the browser to post a result (10-second deadline).
- *   5. Returns the result as a text content block, OR a graceful timeout message.
+ *   5. Returns the result in the shared envelope, OR a relay_timeout failure envelope.
+ *
+ * v2 envelope note (2026-09-25): EVERY path returns the shared envelope. The
+ * relayed payload is plugin-authored and is deliberately NOT reshaped -- it
+ * travels verbatim under data.result, so the server stays a dumb relay while the
+ * envelope stays uniform. Rule this protects: an agent branching on the "ok"
+ * field must never get undefined back, on any tool. Dynamic plugin tools are
+ * most of tools/list in a live session, so a holdout here was the majority case.
  *
  * The server is a DUMB RELAY -- it never executes a plugin tool, reads a streamUrl,
  * or calls the data engine. Execution happens in the browser via plugin.executeMcpTool.
@@ -33,6 +40,7 @@ import { enqueueToolInvocation, waitForToolResult } from "@/lib/mcpRelay";
 import { validateToolArgs } from "@/lib/mcp/pluginTools";
 import type { ToolInputSchema } from "@/lib/mcp/pluginTools";
 import { getStaticPluginTools } from "@/lib/mcp/staticPluginCatalog";
+import { mcpFail, mcpOk, noActiveSessionError } from "@/lib/mcp/responseEnvelope";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -114,6 +122,10 @@ export async function registerPluginToolDispatch(
 
     if (combinedTools.size === 0) return;
 
+    // Vocabulary for the "not active in this session" failure: the tool names the
+    // browser session DOES currently expose, so the next turn lands correctly.
+    const activeToolNames = Array.from(dynamicToolsMap.keys());
+
     for (const [namespacedName, { tool, isActive }] of combinedTools) {
         const capturedTool = tool;
         const isCurrentlyActive = isActive;
@@ -128,21 +140,21 @@ export async function registerPluginToolDispatch(
             },
             async (input) => {
                 // If there is no active session or the plugin is not active in this session:
-                if (!capturedCtx.sessionId || !isCurrentlyActive) {
-                    return {
-                        content: [
-                            {
-                                type: "text" as const,
-                                text: JSON.stringify({
-                                    error: "Plugin not active in session",
-                                    reason: "no_active_session",
-                                    pluginId: capturedTool.pluginId,
-                                    tool: namespacedName,
-                                }),
-                            },
-                        ],
-                        isError: true,
-                    };
+                if (!capturedCtx.sessionId) {
+                    return noActiveSessionError(activeToolNames);
+                }
+                if (!isCurrentlyActive) {
+                    return mcpFail(
+                        "plugin_offline",
+                        `Plugin tool "${namespacedName}" is not active in the current session.`,
+                        {
+                            hint:
+                                "The plugin is installed but the browser session is not exposing this tool. " +
+                                "Enable the plugin in the globe, or retry with one of validValues -- the plugin tools this session does expose.",
+                            validValues: activeToolNames,
+                            details: { pluginId: capturedTool.pluginId, tool: namespacedName },
+                        },
+                    );
                 }
 
                 // Build the args object from whatever the MCP client passed.
@@ -162,18 +174,15 @@ export async function registerPluginToolDispatch(
                 const schema = capturedTool.inputSchema as unknown as ToolInputSchema;
                 const validation = validateToolArgs(argsRecord, schema);
                 if (!validation.valid) {
-                    return {
-                        content: [
-                            {
-                                type: "text" as const,
-                                text: JSON.stringify({
-                                    error: `Validation failed: ${validation.errors.join("; ")}`,
-                                    errors: validation.errors,
-                                }),
-                            },
-                        ],
-                        isError: true,
-                    };
+                    return mcpFail(
+                        "invalid_parameters",
+                        `Validation failed: ${validation.errors.join("; ")}`,
+                        {
+                            hint:
+                                "The plugin tool rejected these args before dispatch. Fix them against the tool's own inputSchema and retry; the browser never saw this call.",
+                            details: { tool: namespacedName, errors: validation.errors },
+                        },
+                    );
                 }
 
                 // Enqueue the invocation for the browser to execute.
@@ -189,17 +198,15 @@ export async function registerPluginToolDispatch(
                 );
 
                 if (enqueueResult.rejected) {
-                    return {
-                        content: [
-                            {
-                                type: "text" as const,
-                                text: JSON.stringify({
-                                    error: `Failed to enqueue tool invocation: ${enqueueResult.reason ?? "rejected"}`,
-                                }),
-                            },
-                        ],
-                        isError: true,
-                    };
+                    return mcpFail(
+                        "internal_error",
+                        `Failed to enqueue tool invocation: ${enqueueResult.reason ?? "rejected"}`,
+                        {
+                            hint:
+                                "The call never reached the browser. Check the globe tab is open, then retry once.",
+                            details: { tool: namespacedName, reason: enqueueResult.reason ?? "rejected" },
+                        },
+                    );
                 }
 
                 // SEC-02 / MCP-QA-04: Wait for browser result with a bounded deadline.
@@ -211,33 +218,23 @@ export async function registerPluginToolDispatch(
                 );
 
                 if (resultOrTimeout.timedOut) {
-                    return {
-                        content: [
-                            {
-                                type: "text" as const,
-                                text: JSON.stringify({
-                                    error: "Plugin tool timed out: no response from the browser before the deadline.",
-                                    timedOut: true,
-                                    tool: namespacedName,
-                                }),
-                            },
-                        ],
-                        isError: true,
-                    };
+                    return mcpFail(
+                        "relay_timeout",
+                        "Plugin tool timed out: no response from the browser before the deadline.",
+                        {
+                            hint:
+                                "The browser relay did not answer within the deadline. The invocation may still be running in the tab -- wait a moment and retry once rather than assuming it failed.",
+                            details: { tool: namespacedName, deadlineMs: RELAY_DEADLINE_MS },
+                        },
+                    );
                 }
 
-                // Sanitize: serialize the value to JSON, never return raw Error objects.
-                const safeResult = resultOrTimeout.value;
-                return {
-                    content: [
-                        {
-                            type: "text" as const,
-                            text: typeof safeResult === "string"
-                                ? safeResult
-                                : JSON.stringify(safeResult ?? null),
-                        },
-                    ],
-                };
+                // Sanitize: JSON-serialize the relayed value, never return a raw
+                // Error object. The payload keeps its own shape under data.result.
+                return mcpOk({
+                    tool: namespacedName,
+                    result: resultOrTimeout.value ?? null,
+                });
             },
         );
     }
