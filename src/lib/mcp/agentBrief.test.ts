@@ -16,7 +16,7 @@ import {
 import { resolveMcpEndpoint } from "./endpoint";
 import { MCP_TOOLS, groupToolsBySession, mcpToolNames } from "./toolRegistry";
 
-const TOKEN = "wwv_abc123.s3cret-tail";
+const TOKEN = "wwv_abc123.s3cret-tail"; // gitleaks:allow -- a fake key, not a credential
 const ENDPOINT = "https://acme.cloud-wwv.dev/api/mcp";
 
 /** A detected endpoint, resolved by the real resolver rather than hand-built. */
