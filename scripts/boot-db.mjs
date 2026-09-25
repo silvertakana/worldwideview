@@ -142,9 +142,10 @@ if (!fs.existsSync(envPath)) {
 console.log('🚀 Checking local PostgreSQL database...');
 
 try {
-  // Check that docker is reachable, and report WHY it is not. stdio:'ignore' hid the real
-  // error (a broken credential helper, an unreadable PATH entry, a stopped engine) behind a
-  // single wrong diagnosis.
+  // Check that the docker CLI can run at all, and report WHY it cannot. stdio:'ignore' threw
+  // away the real error, so the old message guessed at the cause instead of quoting it. This
+  // covers the CLI only: "docker --version" never contacts the daemon, so a stopped engine
+  // passes here and fails on the compose call below - which now exits non-zero as well.
   try {
     execSync('docker --version', { stdio: ['ignore', 'pipe', 'pipe'] });
   } catch (dockerError) {
@@ -167,6 +168,6 @@ try {
   // only moves the error somewhere less obvious (prisma db push via the predev chain).
   console.error('❌ Failed to start the local database:', error.message);
   console.log('💡 Ensure that docker is running and try again.');
-  console.log('💡 Or start a database yourself and set WWV_SKIP_LOCAL_DB=true in .env.');
+  console.log('💡 Or run your own database: set WWV_SKIP_LOCAL_DB=true and restore your DATABASE_URL in .env.');
   process.exit(1);
 }
