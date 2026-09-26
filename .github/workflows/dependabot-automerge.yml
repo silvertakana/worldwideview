@@ -75,7 +75,8 @@ jobs:
           PR: ${{ github.event.pull_request.number || github.event.check_suite.pull_requests[0].number }}
         run: |
           set -euo pipefail
-          if [ -z "${{ github.event.pull_request.number || github.event.check_suite.pull_requests[0].number }}" ]; then
+          # Read the number from the environment, never interpolated into the script text.
+          if [ -z "${PR:-}" ]; then
             echo "No pull request is attached to this event; nothing to gate."
             exit 0
           fi
