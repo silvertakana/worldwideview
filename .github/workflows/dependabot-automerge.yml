@@ -1,0 +1,101 @@
+name: Dependabot Automerge
+
+# Enables GitHub auto-merge for Dependabot pull requests that only update patch or minor
+# versions of npm packages or docker images. The decision lives in
+# .github/scripts/dependabot-decision.mjs, which carries its own test suite
+# (node .github/scripts/dependabot-decision.mjs --self-test) and fails closed on anything
+# it cannot parse. GitHub holds the actual merge until the required checks pass.
+#
+# Two properties are load-bearing, not stylistic:
+#   1. The job runs only for the Dependabot actor.
+#   2. It checks out the BASE branch and never executes the pull request's code. A
+#      Dependabot-triggered run gets a read-only token, which is why pull_request_target
+#      is needed to reach a write token - and that is exactly why the checkout must never
+#      point at the head commit.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      audit:
+        description: Report what would happen for every open Dependabot pull request without changing anything
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: dependabot-automerge-${{ github.event.pull_request.number || 'audit' }}
+  cancel-in-progress: false
+
+jobs:
+  automerge:
+    if: github.actor == 'dependabot[bot]' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the base branch only
+        uses: actions/checkout@v7
+        with:
+          # Never the head of the pull request: this workflow holds a write token.
+          ref: ${{ github.event.pull_request.base.ref || github.ref_name }}
+          persist-credentials: false
+
+      - name: Audit every open Dependabot pull request (reports only, changes nothing)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "Audit only - this run does not modify any pull request."
+          node .github/scripts/dependabot-decision.mjs --audit | tee /tmp/audit.txt
+          {
+            echo "### Dependabot auto-merge audit"
+            echo ""
+            echo '~~~'
+            cat /tmp/audit.txt
+            echo '~~~'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Decide
+        id: decide
+        if: github.event_name == 'pull_request_target'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          verdict="$(node .github/scripts/dependabot-decision.mjs --pr "$PR")"
+          echo "$verdict"
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge for patch and minor updates
+        if: github.event_name == 'pull_request_target' && startsWith(steps.decide.outputs.verdict, 'ENABLE')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          set -euo pipefail
+          if gh pr merge --auto --squash "$PR_URL"; then
+            echo "auto-merge enabled; GitHub holds the merge until the required checks pass"
+          else
+            # A dependency pull request that cannot be merged yet - a conflict, for example -
+            # is an expected state rather than a failure. Reporting it as a red check here
+            # would teach people to ignore red; the weekly dependency digest surfaces it.
+            echo "::notice::auto-merge could not be enabled yet; the weekly dependency digest will report it"
+          fi
+
+      - name: Note an update that is left for a person
+        if: >-
+          github.event_name == 'pull_request_target'
+          && startsWith(steps.decide.outputs.verdict, 'SKIP')
+          && (github.event.action == 'opened' || github.event.action == 'ready_for_review')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          reason="$(node .github/scripts/dependabot-decision.mjs --pr "$PR")"
+          reason="${reason#SKIP - }"
+          gh pr comment "$PR" --body "Left for a person rather than auto-merged: $reason. Patch and minor updates merge themselves once the required checks pass; this one is listed in the weekly dependency digest."

@@ -1,0 +1,56 @@
+name: Dependency digest
+
+# Weekly report of Dependabot pull requests that need a person: anything failing, anything
+# open longer than a week, and - the case that is easy to miss - anything that is mergeable
+# and green but never merged because a required check never reported. An issue is opened
+# only when there is something to report, so a quiet week stays quiet.
+on:
+  schedule:
+    # Monday 09:00 NZ (Sunday 21:00 UTC).
+    - cron: "0 21 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build the report
+        id: report
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          node .github/scripts/dependabot-decision.mjs --digest > digest.md
+          cat digest.md
+          cat digest.md >> "$GITHUB_STEP_SUMMARY"
+          if grep -q '^NEEDS_ATTENTION$' digest.md; then
+            echo "attention=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "attention=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update the digest issue
+        if: steps.report.outputs.attention == 'yes'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          title="Dependency pull requests needing attention"
+          body="$(sed -n '/^NEEDS_ATTENTION$/,$p' digest.md | tail -n +2)"
+          existing="$(gh issue list --state open --limit 100 --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+            echo "appended to issue #$existing"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi
