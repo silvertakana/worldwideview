@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "commander": "^15.0.0",
-    "ioredis": "^5.11.1",
+    "ioredis": "^6.0.0",
     "ws": "^8.21.1"
   },
   "devDependencies": {
