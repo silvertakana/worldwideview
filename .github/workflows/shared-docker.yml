@@ -122,6 +122,13 @@ jobs:
           format: spdx-json
           output-file: sbom.spdx.json
 
+      # The runner image no longer ships cosign, so the sign step below needs it
+      # installed first. The globe's own publish workflow installs the same
+      # pinned version before signing.
+      - name: Install cosign
+        if: ${{ !inputs.is-preview }}
+        uses: sigstore/cosign-installer@v4.1.2
+
       - name: Sign image with Cosign
         if: ${{ !inputs.is-preview }}
         env:
