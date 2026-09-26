@@ -41,7 +41,10 @@ permissions:
 
 concurrency:
   group: dependabot-automerge-${{ github.event.pull_request.number || github.event.check_suite.pull_requests[0].number || github.ref_name }}
-  cancel-in-progress: true
+  # Not cancel-in-progress: a cancelled run leaves a cancelled check on the pull request, which
+  # reads as a red X on an otherwise green pull request. Every run re-derives its answer from live
+  # state, so queueing them instead loses nothing.
+  cancel-in-progress: false
 
 jobs:
   automerge:
