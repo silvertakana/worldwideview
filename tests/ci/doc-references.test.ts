@@ -28,7 +28,9 @@ describe("documentation references", () => {
   it("resolves every reference this repository publishes", () => {
     expect(existsSync(CHECKER)).toBe(true);
     const result = run();
-    expect(result.ok).toBe(true);
+    // The checker's own output is the message: a bare "expected false to be true" here would
+    // hide which reference broke.
+    expect(result.ok, result.output).toBe(true);
     expect(result.output).toContain("all resolve");
     // A pass is only meaningful if the check actually read the repository.
     const checked = Number(/doc references: (\d+) files/.exec(result.output)?.[1] ?? 0);
@@ -36,18 +38,22 @@ describe("documentation references", () => {
   });
 
   it("fails on a pointer to internal maintainer material", () => {
-    const file = fixture("internal.md", "Notes live in `.agents/research/some-review.md`.\n");
+    // Composed rather than written out: a literal dead reference in this file would make
+    // this file the first thing the repository-wide check reports.
+    const target = [".agents", "research", "some-review.md"].join("/");
+    const file = fixture("internal.md", `Notes live in \`${target}\`.\n`);
     const result = run([file]);
     expect(result.ok).toBe(false);
-    expect(result.output).toContain(".agents/research/some-review.md");
+    expect(result.output).toContain(target);
     expect(result.output).toContain("internal maintainer material");
   });
 
   it("fails on a pointer to a file this repository does not have", () => {
-    const file = fixture("missing.md", "See `.agents/rules/does-not-exist.md` for the rules.\n");
+    const target = [".agents", "rules", "does-not-exist.md"].join("/");
+    const file = fixture("missing.md", `See \`${target}\` for the rules.\n`);
     const result = run([file]);
     expect(result.ok).toBe(false);
-    expect(result.output).toContain(".agents/rules/does-not-exist.md");
+    expect(result.output).toContain(target);
   });
 
   it("fails on a relative markdown link to a path that is gone", () => {

@@ -30,7 +30,10 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const locate = (file) => (path.isAbsolute(file) ? file : path.join(ROOT, file));
 const SCANNED = /\.(md|mdc|mjs|cjs|js|jsx|ts|tsx|json|ya?ml|ps1|sh|txt|example)$/i;
 const MARKDOWN = /\.mdc?$/i;
-const INTERNAL = ['.planning/', '.agents/context/', '.agents/research/', '.agents/plans/'];
+const INTERNAL = ['.planning', '.agents/context', '.agents/research', '.agents/plans'];
+const isInternal = (target) => INTERNAL.some((prefix) => target === prefix || target.startsWith(prefix + '/'));
+// This file holds the patterns it searches for, so scanning it reports its own pattern list.
+const SELF = 'scripts/check-doc-references.mjs';
 const AGENT_PATH = /\.agents\/[A-Za-z0-9._/-]*[A-Za-z0-9_-]/g;
 const MD_LINK = /\]\(([^)\s]+)\)/g;
 const EXTERNAL = /^(https?:|mailto:|#)/;
@@ -53,7 +56,7 @@ const publishes = (target) => {
 const onPurpose = (target) => NOT_PUBLISHED_ON_PURPOSE.some((prefix) => target === prefix || target.startsWith(prefix + '/'));
 
 const argv = process.argv.slice(2);
-const candidates = argv.length > 0 ? argv : tracked.filter((file) => SCANNED.test(file));
+const candidates = argv.length > 0 ? argv : tracked.filter((file) => SCANNED.test(file) && file !== SELF);
 
 // A symlink (CLAUDE.md -> AGENTS.md) is one file with two names; check it once.
 const files = [];
@@ -81,7 +84,7 @@ for (const file of files) {
       if (PLACEHOLDER.test(target) || onPurpose(target)) continue;
       // A template pointing at the file it is a template for is correct as written.
       if (file === target + '.example' || target === file.replace(/\.example$/, '')) continue;
-      if (INTERNAL.some((prefix) => target.startsWith(prefix))) {
+      if (isInternal(target)) {
         problems.add(where + '  ->  ' + target + '  (internal maintainer material, not published here)');
       } else if (!publishes(target)) {
         problems.add(where + '  ->  ' + target + '  (this repository does not have that file)');
