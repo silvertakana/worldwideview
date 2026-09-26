@@ -50,7 +50,7 @@ Live evidence settled the question: the engine (`dataenginev2.worldwideview.dev`
 - No globe redeploy needed when plugin data needs change.
 
 **Negative / caveats (hardening backlog, owner review in progress)**
-- The production engine currently behaves as an OPEN public data CDN (architecture review 2026-08-24, `~/.agents/research/wwv-engine-direct-routing-review-2026-08-24.md`):
+- The production engine currently behaves as an OPEN public data CDN (architecture review, 2026-08-24):
   - `GET /api/<id>` unauthenticated — anyone with the URL reads every seeder snapshot incl. private seeders (aviation, maritime, military-aviation, surveillance-satellites) when producing.
   - CORS reflects any origin (`ALLOWED_ORIGINS` unset → `['*']`).
   - Production runs `WWV_SKIP_WS_AUTH=true` — WS stream connects unauthenticated.

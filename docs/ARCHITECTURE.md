@@ -59,7 +59,7 @@ All four are now dynamically imported at runtime as ES module bundles via `loadP
 > [!IMPORTANT]
 > Plugin types are re-exported from the SDK through `src/core/plugins/PluginTypes.ts` and `src/core/plugins/PluginManifest.ts`. The **source of truth is always `@worldwideview/wwv-plugin-sdk`** — never define plugin types locally.
 
-For the contributor checklist when authoring a plugin, see [`.agents/skills/worldwideview-plugin-creation/`](../.agents/skills/) and the [Plugin Quickstart](plugin-quickstart.md).
+For the contributor checklist when authoring a plugin, see [`.agents/workflows/worldwideview-plugin-creation/SKILL.md`](../.agents/workflows/worldwideview-plugin-creation/SKILL.md) and the [Plugin Quickstart](plugin-quickstart.md).
 
 ## State Management
 
@@ -188,9 +188,6 @@ Quick map of the load-bearing modules:
 
 For deeper coverage of specific subsystems, see the rule files under [`.agents/rules/`](../.agents/rules/):
 
-- [`platform-architecture.md`](../.agents/rules/platform-architecture.md) — high-level platform goals, product vision, Edition System
-- [`application-architecture.md`](../.agents/rules/application-architecture.md) — Next.js frontend, Zustand, CesiumJS integration
-- [`plugin-architecture.md`](../.agents/rules/plugin-architecture.md) — plugin lifecycle, capability declarations, seeders
 - [`marketplace-architecture.md`](../.agents/rules/marketplace-architecture.md) — dynamic plugin installation, DB sync, CDN loading
 - [`cesium-rendering.md`](../.agents/rules/cesium-rendering.md) — globe rendering, entity types, primitives, LOD, culling
 - [`state-management.md`](../.agents/rules/state-management.md) — slice access patterns, plugin settings

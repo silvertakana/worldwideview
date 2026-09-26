@@ -1,0 +1,31 @@
+name: Documentation references
+
+# Every path a published file points at must exist in this repository.
+#
+# The failure this catches is quiet by nature: a cleanup untracks or moves a file, every
+# pointer to it survives, and a reader (or an agent following the file) hits a dead end in a
+# public repository. Nothing else in CI resolves those paths, so nothing else notices.
+#
+# No path filter on purpose. A required check whose workflow is filtered out never reports,
+# and a required check that never reports blocks the pull request forever. The job is a
+# few seconds of node with no dependencies, so there is nothing to save by skipping it.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  references:
+    name: Documentation references
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Check every published reference resolves
+        run: node scripts/check-doc-references.mjs

@@ -223,7 +223,7 @@ Everything else - generating a key, the Authorization header, the two capability
 the open-tab requirement for command tools - is identical.
 
 > Canonical domain map and probe evidence:
-> [ADR-0010](../architecture/decisions/adr-0010-ecosystem-domain-map-and-tenant-endpoints.md).
+> [ADR-0010](architecture/decisions/adr-0010-ecosystem-domain-map-and-tenant-endpoints.md).
 
 ---
 

@@ -43,7 +43,8 @@ node_modules/
 # stray Windows redirect artifact
 /nul
 
-# planning (private repo: github.com/silvertakana/wwv-planning)
+# planning and internal maintainer material - kept in the private workspace repository,
+# never published from here. Do not point a shipped file at anything under it.
 .planning/
 
 # performance

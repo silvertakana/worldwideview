@@ -1,7 +1,11 @@
 name: CI
 
-# CLI-only changes are covered by cli.yml; skip the full app suite for them.
-# Docs/agent-rules/issue-template changes also skip the suite.
+# Push builds skip the full app suite for changes that cannot affect it: CLI-only work is
+# covered by cli.yml, and docs / agent rules / issue templates cannot break the app.
+#
+# Pull requests deliberately have NO path filter. A required check whose workflow is
+# filtered out never reports, and a required check that never reports blocks the pull
+# request forever. Jobs a change cannot affect exit early instead.
 on:
   push:
     branches: [main]
@@ -14,13 +18,6 @@ on:
       - ".github/gc/**"
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "packages/wwv-cli/**"
-      - ".agents/**"
-      - "**/*.md"
-      - ".github/ISSUE_TEMPLATE/**"
-      - ".github/PULL_REQUEST_TEMPLATE.md"
-      - ".github/gc/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -110,7 +107,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @worldwideview/wwv-plugin-sdk build
       - run: npx prisma generate
-      - run: pnpm exec vitest run --coverage || true
+      - run: pnpm exec vitest run --coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
