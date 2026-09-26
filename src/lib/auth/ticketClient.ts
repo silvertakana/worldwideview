@@ -78,7 +78,23 @@ async function fetchTicket(pluginId: string): Promise<PluginTicket> {
  * Returns a short-lived PluginTicket for the given plugin ID.
  * Results are cached by engine audience; the ticket is refreshed 30s before expiry (4.5-min window).
  */
+/**
+ * Fetches a ticket for this instance.
+ *
+ * The ticket is instance-scoped, not plugin-scoped: the marketplace issues it
+ * from the scope recorded on the instance's key, and the engine enforces
+ * per-channel access from that scope on every subscribe. `pluginId` labels the
+ * request (it keys the cache, and names the caller in logs); it does not narrow
+ * what the ticket may subscribe to.
+ */
 export async function getTicket(pluginId: string): Promise<PluginTicket> {
+    // A demo instance mints a ticket per visitor session: serving one from a
+    // process-wide cache would hand every visitor the same identity, which is
+    // the opposite of what a short-lived demo ticket is for.
+    if (isDemo) {
+        return await fetchTicket(pluginId);
+    }
+
     const cached = cache.get(ENGINE_AUDIENCE);
     if (cached && cached.expiresAt > Date.now()) {
         return cached.ticket;

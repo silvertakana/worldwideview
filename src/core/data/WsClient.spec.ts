@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("../edition", () => ({
     ticketAuthEnabledForPlugin: vi.fn(),
+    ticketAuthRequired: vi.fn(),
+    marketplaceCredentialRequired: vi.fn(),
 }));
 vi.mock("./DataBus", () => ({
     dataBus: { emit: vi.fn() },
@@ -74,8 +76,8 @@ describe("WsClient — first-message auth", () => {
     });
 
     it("sends subscribe immediately on open when ticket auth is not required", async () => {
-        const { ticketAuthEnabledForPlugin } = await import("../edition");
-        vi.mocked(ticketAuthEnabledForPlugin).mockReturnValue(false);
+        const { ticketAuthRequired } = await import("../edition");
+        vi.mocked(ticketAuthRequired).mockReturnValue(false);
 
         const { wsClient } = await import("./WsClient");
         const url = nextEngineUrl();
@@ -90,8 +92,8 @@ describe("WsClient — first-message auth", () => {
     });
 
     it("sends auth message before any subscribe when ticket auth is required", async () => {
-        const { ticketAuthEnabledForPlugin } = await import("../edition");
-        vi.mocked(ticketAuthEnabledForPlugin).mockReturnValue(true);
+        const { ticketAuthRequired } = await import("../edition");
+        vi.mocked(ticketAuthRequired).mockReturnValue(true);
 
         const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             new Response(JSON.stringify({ token: "ticket-abc" }), { status: 200 })
@@ -116,8 +118,8 @@ describe("WsClient — first-message auth", () => {
     });
 
     it("flushes all queued subscribes after receiving a welcome message", async () => {
-        const { ticketAuthEnabledForPlugin } = await import("../edition");
-        vi.mocked(ticketAuthEnabledForPlugin).mockReturnValue(true);
+        const { ticketAuthRequired } = await import("../edition");
+        vi.mocked(ticketAuthRequired).mockReturnValue(true);
 
         const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             new Response(JSON.stringify({ token: "ticket-abc" }), { status: 200 })
@@ -151,9 +153,10 @@ describe("WsClient — first-message auth", () => {
         fetchSpy.mockRestore();
     });
 
-    it("skips auth and subscribes immediately when ticket response returns noCredential", async () => {
-        const { ticketAuthEnabledForPlugin } = await import("../edition");
-        vi.mocked(ticketAuthEnabledForPlugin).mockReturnValue(true);
+    it("skips auth and subscribes immediately when a local instance has no credential", async () => {
+        const { ticketAuthRequired, marketplaceCredentialRequired } = await import("../edition");
+        vi.mocked(ticketAuthRequired).mockReturnValue(true);
+        vi.mocked(marketplaceCredentialRequired).mockReturnValue(false);
 
         const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             new Response(JSON.stringify({ noCredential: true }), { status: 200 })
@@ -178,3 +181,71 @@ describe("WsClient — first-message auth", () => {
         fetchSpy.mockRestore();
     });
 });
+
+describe("WsClient - ticket auth by edition capability", () => {
+    beforeEach(() => {
+        FakeWebSocket.instances.length = 0;
+        savedWebSocket = global.WebSocket;
+        global.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
+        vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        global.WebSocket = savedWebSocket;
+    });
+
+    it("requests a ticket in a hosted edition with no plugin opted in", async () => {
+        const { ticketAuthRequired, marketplaceCredentialRequired } = await import("../edition");
+        vi.mocked(ticketAuthRequired).mockReturnValue(true);
+        vi.mocked(marketplaceCredentialRequired).mockReturnValue(true);
+
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            new Response(JSON.stringify({ token: "ticket-cloud" }), { status: 200 })
+        );
+
+        const { wsClient } = await import("./WsClient");
+        const url = nextEngineUrl();
+        wsClient.subscribe("aviation", url);
+        const ws = FakeWebSocket.instances.at(-1)!;
+        ws.triggerOpen();
+        await flushPromises();
+
+        const msgs = ws.sentMessages.map((m) => JSON.parse(m));
+        expect(msgs).toContainEqual({ type: "auth", v: 1, token: "ticket-cloud" });
+        expect(msgs.some((m: { action?: string }) => m.action === "subscribe")).toBe(false);
+        expect(fetchSpy).toHaveBeenCalledWith(
+            expect.stringContaining("/api/auth/ticket?pluginId=aviation")
+        );
+
+        fetchSpy.mockRestore();
+    });
+
+    it("explains a missing credential instead of subscribing into a reconnect loop", async () => {
+        const { ticketAuthRequired, marketplaceCredentialRequired } = await import("../edition");
+        vi.mocked(ticketAuthRequired).mockReturnValue(true);
+        vi.mocked(marketplaceCredentialRequired).mockReturnValue(true);
+
+        const showEngineAuthNotice = vi.fn();
+        const { useStore } = await import("../state/store");
+        vi.mocked(useStore.getState).mockReturnValue({ entitiesByPlugin: {}, showEngineAuthNotice } as never);
+
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            new Response(JSON.stringify({ noCredential: true }), { status: 200 })
+        );
+
+        const { wsClient } = await import("./WsClient");
+        const url = nextEngineUrl();
+        wsClient.subscribe("aviation", url);
+        const ws = FakeWebSocket.instances.at(-1)!;
+        ws.triggerOpen();
+        await flushPromises();
+
+        const msgs = ws.sentMessages.map((m) => JSON.parse(m));
+        expect(msgs.some((m: { action?: string }) => m.action === "subscribe")).toBe(false);
+        expect(msgs.some((m: { type?: string }) => m.type === "auth")).toBe(false);
+        expect(showEngineAuthNotice).toHaveBeenCalled();
+
+        fetchSpy.mockRestore();
+    });
+});
+

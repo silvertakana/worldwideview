@@ -12,6 +12,8 @@ import { wsClient } from "./WsClient";
 
 vi.mock("../edition", () => ({
     ticketAuthEnabledForPlugin: vi.fn(),
+    ticketAuthRequired: vi.fn(() => false),
+    marketplaceCredentialRequired: vi.fn(() => false),
 }));
 vi.mock("./DataBus", () => ({
     dataBus: { emit: vi.fn() },

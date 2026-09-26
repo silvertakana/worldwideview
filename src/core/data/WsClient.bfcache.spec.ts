@@ -12,6 +12,8 @@ vi.mock("../state/store", () => ({
 }));
 vi.mock("../edition", () => ({
     ticketAuthEnabledForPlugin: vi.fn(() => false),
+    ticketAuthRequired: vi.fn(() => false),
+    marketplaceCredentialRequired: vi.fn(() => false),
 }));
 
 import { wsClient } from "./WsClient";

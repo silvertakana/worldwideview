@@ -1,7 +1,7 @@
 # ADR-0005: Demo Service Account — Marketplace Identity for Anonymous Access
 
 ## Status
-Proposed
+Accepted (2026-09-26 - the mechanism for marking the demo identity changed; see Amendments)
 
 ## Date
 2026-06-13
@@ -11,6 +11,7 @@ Proposed
 - **Builds on:** ADR-003 (Shared Identity & Ecosystem Auth Host) — the user identity model this ADR reuses for non-human accounts
 - **Supersedes:** v1.6 deferred item "Demo instance service account — needs marketplace credential for anonymous visitor authentication"
 - **Amended by:** ADR-0010 (Ecosystem Domain Map & Per-Tenant MCP Endpoints) — the demo host in Context is `demo.worldwideview.dev`; a third-party host was named there in error
+- **Amended by:** ADR-0011 (Two-Tier Onboarding and Risk-Ranked Data Access) — the demo marker moves from the user record to the API key, and demo connections gain origin, rate, and scope limits
 
 ---
 
@@ -136,3 +137,30 @@ For existing demo deployments (none in production yet — this is pre-launch):
 4. Redeploy globe app
 
 No zero-downtime concern — the demo is not serving production traffic at launch.
+
+---
+
+## Amendments (2026-09-26)
+
+### A1: The demo marker moved from the user record to the API key
+
+ADR-005C above specifies that the exchange reads `apiKeyRecord.user.tier` and derives scope with `scopeFor(tier)`. **The `tier` column no longer exists.** A June 2026 migration (`remove_tier_stripe_fields`) removed it along with the Stripe fields, and the exchange endpoint now hardcodes `tier: "free"` and `scope: scopeFor("free")` for every key it issues.
+
+Consequences:
+
+- A demo ticket is currently indistinguishable from an ordinary free key's ticket. The engine cannot tell them apart, and neither can anything downstream.
+- The migration step below (creating the demo user with `tier: "demo"`) is no longer executable as written.
+- The demo marker therefore attaches to the **API key**: the key a caller presents carries the scope that key is entitled to. See ADR-0011, "Identity attaches to the credential, not the person".
+
+### A2: Tickets are minted per visitor session, not cached per process
+
+The demo server mints a fresh short-lived ticket for each visitor session. The long-lived service-account key stays server-side and never reaches a browser.
+
+### A3: Demo connections carry three independent limits
+
+An origin allowlist, a per-connection message rate limit, and a scope-restricted channel set. Any one of them alone would be thin; together they bound what an anonymous visitor can consume.
+
+### A4: Non-goal restated
+
+Per-visitor cryptographic identity remains out of scope. A demo ticket's `sub` stays the service account's identifier and no visitor is tracked.
+

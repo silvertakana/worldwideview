@@ -1,7 +1,7 @@
 # ADR-001: Decentralized Plugin Authentication & SSRF Mitigation
 
 ## Status
-Proposed *(Pending Review)*
+Accepted (implemented in the data engine and the globe; clarified 2026-09-26 — see Amendments)
 
 ## Date
 2026-05-14
@@ -107,7 +107,7 @@ The Local App stores the API Key in PostgreSQL. It MUST NOT be stored in plainte
 | **JWKS Cache expires (Marketplace down)** | Data Engine retains stale cache for a grace period, but eventually **fails closed**. |
 | **Redis is down (Marketplace)** | Ticket issuance falls back to PostgreSQL (slower, but functional). |
 | **Unknown `kid` arrives** | Data Engine immediately triggers a background re-fetch of `jwks.json`. If still unknown, rejects token. |
-| **Clocks drift beyond leeway** | Token is rejected (Next.js and Fastify default to 60s leeway). NTP sync is a hard operational requirement. |
+| **Clocks drift beyond leeway** | Token is rejected. The data engine allows 30 seconds of clock tolerance; NTP sync is a hard operational requirement. |
 
 ---
 
@@ -163,3 +163,17 @@ sequenceDiagram
         E->>U: Stream
     end
 ```
+
+---
+
+## Amendments (2026-09-26)
+
+Recorded after the implementation shipped and was read back against this document:
+
+1. **Transport.** Tickets travel as the first WebSocket message (`{ "type": "auth", "v": 1, "token": "<jwt>" }`), never as a query parameter or header. A connection that does not authenticate within 3 seconds is closed with code `4003`.
+2. **Clock tolerance is 30 seconds.** Earlier security documentation stated 60 seconds; the implementation uses 30.
+3. **Authentication alone does not bound resource use.** A data engine must also apply a per-connection message rate limit and authorize each subscription against the ticket's scope. Both are required, not optional.
+4. **Replay defense is deferred, not absent by oversight.** The marketplace mints a `jti` and the engine does not yet record it, so a ticket is reusable for its 5-minute lifetime. Recording `jti` is tracked work.
+
+Two claims in the contract deserve emphasis: the marketplace mints `tier` and `scope`, and the engine must read them for claim-based subscription scoping. Today it discards both (see ADR-0011).
+
