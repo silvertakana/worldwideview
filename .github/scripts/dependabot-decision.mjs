@@ -93,6 +93,36 @@ export function decide({ body, files = [] }) {
   return { action: "enable", ecosystem, reason: bumps.length + " update(s), all patch or minor" };
 }
 
+/**
+ * The gate. decide() answers "is this update safe in principle"; gate() answers "what should
+ * happen to this pull request right now", and it is stricter on purpose: auto-merge is only
+ * enabled once EVERY check has completed green, not merely the required ones.
+ *
+ * That distinction is not theoretical. A 41-update dependency group passed every required
+ * check while a security scan on the same pull request failed, and the browser tests -
+ * which do not run on every pull request, so they cannot be made required - were the checks
+ * that caught the regression in an earlier attempt at that same group. Waiting only for
+ * required checks would have merged it.
+ */
+export function gate(pr) {
+  if (!(pr.author?.login ?? "").includes("dependabot")) {
+    return { action: "leave", reason: "not a Dependabot pull request" };
+  }
+  if (pr.isDraft) return { action: "wait", reason: "still a draft" };
+  const checks = pr.statusCheckRollup ?? [];
+  const failing = checks.filter((c) => FAILING.has(state(c)));
+  const pending = checks.filter((c) => ["", "PENDING", "IN_PROGRESS", "QUEUED", "WAITING", "EXPECTED"].includes(state(c)));
+  const autoOn = (pr.autoMergeRequest ?? null) !== null;
+  const withdraw = (reason) => (autoOn ? { action: "withdraw", reason } : { action: "leave", reason });
+  const verdict = decide({ body: pr.body, files: pr.files ?? [] });
+  if (verdict.action !== "enable") return withdraw(verdict.reason);
+  if (failing.length) return withdraw("failing checks: " + failing.map(label).join(", "));
+  if (checks.length === 0) return { action: "leave", reason: "no checks have reported yet" };
+  if (pending.length) return { action: "wait", reason: pending.length + " check(s) still running" };
+  if (pr.mergeable !== "MERGEABLE") return { action: "leave", reason: "not mergeable right now (" + pr.mergeable + ")" };
+  return { action: "enable", reason: "every bump is patch or minor and every check has completed green" };
+}
+
 function selfTest() {
   const cases = [
     ["single patch npm", { body: "Bumps [left-pad](https://x) from 1.2.3 to 1.2.4.", files: ["package.json"] }, "enable"],
@@ -121,7 +151,28 @@ function selfTest() {
     if (!ok) failures += 1;
     console.log((ok ? "ok   " : "FAIL ") + ("classify " + from + "->" + to).padEnd(26) + " expected " + expected + ", got " + got);
   }
-  console.log(failures === 0 ? "self-test: " + cases.length + "+" + bumps.length + " cases, all pass" : "self-test: " + failures + " FAILURES");
+  const ok = (s) => ({ status: "COMPLETED", conclusion: s });
+  const dep = { login: "app/dependabot" };
+  const patchBody = "Bumps [left-pad](https://x) from 1.2.3 to 1.2.4.";
+  const majorBody = "Bumps [@vitest/coverage-v8](https://x) from 4.1.10 to 5.0.1.";
+  const gates = [
+    ["gate: all green", { author: dep, body: patchBody, files: ["package.json"], mergeable: "MERGEABLE", statusCheckRollup: [ok("SUCCESS"), ok("SKIPPED")] }, "enable"],
+    ["gate: non-required check failing", { author: dep, body: patchBody, files: ["package.json"], mergeable: "MERGEABLE", statusCheckRollup: [ok("SUCCESS"), { name: "security/snyk", status: "COMPLETED", conclusion: "FAILURE" }] }, "leave"],
+    ["gate: failing while auto-merge on", { author: dep, body: patchBody, files: ["package.json"], mergeable: "MERGEABLE", autoMergeRequest: { enabledAt: "x" }, statusCheckRollup: [{ name: "Playwright Tests", status: "COMPLETED", conclusion: "FAILURE" }] }, "withdraw"],
+    ["gate: major", { author: dep, body: majorBody, files: ["package.json"], mergeable: "MERGEABLE", statusCheckRollup: [ok("SUCCESS")] }, "leave"],
+    ["gate: major while auto-merge on", { author: dep, body: majorBody, files: ["package.json"], mergeable: "MERGEABLE", autoMergeRequest: {}, statusCheckRollup: [ok("SUCCESS")] }, "withdraw"],
+    ["gate: checks still running", { author: dep, body: patchBody, files: ["package.json"], mergeable: "MERGEABLE", statusCheckRollup: [ok("SUCCESS"), { name: "Unit Tests", status: "IN_PROGRESS" }] }, "wait"],
+    ["gate: no checks at all", { author: dep, body: patchBody, files: ["package.json"], mergeable: "MERGEABLE", statusCheckRollup: [] }, "leave"],
+    ["gate: conflicting", { author: dep, body: patchBody, files: ["package.json"], mergeable: "CONFLICTING", statusCheckRollup: [ok("SUCCESS")] }, "leave"],
+    ["gate: a person's pull request", { author: { login: "someone" }, body: patchBody, files: ["package.json"], mergeable: "MERGEABLE", statusCheckRollup: [ok("SUCCESS")] }, "leave"],
+  ];
+  for (const [lbl, input, expected] of gates) {
+    const got = gate(input).action;
+    const good = got === expected;
+    if (!good) failures += 1;
+    console.log((good ? "ok   " : "FAIL ") + lbl.padEnd(34) + " expected " + expected + ", got " + got);
+  }
+  console.log(failures === 0 ? "self-test: " + (cases.length + bumps.length + gates.length) + " cases, all pass" : "self-test: " + failures + " FAILURES");
   return failures === 0 ? 0 : 1;
 }
 
@@ -191,6 +242,13 @@ const argv = process.argv.slice(2);
 if (argv.includes("--self-test")) process.exit(selfTest());
 if (argv.includes("--audit")) process.exit(audit());
 if (argv.includes("--digest")) process.exit(digest());
+const gi = argv.indexOf("--gate");
+if (gi >= 0) {
+  const pr = gh(["pr", "view", String(argv[gi + 1]), "--json", "number,author,isDraft,body,files,mergeable,statusCheckRollup,autoMergeRequest"]);
+  const r = gate(pr);
+  console.log(r.action.toUpperCase() + "|" + r.reason);
+  process.exit(0);
+}
 const at = argv.indexOf("--pr");
 if (at >= 0) {
   const pr = gh(["pr", "view", String(argv[at + 1]), "--json", "number,title,body,files,mergeable"]);
