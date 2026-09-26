@@ -1,0 +1,58 @@
+.notice {
+    position: fixed;
+    top: 72px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: min(560px, calc(100vw - 32px));
+    padding: 10px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    background: rgba(12, 16, 22, 0.92);
+    color: #e6edf3;
+    font-size: 13px;
+    line-height: 1.4;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+
+.icon {
+    flex: 0 0 auto;
+    color: #f59e0b;
+}
+
+.message {
+    flex: 1 1 auto;
+}
+
+.action {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.action:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.dismiss {
+    flex: 0 0 auto;
+    display: inline-flex;
+    padding: 4px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+.dismiss:hover {
+    opacity: 1;
+}

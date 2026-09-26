@@ -79,6 +79,13 @@ async function fetchTicket(pluginId: string): Promise<PluginTicket> {
  * Results are cached by engine audience; the ticket is refreshed 30s before expiry (4.5-min window).
  */
 export async function getTicket(pluginId: string): Promise<PluginTicket> {
+    // A demo instance mints a ticket per visitor session: serving one from a
+    // process-wide cache would hand every visitor the same identity, which is
+    // the opposite of what a short-lived demo ticket is for.
+    if (isDemo) {
+        return await fetchTicket(pluginId);
+    }
+
     const cached = cache.get(ENGINE_AUDIENCE);
     if (cached && cached.expiresAt > Date.now()) {
         return cached.ticket;

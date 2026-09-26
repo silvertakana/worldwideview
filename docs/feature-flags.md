@@ -16,7 +16,7 @@ this doc exists to prevent.
 
 | Flag | Repo | Default | Meaning |
 |---|---|---|---|
-| `NEXT_PUBLIC_WWV_TICKET_AUTH_PLUGINS` | **Local App** | `""` (empty = dormant) | Comma-separated plugin IDs that require WS first-message auth (e.g. `aviation,maritime`). Empty or unset → ticket auth disabled for all plugins. Set *after* Marketplace + Data Engine are deployed (step 6). |
+| `NEXT_PUBLIC_WWV_TICKET_AUTH_PLUGINS` | **Local App** | `""` | **Deprecated (2026-09-26).** Cloud and demo editions now request a ticket before subscribing regardless of this list; a local instance uses it only to opt specific plugins in. Kept for one release. |
 | `REQUIRE_TICKET_AUTH` | **Data Engine** | `false` | When `true`, the engine rejects any WS connection that does not present a valid ticket. Global — applies to all plugins. Replaces `WWV_SKIP_WS_AUTH=false` once JWKS is wired (step 7a). |
 | `REQUIRE_TICKET_AUTH_PLUGINS` | **Data Engine** | `""` | Comma-separated plugin IDs for per-plugin enforcement before enabling the global flag. Not yet implemented (see Divergence Note below). |
 | `ENFORCE_ORIGIN_ALLOWLIST` | **Data Engine** | `false` | When `true`, the engine rejects connections from Origins not in its configured allowlist. Enable after populating the allowlist from observed traffic (step 7b). |
@@ -42,7 +42,7 @@ Update this table whenever a flag changes in Coolify.
 
 | Flag | Local dev | Staging | Production | Last updated |
 |---|---|---|---|---|
-| `NEXT_PUBLIC_WWV_TICKET_AUTH_PLUGINS` | `""` (.env.example) | `""` (not set) | `""` (not set) | 2026-05-21 |
+| `NEXT_PUBLIC_WWV_TICKET_AUTH_PLUGINS` | commented out (.env.example) | `""` (not set) | `""` (not set) | 2026-09-26 (deprecated) |
 | `REQUIRE_TICKET_AUTH` | N/A | N/A | N/A (not yet implemented) | — |
 | `REQUIRE_TICKET_AUTH_PLUGINS` | N/A | N/A | N/A (not yet implemented) | — |
 | `ENFORCE_ORIGIN_ALLOWLIST` | N/A | N/A | N/A (not yet implemented) | — |
@@ -58,11 +58,11 @@ The sequence in which flags are set during the ADR-001 deploy order:
 | Deploy step | Service | Flag change | Notes |
 |---|---|---|---|
 | Step 1 | Local App | Set `PROXY_HOST_ALLOWLIST="*"` | Observation mode — watch WARN logs for one week |
-| Step 3 | Local App | `NEXT_PUBLIC_WWV_TICKET_AUTH_PLUGINS=""` confirmed empty | Dormant — no change needed, just confirm |
+| Step 3 | Local App | `NEXT_PUBLIC_WWV_TICKET_AUTH_PLUGINS=""` confirmed empty | Dormant for a local instance; cloud and demo request tickets unconditionally |
 | Step 4 | Data Engine | JWKS wired; `WWV_SKIP_WS_AUTH` remains `true` | Both paths exist, neither enforced |
 | Step 5 (staging) | Local App | `NEXT_PUBLIC_WWV_TICKET_AUTH_PLUGINS=test-synthetic` | Smoke test only — revert after |
 | Step 5 (staging) | Data Engine | `WWV_SKIP_WS_AUTH=false` | Prove real JWT verification end-to-end |
-| Step 6 | Local App | `NEXT_PUBLIC_WWV_TICKET_AUTH_PLUGINS=<first-real-plugin>` | One plugin at a time, 24 h soak |
+| Step 6 | Local App | No flag change needed | Hosted editions already request tickets; the list only opts a local instance in |
 | Step 6 | Data Engine | `REQUIRE_TICKET_AUTH_PLUGINS=<same-plugin>` | Mirror Local App change |
 | Step 7a | Data Engine | `REQUIRE_TICKET_AUTH=true` | Global default-deny; 24 h soak |
 | Step 7b | Data Engine | `ENFORCE_ORIGIN_ALLOWLIST=true` | After populating allowlist from observed connections |

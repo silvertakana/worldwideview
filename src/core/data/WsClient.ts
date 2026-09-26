@@ -2,7 +2,7 @@ import type { WsStreamPayload, GeoEntity } from "@worldwideview/wwv-plugin-sdk";
 import { dataBus } from "./DataBus";
 import { pluginManager } from "../plugins/PluginManager";
 import { useStore } from "../state/store";
-import { ticketAuthEnabledForPlugin } from "../edition";
+import { ticketAuthRequired, marketplaceCredentialRequired } from "../edition";
 import type { PluginTicket } from "@worldwideview/wwv-plugin-sdk";
 
 async function fetchPluginTicket(pluginId: string): Promise<PluginTicket | null> {
@@ -15,6 +15,23 @@ async function fetchPluginTicket(pluginId: string): Promise<PluginTicket | null>
   }
   if (!data.token) throw new Error(`[WSClient] Ticket response missing token for ${pluginId}`);
   return data.token as PluginTicket;
+}
+
+let credentialNoticeRaised = false;
+
+/**
+ * Explains a missing marketplace credential once per session.
+ *
+ * A hosted engine refuses unauthenticated subscriptions, so subscribing anyway
+ * would produce a silent reconnect loop rather than a visible failure.
+ */
+function raiseCredentialNotice(engineUrl: string) {
+  if (credentialNoticeRaised) return;
+  credentialNoticeRaised = true;
+  console.warn(
+    `[WSClient] No marketplace credential for ${engineUrl}. Live feeds stay disconnected until this instance is connected to the marketplace.`
+  );
+  useStore.getState().showEngineAuthNotice?.();
 }
 
 interface EngineConnection {
@@ -155,16 +172,22 @@ class WebSocketClient {
         engine.reconnectAttempts = 0;
       }, STABLE_CONNECTION_MS);
 
-      // Check whether any subscription on this engine requires ticket auth.
-      const ticketPlugin = [...engine.subscriptions].find((id) => ticketAuthEnabledForPlugin(id));
-      if (ticketPlugin) {
+      // Cloud and demo instances always authenticate; a local instance only when
+      // the operator opted a plugin in. See ticketAuthRequired.
+      const subscriptions = [...engine.subscriptions];
+      if (ticketAuthRequired(subscriptions)) {
         engine.awaitingWelcome = true;
-        fetchPluginTicket(ticketPlugin)
+        fetchPluginTicket(subscriptions[0] ?? "engine")
           .then((ticket) => {
             if (!ticket) {
-              // No credential available (user hasn't connected to Marketplace yet).
-              // Skip auth and subscribe immediately, same as the non-auth path.
               engine.awaitingWelcome = false;
+              if (marketplaceCredentialRequired()) {
+                // A hosted engine rejects unauthenticated connections, so
+                // subscribing here would only loop through reconnects.
+                raiseCredentialNotice(engineUrl);
+                return;
+              }
+              // A self-hosted engine may be running with auth off: subscribe.
               for (const pluginId of engine.subscriptions) {
                 this.send(engine, { action: "subscribe", pluginId });
               }
@@ -180,7 +203,7 @@ class WebSocketClient {
             }, 3000);
           })
           .catch((err: unknown) => {
-            console.error(`[WSClient] Failed to get ticket for ${ticketPlugin}:`, err instanceof Error ? err.message : err);
+            console.error(`[WSClient] Failed to get ticket for ${subscriptions[0] ?? "engine"}:`, err instanceof Error ? err.message : err);
             engine.ws?.close();
           });
       } else {

@@ -23,6 +23,7 @@ import { useStore } from "@/core/state/store";
 import { dataBus } from "@/core/data/DataBus";
 import { useAlertEngine } from "@/lib/alerts/engine";
 import { AlertToasts } from "@/components/alerts/AlertToasts";
+import EngineAuthNotice from "@/components/ui/EngineAuthNotice";
 import { PanelToggleArrows } from "@/components/layout/PanelToggleArrows";
 import { FloatingVideoManager } from "@/components/video/FloatingVideoManager";
 import { BootOverlay } from "@/components/common/BootOverlay";
@@ -233,6 +234,7 @@ export function AppShell() {
         <FloatingVideoManager />
         {needsReload && <ReloadToast />}
         <ErrorToast />
+        <EngineAuthNotice />
         <AlertToasts />
         <FeedbackDialog />
         {pendingUnverified.length > 0 && (

@@ -105,6 +105,12 @@ export interface UISlice {
     showErrorToast: (message: string) => void;
     /** Dismisses the active error toast. */
     clearErrorToast: () => void;
+    /** True when the globe should explain that live feeds need a marketplace connection. */
+    engineAuthNotice: boolean;
+    /** Raises the marketplace-connection notice. */
+    showEngineAuthNotice: () => void;
+    /** Dismisses the marketplace-connection notice. */
+    dismissEngineAuthNotice: () => void;
     /**
      * The ID of the currently active bottom panel, or null when the dock is shown without
      * an active panel. The built-in timeline uses the reserved ID "timeline".
@@ -206,6 +212,9 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => (
     errorToastMessage: null,
     showErrorToast: (message) => set({ errorToastMessage: message }),
     clearErrorToast: () => set({ errorToastMessage: null }),
+    engineAuthNotice: false,
+    showEngineAuthNotice: () => set({ engineAuthNotice: true }),
+    dismissEngineAuthNotice: () => set({ engineAuthNotice: false }),
     setActiveBottomPanel: (id) => set({ activeBottomPanel: id }),
     setBottomPanelHeight: (height) => set({ bottomPanelHeight: height }),
 });

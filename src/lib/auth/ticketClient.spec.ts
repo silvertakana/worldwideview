@@ -51,6 +51,35 @@ describe("ticketClient", () => {
         fetchSpy.mockRestore();
     });
 
+    it("mints a fresh ticket for every request in a demo instance", async () => {
+        vi.stubEnv("WWV_EDITION", "demo");
+        vi.stubEnv("NEXT_PUBLIC_WWV_EDITION", "demo");
+        try {
+            const { prisma } = await import("@/lib/db");
+            const { decryptCredential } = await import("@/lib/auth/encryption");
+            const { getTicket } = await import("./ticketClient");
+
+            vi.mocked(prisma.marketplaceCredential.findUnique).mockResolvedValue({ tenantId: "local" } as never);
+            vi.mocked(decryptCredential).mockResolvedValue("my-api-key");
+
+            const fetchSpy = vi.spyOn(globalThis, "fetch")
+                .mockResolvedValueOnce(new Response(JSON.stringify({ token: "demo-1" }), { status: 200 }))
+                .mockResolvedValueOnce(new Response(JSON.stringify({ token: "demo-2" }), { status: 200 }));
+
+            const t1 = await getTicket("aviation");
+            const t2 = await getTicket("aviation");
+
+            expect(t1).toBe("demo-1");
+            expect(t2).toBe("demo-2");
+            expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+            fetchSpy.mockRestore();
+        } finally {
+            vi.unstubAllEnvs();
+        }
+    });
+
+
     it("sends the correct body to the Marketplace exchange endpoint", async () => {
         const { prisma } = await import("@/lib/db");
         const { decryptCredential } = await import("@/lib/auth/encryption");
