@@ -85,12 +85,20 @@ export const createFavoritesSlice: StateCreator<AppStore, [], [], FavoritesSlice
                     label: entity.label || entity.id,
                     pluginName
                 })
-            }).catch((e) => console.error("Failed to sync add favorite to DB:", e));
+            }).then((res) => {
+                if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+            }).catch((e) => {
+                console.error("Failed to sync add favorite to DB:", e);
+                // Revert the optimistic update so UI state matches the backend.
+                set((s) => ({ favorites: s.favorites.filter((f) => f.id !== entity.id) }));
+                get().showErrorToast?.("Failed to save favorite. Please try again.");
+            });
         }
     },
 
     removeFavorite: (id) => {
         const state = get();
+        const removed = state.favorites.find((f) => f.id === id);
         const newFavorites = state.favorites.filter((f) => f.id !== id);
         set({ favorites: newFavorites });
 
@@ -99,7 +107,16 @@ export const createFavoritesSlice: StateCreator<AppStore, [], [], FavoritesSlice
         } else {
             fetch(`/api/user/favorites?entityId=${encodeURIComponent(id)}`, {
                 method: "DELETE"
-            }).catch((e) => console.error("Failed to sync remove favorite from DB:", e));
+            }).then((res) => {
+                if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+            }).catch((e) => {
+                console.error("Failed to sync remove favorite from DB:", e);
+                // Revert the optimistic update so UI state matches the backend.
+                if (removed) {
+                    set((s) => (s.favorites.some((f) => f.id === id) ? {} : { favorites: [...s.favorites, removed] }));
+                }
+                get().showErrorToast?.("Failed to remove favorite. Please try again.");
+            });
         }
     },
 });

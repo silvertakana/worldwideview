@@ -250,7 +250,7 @@ export async function getEntitiesInRegion(bounds: RegionOptions): Promise<QueryR
         throw new Error("Invalid bounding box: north/south/east/west must all be numbers");
     }
 
-    const effectiveLimit = Math.min(bounds.limit ?? 100, 1000);
+    const effectiveLimit = Math.min(Math.max(bounds.limit ?? 100, 1), 1000);
     const isAntimeridian = east < west;
 
     let snapshotNotStreaming = false;

@@ -6,9 +6,11 @@ import { createStore, type StoreApi } from 'zustand/vanilla';
 import type { GeoEntity } from '@/core/plugins/PluginTypes';
 import { createDataSlice, DataSlice } from './dataSlice';
 
-// We need a mock store that includes selectedEntity to test the cross-slice update behavior
+// We need a mock store that includes selectedEntity and layers to test the
+// cross-slice update behavior and getAllEntities' enabled-flag filtering.
 interface MockAppStore extends DataSlice {
     selectedEntity: GeoEntity | null;
+    layers: Record<string, { enabled: boolean }>;
 }
 
 describe('dataSlice', () => {
@@ -20,6 +22,7 @@ describe('dataSlice', () => {
             return {
                 ...dataSlice,
                 selectedEntity: null,
+                layers: {},
             };
         });
     });
@@ -70,10 +73,16 @@ describe('dataSlice', () => {
         expect(store.getState().entitiesByPlugin['plugin-b']).toEqual(mockEntitiesB);
     });
 
-    it('gets all entities across plugins flattened', () => {
+    it('gets all entities across enabled plugins flattened', () => {
         const mockEntitiesA = [{ id: 'e1', pluginId: 'plugin-a' } as GeoEntity];
         const mockEntitiesB = [{ id: 'e2', pluginId: 'plugin-b' } as GeoEntity];
 
+        store.setState({
+            layers: {
+                'plugin-a': { enabled: true },
+                'plugin-b': { enabled: true },
+            },
+        });
         store.getState().setEntities('plugin-a', mockEntitiesA);
         store.getState().setEntities('plugin-b', mockEntitiesB);
 
@@ -82,5 +91,24 @@ describe('dataSlice', () => {
         expect(all).toHaveLength(2);
         expect(all).toContainEqual(mockEntitiesA[0]);
         expect(all).toContainEqual(mockEntitiesB[0]);
+    });
+
+    it('excludes entities from disabled plugins', () => {
+        const mockEntitiesA = [{ id: 'e1', pluginId: 'plugin-a' } as GeoEntity];
+        const mockEntitiesB = [{ id: 'e2', pluginId: 'plugin-b' } as GeoEntity];
+
+        store.setState({
+            layers: {
+                'plugin-a': { enabled: true },
+                'plugin-b': { enabled: false },
+            },
+        });
+        store.getState().setEntities('plugin-a', mockEntitiesA);
+        store.getState().setEntities('plugin-b', mockEntitiesB);
+
+        const all = store.getState().getAllEntities();
+
+        expect(all).toHaveLength(1);
+        expect(all).toContainEqual(mockEntitiesA[0]);
     });
 });

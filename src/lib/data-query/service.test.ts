@@ -335,6 +335,23 @@ describe("getEntitiesInRegion", () => {
         expect(result.entities[0].id).toBe("e1");
     });
 
+    it("clamps a negative limit to the floor of 1 instead of producing a negative slice bound", async () => {
+        const entities = [
+            makeEntity({ id: "e1", latitude: 51.5, longitude: -0.1, pluginId: "test-plugin" }),
+            makeEntity({ id: "e2", latitude: 51.6, longitude: -0.2, pluginId: "test-plugin" }),
+        ];
+        mockEngineSnapshot("test-plugin", entities);
+        const result = await getEntitiesInRegion({
+            north: 52,
+            south: 50,
+            east: 1,
+            west: -1,
+            pluginId: "test-plugin",
+            limit: -5,
+        });
+        expect(result.entities).toHaveLength(1);
+    });
+
     it("respects pluginId filter", async () => {
         const entity = makeEntity({ id: "e1", latitude: 51.5, longitude: -0.1, pluginId: "specific-plugin" });
         mockEngineSnapshot("specific-plugin", [entity]);

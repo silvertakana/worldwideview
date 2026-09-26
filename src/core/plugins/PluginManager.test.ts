@@ -150,6 +150,23 @@ describe("PluginManager.enablePlugin", () => {
     });
 });
 
+describe("PluginManager — enable/disable race", () => {
+    it("does not restart polling or re-announce enabled if disabled while enablePlugin was still awaiting", async () => {
+        const layerHandler = vi.fn();
+        await pluginManager.registerPlugin(makePlugin({ id: "race-1" }));
+
+        const enabling = pluginManager.enablePlugin("race-1");
+        // Fast toggle-off before the enable's internal awaits resolve.
+        pluginManager.disablePlugin("race-1");
+        dataBus.on("layerToggled", layerHandler);
+
+        await enabling;
+
+        expect(pluginManager.getPlugin("race-1")?.enabled).toBe(false);
+        expect(layerHandler).not.toHaveBeenCalledWith({ pluginId: "race-1", enabled: true });
+    });
+});
+
 describe("PluginManager.disablePlugin", () => {
     it("clears entities and emits layerToggled(false) + dataUpdated([])", async () => {
         const layerHandler = vi.fn();

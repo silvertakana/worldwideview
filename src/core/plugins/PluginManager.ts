@@ -40,6 +40,11 @@ class PluginManager {
     private loadedManifests: Map<string, PluginManifest> = new Map();
     private initialized = false;
     private configCacheMaxAge = 3600000;
+    // Bumped by every enablePlugin/disablePlugin call for a given plugin so
+    // an in-flight enablePlugin can detect it was superseded by a later
+    // toggle (e.g. a fast enable->disable) after resuming from an await,
+    // and bail out instead of re-enabling a plugin the user just disabled.
+    private toggleEpoch: Map<string, number> = new Map();
 
     /**
      * Initializes the PluginManager and prepares the persistent cache layer.
@@ -216,9 +221,20 @@ class PluginManager {
     async enablePlugin(pluginId: string): Promise<void> {
         const start = performance.now();
         console.debug(`[PluginManager] enablePlugin called for ${pluginId}`);
+        const epoch = (this.toggleEpoch.get(pluginId) ?? 0) + 1;
+        this.toggleEpoch.set(pluginId, epoch);
+
         // Ensure local manifest is fetched so we don't accidentally fall back to cloud if toggled too fast
         await fetchLocalEngineManifest();
         console.debug(`[PluginManager] Manifest fetched for ${pluginId}. Took ${(performance.now() - start).toFixed(2)}ms`);
+
+        // A disablePlugin() (or a newer enablePlugin()) call may have landed
+        // while we were awaiting above (e.g. the user toggled the layer off
+        // before this resolved). Bail out so we don't re-enable a plugin the
+        // user just disabled, or clobber a newer toggle's state.
+        if (this.toggleEpoch.get(pluginId) !== epoch) {
+            return;
+        }
 
         const managed = this.plugins.get(pluginId);
         if (!managed) {
@@ -234,6 +250,11 @@ class PluginManager {
         let cached = cacheLayer.get(pluginId);
         if (!cached) {
             cached = await cacheLayer.getFromPersistent(pluginId);
+        }
+
+        // Re-check after the second await for the same reason as above.
+        if (this.toggleEpoch.get(pluginId) !== epoch) {
+            return;
         }
 
         // If still enabled and we got cached data, emit it
@@ -256,6 +277,7 @@ class PluginManager {
      */
     disablePlugin(pluginId: string): void {
         console.debug(`[PluginManager] disablePlugin called for ${pluginId}`);
+        this.toggleEpoch.set(pluginId, (this.toggleEpoch.get(pluginId) ?? 0) + 1);
         const managed = this.plugins.get(pluginId);
         if (!managed) {
             console.error(`[PluginManager] Plugin ${pluginId} not found during disable`);
