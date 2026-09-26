@@ -25,7 +25,11 @@ import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// Defaults to the repository this script lives in. DOC_REFERENCES_ROOT lets the workspace
+// run the same rules over the sibling repositories, which share these conventions.
+const ROOT = process.env.DOC_REFERENCES_ROOT
+  ? path.resolve(process.env.DOC_REFERENCES_ROOT)
+  : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Arguments may be repo-relative or absolute (the tests hand it files outside the repo).
 const locate = (file) => (path.isAbsolute(file) ? file : path.join(ROOT, file));
 const SCANNED = /\.(md|mdc|mjs|cjs|js|jsx|ts|tsx|json|ya?ml|ps1|sh|txt|example)$/i;
