@@ -31,8 +31,11 @@ on:
         type: boolean
         default: true
 
+# contents: write is what enables or withdraws auto-merge; pull-requests: write is what writes
+# the note. The checkout below uses persist-credentials: false, so no git credential is left in
+# the workspace even though the token can write.
 permissions:
-  contents: read
+  contents: write
   checks: read
   pull-requests: write
 
@@ -88,13 +91,17 @@ jobs:
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
           case "$action" in
             ENABLE)
-              if gh pr merge --auto --squash "$PR"; then
-                echo "auto-merge enabled: $reason"
-              else
+              # Keep the real error text: a permission problem and a pull request that simply
+              # cannot merge yet look identical when the output is swallowed, and only one of
+              # them is expected.
+              if ! output="$(gh pr merge --auto --squash "$PR" 2>&1)"; then
+                echo "$output"
                 # A pull request that cannot be merged yet - a conflict, for example - is an
                 # expected state rather than a failure. Reporting it red here would teach
                 # people to ignore red; the weekly dependency digest surfaces it instead.
-                echo "::notice::auto-merge could not be enabled yet; the weekly digest reports it"
+                echo "::notice::auto-merge was not enabled; the weekly digest reports it"
+              else
+                echo "auto-merge enabled: $reason"
               fi
               ;;
             WITHDRAW)
