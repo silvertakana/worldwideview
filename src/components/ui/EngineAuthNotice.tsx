@@ -2,9 +2,13 @@
 
 /**
  * @file EngineAuthNotice.tsx
- * @description Explains that live feeds need a marketplace connection.
- * A hosted engine refuses unauthenticated subscriptions, so the alternative to
- * this notice is a silent reconnect loop.
+ * @description Notice shown when live feeds are locked because this instance
+ * has no marketplace connection.
+ *
+ * Its action is a plain link into the connect flow rather than a jump to a
+ * settings tab: a locked-out user can take exactly one useful action, and it
+ * must be one click away. The connect route is a GET that leaves the app and
+ * returns, so a link works with or without client-side JavaScript.
  * @module src/components/ui
  */
 
@@ -12,24 +16,14 @@ import { useStore } from "@/core/state/store";
 import { PlugZap, X } from "lucide-react";
 import styles from "./EngineAuthNotice.module.css";
 
-/**
- * @component EngineAuthNotice
- * @description Dismissible notice offering the settings panel where an
- * instance is connected to the marketplace.
- */
+/** The marketplace connect flow; it redirects away and returns to this origin. */
+const CONNECT_HREF = "/api/marketplace/connect";
+
 export default function EngineAuthNotice() {
-    const engineAuthNotice = useStore((state) => state.engineAuthNotice);
-    const dismissEngineAuthNotice = useStore((state) => state.dismissEngineAuthNotice);
-    const setActiveConfigTab = useStore((state) => state.setActiveConfigTab);
-    const setConfigPanelOpen = useStore((state) => state.setConfigPanelOpen);
+    const engineAuthNotice = useStore((s) => s.engineAuthNotice);
+    const dismissEngineAuthNotice = useStore((s) => s.dismissEngineAuthNotice);
 
     if (!engineAuthNotice) return null;
-
-    const openSettings = () => {
-        setActiveConfigTab("apikeys");
-        setConfigPanelOpen(true);
-        dismissEngineAuthNotice();
-    };
 
     return (
         <div className={styles.notice} role="status">
@@ -37,8 +31,14 @@ export default function EngineAuthNotice() {
             <div className={styles.message}>
                 Live feeds need a marketplace connection. Connect this instance to load them.
             </div>
-            <button className={styles.action} onClick={openSettings}>Open settings</button>
-            <button className={styles.dismiss} onClick={dismissEngineAuthNotice} aria-label="Dismiss">
+            <a
+                className={styles.action}
+                href={CONNECT_HREF}
+                onClick={() => dismissEngineAuthNotice()}
+            >
+                Connect to marketplace
+            </a>
+            <button className={styles.dismiss} onClick={() => dismissEngineAuthNotice()} aria-label="Dismiss">
                 <X size={16} />
             </button>
         </div>

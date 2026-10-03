@@ -7,8 +7,6 @@ const { mockState } = vi.hoisted(() => ({
     mockState: {
         engineAuthNotice: true,
         dismissEngineAuthNotice: vi.fn(),
-        setActiveConfigTab: vi.fn(),
-        setConfigPanelOpen: vi.fn(),
     },
 }));
 
@@ -37,11 +35,14 @@ describe("EngineAuthNotice", () => {
         expect(mockState.dismissEngineAuthNotice).toHaveBeenCalled();
     });
 
-    it("opens the settings panel where an instance is connected", () => {
+    it("sends the user into the marketplace connect flow", () => {
         render(<EngineAuthNotice />);
-        fireEvent.click(screen.getByText("Open settings"));
+        const link = screen.getByRole("link", { name: /connect/i });
 
-        expect(mockState.setActiveConfigTab).toHaveBeenCalledWith("apikeys");
-        expect(mockState.setConfigPanelOpen).toHaveBeenCalledWith(true);
+        // A locked-out user must reach the real connect route in one click.
+        expect(link.getAttribute("href")).toBe("/api/marketplace/connect");
+
+        fireEvent.click(link);
+        expect(mockState.dismissEngineAuthNotice).toHaveBeenCalled();
     });
 });

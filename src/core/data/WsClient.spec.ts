@@ -27,7 +27,7 @@ class FakeWebSocket {
     readyState = FakeWebSocket.CONNECTING;
     onopen: ((e: Event) => void) | null = null;
     onmessage: ((e: MessageEvent) => void) | null = null;
-    onclose: (() => void) | null = null;
+    onclose: ((e: CloseEvent) => void) | null = null;
     onerror: (() => void) | null = null;
     readonly sentMessages: string[] = [];
 
@@ -41,12 +41,20 @@ class FakeWebSocket {
 
     close() {
         this.readyState = FakeWebSocket.CLOSED;
-        this.onclose?.();
+        // A client-initiated close carries a normal code, so the handler treats
+        // it like any other disconnect rather than a server refusal.
+        this.onclose?.({ code: 1000, reason: "" } as CloseEvent);
     }
 
     triggerOpen() {
         this.readyState = FakeWebSocket.OPEN;
         this.onopen?.(new Event("open"));
+    }
+
+    /** Closes the socket the way a server-initiated close arrives, code and all. */
+    triggerClose(code: number, reason = "") {
+        this.readyState = FakeWebSocket.CLOSED;
+        this.onclose?.({ code, reason } as CloseEvent);
     }
 
     triggerMessage(data: object) {
@@ -68,6 +76,9 @@ describe("WsClient — first-message auth", () => {
         FakeWebSocket.instances.length = 0;
         savedWebSocket = global.WebSocket;
         global.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
+        // WsClient keeps module-level state (the once-per-session notice flag),
+        // so each test needs its own module instance to stay order-independent.
+        vi.resetModules();
         vi.clearAllMocks();
     });
 
@@ -182,11 +193,114 @@ describe("WsClient — first-message auth", () => {
     });
 });
 
+describe("WsClient — engine close codes", () => {
+    beforeEach(() => {
+        FakeWebSocket.instances.length = 0;
+        savedWebSocket = global.WebSocket;
+        global.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
+        // WsClient keeps module-level state (the once-per-session notice flag),
+        // so each test needs its own module instance to stay order-independent.
+        vi.resetModules();
+        vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        global.WebSocket = savedWebSocket;
+    });
+
+    it("retries with a fresh ticket when the engine refuses the cached one", async () => {
+        vi.useFakeTimers();
+        const { ticketAuthRequired, marketplaceCredentialRequired } = await import("../edition");
+        vi.mocked(ticketAuthRequired).mockReturnValue(true);
+        vi.mocked(marketplaceCredentialRequired).mockReturnValue(true);
+
+        const fetchSpy = vi.spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(new Response(JSON.stringify({ token: "stale" }), { status: 200 }))
+            .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fresh" }), { status: 200 }));
+
+        const { wsClient } = await import("./WsClient");
+        const url = nextEngineUrl();
+        wsClient.subscribe("aviation", url);
+        const first = FakeWebSocket.instances.at(-1)!;
+        first.triggerOpen();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(JSON.parse(first.sentMessages[0])).toEqual({ type: "auth", v: 1, token: "stale" });
+
+        // The engine rejects the cached ticket.
+        first.triggerClose(4003, "Auth failed");
+        await vi.advanceTimersByTimeAsync(2500);
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(FakeWebSocket.instances.length).toBeGreaterThan(1);
+        const second = FakeWebSocket.instances.at(-1)!;
+        second.triggerOpen();
+        await vi.advanceTimersByTimeAsync(0);
+
+        // The retry must not hand the engine the ticket it just refused.
+        expect(String(fetchSpy.mock.calls.at(-1)?.[0])).toContain("refresh=1");
+        expect(JSON.parse(second.sentMessages[0])).toEqual({ type: "auth", v: 1, token: "fresh" });
+        fetchSpy.mockRestore();
+    });
+
+    it("stops reconnecting when the engine refuses a subscription it can never serve", async () => {
+        vi.useFakeTimers();
+        const { ticketAuthRequired, marketplaceCredentialRequired } = await import("../edition");
+        vi.mocked(ticketAuthRequired).mockReturnValue(false);
+        vi.mocked(marketplaceCredentialRequired).mockReturnValue(false);
+
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        const { wsClient } = await import("./WsClient");
+        const url = nextEngineUrl();
+        wsClient.subscribe("aviation", url);
+        const ws = FakeWebSocket.instances.at(-1)!;
+        ws.triggerOpen();
+        await vi.advanceTimersByTimeAsync(0);
+        const opened = FakeWebSocket.instances.length;
+
+        ws.triggerClose(4400, "Invalid pluginId");
+        await vi.advanceTimersByTimeAsync(60000);
+
+        // A reconnect cannot fix an id the engine does not serve.
+        expect(FakeWebSocket.instances.length).toBe(opened);
+        fetchSpy.mockRestore();
+    });
+
+    it("stops reconnecting once a missing credential has been reported", async () => {
+        vi.useFakeTimers();
+        const { ticketAuthRequired, marketplaceCredentialRequired } = await import("../edition");
+        vi.mocked(ticketAuthRequired).mockReturnValue(true);
+        vi.mocked(marketplaceCredentialRequired).mockReturnValue(true);
+
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(JSON.stringify({ noCredential: true }), { status: 200 })
+        );
+
+        const { wsClient } = await import("./WsClient");
+        const url = nextEngineUrl();
+        wsClient.subscribe("aviation", url);
+        const ws = FakeWebSocket.instances.at(-1)!;
+        ws.triggerOpen();
+        await vi.advanceTimersByTimeAsync(0);
+        const opened = FakeWebSocket.instances.length;
+
+        // The engine closes the unauthenticated connection.
+        ws.triggerClose(4003, "Auth timeout");
+        await vi.advanceTimersByTimeAsync(300000);
+
+        expect(FakeWebSocket.instances.length).toBe(opened);
+        fetchSpy.mockRestore();
+    });
+});
+
 describe("WsClient - ticket auth by edition capability", () => {
     beforeEach(() => {
         FakeWebSocket.instances.length = 0;
         savedWebSocket = global.WebSocket;
         global.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
+        // WsClient keeps module-level state (the once-per-session notice flag),
+        // so each test needs its own module instance to stay order-independent.
+        vi.resetModules();
         vi.clearAllMocks();
     });
 

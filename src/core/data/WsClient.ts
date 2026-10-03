@@ -3,10 +3,12 @@ import { dataBus } from "./DataBus";
 import { pluginManager } from "../plugins/PluginManager";
 import { useStore } from "../state/store";
 import { ticketAuthRequired, marketplaceCredentialRequired } from "../edition";
+import { classifyEngineClose } from "./engineCloseCodes";
 import type { PluginTicket } from "@worldwideview/wwv-plugin-sdk";
 
-async function fetchPluginTicket(pluginId: string): Promise<PluginTicket | null> {
-  const res = await fetch(`/api/auth/ticket?pluginId=${encodeURIComponent(pluginId)}`);
+async function fetchPluginTicket(pluginId: string, forceRefresh = false): Promise<PluginTicket | null> {
+  const query = `pluginId=${encodeURIComponent(pluginId)}${forceRefresh ? "&refresh=1" : ""}`;
+  const res = await fetch(`/api/auth/ticket?${query}`);
   if (!res.ok) throw new Error(`[WSClient] Ticket fetch failed (${res.status}) for ${pluginId}`);
   const data = await res.json() as { token?: string; noCredential?: boolean };
   if (data.noCredential) {
@@ -48,9 +50,19 @@ interface EngineConnection {
   awaitingWelcome: boolean;
   /** Closes the connection if the server doesn't send welcome within 3s */
   authTimeoutTimer: NodeJS.Timeout | null;
+  /** Set when reconnecting cannot succeed, so the client stops looping. */
+  authBlocked: boolean;
+  /** Consecutive ticket-refresh retries; bounds the loop on a stale credential. */
+  authRefreshAttempts: number;
+  /** Set when the next connect must bypass the cached ticket. */
+  ticketRefreshPending: boolean;
 }
 
 const RECONNECT_BASE_MS = 5000;
+/** Bounded retries after the engine refuses our credentials. */
+const AUTH_REFRESH_MAX_ATTEMPTS = 2;
+/** Deliberate retry after a credential refusal — not a backoff failure. */
+const AUTH_RETRY_DELAY_MS = 2000;
 const RECONNECT_MAX_MS = 60000; // Cap at 1 minute
 const RECONNECT_JITTER_MS = 4000;
 const STABLE_CONNECTION_MS = 5000; // Reset backoff after 5s of stable connection
@@ -146,6 +158,9 @@ class WebSocketClient {
         stableConnectionTimer: null,
         awaitingWelcome: false,
         authTimeoutTimer: null,
+        authBlocked: false,
+        authRefreshAttempts: 0,
+        ticketRefreshPending: false,
       };
       this.engines.set(engineUrl, engine);
     }
@@ -177,11 +192,14 @@ class WebSocketClient {
       const subscriptions = [...engine.subscriptions];
       if (ticketAuthRequired(subscriptions)) {
         engine.awaitingWelcome = true;
-        fetchPluginTicket(subscriptions[0] ?? "engine")
+        const forceRefresh = engine.ticketRefreshPending;
+        engine.ticketRefreshPending = false;
+        fetchPluginTicket(subscriptions[0] ?? "engine", forceRefresh)
           .then((ticket) => {
             if (!ticket) {
               engine.awaitingWelcome = false;
               if (marketplaceCredentialRequired()) {
+                engine.authBlocked = true;
                 // A hosted engine rejects unauthenticated connections, so
                 // subscribing here would only loop through reconnects.
                 raiseCredentialNotice(engineUrl);
@@ -224,6 +242,7 @@ class WebSocketClient {
           console.debug(`[WSClient] 👋 Engine ${engineUrl} serves: ${data.plugins?.join(", ")}`);
           if (engine.awaitingWelcome) {
             engine.awaitingWelcome = false;
+            engine.authRefreshAttempts = 0;
             if (engine.authTimeoutTimer) { clearTimeout(engine.authTimeoutTimer); engine.authTimeoutTimer = null; }
             for (const pluginId of engine.subscriptions) {
               this.send(engine, { action: "subscribe", pluginId });
@@ -254,7 +273,7 @@ class WebSocketClient {
       console.warn(`[WSClient] WebSocket error on ${engineUrl} - reconnect is handled on close`);
     };
 
-    engine.ws.onclose = () => {
+    engine.ws.onclose = (event?: CloseEvent) => {
       // BFCache restore can reconnect and swap in a fresh socket before a
       // deferred close event from the frozen socket lands. Only clear the
       // reference when this close belongs to the current socket.
@@ -272,6 +291,31 @@ class WebSocketClient {
       // A deferred close from a superseded socket must not schedule a reconnect
       // when the restore path already swapped in a fresh connection.
       if (engine.ws && (engine.ws.readyState === WebSocket.CONNECTING || engine.ws.readyState === WebSocket.OPEN)) return;
+      // The engine states why it hung up. Acting on that code is what keeps a
+      // refused connection visible instead of retrying forever in silence.
+      const recovery = classifyEngineClose(event?.code);
+
+      if (engine.authBlocked || recovery === "block") {
+        console.warn(
+          `[WSClient] Engine ${engineUrl} refused the connection (code ${event?.code ?? "none"}${event?.reason ? `: ${event.reason}` : ""}). Not reconnecting.`
+        );
+        return;
+      }
+
+      if (recovery === "refresh-ticket") {
+        if (engine.authRefreshAttempts >= AUTH_REFRESH_MAX_ATTEMPTS) {
+          engine.authBlocked = true;
+          raiseCredentialNotice(engineUrl);
+          return;
+        }
+        engine.authRefreshAttempts += 1;
+        engine.ticketRefreshPending = true;
+        engine.reconnectAttempts = 0;
+        console.warn(`[WSClient] Engine ${engineUrl} rejected our credentials. Retrying with a fresh ticket.`);
+        engine.reconnectTimer = setTimeout(() => this.connectEngine(engineUrl), AUTH_RETRY_DELAY_MS);
+        return;
+      }
+
       // Only reconnect if there are still active subscriptions
       if (engine.subscriptions.size > 0) {
         // Exponential backoff with jitter to prevent thundering herd on engine restart.
@@ -281,7 +325,9 @@ class WebSocketClient {
           RECONNECT_BASE_MS * Math.pow(2, engine.reconnectAttempts),
           RECONNECT_MAX_MS
         );
-        const delay = expDelay + Math.random() * RECONNECT_JITTER_MS;
+        const jitter = Math.random() * RECONNECT_JITTER_MS;
+        // A rate-limited engine needs a longer rest than a dropped socket.
+        const delay = recovery === "backoff" ? expDelay + jitter + RECONNECT_BASE_MS : expDelay + jitter;
         engine.reconnectAttempts++;
         console.warn(`[WSClient] Disconnected from ${engineUrl}. Reconnecting in ${Math.round(delay / 1000)}s (attempt ${engine.reconnectAttempts})...`);
         engine.reconnectTimer = setTimeout(() => this.connectEngine(engineUrl), delay);
@@ -358,6 +404,10 @@ class WebSocketClient {
     }
 
     engine.subscriptions.add(pluginId);
+    // A user action is a fresh attempt: clear a previous refusal so a layer
+    // toggled after connecting the marketplace tries again.
+    engine.authBlocked = false;
+    engine.authRefreshAttempts = 0;
     this.connectEngine(engineUrl);
     // Only send immediately if auth is not in-flight; the welcome handler will
     // replay all pending subscriptions once auth succeeds (see onmessage:121-124).

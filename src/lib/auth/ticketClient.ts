@@ -11,6 +11,17 @@ interface CacheEntry {
 
 const TICKET_LIFETIME_MS = 4.5 * 60 * 1000; // refresh 30s before the 5-min expiry
 
+/**
+ * Returns a ticket while bypassing the process-wide cache.
+ *
+ * Used when the engine has just refused the cached ticket: handing it back
+ * unchanged would reproduce exactly the same refusal.
+ */
+export async function getTicketForcingRefresh(pluginId: string): Promise<PluginTicket> {
+    cache.delete(ENGINE_AUDIENCE);
+    return await getTicket(pluginId);
+}
+
 // Per ADR-001B: audience = the Data Engine's ENGINE_ID (default "wwv-data-engine").
 // Per-engine audiences (true multi-engine decentralisation) are a follow-up.
 const ENGINE_AUDIENCE = "wwv-data-engine";
