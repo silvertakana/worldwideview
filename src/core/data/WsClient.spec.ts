@@ -291,6 +291,51 @@ describe("WsClient — engine close codes", () => {
         expect(FakeWebSocket.instances.length).toBe(opened);
         fetchSpy.mockRestore();
     });
+
+    it("explains missing credential and stops when a local instance is refused by an authenticated engine", async () => {
+        vi.useFakeTimers();
+        const { ticketAuthRequired, marketplaceCredentialRequired } = await import("../edition");
+        vi.mocked(ticketAuthRequired).mockReturnValue(false);
+        vi.mocked(marketplaceCredentialRequired).mockReturnValue(false);
+
+        const showEngineAuthNotice = vi.fn();
+        const { useStore } = await import("../state/store");
+        vi.mocked(useStore.getState).mockReturnValue({ entitiesByPlugin: {}, showEngineAuthNotice } as never);
+
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(JSON.stringify({ noCredential: true }), { status: 200 })
+        );
+
+        const { wsClient } = await import("./WsClient");
+        const url = nextEngineUrl();
+        wsClient.subscribe("aviation", url);
+        const ws = FakeWebSocket.instances.at(-1)!;
+        ws.triggerOpen();
+        await vi.advanceTimersByTimeAsync(0);
+
+        // Local instance initially sent unauthenticated subscribe
+        expect(ws.sentMessages.map((m) => JSON.parse(m))).toContainEqual({ action: "subscribe", pluginId: "aviation" });
+
+        // Engine rejects with 4003 (Auth required)
+        ws.triggerClose(4003, "Auth required");
+        await vi.advanceTimersByTimeAsync(2500);
+        await vi.advanceTimersByTimeAsync(0);
+
+        // Reconnect was opened and triggered
+        const retryWs = FakeWebSocket.instances.at(-1)!;
+        retryWs.triggerOpen();
+        await vi.advanceTimersByTimeAsync(0);
+
+        // Because forceRefresh was true and noCredential returned, notice is raised and connection is blocked
+        expect(showEngineAuthNotice).toHaveBeenCalled();
+        const socketCountAfterRefusal = FakeWebSocket.instances.length;
+
+        // Further timer advancement does not create more sockets
+        await vi.advanceTimersByTimeAsync(60000);
+        expect(FakeWebSocket.instances.length).toBe(socketCountAfterRefusal);
+
+        fetchSpy.mockRestore();
+    });
 });
 
 describe("WsClient - ticket auth by edition capability", () => {

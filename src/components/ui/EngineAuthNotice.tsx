@@ -29,7 +29,7 @@ export default function EngineAuthNotice() {
         <div className={styles.notice} role="status">
             <PlugZap size={18} className={styles.icon} />
             <div className={styles.message}>
-                Live feeds need a marketplace connection. Connect this instance to load them.
+                Live feeds require a marketplace account. Sign up or connect your account to load them.
             </div>
             <a
                 className={styles.action}

@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
         secure: isHttps,
         sameSite: "lax",
         path: "/", // __Host- prefix requires path="/" per RFC 6265bis
-        maxAge: 60 * 10 // 10 minutes
+        maxAge: 60 * 60 // 1 hour
     });
 
     res.cookies.set(`${cookiePrefix}pkce_verifier`, code_verifier, {
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         secure: isHttps,
         sameSite: "lax",
         path: "/", // __Host- prefix requires path="/" per RFC 6265bis
-        maxAge: 60 * 10 // 10 minutes
+        maxAge: 60 * 60 // 1 hour
     });
 
     return res;

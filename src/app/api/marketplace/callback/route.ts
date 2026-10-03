@@ -7,7 +7,7 @@ import { isDemo, isDemoAdmin } from "@/core/edition";
 
 function redirectWith(query: Record<string, string>, req: NextRequest) {
     const params = new URLSearchParams(query);
-    const res = NextResponse.redirect(new URL(`/?${params.toString()}`, req.nextUrl.origin), 302);
+    const res = NextResponse.redirect(new URL(`/marketplace/connect-status?${params.toString()}`, req.nextUrl.origin), 302);
 
     const isHttps = req.nextUrl.protocol === "https:";
     const cookiePrefix = isHttps ? "__Host-" : "";

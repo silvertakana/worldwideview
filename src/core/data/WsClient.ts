@@ -190,7 +190,7 @@ class WebSocketClient {
       // Cloud and demo instances always authenticate; a local instance only when
       // the operator opted a plugin in. See ticketAuthRequired.
       const subscriptions = [...engine.subscriptions];
-      if (ticketAuthRequired(subscriptions)) {
+      if (ticketAuthRequired(subscriptions) || engine.ticketRefreshPending) {
         engine.awaitingWelcome = true;
         const forceRefresh = engine.ticketRefreshPending;
         engine.ticketRefreshPending = false;
@@ -198,7 +198,7 @@ class WebSocketClient {
           .then((ticket) => {
             if (!ticket) {
               engine.awaitingWelcome = false;
-              if (marketplaceCredentialRequired()) {
+              if (marketplaceCredentialRequired() || forceRefresh) {
                 engine.authBlocked = true;
                 // A hosted engine rejects unauthenticated connections, so
                 // subscribing here would only loop through reconnects.

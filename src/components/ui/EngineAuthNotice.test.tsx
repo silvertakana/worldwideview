@@ -29,7 +29,7 @@ describe("EngineAuthNotice", () => {
     it("explains the missing connection and can be dismissed", () => {
         render(<EngineAuthNotice />);
         expect(screen.getByRole("status")).toBeTruthy();
-        expect(screen.getByText(/marketplace connection/i)).toBeTruthy();
+        expect(screen.getByText(/marketplace account/i)).toBeTruthy();
 
         fireEvent.click(screen.getByLabelText("Dismiss"));
         expect(mockState.dismissEngineAuthNotice).toHaveBeenCalled();
