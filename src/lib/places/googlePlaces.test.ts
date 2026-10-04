@@ -86,6 +86,16 @@ describe("autocompletePlaces", () => {
         expect(callHeaders()["X-Goog-Api-Key"]).toBe(KEY_A);
     });
 
+    it("returns an empty list when the success body is not JSON", async () => {
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => { throw new Error("not json"); },
+        } as unknown as Response);
+
+        await expect(autocompletePlaces("paris", KEY_A)).resolves.toEqual([]);
+    });
+
     it("returns an empty list when Google sends no suggestions", async () => {
         fetchMock.mockResolvedValueOnce(jsonResponse({}));
 
@@ -163,6 +173,12 @@ describe("textSearchPlaces", () => {
         ]);
         const body = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
         expect(body.maxResultCount).toBe(20);
+    });
+
+    it("returns an empty list when Google sends no places array", async () => {
+        fetchMock.mockResolvedValueOnce(jsonResponse({}));
+
+        await expect(textSearchPlaces("berlin", KEY_A)).resolves.toEqual([]);
     });
 });
 
