@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { WEATHER_LAYERS, isValidWeatherLayer } from "@/lib/weatherLayers";
+import { getClientIp } from "@/lib/rateLimit";
+import { weatherTileLimiter } from "@/lib/rateLimiters";
 
 export const revalidate = 600;
 
@@ -23,6 +25,10 @@ export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ z: string; x: string; y: string }> },
 ) {
+    // 1. Rate limiting -- cheapest check, before any billed upstream call
+    const rateLimited = weatherTileLimiter.check(getClientIp(req));
+    if (rateLimited) return rateLimited;
+
     const { z, x, y } = await params;
     const layer = req.nextUrl.searchParams.get("layer");
 
