@@ -14,7 +14,7 @@
  *   MAN-08  mcpTools entries missing inputSchema are rejected
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { validateManifest } from "./validateManifest";
 import type { PluginManifest } from "./PluginManifest";
 
@@ -423,5 +423,88 @@ rejects("https://evil.com/?x=.worldwideview.dev"); // lint-url: allow (test asse
         rejects("https://unpkg.com@evil.com/frontend.mjs");
         rejects("javascript:alert(1)");
         rejects("data:text/javascript,alert(1)");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// CAP-01: capability declaration convention (ADR-0009 amendment, 2026-10-05)
+// An unrecognised capability WARNS; it is never pushed into `errors`, because the
+// legacy `layer` tag is still live in most published plugin manifests.
+// ---------------------------------------------------------------------------
+
+describe("validateManifest capability declarations (CAP-01)", () => {
+    let warnings: string[] = [];
+
+    beforeEach(() => {
+        warnings = [];
+        vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
+            warnings.push(args.map((arg) => String(arg)).join(" "));
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("accepts every declared capability literal without warning", () => {
+        const result = validateManifest(
+            baseManifest({
+                capabilities: [
+                    "data:own",
+                    "ui:detail-panel",
+                    "ui:sidebar",
+                    "ui:toolbar",
+                    "ui:settings",
+                    "globe:overlay",
+                    "globe:camera",
+                    "storage:read",
+                    "storage:write",
+                    "network:fetch",
+                    "data:read:usgs",
+                ],
+            }),
+        );
+
+        expect(result.valid).toBe(true);
+        expect(warnings).toHaveLength(0);
+    });
+
+    it("warns with the plugin id and the offending value, and still accepts the manifest", () => {
+        const result = validateManifest(baseManifest({ capabilities: ["not:a:capability"] }));
+
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]).toContain("test-plugin");
+        expect(warnings[0]).toContain("not:a:capability");
+        // Advisory only: an unknown capability never enters `errors`.
+        expect(result.valid).toBe(true);
+        expect(result.errors).toHaveLength(0);
+    });
+
+    it("warns on the legacy `layer` tag but keeps the plugin loadable", () => {
+        const result = validateManifest(baseManifest({ capabilities: ["layer"] }));
+
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]).toContain("test-plugin");
+        expect(warnings[0]).toContain("layer");
+        expect(result.valid).toBe(true);
+        expect(result.errors).toHaveLength(0);
+    });
+
+    it("warns once per offending value when several are unknown", () => {
+        const result = validateManifest(
+            baseManifest({ capabilities: ["data:own", "layer", "bogus"] }),
+        );
+
+        expect(warnings).toHaveLength(2);
+        expect(warnings.some((w) => w.includes("layer"))).toBe(true);
+        expect(warnings.some((w) => w.includes("bogus"))).toBe(true);
+        expect(result.valid).toBe(true);
+    });
+
+    it("still rejects a missing or empty capabilities array, without warning", () => {
+        expect(validateManifest(baseManifest({ capabilities: [] })).errors).toContain(
+            "capabilities must be a non-empty array",
+        );
+        expect(warnings).toHaveLength(0);
     });
 });

@@ -25,6 +25,7 @@ export interface IconUrlOptions extends Record<string, unknown> {
  */
 export declare function createSvgIconUrl(Icon: ComponentType<any>, opts?: IconUrlOptions): string;
 export type { PluginManifest, PluginFormat, PluginType, TrustTier, PluginCapability, DataSourceConfig, FieldMapping, RenderingConfig, McpToolDeclaration, LocalDataSourceDeclaration } from "./manifest";
+export { PLUGIN_CAPABILITIES, isValidCapability } from "./manifest";
 export type PluginCategory = "aviation" | "maritime" | "military" | "conflict" | "natural-disaster" | "infrastructure" | "space" | "cyber" | "economic" | "intelligence" | "custom";
 export interface TimeRange {
     start: Date;

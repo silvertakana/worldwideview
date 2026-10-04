@@ -3,6 +3,7 @@
  * @description Validates PluginManifest objects against the required schema and security constraints.
  */
 
+import { isValidCapability } from "@worldwideview/wwv-plugin-sdk";
 import type { PluginManifest } from "./PluginManifest";
 
 /**
@@ -79,6 +80,17 @@ export function validateManifest(
     }
     if (!Array.isArray(manifest.capabilities) || manifest.capabilities.length === 0) {
         errors.push("capabilities must be a non-empty array");
+    } else {
+        // Advisory only. Most published plugins still declare the legacy `layer` tag,
+        // so an unrecognised capability warns instead of rejecting the plugin
+        // (ADR-0009 amendment, 2026-10-04).
+        for (const capability of manifest.capabilities) {
+            if (typeof capability === "string" && !isValidCapability(capability)) {
+                console.warn(
+                    `[validateManifest] plugin "${manifest.id ?? "unknown"}" declares unknown capability "${capability}"`,
+                );
+            }
+        }
     }
 
     // Entry point validation - critical for preventing RCE
