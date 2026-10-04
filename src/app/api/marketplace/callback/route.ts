@@ -4,12 +4,16 @@ import { encryptCredential } from "@/lib/auth/encryption";
 import { prisma as db } from "@/lib/db";
 import { getServerSession } from "@/lib/ba-session";
 import { isDemo, isDemoAdmin } from "@/core/edition";
+import { getRequestOrigin } from "@/lib/origin";
 
 function redirectWith(query: Record<string, string>, req: NextRequest) {
     const params = new URLSearchParams(query);
-    const res = NextResponse.redirect(new URL(`/marketplace/connect-status?${params.toString()}`, req.nextUrl.origin), 302);
+    // Same reason as the connect route: nextUrl.origin is the server's bind address
+    // behind a container, not the address the browser can reach.
+    const origin = getRequestOrigin(req);
+    const res = NextResponse.redirect(new URL(`/marketplace/connect-status?${params.toString()}`, origin), 302);
 
-    const isHttps = req.nextUrl.protocol === "https:";
+    const isHttps = origin.startsWith("https:");
     const cookiePrefix = isHttps ? "__Host-" : "";
 
     res.cookies.set(`${cookiePrefix}pkce_state`, "", {
@@ -30,7 +34,8 @@ export async function GET(req: NextRequest) {
         }
     }
 
-    const isHttps = req.nextUrl.protocol === "https:";
+    // Must match the prefix the connect route wrote, or the PKCE cookies are invisible.
+    const isHttps = getRequestOrigin(req).startsWith("https:");
     const cookiePrefix = isHttps ? "__Host-" : "";
 
     const stateCookie = req.cookies.get(`${cookiePrefix}pkce_state`)?.value;
