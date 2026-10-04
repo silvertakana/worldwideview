@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { transliterate } from "@/lib/utils/transliterate";
+import { getClientIp } from "@/lib/rateLimit";
+import { placesLimiter } from "@/lib/rateLimiters";
 
 // Server-side cache: keyed by normalised input, 1-hour TTL
 const cache = new Map<string, { data: unknown; expiresAt: number }>();
 const TTL_MS = 60 * 60 * 1000; // 1 hour
 
 export async function GET(request: Request) {
+    // 1. Rate limiting -- cheapest check, before any billed upstream call
+    const rateLimited = placesLimiter.check(getClientIp(request));
+    if (rateLimited) return rateLimited;
+
     const { searchParams } = new URL(request.url);
     const input = searchParams.get("input");
 
