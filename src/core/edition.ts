@@ -158,15 +158,44 @@ export const DEMO_ADMIN_ROLE = "demo-admin";
 // ---------------------------------------------------------------------------
 
 /**
- * Returns true when the given plugin requires WebSocket first-message auth
- * (i.e., must send a PluginTicket before any subscribe message).
+ * Whether one plugin opted into ticket auth through the local override list.
  *
  * Controlled by NEXT_PUBLIC_WWV_TICKET_AUTH_PLUGINS (comma-separated plugin IDs).
- * Empty or unset → ticket auth is disabled for all plugins (dormant / safe default).
+ *
+ * @deprecated Cloud and demo instances authenticate by capability now, through
+ * `ticketAuthRequired`. This list survives one release as the opt-in for a
+ * local instance that points at an engine with auth on, and is then removed.
  */
 export function ticketAuthEnabledForPlugin(pluginId: string): boolean {
     const list = process.env.NEXT_PUBLIC_WWV_TICKET_AUTH_PLUGINS ?? "";
     return list.split(",").map((s) => s.trim()).filter(Boolean).includes(pluginId);
+}
+
+/**
+ * Whether this instance must authenticate before it subscribes to an engine.
+ *
+ * Cloud and demo instances stream from a hosted engine that requires tickets, so
+ * they always ask for one. A local (sovereign) instance runs its own engine and
+ * usually has no marketplace account at all, so it asks only when the operator
+ * opted a plugin in through the list above.
+ *
+ * The edition is read per call, so a runtime override applies without a rebuild.
+ */
+export function ticketAuthRequired(pluginIds: readonly string[]): boolean {
+    const current = getEdition();
+    if (current === "cloud" || current === "demo") return true;
+    return pluginIds.some((id) => ticketAuthEnabledForPlugin(id));
+}
+
+/**
+ * Whether this instance is expected to hold a marketplace credential at all.
+ *
+ * True for the editions that stream from a hosted engine. A local instance
+ * without a credential is normal, not a fault, and must not be told otherwise.
+ */
+export function marketplaceCredentialRequired(): boolean {
+    const current = getEdition();
+    return current === "cloud" || current === "demo";
 }
 
 /**

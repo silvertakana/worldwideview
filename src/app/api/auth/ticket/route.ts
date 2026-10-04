@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/ba-session";
 import { isAuthEnabled } from "@/core/edition";
-import { getTicket } from "@/lib/auth/ticketClient";
+import { getTicket, getTicketForcingRefresh } from "@/lib/auth/ticketClient";
 
 /**
  * GET /api/auth/ticket?pluginId=<id>
@@ -22,7 +22,11 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const token = await getTicket(pluginId);
+        // The client asks for a refresh after the engine refused a cached ticket.
+        const forceRefresh = req.nextUrl.searchParams.get("refresh") === "1";
+        const token = forceRefresh
+            ? await getTicketForcingRefresh(pluginId)
+            : await getTicket(pluginId);
         return NextResponse.json({ token });
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

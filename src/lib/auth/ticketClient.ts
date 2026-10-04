@@ -11,6 +11,17 @@ interface CacheEntry {
 
 const TICKET_LIFETIME_MS = 4.5 * 60 * 1000; // refresh 30s before the 5-min expiry
 
+/**
+ * Returns a ticket while bypassing the process-wide cache.
+ *
+ * Used when the engine has just refused the cached ticket: handing it back
+ * unchanged would reproduce exactly the same refusal.
+ */
+export async function getTicketForcingRefresh(pluginId: string): Promise<PluginTicket> {
+    cache.delete(ENGINE_AUDIENCE);
+    return await getTicket(pluginId);
+}
+
 // Per ADR-001B: audience = the Data Engine's ENGINE_ID (default "wwv-data-engine").
 // Per-engine audiences (true multi-engine decentralisation) are a follow-up.
 const ENGINE_AUDIENCE = "wwv-data-engine";
@@ -78,7 +89,23 @@ async function fetchTicket(pluginId: string): Promise<PluginTicket> {
  * Returns a short-lived PluginTicket for the given plugin ID.
  * Results are cached by engine audience; the ticket is refreshed 30s before expiry (4.5-min window).
  */
+/**
+ * Fetches a ticket for this instance.
+ *
+ * The ticket is instance-scoped, not plugin-scoped: the marketplace issues it
+ * from the scope recorded on the instance's key, and the engine enforces
+ * per-channel access from that scope on every subscribe. `pluginId` labels the
+ * request (it keys the cache, and names the caller in logs); it does not narrow
+ * what the ticket may subscribe to.
+ */
 export async function getTicket(pluginId: string): Promise<PluginTicket> {
+    // A demo instance mints a ticket per visitor session: serving one from a
+    // process-wide cache would hand every visitor the same identity, which is
+    // the opposite of what a short-lived demo ticket is for.
+    if (isDemo) {
+        return await fetchTicket(pluginId);
+    }
+
     const cached = cache.get(ENGINE_AUDIENCE);
     if (cached && cached.expiresAt > Date.now()) {
         return cached.ticket;

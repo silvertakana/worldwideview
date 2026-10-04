@@ -56,7 +56,7 @@ export interface UISlice {
     /** List of active floating stream windows. */
     floatingStreams: FloatingStream[];
     /** The active sub-tab within the configuration panel. */
-    activeConfigTab: "intel" | "filters" | "cache" | "overlay" | "apikeys" | "alerts";
+    activeConfigTab: "intel" | "filters" | "cache" | "overlay" | "alerts";
     /** The ID of a layer currently being highlighted/flashed in the UI. */
     highlightLayerId: string | null;
     /** Active panel in mobile view layout. */
@@ -92,7 +92,7 @@ export interface UISlice {
     /** Updates properties (position, size, state) of an existing stream window. */
     updateFloatingStream: (id: string, updates: Partial<FloatingStream>) => void;
     /** Switches between configuration tabs. */
-    setActiveConfigTab: (tab: "intel" | "filters" | "cache" | "overlay" | "apikeys" | "alerts") => void;
+    setActiveConfigTab: (tab: "intel" | "filters" | "cache" | "overlay" | "alerts") => void;
     /** Triggers a visual highlight on a specific layer in the layer list. */
     setHighlightLayerId: (id: string | null) => void;
     /** Explicitly sets the configuration panel visibility. */
@@ -105,6 +105,12 @@ export interface UISlice {
     showErrorToast: (message: string) => void;
     /** Dismisses the active error toast. */
     clearErrorToast: () => void;
+    /** True when the globe should explain that live feeds need a marketplace connection. */
+    engineAuthNotice: boolean;
+    /** Raises the marketplace-connection notice. */
+    showEngineAuthNotice: () => void;
+    /** Dismisses the marketplace-connection notice. */
+    dismissEngineAuthNotice: () => void;
     /**
      * The ID of the currently active bottom panel, or null when the dock is shown without
      * an active panel. The built-in timeline uses the reserved ID "timeline".
@@ -206,6 +212,9 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set) => (
     errorToastMessage: null,
     showErrorToast: (message) => set({ errorToastMessage: message }),
     clearErrorToast: () => set({ errorToastMessage: null }),
+    engineAuthNotice: false,
+    showEngineAuthNotice: () => set({ engineAuthNotice: true }),
+    dismissEngineAuthNotice: () => set({ engineAuthNotice: false }),
     setActiveBottomPanel: (id) => set({ activeBottomPanel: id }),
     setBottomPanelHeight: (height) => set({ bottomPanelHeight: height }),
 });
