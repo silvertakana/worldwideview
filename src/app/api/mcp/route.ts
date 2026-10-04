@@ -44,6 +44,7 @@ import { registerGlobeCommandTools } from "./globeCommandTools";
 import { resolveActiveSessionId } from "@/lib/globeCommandQueue";
 import { registerPluginToolDispatch } from "./pluginToolDispatch";
 import { registerGeocodingTools } from "./geocodingTools";
+import { registerPlaceTools } from "./placeTools";
 import { registerFavoritesTools } from "./favoritesTools";
 import { registerFilterTools } from "./filterTools";
 import { registerDiscoveryTools } from "./discoveryTools";
@@ -176,6 +177,7 @@ async function handleMcpRequest(request: Request): Promise<Response> {
     registerDataQueryTools(server, { userId: authResult.userId });
     registerGlobeCommandTools(server, { userId: authResult.userId });
     registerGeocodingTools(server, { userId: authResult.userId });
+    registerPlaceTools(server, { userId: authResult.userId });
     registerFavoritesTools(server, { userId: authResult.userId });
     registerFilterTools(server, { userId: authResult.userId });
     // Phase 29: discovery tools (list_available_plugins, get_globe_context, investigate_area)

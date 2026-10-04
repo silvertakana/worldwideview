@@ -14,6 +14,7 @@ import { registerDiscoveryTools } from "@/app/api/mcp/discoveryTools";
 import { registerFavoritesTools } from "@/app/api/mcp/favoritesTools";
 import { registerFilterTools } from "@/app/api/mcp/filterTools";
 import { registerGeocodingTools } from "@/app/api/mcp/geocodingTools";
+import { registerPlaceTools } from "@/app/api/mcp/placeTools";
 import { registerGlobeCommandTools } from "@/app/api/mcp/globeCommandTools";
 import { registerProximityTools } from "@/app/api/mcp/proximityTools";
 import { registerRegionalAnalyticsTools } from "@/app/api/mcp/regionalAnalyticsTools";
@@ -28,6 +29,7 @@ const REGISTRARS: readonly Registrar[] = [
     registerDataQueryTools,
     registerGlobeCommandTools,
     registerGeocodingTools,
+    registerPlaceTools,
     registerFavoritesTools,
     registerFilterTools,
     registerDiscoveryTools,
