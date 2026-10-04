@@ -3,7 +3,7 @@
  * @description Validates PluginManifest objects against the required schema and security constraints.
  */
 
-import { isValidCapability } from "@worldwideview/wwv-plugin-sdk";
+import { isValidCapability } from "@worldwideview/wwv-plugin-sdk/manifest";
 import type { PluginManifest } from "./PluginManifest";
 
 /**
