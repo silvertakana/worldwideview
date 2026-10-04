@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, TriangleAlert } from "lucide-react";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 import { useSearch } from "./useSearch";
 import type { SearchResult, SearchSection } from "./useSearch";
@@ -45,8 +45,11 @@ export function SearchBar() {
     const {
         query, setQuery, isOpen, setIsOpen,
         sections, selectedIndex, setSelectedIndex,
-        flatResults, handleSelect
+        flatResults, handleSelect, liveError, detailError
     } = useSearch();
+
+    // A failed lookup explains itself; "No results found." would blame the query instead.
+    const noResults = !liveError && !detailError;
 
     const containerRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -149,12 +152,25 @@ export function SearchBar() {
                         padding: "12px"
                     }}
           >
+            {liveError && (
+              <div
+                role="alert"
+                data-search-error="live"
+                style={{
+                        display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "0.8rem", lineHeight: 1.4,
+                        color: "var(--accent-orange, #f59e0b)"
+                    }}
+              >
+                <TriangleAlert size={14} style={{ flexShrink: 0, marginTop: "2px" }} />
+                <span>{liveError}</span>
+              </div>
+            )}
             {sections.map((section) => (
               <div key={section.title} className="search-section">
                 <div
                   className="search-section__header"
                   style={{
- display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "6px"
+ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: liveError ? "var(--accent-orange, #f59e0b)" : "var(--text-muted)", marginBottom: "6px"
 }}
                 >
                   {section.icon}
@@ -206,9 +222,14 @@ export function SearchBar() {
                 </div>
               </div>
                     ))}
+            {liveError && (
+              <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
+                Place results may be incomplete.
+              </div>
+            )}
           </div>
             )}
-        {isOpen && query.trim() && sections.length === 0 && (
+        {isOpen && query.trim() && sections.length === 0 && noResults && (
         <div
           className="search-bar__dropdown glass-panel"
           style={{
@@ -227,6 +248,33 @@ export function SearchBar() {
                 }}
         >
           No results found.
+        </div>
+            )}
+        {isOpen && query.trim() && sections.length === 0 && !noResults && (
+        <div
+          className="search-bar__dropdown glass-panel"
+          role="alert"
+          data-search-error="empty"
+          style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: 0,
+                    right: isMobile ? 0 : "auto",
+                    transform: "none",
+                    width: isMobile ? "100%" : "max(100%, 300px)",
+                    minWidth: isMobile ? "100%" : "300px",
+                    padding: "12px",
+                    zIndex: 100,
+                    textAlign: "left",
+                    color: "var(--text-muted)",
+                    fontSize: "0.85rem",
+                    lineHeight: 1.4
+                }}
+        >
+          <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", color: "var(--accent-orange, #f59e0b)" }}>
+            <TriangleAlert size={14} style={{ flexShrink: 0, marginTop: "2px" }} />
+            <span>{liveError || detailError}</span>
+          </span>
         </div>
             )}
       </div>

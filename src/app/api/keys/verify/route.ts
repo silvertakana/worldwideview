@@ -6,15 +6,33 @@ import { getClientIp } from "@/lib/rateLimit";
 /** Minimum length sanity check before attempting verification. */
 const MIN_KEY_LENGTH = 20;
 
+/**
+ * Probe the Places API (New). Legacy `maps.googleapis.com/maps/api/place/*` cannot be enabled
+ * on a new Google Cloud project, so the old probe reported every fresh key as invalid.
+ */
 async function verifyGoogleMaps(key: string): Promise<{ valid: boolean; error?: string }> {
-    // Use a minimal Places Autocomplete request as a probe
-    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=a&key=${encodeURIComponent(key)}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.status === "OK" || data.status === "ZERO_RESULTS") {
-        return { valid: true };
+    const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
+        method: "POST",
+        headers: {
+            "X-Goog-Api-Key": key,
+            // The New API has no default field set; without a mask every call fails with 400.
+            "X-Goog-FieldMask": "places.id",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ textQuery: "test", maxResultCount: 1 }),
+    });
+    if (res.ok) return { valid: true };
+
+    const data = (await res.json().catch(() => null)) as
+        | { error?: { status?: unknown; message?: unknown } }
+        | null;
+    if (typeof data?.error?.message === "string" && data.error.message) {
+        return { valid: false, error: data.error.message };
     }
-    return { valid: false, error: data.error_message || data.status };
+    if (typeof data?.error?.status === "string" && data.error.status) {
+        return { valid: false, error: data.error.status };
+    }
+    return { valid: false, error: `Places API returned HTTP ${res.status}` };
 }
 
 async function verifyNasaFirms(key: string): Promise<{ valid: boolean; error?: string }> {
