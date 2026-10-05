@@ -9,7 +9,7 @@ Accepted
 ## Related
 - **Builds on:** ADR-0006 (On-Demand Plugin Compute via HTTP) — the engine's `/api/<id>` HTTP endpoint is the canonical data surface
 - **Builds on:** ADR-0001 (Decentralized Plugin Auth) — WS stream auth via Ed25519 JWT tickets (hardening backlog: per-plugin claims, see Context)
-- **Supersedes (in practice):** the legacy globe-side proxy route pattern (`src/app/api/<id>/route.ts` proxying a source server-side), which remains only for `wwv-plugin-earthquakes`, `wwv-plugin-iss`, `wwv-plugin-camera`
+- **Supersedes (in practice):** the legacy globe-side proxy route pattern (`src/app/api/<id>/route.ts` proxying a source server-side), which remains only for `wwv-plugin-camera`
 
 ---
 
