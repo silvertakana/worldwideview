@@ -154,4 +154,28 @@ describe("Marketplace Load Route (#409 regression)", () => {
         expect(data.manifests).toEqual([]);
         expect(res.status).toBe(200);
     });
+
+    it("drops a record whose entry is not a string, without emptying the catalog", async () => {
+        // A numeric entry passes a truthy check but has no .startsWith, so the
+        // bundle-entry filter below would throw a TypeError. The route's own
+        // catch turns that throw into a 200 with an empty manifest list, which
+        // hides the whole catalog behind one malformed record.
+        const good = makeRecord("alpha", true);
+        const bad = makeRecord("bravo", true);
+        bad.config = JSON.stringify({
+            ...JSON.parse(bad.config),
+            entry: 123,
+        });
+
+        mockInstalledPlugin.findMany.mockResolvedValue([good, bad]);
+
+        const res = await GET(new Request("http://localhost/api/marketplace/load"));
+        const data = await res.json();
+
+        const ids = data.manifests.map((m: { id: string }) => m.id);
+        // The malformed record must be dropped...
+        expect(ids).not.toContain("bravo");
+        // ...and it must not take the valid records down with it.
+        expect(ids).toContain("alpha");
+    });
 });

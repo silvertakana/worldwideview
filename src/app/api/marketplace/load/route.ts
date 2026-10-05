@@ -88,7 +88,7 @@ export async function GET(request: Request) {
                 // Skip stale/malformed records (e.g. old empty-config installs for built-ins)
                 // If it lacks basic required fields, it's a legacy record and we drop it silently
                 // to avoid log spam on every poll.
-                if (!m.entry || !m.name || !m.version) return false;
+                if (typeof m.entry !== "string" || !m.entry || !m.name || !m.version) return false;
 
                 // Skip bundle plugins whose entry is a bare module specifier
                 // (e.g. "camera") — cannot be dynamically imported in the browser.
