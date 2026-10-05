@@ -508,3 +508,52 @@ describe("validateManifest capability declarations (CAP-01)", () => {
         expect(warnings).toHaveLength(0);
     });
 });
+
+// ---------------------------------------------------------------------------
+// MALFORMED-ROWS: the validator must never throw on untrusted manifest JSON.
+// It is called from an unguarded `.filter()` in /api/marketplace/load, so one
+// throw there 500s the whole plugin catalog instead of warning about one row.
+// Every malformed row is therefore reported and skipped, never dereferenced.
+// ---------------------------------------------------------------------------
+
+describe("validateManifest survives malformed rows (warn-only, never throws)", () => {
+    it("reports a null mcpTools entry, keeps validating its siblings, and does not throw", () => {
+        const manifest = baseManifest({
+            mcpTools: [
+                null,
+                { name: "decode_squawk", description: "Decodes.", inputSchema: { type: "object" } },
+            ],
+        });
+
+        expect(() => validateManifest(manifest)).not.toThrow();
+
+        const result = validateManifest(manifest);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain("mcpTools[0]: mcpTools entry must be an object");
+        // The loop continued past the bad row: the well-formed sibling is clean.
+        expect(result.errors.some((e) => e.startsWith("mcpTools[1]"))).toBe(false);
+    });
+
+    it("reports a non-string entry instead of dereferencing it", () => {
+        const manifest = baseManifest({ entry: 42 });
+
+        expect(() => validateManifest(manifest)).not.toThrow();
+
+        const result = validateManifest(manifest);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain("Missing required field: entry");
+    });
+
+    it("reports a null localData entry instead of dereferencing it (same rule)", () => {
+        const manifest = baseManifest({
+            localData: [null, { name: "default", type: "geojson", path: "/cameras.json" }],
+        });
+
+        expect(() => validateManifest(manifest)).not.toThrow();
+
+        const result = validateManifest(manifest);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain("localData[0]: localData entry must be an object");
+        expect(result.errors.some((e) => e.startsWith("localData[1]"))).toBe(false);
+    });
+});

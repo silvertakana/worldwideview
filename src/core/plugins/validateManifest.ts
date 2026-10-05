@@ -93,8 +93,10 @@ export function validateManifest(
         }
     }
 
-    // Entry point validation - critical for preventing RCE
-    if (!manifest.entry?.trim()) {
+    // Entry point validation - critical for preventing RCE.
+    // A non-string entry (untrusted JSON) is reported, never dereferenced: this
+    // validator is warn-only, and a throw here takes the whole caller down.
+    if (typeof manifest.entry !== "string" || !manifest.entry.trim()) {
         errors.push("Missing required field: entry");
     } else {
         const entry = manifest.entry.trim();
@@ -166,6 +168,14 @@ export function validateManifest(
             (manifest.mcpTools as unknown as Record<string, unknown>[]).forEach((tool, idx) => {
                 const prefix = `mcpTools[${idx}]`;
 
+                // A malformed array element (null, a string, ...) carries no
+                // fields to check: report it and move to the next entry rather
+                // than dereferencing it and throwing out of the whole function.
+                if (tool === null || typeof tool !== "object") {
+                    errors.push(`${prefix}: mcpTools entry must be an object`);
+                    return;
+                }
+
                 // MAN-06: name must be present
                 if (typeof tool.name !== "string" || !(tool.name as string).trim()) {
                     errors.push(`${prefix}: mcpTools entry missing required field: name`);
@@ -199,6 +209,13 @@ export function validateManifest(
             const VALID_LOCAL_DATA_TYPES = ["geojson", "route"] as const;
             (manifest.localData as unknown as Record<string, unknown>[]).forEach((entry, idx) => {
                 const prefix = `localData[${idx}]`;
+
+                // Same warn-only rule as mcpTools above: a malformed element is
+                // reported and skipped, not dereferenced.
+                if (entry === null || typeof entry !== "object") {
+                    errors.push(`${prefix}: localData entry must be an object`);
+                    return;
+                }
 
                 // name must be a non-empty string
                 if (typeof entry.name !== "string" || !(entry.name as string).trim()) {
