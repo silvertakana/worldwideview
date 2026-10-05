@@ -512,7 +512,8 @@ describe("validateManifest capability declarations (CAP-01)", () => {
 // ---------------------------------------------------------------------------
 // MALFORMED-ROWS: the validator must never throw on untrusted manifest JSON.
 // It is called from an unguarded `.filter()` in /api/marketplace/load, so one
-// throw there 500s the whole plugin catalog instead of warning about one row.
+// throw there empties the whole catalog response (its caller catches, and
+// answers with an empty list) instead of warning about that one row.
 // Every malformed row is therefore reported and skipped, never dereferenced.
 // ---------------------------------------------------------------------------
 
