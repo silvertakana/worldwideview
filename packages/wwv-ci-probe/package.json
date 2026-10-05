@@ -20,11 +20,11 @@
   "dependencies": {
     "commander": "^15.0.0",
     "ioredis": "^6.0.0",
-    "ws": "^8.21.1"
+    "ws": "^8.22.0"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
-    "@types/ws": "^8.5.13",
+    "@types/node": "^26.6.4",
+    "@types/ws": "^8.18.2",
     "typescript": "^5.0.0"
   }
 }
