@@ -8,12 +8,17 @@
  * The key is read from the instance environment only (never from tool
  * arguments), and a key that is absent or too short degrades to a plain
  * "not configured" result instead of an upstream failure.
+ *
+ * Places calls are billed, and this path does not go through /api/places/*, so the
+ * tool spends the SAME per-IP Places budget as the browser routes before any
+ * upstream call: otherwise agent traffic bypasses the only throttle on spend.
  */
 
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { PlacesError, textSearchPlaces } from "@/lib/places/googlePlaces";
+import { MAX_PLACES_QUERY_LENGTH, PlacesError, textSearchPlaces } from "@/lib/places/googlePlaces";
 import type { PlaceSearchResult } from "@/lib/places/googlePlaces";
+import { placesLimiter } from "@/lib/rateLimiters";
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -47,10 +52,13 @@ function resolveInstanceKey(): string | null {
 // Public registrar
 // ---------------------------------------------------------------------------
 
-export function registerPlaceTools(server: McpServer, ctx: { userId: string }): void {
-    // The instance key is the only credential this tool needs, so ctx is
-    // accepted for registrar-signature parity and deliberately unused.
-    void ctx;
+export function registerPlaceTools(
+    server: McpServer,
+    ctx: { userId: string; clientIp: string },
+): void {
+    // The budget is keyed by client IP exactly as the Places routes key it, so an
+    // agent cannot outspend the interactive search budget for its own address.
+    const { clientIp } = ctx;
 
     server.registerTool(
         "search_places",
@@ -61,6 +69,7 @@ export function registerPlaceTools(server: McpServer, ctx: { userId: string }): 
                 query: z
                     .string()
                     .min(1)
+                    .max(MAX_PLACES_QUERY_LENGTH)
                     .describe(
                         "Location name, establishment, address, or point of interest to search for",
                     ),
@@ -74,6 +83,10 @@ export function registerPlaceTools(server: McpServer, ctx: { userId: string }): 
             },
         },
         async (args) => {
+            if (placesLimiter.check(clientIp)) {
+                return errorResult("Places rate limit exceeded. Retry shortly.");
+            }
+
             const key = resolveInstanceKey();
             if (key === null) {
                 return errorResult("Google place search is not configured on this instance.");

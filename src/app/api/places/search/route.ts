@@ -3,6 +3,7 @@ import { transliterate } from "@/lib/utils/transliterate";
 import { getClientIp } from "@/lib/rateLimit";
 import { placesLimiter } from "@/lib/rateLimiters";
 import {
+    MAX_PLACES_QUERY_LENGTH,
     PlacesError,
     autocompletePlaces,
     placesKeyFingerprint,
@@ -34,6 +35,13 @@ export async function GET(request: Request) {
 
     if (!input || !input.trim()) {
         return NextResponse.json({ error: "Input is required" }, { status: 400 });
+    }
+
+    if (input.length > MAX_PLACES_QUERY_LENGTH) {
+        return NextResponse.json(
+            { error: `Input is too long (max ${MAX_PLACES_QUERY_LENGTH} characters)` },
+            { status: 400 }
+        );
     }
 
     const resolved = resolvePlacesKey(request);

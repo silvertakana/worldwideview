@@ -21,7 +21,7 @@ import { registerRegionalAnalyticsTools } from "@/app/api/mcp/regionalAnalyticsT
 import { SESSION_REQUIRED_PREAMBLE } from "@/lib/mcp/toolDescriptionFragments";
 import { MCP_TOOLS, groupToolsBySession, mcpToolNames } from "./toolRegistry";
 
-type Registrar = (server: McpServer, ctx: { userId: string }) => void;
+type Registrar = (server: McpServer, ctx: { userId: string; clientIp: string }) => void;
 type RegisterToolFn = (name: string, config: unknown, handler: unknown) => unknown;
 
 /** Exactly the registrars src/app/api/mcp/route.ts calls, in the same order. */
@@ -61,7 +61,7 @@ function captureRegisteredTools(): CapturedTool[] {
     server.registerTool = recording;
 
     for (const registrar of REGISTRARS) {
-        registrar(server, { userId: "registry-capture" });
+        registrar(server, { userId: "registry-capture", clientIp: "203.0.113.9" });
     }
 
     return captured;

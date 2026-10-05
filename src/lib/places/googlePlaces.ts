@@ -30,6 +30,17 @@ const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_SEARCH_RESULTS = 20;
 const DEFAULT_SEARCH_RESULTS = 5;
 
+/**
+ * Conservative upper bound on a Places query string. This is NOT a documented Google
+ * limit: as of 2026-10-05 neither the Text Search (New) guide, the searchText REST
+ * reference, the Autocomplete (New) reference, the v1 Discovery document, nor
+ * googleapis/google/maps/places/v1/places_service.proto states a maximum length for
+ * `textQuery`/autocomplete `input` (the only documented string bound in that service is
+ * sessionToken, 36 ASCII characters). The cap exists so one caller cannot push an
+ * arbitrarily large string into a billed upstream call.
+ */
+export const MAX_PLACES_QUERY_LENGTH = 256;
+
 export interface PlacePrediction {
     placeId: string;
     description: string;

@@ -177,7 +177,7 @@ async function handleMcpRequest(request: Request): Promise<Response> {
     registerDataQueryTools(server, { userId: authResult.userId });
     registerGlobeCommandTools(server, { userId: authResult.userId });
     registerGeocodingTools(server, { userId: authResult.userId });
-    registerPlaceTools(server, { userId: authResult.userId });
+    registerPlaceTools(server, { userId: authResult.userId, clientIp: getClientIp(request) });
     registerFavoritesTools(server, { userId: authResult.userId });
     registerFilterTools(server, { userId: authResult.userId });
     // Phase 29: discovery tools (list_available_plugins, get_globe_context, investigate_area)

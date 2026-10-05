@@ -225,6 +225,12 @@ describe("placesKeyFingerprint", () => {
         expect(placesKeyFingerprint(KEY_A)).toBe(placesKeyFingerprint(KEY_A));
         expect(placesKeyFingerprint(KEY_A)).toMatch(/^[0-9a-f]{12}$/);
     });
+
+    it("pins the digest, so a re-keyed or re-truncated fingerprint cannot ship silently", () => {
+        // Golden value: padding, encoding, or truncation-length changes fail here
+        // instead of silently re-keying every cached result.
+        expect(placesKeyFingerprint(KEY_A)).toBe("b3290a8f79ea");
+    });
 });
 
 describe("resolvePlacesKey", () => {
