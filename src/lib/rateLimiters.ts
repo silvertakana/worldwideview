@@ -101,3 +101,25 @@ export const feedbackLimiter = new RateLimiter({
     windowMs: 60_000,
     maxRequests: 5,
 });
+
+/**
+ * /api/places/* -- Google Places (Autocomplete + Details) proxy.
+ * Both endpoints are billed per request and search is public, so this limit is
+ * the only throttle between an anonymous client and a billed upstream call.
+ * 30 req/60s per IP matches the interactive-search budget of osmSearchLimiter.
+ */
+export const placesLimiter = new RateLimiter({
+    windowMs: 60_000,
+    maxRequests: 30,
+});
+
+/**
+ * /api/weather/tile/... -- OpenWeatherMap raster tile proxy, billed per tile.
+ * A single map viewport pulls dozens of tiles, so the budget is deliberately
+ * generous: 240 req/60s per IP (~4 tiles/s sustained) still bounds one client
+ * to a quarter of the upstream free-tier minute.
+ */
+export const weatherTileLimiter = new RateLimiter({
+    windowMs: 60_000,
+    maxRequests: 240,
+});

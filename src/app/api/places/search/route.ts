@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { transliterate } from "@/lib/utils/transliterate";
+import { getClientIp } from "@/lib/rateLimit";
+import { placesLimiter } from "@/lib/rateLimiters";
 import {
     PlacesError,
     autocompletePlaces,
@@ -23,6 +25,10 @@ function errorResponse(error: PlacesError): NextResponse {
 }
 
 export async function GET(request: Request) {
+    // 1. Rate limiting -- cheapest check, before any billed upstream call
+    const rateLimited = placesLimiter.check(getClientIp(request));
+    if (rateLimited) return rateLimited;
+
     const { searchParams } = new URL(request.url);
     const input = searchParams.get("input");
 
