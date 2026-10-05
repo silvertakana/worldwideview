@@ -17,7 +17,7 @@ Accepted
 
 Dynamic data-layer plugins need live data. Two competing patterns existed:
 
-1. **Globe-side proxy (legacy)**: the globe app defines `src/app/api/<id>/route.ts` that proxies a source server-side (e.g. `api/earthquake` → USGS), and the plugin fetches same-origin `/api/<id>`. Used by `wwv-plugin-earthquakes`, `wwv-plugin-iss`, `wwv-plugin-camera`.
+1. **Globe-side proxy (legacy)**: the globe app defines `src/app/api/<id>/route.ts` that proxies a source server-side (e.g. `api/earthquake` → USGS, a route since retired with the ISS and OSM search proxies once those plugins read the engine directly), and the plugin fetches same-origin `/api/<id>`. Used by `wwv-plugin-earthquakes`, `wwv-plugin-iss`, `wwv-plugin-camera` (the first two since moved off it).
 2. **Engine-direct (modern)**: the plugin fetches the DATA ENGINE directly: `\`${this.context?.getEngineUrl() || "https://dataenginev2.worldwideview.dev"}/api/<id>\``. Used by `wwv-plugin-wildfire` and the engine-backed family (civil-unrest, conflict-events, market-tracker, marine-buoys, hurricane-storms, live-disasters, launch-tracker, ...).
 
 Batch `dynamic-2026-08-24` initially scaffolded the four new plugins with the legacy relative-fetch pattern (mirroring the earthquakes reference), which broke on the demo globe (404/500 — no globe route for the new ids). The owner corrected the design: **the data route lives in the data engine; the plugin contacts the engine itself.**
