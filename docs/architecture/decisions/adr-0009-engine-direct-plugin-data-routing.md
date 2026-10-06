@@ -63,3 +63,60 @@ Live evidence settled the question: the engine (`dataenginev2.worldwideview.dev`
 - Review doc: internal research note `wwv-engine-direct-routing-review-2026-08-24.md` (maintainer-only, not tracked in this repo)
 - Migration: wwv-plugins PRs #62/#63, worldwideview PRs #449/#450 (batch dynamic-2026-08-24)
 - Skill doctrine: internal `plugin-mass-production` skill §1 (dynamic plugins) + §6-6f (maintainer-only, not tracked in this repo)
+
+---
+
+## Amendment — 2026-10-04: capability declaration convention and the sanctioned-route boundary
+
+*This is an amendment: it adds a declaration convention and names the boundary. It does not rewrite the Decision above.*
+
+### (a) Declaration convention
+
+The capability list is now machine-checkable: the SDK exposes `PLUGIN_CAPABILITIES` as the single
+source of truth (`PluginCapability` is derived from it) plus `isValidCapability()`, and
+`src/core/plugins/validateManifest.ts` warns on any value outside it. A plugin declares HOW it
+reaches its data:
+
+- **Engine-backed layer** — declares `getServerConfig().streamUrl` (optionally a
+  `dataSource.streamUrl` in its manifest) and contacts the data engine directly, per the Decision
+  above. It does **not** declare `network:fetch`.
+- **Browser-direct interactive tool** — declares `network:fetch`. The request runs in the user's
+  browser against a third-party API that needs no secret.
+- **Secret-holding upstream** — goes through a **sanctioned platform route**: a globe-app route or
+  a data-engine endpoint that the platform owns, reviews, and rotates the secret for. A
+  **per-plugin route on the globe app is never the answer** — it reintroduces exactly the
+  per-deployment duplication this ADR removed.
+
+`data:read:<source>` names a specific upstream the plugin reads and stays a template family, not a
+literal. `layer` is not a capability: it is a legacy manifest tag that most published plugin
+packages still declare (counted 69 of 80 at the plugin repository's `origin/main`, 2026-09-26). It
+therefore **warns and is accepted**; a hard reject is not possible until `layer` is migrated.
+
+### (b) Where the rule actually stops
+
+Sanctioned **platform** compute over **cached engine snapshots** is allowed and in scope:
+haversine proximity search, regional clustering, and anything else the platform computes over data
+it already holds.
+
+**Third-party plugin code running on the server is not allowed, under any spelling of that idea.**
+No server-side plugin execution, no plugin-supplied route handler, no "plugin compute" hook, and no
+relay that runs plugin code outside the browser. The browser stays the sole execution site for
+plugin code (v3 frontend-relay design).
+
+### (c) Secret-holding exception list (as it stands)
+
+| Route | Upstream secret it holds |
+| --- | --- |
+| `places/*` | Google Maps key (`GOOGLE_MAPS_API_KEY`, per-user key when supplied) |
+| `weather/tile` (and `weather/layers`) | OpenWeatherMap key (`OPENWEATHERMAP_API_KEY`) |
+| the camera family (`camera/*`) | per-camera upstream credentials (`NY511_API_KEY`, `WSDOT_API_KEY`, ...), until migrated |
+
+These are the only sanctioned secret-holding globe routes. Anything not on this list must not add
+another one.
+
+### (d) Direction of travel
+
+The **data engine** is the long-term home for secret-holding **data** layers: the engine owns the
+secret, the seeder owns the data, and the plugin reads a snapshot or a stream. The globe app's
+remaining secret-holding routes in (c) are **transitional** and should move to the engine as each
+upstream allows.

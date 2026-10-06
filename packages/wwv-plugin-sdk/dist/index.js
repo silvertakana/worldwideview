@@ -32,7 +32,7 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_ICON_SIZE = void 0;
+exports.isValidCapability = exports.PLUGIN_CAPABILITIES = exports.DEFAULT_ICON_SIZE = void 0;
 exports.createSvgIconUrl = createSvgIconUrl;
 exports.dtProp = dtProp;
 exports.urlProp = urlProp;
@@ -68,6 +68,9 @@ function createSvgIconUrl(Icon, opts = {}) {
     ].join("");
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(wrappedSvg)}`;
 }
+var manifest_1 = require("./manifest");
+Object.defineProperty(exports, "PLUGIN_CAPABILITIES", { enumerable: true, get: function () { return manifest_1.PLUGIN_CAPABILITIES; } });
+Object.defineProperty(exports, "isValidCapability", { enumerable: true, get: function () { return manifest_1.isValidCapability; } });
 __exportStar(require("./viteGlobals"), exports);
 // ─── Auth Contracts ──────────────────────────────────────────
 __exportStar(require("./auth-contracts"), exports);

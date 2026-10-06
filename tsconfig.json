@@ -29,6 +29,9 @@
       "@worldwideview/wwv-plugin-sdk": [
         "./packages/wwv-plugin-sdk/src"
       ],
+      "@worldwideview/wwv-plugin-sdk/manifest": [
+        "./packages/wwv-plugin-sdk/src/manifest"
+      ],
       "@local/*": [
         "./local-plugins/*/src"
       ]

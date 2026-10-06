@@ -3,6 +3,7 @@
  * @description Validates PluginManifest objects against the required schema and security constraints.
  */
 
+import { isValidCapability } from "@worldwideview/wwv-plugin-sdk/manifest";
 import type { PluginManifest } from "./PluginManifest";
 
 /**
@@ -57,19 +58,37 @@ const ENV_ALLOWED_ENTRY_HOSTS: ReadonlySet<string> = (() => {
  * @param manifest - The manifest object to validate (potentially partial during parsing).
  * @returns A ValidationResult indicating success or a list of identified security/structural risks.
  */
+/**
+ * True only for a string carrying at least one non-whitespace character.
+ *
+ * A manifest arrives as parsed, untrusted JSON, so a required field can be a
+ * number, an object or null. Calling `.trim()` on those throws, and a throw
+ * here escapes into the caller: for the marketplace catalog that means one bad
+ * record takes every healthy plugin down with it.
+ */
+function isNonEmptyString(value: unknown): value is string {
+    return typeof value === "string" && value.trim().length > 0;
+}
+
 export function validateManifest(
     manifest: Partial<PluginManifest>,
 ): ValidationResult {
     const errors: string[] = [];
 
+    // The manifest itself can be any JSON value. Report a non-object shape and
+    // return, rather than dereferencing it on every line below.
+    if (manifest === null || typeof manifest !== "object" || Array.isArray(manifest)) {
+        return { valid: false, errors: ["manifest must be a JSON object"] };
+    }
+
     // Default type for older manifests missing the field to ensure backward compatibility
-    if (manifest && !manifest.type) {
+    if (!manifest.type) {
         manifest.type = "data-layer";
     }
 
-    if (!manifest.id?.trim()) errors.push("Missing required field: id");
-    if (!manifest.name?.trim()) errors.push("Missing required field: name");
-    if (!manifest.version?.trim()) errors.push("Missing required field: version");
+    if (!isNonEmptyString(manifest.id)) errors.push("Missing required field: id");
+    if (!isNonEmptyString(manifest.name)) errors.push("Missing required field: name");
+    if (!isNonEmptyString(manifest.version)) errors.push("Missing required field: version");
 
     if (!VALID_TYPES.includes(manifest.type as typeof VALID_TYPES[number])) {
         errors.push(`Invalid type "${manifest.type}". Must be: ${VALID_TYPES.join(", ")}`);
@@ -79,10 +98,23 @@ export function validateManifest(
     }
     if (!Array.isArray(manifest.capabilities) || manifest.capabilities.length === 0) {
         errors.push("capabilities must be a non-empty array");
+    } else {
+        // Advisory only. Most published plugins still declare the legacy `layer` tag,
+        // so an unrecognised capability warns instead of rejecting the plugin
+        // (ADR-0009 amendment, 2026-10-04).
+        for (const capability of manifest.capabilities) {
+            if (typeof capability === "string" && !isValidCapability(capability)) {
+                console.warn(
+                    `[validateManifest] plugin "${manifest.id ?? "unknown"}" declares unknown capability "${capability}"`,
+                );
+            }
+        }
     }
 
-    // Entry point validation - critical for preventing RCE
-    if (!manifest.entry?.trim()) {
+    // Entry point validation - critical for preventing RCE.
+    // A non-string entry (untrusted JSON) is reported, never dereferenced: this
+    // validator is warn-only, and a throw here takes the whole caller down.
+    if (typeof manifest.entry !== "string" || !manifest.entry.trim()) {
         errors.push("Missing required field: entry");
     } else {
         const entry = manifest.entry.trim();
@@ -154,6 +186,14 @@ export function validateManifest(
             (manifest.mcpTools as unknown as Record<string, unknown>[]).forEach((tool, idx) => {
                 const prefix = `mcpTools[${idx}]`;
 
+                // A malformed array element (null, a string, ...) carries no
+                // fields to check: report it and move to the next entry rather
+                // than dereferencing it and throwing out of the whole function.
+                if (tool === null || typeof tool !== "object") {
+                    errors.push(`${prefix}: mcpTools entry must be an object`);
+                    return;
+                }
+
                 // MAN-06: name must be present
                 if (typeof tool.name !== "string" || !(tool.name as string).trim()) {
                     errors.push(`${prefix}: mcpTools entry missing required field: name`);
@@ -187,6 +227,13 @@ export function validateManifest(
             const VALID_LOCAL_DATA_TYPES = ["geojson", "route"] as const;
             (manifest.localData as unknown as Record<string, unknown>[]).forEach((entry, idx) => {
                 const prefix = `localData[${idx}]`;
+
+                // Same warn-only rule as mcpTools above: a malformed element is
+                // reported and skipped, not dereferenced.
+                if (entry === null || typeof entry !== "object") {
+                    errors.push(`${prefix}: localData entry must be an object`);
+                    return;
+                }
 
                 // name must be a non-empty string
                 if (typeof entry.name !== "string" || !(entry.name as string).trim()) {
