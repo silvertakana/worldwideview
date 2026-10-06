@@ -14,13 +14,14 @@ import { registerDiscoveryTools } from "@/app/api/mcp/discoveryTools";
 import { registerFavoritesTools } from "@/app/api/mcp/favoritesTools";
 import { registerFilterTools } from "@/app/api/mcp/filterTools";
 import { registerGeocodingTools } from "@/app/api/mcp/geocodingTools";
+import { registerPlaceTools } from "@/app/api/mcp/placeTools";
 import { registerGlobeCommandTools } from "@/app/api/mcp/globeCommandTools";
 import { registerProximityTools } from "@/app/api/mcp/proximityTools";
 import { registerRegionalAnalyticsTools } from "@/app/api/mcp/regionalAnalyticsTools";
 import { SESSION_REQUIRED_PREAMBLE } from "@/lib/mcp/toolDescriptionFragments";
 import { MCP_TOOLS, groupToolsBySession, mcpToolNames } from "./toolRegistry";
 
-type Registrar = (server: McpServer, ctx: { userId: string }) => void;
+type Registrar = (server: McpServer, ctx: { userId: string; clientIp: string }) => void;
 type RegisterToolFn = (name: string, config: unknown, handler: unknown) => unknown;
 
 /** Exactly the registrars src/app/api/mcp/route.ts calls, in the same order. */
@@ -28,6 +29,7 @@ const REGISTRARS: readonly Registrar[] = [
     registerDataQueryTools,
     registerGlobeCommandTools,
     registerGeocodingTools,
+    registerPlaceTools,
     registerFavoritesTools,
     registerFilterTools,
     registerDiscoveryTools,
@@ -59,7 +61,7 @@ function captureRegisteredTools(): CapturedTool[] {
     server.registerTool = recording;
 
     for (const registrar of REGISTRARS) {
-        registrar(server, { userId: "registry-capture" });
+        registrar(server, { userId: "registry-capture", clientIp: "203.0.113.9" });
     }
 
     return captured;

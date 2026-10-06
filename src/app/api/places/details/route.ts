@@ -1,63 +1,74 @@
 import { NextResponse } from "next/server";
 import { transliterate } from "@/lib/utils/transliterate";
+import { getClientIp } from "@/lib/rateLimit";
+import { placesLimiter } from "@/lib/rateLimiters";
+import {
+    PlacesError,
+    fetchPlaceDetails,
+    placesKeyFingerprint,
+    resolvePlacesKey,
+} from "@/lib/places/googlePlaces";
 
 // Server-side cache: keyed by place_id, 24-hour TTL (place geometry is stable)
 const cache = new Map<string, { data: unknown; expiresAt: number }>();
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export async function GET(request: Request) {
+    // 1. Rate limiting -- cheapest check, before any billed upstream call
+    const rateLimited = placesLimiter.check(getClientIp(request));
+    if (rateLimited) return rateLimited;
+
     const { searchParams } = new URL(request.url);
     const placeId = searchParams.get("place_id");
 
-    if (!placeId || typeof placeId !== "string") {
+    if (!placeId || !placeId.trim()) {
         return NextResponse.json({ error: "place_id is required" }, { status: 400 });
     }
 
-    // Use user-provided key if present in header AND looks valid, otherwise fall back to .env
-    const userKey = request.headers.get("X-User-Google-Key");
-    const isValidUserKey = userKey && userKey.length >= 20;
-    const apiKey = isValidUserKey ? userKey : (process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
-    if (!apiKey) {
+    const resolved = resolvePlacesKey(request);
+    if (!resolved) {
         console.error("GOOGLE_MAPS_API_KEY is not defined and no user key provided");
-        return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+        return NextResponse.json(
+            {
+                error: "Google place search is not configured on this instance.",
+                code: "places_not_configured",
+            },
+            { status: 503 }
+        );
     }
 
-    // Separate cache entries for user-provided keys vs default
-    const cachePrefix = userKey ? `user:${userKey.slice(0, 8)}:` : "";
-    const cacheId = `${cachePrefix}${placeId}`;
+    // Separate cache entries per key, fingerprinted (see the search route).
+    const cachePrefix = resolved.source === "user" ? "user:" + placesKeyFingerprint(resolved.key) + ":" : "";
+    const cacheId = cachePrefix + placeId;
     const cached = cache.get(cacheId);
     if (cached && Date.now() < cached.expiresAt) {
         return NextResponse.json(cached.data);
     }
 
     try {
-        const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
-            placeId
-        )}&fields=geometry,name,types,formatted_address&key=${apiKey}`;
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.status !== "OK") {
-            console.error("Google Places Details API Error:", data);
-            return NextResponse.json({ error: "Failed to fetch place details" }, { status: 500 });
-        }
-
-        const location = data.result.geometry?.location;
-        if (!location) {
-            return NextResponse.json({ error: "No geometry found for place" }, { status: 404 });
-        }
+        const place = await fetchPlaceDetails(placeId, resolved.key);
 
         const result = {
-            lat: location.lat,
-            lon: location.lng,
-            name: transliterate(data.result.name ?? ""),
-            types: data.result.types || [],
-            viewport: data.result.geometry?.viewport || null,
+            lat: place.lat,
+            lon: place.lon,
+            name: transliterate(place.name),
+            types: place.types,
+            viewport: place.viewport,
         };
         cache.set(cacheId, { data: result, expiresAt: Date.now() + TTL_MS });
         return NextResponse.json(result);
     } catch (error) {
+        if (error instanceof PlacesError) {
+            console.error("Google Places details failed:", error.googleStatus, error.message);
+            return NextResponse.json(
+                {
+                    error: error.message,
+                    code: "places_upstream_error",
+                    googleStatus: error.googleStatus,
+                },
+                { status: error.httpStatus === 404 ? 404 : 502 }
+            );
+        }
         console.error("Error in Places Details route:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }

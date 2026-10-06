@@ -96,6 +96,11 @@ export const MCP_TOOLS: readonly McpToolDescriptor[] = [
         requiresSession: false,
     },
     {
+        name: "search_places",
+        summary: "search establishments, addresses, and landmarks via Google Places",
+        requiresSession: false,
+    },
+    {
         name: "fly_to",
         summary: "fly the camera to a geocoded place or bounding box",
         requiresSession: true,

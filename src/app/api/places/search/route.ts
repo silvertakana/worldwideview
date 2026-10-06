@@ -1,61 +1,88 @@
 import { NextResponse } from "next/server";
 import { transliterate } from "@/lib/utils/transliterate";
+import { getClientIp } from "@/lib/rateLimit";
+import { placesLimiter } from "@/lib/rateLimiters";
+import {
+    MAX_PLACES_QUERY_LENGTH,
+    PlacesError,
+    autocompletePlaces,
+    placesKeyFingerprint,
+    resolvePlacesKey,
+} from "@/lib/places/googlePlaces";
 
 // Server-side cache: keyed by normalised input, 1-hour TTL
 const cache = new Map<string, { data: unknown; expiresAt: number }>();
 const TTL_MS = 60 * 60 * 1000; // 1 hour
 
+function errorResponse(error: PlacesError): NextResponse {
+    return NextResponse.json(
+        {
+            error: error.message,
+            code: "places_upstream_error",
+            googleStatus: error.googleStatus,
+        },
+        { status: 502 }
+    );
+}
+
 export async function GET(request: Request) {
+    // 1. Rate limiting -- cheapest check, before any billed upstream call
+    const rateLimited = placesLimiter.check(getClientIp(request));
+    if (rateLimited) return rateLimited;
+
     const { searchParams } = new URL(request.url);
     const input = searchParams.get("input");
 
-    if (!input || typeof input !== "string") {
+    if (!input || !input.trim()) {
         return NextResponse.json({ error: "Input is required" }, { status: 400 });
     }
 
-    // Use user-provided key if present in header AND looks valid, otherwise fall back to .env
-    const userKey = request.headers.get("X-User-Google-Key");
-    const isValidUserKey = userKey && userKey.length >= 20;
-    const apiKey = isValidUserKey ? userKey : (process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
-    if (!apiKey) {
-        console.error("GOOGLE_MAPS_API_KEY is not defined and no user key provided");
-        return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    if (input.length > MAX_PLACES_QUERY_LENGTH) {
+        return NextResponse.json(
+            { error: `Input is too long (max ${MAX_PLACES_QUERY_LENGTH} characters)` },
+            { status: 400 }
+        );
     }
 
-    // Separate cache entries for user-provided keys vs default
-    const cachePrefix = userKey ? `user:${userKey.slice(0, 8)}:` : "";
-    const cacheKey = `${cachePrefix}${input.toLowerCase().trim()}`;
+    const resolved = resolvePlacesKey(request);
+    if (!resolved) {
+        console.error("GOOGLE_MAPS_API_KEY is not defined and no user key provided");
+        return NextResponse.json(
+            {
+                error: "Google place search is not configured on this instance.",
+                code: "places_not_configured",
+            },
+            { status: 503 }
+        );
+    }
+
+    // Separate cache entries per key, fingerprinted: every Google key starts with the same
+    // 8 characters, so a first-8 prefix would let one user read another user's results.
+    const cachePrefix = resolved.source === "user" ? "user:" + placesKeyFingerprint(resolved.key) + ":" : "";
+    const cacheKey = cachePrefix + input.toLowerCase().trim();
     const cached = cache.get(cacheKey);
     if (cached && Date.now() < cached.expiresAt) {
         return NextResponse.json(cached.data);
     }
 
     try {
-        // No type restriction — returns addresses, establishments, landmarks, regions, etc.
-        const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-            input
-        )}&key=${apiKey}`;
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-            console.error("Google Places API Error:", data);
-            return NextResponse.json({ error: "Failed to fetch predictions" }, { status: 500 });
-        }
-
-        const predictions = data.predictions.map((p: any) => ({
-            description: transliterate(p.description ?? ""),
-            placeId: p.place_id,
-            mainText: transliterate(p.structured_formatting?.main_text || p.description),
-            secondaryText: transliterate(p.structured_formatting?.secondary_text || ""),
-            types: p.types,
+        // No type restriction - returns addresses, establishments, landmarks, regions, etc.
+        const predictions = (await autocompletePlaces(input, resolved.key)).map((prediction) => ({
+            description: transliterate(prediction.description),
+            placeId: prediction.placeId,
+            mainText: transliterate(prediction.mainText),
+            secondaryText: transliterate(prediction.secondaryText),
+            types: prediction.types,
         }));
 
         const result = { predictions };
         cache.set(cacheKey, { data: result, expiresAt: Date.now() + TTL_MS });
         return NextResponse.json(result);
     } catch (error) {
+        if (error instanceof PlacesError) {
+            console.error("Google Places autocomplete failed:", error.googleStatus, error.message);
+            return errorResponse(error);
+        }
         console.error("Error in Places Autocomplete route:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
