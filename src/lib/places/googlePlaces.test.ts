@@ -86,14 +86,20 @@ describe("autocompletePlaces", () => {
         expect(callHeaders()["X-Goog-Api-Key"]).toBe(KEY_A);
     });
 
-    it("returns an empty list when the success body is not JSON", async () => {
+    it("surfaces an unreadable success body as a 502 rather than an empty result", async () => {
+        // A 200 whose body cannot be parsed is an upstream fault. Reporting it as
+        // an empty list would present a broken response as "no matches".
         fetchMock.mockResolvedValueOnce({
             ok: true,
             status: 200,
             json: async () => { throw new Error("not json"); },
         } as unknown as Response);
 
-        await expect(autocompletePlaces("paris", KEY_A)).resolves.toEqual([]);
+        const error = await autocompletePlaces("paris", KEY_A).catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(PlacesError);
+        expect((error as PlacesError).httpStatus).toBe(502);
+        expect((error as PlacesError).googleStatus).toBe("INVALID_RESPONSE");
     });
 
     it("returns an empty list when Google sends no suggestions", async () => {
@@ -212,6 +218,57 @@ describe("failure handling", () => {
 
         expect(error).toBeInstanceOf(PlacesError);
         expect((error as PlacesError).googleStatus).toBe("NETWORK_ERROR");
+    });
+
+    it("keeps the request deadline alive while the response body is read", async () => {
+        // Google can answer with headers and then stall mid-body. The mock body
+        // settles only when the request signal aborts, so this test hangs (and
+        // fails on timeout) if the deadline is cleared when fetch() resolves.
+        vi.useFakeTimers();
+        try {
+            let signal: AbortSignal | null | undefined;
+            fetchMock.mockImplementationOnce(async (_url: unknown, init?: RequestInit) => {
+                signal = init?.signal;
+                return {
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        new Promise((_resolve, reject) => {
+                            signal?.addEventListener("abort", () => {
+                                const abort = new Error("aborted");
+                                abort.name = "AbortError";
+                                reject(abort);
+                            });
+                        }),
+                } as unknown as Response;
+            });
+
+            const pending = autocompletePlaces("paris", KEY_A).catch((thrown: unknown) => thrown);
+            // REQUEST_TIMEOUT_MS is 10_000 and is deliberately not exported.
+            await vi.advanceTimersByTimeAsync(10_001);
+            const error = await pending;
+
+            expect(signal?.aborted).toBe(true);
+            expect(error).toBeInstanceOf(PlacesError);
+            expect((error as PlacesError).httpStatus).toBe(504);
+            expect((error as PlacesError).googleStatus).toBe("DEADLINE_EXCEEDED");
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("preserves the upstream status when a non-2xx body cannot be read", async () => {
+        fetchMock.mockResolvedValueOnce({
+            ok: false,
+            status: 429,
+            json: async () => { throw new Error("not json"); },
+        } as unknown as Response);
+
+        const error = await autocompletePlaces("paris", KEY_A).catch((thrown: unknown) => thrown);
+
+        expect(error).toBeInstanceOf(PlacesError);
+        expect((error as PlacesError).httpStatus).toBe(429);
+        expect((error as PlacesError).googleStatus).toBe("HTTP_429");
     });
 });
 

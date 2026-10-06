@@ -148,46 +148,76 @@ interface GoogleErrorBody {
     error?: { code?: number; message?: string; status?: string };
 }
 
+/** True when the failure is this request's own deadline firing, not an upstream fault. */
+function isAbortError(error: unknown): boolean {
+    return error instanceof Error && error.name === "AbortError";
+}
+
+/** The single mapping from a transport failure to the caller-visible error. */
+function transportError(error: unknown): PlacesError {
+    return isAbortError(error)
+        ? new PlacesError(504, "DEADLINE_EXCEEDED", "Google Places did not respond in time.")
+        : new PlacesError(502, "NETWORK_ERROR", "Could not reach Google Places.");
+}
+
 async function requestJson(
     url: string,
     key: string,
     init: { method: "GET" | "POST"; body?: string; fieldMask?: string }
 ): Promise<unknown> {
     const controller = new AbortController();
+    // The deadline must outlive fetch(). Google can answer with headers and then
+    // stall while the body is read, and a timer cleared as soon as the headers
+    // arrive leaves that read unbounded.
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-    let response: Response;
     try {
         const headers: Record<string, string> = { "X-Goog-Api-Key": key };
         if (init.fieldMask) headers["X-Goog-FieldMask"] = init.fieldMask;
         if (init.body) headers["Content-Type"] = "application/json";
-        response = await fetch(url, {
-            method: init.method,
-            headers,
-            body: init.body,
-            signal: controller.signal,
-        });
-    } catch (error) {
-        const aborted = error instanceof Error && error.name === "AbortError";
-        throw new PlacesError(
-            aborted ? 504 : 502,
-            aborted ? "DEADLINE_EXCEEDED" : "NETWORK_ERROR",
-            aborted
-                ? "Google Places did not respond in time."
-                : "Could not reach Google Places."
-        );
+
+        let response: Response;
+        try {
+            response = await fetch(url, {
+                method: init.method,
+                headers,
+                body: init.body,
+                signal: controller.signal,
+            });
+        } catch (error) {
+            throw transportError(error);
+        }
+
+        let payload: GoogleErrorBody | null = null;
+        let bodyReadable = true;
+        try {
+            payload = (await response.json()) as GoogleErrorBody;
+        } catch (error) {
+            // A body read killed by the deadline is still a timeout, not a
+            // malformed response.
+            if (isAbortError(error)) throw transportError(error);
+            bodyReadable = false;
+        }
+
+        if (!response.ok) {
+            throw new PlacesError(
+                response.status,
+                payload?.error?.status ?? "HTTP_" + response.status,
+                payload?.error?.message ?? "Google Places returned HTTP " + response.status + "."
+            );
+        }
+        if (!bodyReadable) {
+            // A 200 with an unreadable body is an upstream fault. Reporting it as
+            // an empty result would present a broken response as "no matches".
+            throw new PlacesError(
+                502,
+                "INVALID_RESPONSE",
+                "Google Places returned an unreadable response."
+            );
+        }
+        return payload;
     } finally {
         clearTimeout(timer);
     }
-
-    const payload = (await response.json().catch(() => null)) as GoogleErrorBody | null;
-    if (!response.ok) {
-        throw new PlacesError(
-            response.status,
-            payload?.error?.status ?? "HTTP_" + response.status,
-            payload?.error?.message ?? "Google Places returned HTTP " + response.status + "."
-        );
-    }
-    return payload;
 }
 
 /** Autocomplete predictions. Query-level suggestions are dropped: they carry no place id. */
