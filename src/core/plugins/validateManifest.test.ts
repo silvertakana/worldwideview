@@ -558,3 +558,43 @@ describe("validateManifest survives malformed rows (warn-only, never throws)", (
         expect(result.errors.some((e) => e.startsWith("localData[1]"))).toBe(false);
     });
 });
+
+describe("validateManifest rejects unusable manifest shapes without throwing", () => {
+    // A manifest is parsed, untrusted JSON. Before these guards a numeric id
+    // reached `.trim()` and threw out of the validator — and, in the marketplace
+    // catalog, out of the whole response, dropping every healthy plugin along
+    // with the one bad record.
+    it("reports a non-object manifest instead of dereferencing it", () => {
+        const values: unknown[] = [null, undefined, 42, "manifest", [], [{ id: "x" }]];
+
+        for (const value of values) {
+            const manifest = value as Partial<PluginManifest>;
+            expect(() => validateManifest(manifest)).not.toThrow();
+            expect(validateManifest(manifest)).toEqual({
+                valid: false,
+                errors: ["manifest must be a JSON object"],
+            });
+        }
+    });
+
+    it.each([
+        ["id", { id: 123 }],
+        ["id", { id: {} }],
+        ["name", { name: false }],
+        ["name", { name: "   " }],
+        ["version", { version: 1.2 }],
+        ["version", { version: null }],
+    ])("reports a non-string %s instead of dereferencing it", (field, override) => {
+        const manifest = baseManifest(override);
+
+        expect(() => validateManifest(manifest)).not.toThrow();
+
+        const result = validateManifest(manifest);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain(`Missing required field: ${field}`);
+    });
+
+    it("still accepts a well-formed manifest (the guards do not over-reject)", () => {
+        expect(validateManifest(baseManifest())).toEqual({ valid: true, errors: [] });
+    });
+});

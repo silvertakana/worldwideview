@@ -58,19 +58,37 @@ const ENV_ALLOWED_ENTRY_HOSTS: ReadonlySet<string> = (() => {
  * @param manifest - The manifest object to validate (potentially partial during parsing).
  * @returns A ValidationResult indicating success or a list of identified security/structural risks.
  */
+/**
+ * True only for a string carrying at least one non-whitespace character.
+ *
+ * A manifest arrives as parsed, untrusted JSON, so a required field can be a
+ * number, an object or null. Calling `.trim()` on those throws, and a throw
+ * here escapes into the caller: for the marketplace catalog that means one bad
+ * record takes every healthy plugin down with it.
+ */
+function isNonEmptyString(value: unknown): value is string {
+    return typeof value === "string" && value.trim().length > 0;
+}
+
 export function validateManifest(
     manifest: Partial<PluginManifest>,
 ): ValidationResult {
     const errors: string[] = [];
 
+    // The manifest itself can be any JSON value. Report a non-object shape and
+    // return, rather than dereferencing it on every line below.
+    if (manifest === null || typeof manifest !== "object" || Array.isArray(manifest)) {
+        return { valid: false, errors: ["manifest must be a JSON object"] };
+    }
+
     // Default type for older manifests missing the field to ensure backward compatibility
-    if (manifest && !manifest.type) {
+    if (!manifest.type) {
         manifest.type = "data-layer";
     }
 
-    if (!manifest.id?.trim()) errors.push("Missing required field: id");
-    if (!manifest.name?.trim()) errors.push("Missing required field: name");
-    if (!manifest.version?.trim()) errors.push("Missing required field: version");
+    if (!isNonEmptyString(manifest.id)) errors.push("Missing required field: id");
+    if (!isNonEmptyString(manifest.name)) errors.push("Missing required field: name");
+    if (!isNonEmptyString(manifest.version)) errors.push("Missing required field: version");
 
     if (!VALID_TYPES.includes(manifest.type as typeof VALID_TYPES[number])) {
         errors.push(`Invalid type "${manifest.type}". Must be: ${VALID_TYPES.join(", ")}`);

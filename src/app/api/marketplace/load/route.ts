@@ -73,6 +73,11 @@ export async function GET(request: Request) {
             .map((r: any): PluginManifest | null => {
                 try {
                     const manifest = JSON.parse(r.config);
+                    // A stored config is untrusted JSON: it can parse to null, an
+                    // array or a primitive, none of which carry manifest fields.
+                    if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
+                        return null;
+                    }
                     if (!manifest.id) manifest.id = r.pluginId;
 
                     return manifest as PluginManifest;
@@ -82,40 +87,50 @@ export async function GET(request: Request) {
             })
             .filter((m: any): m is PluginManifest => {
                 if (!m) return false;
-                // Skip built-in plugins — already registered by AppShell
-                if (m.trust === "built-in") return false;
+                // Every check below runs on untrusted JSON. A record that cannot be
+                // inspected must drop only itself: an exception escaping here fails
+                // the whole catalog response and takes every healthy plugin with it.
+                try {
+                    // Skip built-in plugins — already registered by AppShell
+                    if (m.trust === "built-in") return false;
 
-                // Skip stale/malformed records (e.g. old empty-config installs for built-ins)
-                // If it lacks basic required fields, it's a legacy record and we drop it silently
-                // to avoid log spam on every poll.
-                if (typeof m.entry !== "string" || !m.entry || !m.name || !m.version) return false;
+                    // Skip stale/malformed records (e.g. old empty-config installs for built-ins)
+                    // If it lacks basic required fields, it's a legacy record and we drop it silently
+                    // to avoid log spam on every poll.
+                    if (typeof m.entry !== "string" || !m.entry || !m.name || !m.version) return false;
 
-                // Skip bundle plugins whose entry is a bare module specifier
-                // (e.g. "camera") — cannot be dynamically imported in the browser.
-                if (
-                    m.format === "bundle"
-                    && !m.entry.startsWith("/")
-                    && !m.entry.startsWith("./")
-                    && !m.entry.startsWith("http")
-                ) return false;
+                    // Skip bundle plugins whose entry is a bare module specifier
+                    // (e.g. "camera") — cannot be dynamically imported in the browser.
+                    if (
+                        m.format === "bundle"
+                        && !m.entry.startsWith("/")
+                        && !m.entry.startsWith("./")
+                        && !m.entry.startsWith("http")
+                    ) return false;
 
-                // For anything that looks like a real manifest, validate it and log if it fails
-                const validation = validateManifest(m);
-                if (!validation.valid) {
-                    const errorMessage = `Manifest validation failed for ${m.id}`;
-                    console.error(`[Marketplace API] ${errorMessage}:`, validation.errors);
+                    // For anything that looks like a real manifest, validate it and log if it fails
+                    const validation = validateManifest(m);
+                    if (!validation.valid) {
+                        const errorMessage = `Manifest validation failed for ${m.id}`;
+                        console.error(`[Marketplace API] ${errorMessage}:`, validation.errors);
 
-                    // Capture in Sentry so we have visibility into malformed third-party plugins
-                    Sentry.captureMessage(errorMessage, {
-                        level: "error",
-                        extra: {
-                            pluginId: m.id,
-                            validationErrors: validation.errors,
-                            manifest: m
-                        }
-                    });
+                        // Capture in Sentry so we have visibility into malformed third-party
+                        // plugins. The record id and the validation errors travel; the stored
+                        // configuration does not (a declarative plugin's dataSource can carry
+                        // auth headers).
+                        Sentry.captureMessage(errorMessage, {
+                            level: "error",
+                            extra: {
+                                pluginId: m.id,
+                                validationErrors: validation.errors
+                            }
+                        });
+                    }
+                    return validation.valid;
+                } catch (err) {
+                    console.error("[Marketplace API] Dropping unreadable plugin record:", err);
+                    return false;
                 }
-                return validation.valid;
             })
             .map((m: any) => {
                 // Re-stamp trust against the live registry so revoked plugins
