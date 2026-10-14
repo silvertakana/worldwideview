@@ -263,4 +263,211 @@ describe("globe://layers handler (RSRC-04)", () => {
         expect(mockReadSessions).toHaveBeenCalledWith("scoped-user");
         expect(mockReadSessions).not.toHaveBeenCalledWith("u1");
     });
+
+    it("reads the most-recently-active session when active sessions arrive oldest-first", async () => {
+        const newestLayers = {
+            aviation: { enabled: true, entityCount: 12, loading: false },
+        };
+        const oldestLayers = {
+            maritime: { enabled: true, entityCount: 3, loading: false },
+        };
+        const newest = {
+            viewport: { lat: 10, lon: 20, altitude: 500000, heading: 0, pitch: -90, roll: 0 },
+            layers: newestLayers,
+            timeline: {
+                currentTime: "2026-10-14T00:00:00.000Z",
+                timeWindow: "24h",
+                isPlaybackMode: false,
+                playbackTime: 1737000000000,
+                playbackSpeed: 1,
+            },
+            selectedEntity: null,
+            lastUpdate: 1737000000000,
+        };
+        const oldest = {
+            viewport: { lat: 1, lon: 2, altitude: 1000000, heading: 0, pitch: -90, roll: 0 },
+            layers: oldestLayers,
+            timeline: {
+                currentTime: "2026-10-13T00:00:00.000Z",
+                timeWindow: "6h",
+                isPlaybackMode: false,
+                playbackTime: 1736900000000,
+                playbackSpeed: 1,
+            },
+            selectedEntity: null,
+            lastUpdate: 1736900000000,
+        };
+        // readActiveSessions zrange read hands back ascending lastSeen scores,
+        // so index 0 is the OLDEST active session.
+        const sessions = [
+            { sessionId: "sess-oldest", lastSeen: 1736900000000 },
+            { sessionId: "sess-newest", lastSeen: 1737000000000 },
+        ];
+        // Hand the handler the very array this mock returned (no defensive
+        // pre-copy) and freeze it, so an in-place reorder either throws or
+        // leaves a mutation signature this test can see. Distinct lastSeen
+        // scores make the original order genuinely distinguishable.
+        const handedToHandler = Object.freeze(sessions);
+        mockReadSessions.mockResolvedValue(handedToHandler as (typeof sessions));
+        mockReadState.mockImplementation(
+            async (_userId: string, sessionId: string) =>
+                ({ "sess-newest": newest, "sess-oldest": oldest })[sessionId] ?? null,
+        );
+
+        const server = makeFakeServer();
+        registerGlobeResources(server as never, { userId: "u1" });
+
+        const layersCall = (server.registerResource.mock.calls as [string | { uriTemplate: string }, ...unknown[]][]).find(
+            ([uriOrTemplate]) => {
+                const s = typeof uriOrTemplate === "string" ? uriOrTemplate : uriOrTemplate.uriTemplate;
+                return s.includes("layers");
+            },
+        );
+        expect(layersCall).toBeDefined();
+
+        const handler = layersCall![layersCall!.length - 1] as (
+            uri: URL,
+            params: Record<string, string>,
+        ) => Promise<unknown>;
+
+        const result = await handler(new URL("globe://layers"), {});
+
+        const contents = (result as { contents: { mimeType: string; text: string }[] }).contents;
+        expect(contents).toHaveLength(1);
+        expect(contents[0].mimeType).toBe("application/json");
+        expect(JSON.parse(contents[0].text)).toEqual(newestLayers);
+
+        expect(mockReadState).toHaveBeenCalledWith("u1", "sess-newest");
+        expect(mockReadState).not.toHaveBeenCalledWith("u1", "sess-oldest");
+
+        // Immutability control: the exact array handed to the handler still
+        // holds the delivered oldest-first order after a newest-first
+        // selection. A stable in-place sort of equal scores cannot falsify
+        // this; distinct scores can, so this assertion fails on an in-place
+        // descending sort (verified against that mutant, not by inspection).
+        expect(sessions.map((session) => session.sessionId)).toEqual(["sess-oldest", "sess-newest"]);
+        expect(sessions[0].lastSeen).toBe(1736900000000);
+        expect(sessions[1].lastSeen).toBe(1737000000000);
+        expect(handedToHandler).toBe(sessions);
+        // The newest snapshot really was the one read, so the order assertion
+        // above is a statement about immutability rather than about inaction.
+        expect(mockReadSessions).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves the caller's session array and keeps original order on lastSeen ties", async () => {
+        const tiedSessions = [
+            { sessionId: "tied-first", lastSeen: 1737000000000 },
+            { sessionId: "tied-second", lastSeen: 1737000000000 },
+        ];
+        const tiedLayers = {
+            aviation: { enabled: true, entityCount: 4, loading: false },
+        };
+        const snapshot = {
+            viewport: { lat: 0, lon: 0, altitude: 1000000, heading: 0, pitch: -90, roll: 0 },
+            layers: tiedLayers,
+            timeline: {
+                currentTime: "2026-10-14T00:00:00.000Z",
+                timeWindow: "24h",
+                isPlaybackMode: false,
+                playbackTime: 1737000000000,
+                playbackSpeed: 1,
+            },
+            selectedEntity: null,
+            lastUpdate: 1737000000000,
+        };
+        mockReadSessions.mockResolvedValue(tiedSessions);
+        mockReadState.mockResolvedValue(snapshot);
+
+        const server = makeFakeServer();
+        registerGlobeResources(server as never, { userId: "u1" });
+
+        const layersCall = (server.registerResource.mock.calls as [string | { uriTemplate: string }, ...unknown[]][]).find(
+            ([uriOrTemplate]) => {
+                const s = typeof uriOrTemplate === "string" ? uriOrTemplate : uriOrTemplate.uriTemplate;
+                return s.includes("layers");
+            },
+        );
+        const handler = layersCall![layersCall!.length - 1] as (
+            uri: URL,
+            params: Record<string, string>,
+        ) => Promise<unknown>;
+
+        const result = await handler(new URL("globe://layers"), {});
+
+        const contents = (result as { contents: { text: string }[] }).contents;
+        expect(JSON.parse(contents[0].text)).toEqual(tiedLayers);
+        expect(mockReadState).toHaveBeenCalledWith("u1", "tied-first");
+        expect(tiedSessions.map((session) => session.sessionId)).toEqual(["tied-first", "tied-second"]);
+        expect(mockReadSessions.mock.calls[0][0]).toBe("u1");
+    });
+
+    it("returns an empty object when no active sessions exist", async () => {
+        mockReadSessions.mockResolvedValue([]);
+
+        const server = makeFakeServer();
+        registerGlobeResources(server as never, { userId: "u1" });
+
+        const layersCall = (server.registerResource.mock.calls as [string | { uriTemplate: string }, ...unknown[]][]).find(
+            ([uriOrTemplate]) => {
+                const s = typeof uriOrTemplate === "string" ? uriOrTemplate : uriOrTemplate.uriTemplate;
+                return s.includes("layers");
+            },
+        );
+        const handler = layersCall![layersCall!.length - 1] as (
+            uri: URL,
+            params: Record<string, string>,
+        ) => Promise<unknown>;
+
+        const result = await handler(new URL("globe://layers"), {});
+
+        const contents = (result as { contents: { text: string }[] }).contents;
+        expect(JSON.parse(contents[0].text)).toEqual({});
+        expect(mockReadState).not.toHaveBeenCalled();
+    });
+
+    it("does not fall back to an older session when the newest session has no snapshot", async () => {
+        const sessions = [
+            { sessionId: "sess-oldest", lastSeen: 1736900000000 },
+            { sessionId: "sess-newest", lastSeen: 1737000000000 },
+        ];
+        mockReadSessions.mockResolvedValue([...sessions]);
+        const olderSnapshot = {
+            viewport: { lat: 1, lon: 2, altitude: 1000000, heading: 0, pitch: -90, roll: 0 },
+            layers: { maritime: { enabled: true, entityCount: 9, loading: false } },
+            timeline: {
+                currentTime: "2026-10-13T00:00:00.000Z",
+                timeWindow: "6h",
+                isPlaybackMode: false,
+                playbackTime: 1736900000000,
+                playbackSpeed: 1,
+            },
+            selectedEntity: null,
+            lastUpdate: 1736900000000,
+        };
+        mockReadState.mockImplementation(async (_userId: string, sessionId: string) =>
+            sessionId === "sess-newest" ? null : olderSnapshot,
+        );
+
+        const server = makeFakeServer();
+        registerGlobeResources(server as never, { userId: "u1" });
+
+        const layersCall = (server.registerResource.mock.calls as [string | { uriTemplate: string }, ...unknown[]][]).find(
+            ([uriOrTemplate]) => {
+                const s = typeof uriOrTemplate === "string" ? uriOrTemplate : uriOrTemplate.uriTemplate;
+                return s.includes("layers");
+            },
+        );
+        const handler = layersCall![layersCall!.length - 1] as (
+            uri: URL,
+            params: Record<string, string>,
+        ) => Promise<unknown>;
+
+        const result = await handler(new URL("globe://layers"), {});
+
+        const contents = (result as { contents: { mimeType: string; text: string }[] }).contents;
+        expect(contents[0].mimeType).toBe("application/json");
+        expect(JSON.parse(contents[0].text)).toEqual({});
+        expect(mockReadState).toHaveBeenCalledWith("u1", "sess-newest");
+        expect(mockReadState).not.toHaveBeenCalledWith("u1", "sess-oldest");
+    });
 });

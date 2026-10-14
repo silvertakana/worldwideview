@@ -65,6 +65,9 @@ export function registerGlobeResources(
 
     // RSRC-04: globe://layers
     // Returns the layer map from the most-recent active session snapshot.
+    // readActiveSessions hands back ascending Redis scores, so pick the
+    // highest lastSeen (a copy keeps the caller's array untouched; ties keep
+    // the original order).
     // Gracefully returns an empty object when no active sessions exist.
     server.registerResource(
         "globe-layers",
@@ -83,7 +86,8 @@ export function registerGlobeResources(
                     ],
                 };
             }
-            const snapshot = await readGlobeState(userId, sessions[0].sessionId);
+            const mostRecent = [...sessions].sort((a, b) => b.lastSeen - a.lastSeen)[0];
+            const snapshot = await readGlobeState(userId, mostRecent.sessionId);
             return {
                 contents: [
                     {
