@@ -19,6 +19,7 @@ import * as zustand from "zustand";
 import { useStore } from "@/core/state/store";
 import { pluginManager } from "@/core/plugins/PluginManager";
 import { CameraStream } from "@/components/video/CameraStream";
+import { CLOUD_ENGINE_BASE_URL, toWsStreamUrl } from "@/core/data/resolveEngineUrl";
 
 export interface WWVHostGlobals {
     React: typeof React;
@@ -74,16 +75,12 @@ export async function injectHostGlobals(): Promise<void> {
     // localhost:5000) happens dynamically inside resolveEngineUrl.ts during plugin routing.
     // These variables act as global fallbacks.
     const envDataEngine = process.env.NEXT_PUBLIC_WWV_PLUGIN_DATA_ENGINE_URL;
-    if (envDataEngine) {
-        (globalThis as Record<string, unknown>).__WWV_ENGINE_URL__ = envDataEngine;
-    } else {
-        // ALWAYS default to the cloud engine unless explicitly told otherwise via env var
-        (globalThis as Record<string, unknown>).__WWV_ENGINE_URL__ = 'https://dataengine.worldwideview.dev'; // lint-url: allow (default fallback, gated by env check)
-    }
+    // ALWAYS default to the cloud engine unless explicitly told otherwise via env var.
+    (globalThis as Record<string, unknown>).__WWV_ENGINE_URL__ = envDataEngine || CLOUD_ENGINE_BASE_URL;
 
-    // WebSocket Engine URL
-    const fallbackWs = envDataEngine ? `${envDataEngine.replace(/^http/, "ws")}/stream` : 'wss://dataengine.worldwideview.dev/stream'; // lint-url: allow (default fallback, gated by env check)
-    (globalThis as Record<string, unknown>).__WWV_WS_ENGINE_URL__ = fallbackWs;
+    // WebSocket Engine URL — normalized by the same helper plugin routing uses, so an env
+    // value that already ends in /stream (or in a trailing slash) cannot double the path.
+    (globalThis as Record<string, unknown>).__WWV_WS_ENGINE_URL__ = toWsStreamUrl(envDataEngine || CLOUD_ENGINE_BASE_URL);
 
     console.log("[HostGlobals] React and SDK injected for dynamic plugins");
 }
