@@ -35,7 +35,7 @@
   "dependencies": {
     "@better-auth/api-key": "1.6.29",
     "@better-auth/prisma-adapter": "1.6.29",
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "@prisma/client-runtime-utils": "7.9.1",
