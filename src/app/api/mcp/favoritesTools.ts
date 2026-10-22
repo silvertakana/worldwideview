@@ -176,11 +176,11 @@ export function registerFavoritesTools(
                 "Rename or annotate an existing bookmarked entity without deleting and re-creating it. " +
                 "Use when the user wants to change the display name or add a personal note to an existing favorite. " +
                 "Limitations: at least one of name or notes must be supplied; favoriteId must match an existing bookmark owned by the user. " +
-                "Parameters: favoriteId (string, required, the entityId of the bookmark); name (string, optional, new display label); notes (string, optional, free-text annotation). " +
+                "Parameters: favoriteId (string, required, the id returned by list_favorites or the bookmark's entityId); name (string, optional, new display label); notes (string, optional, free-text annotation). " +
                 "Output: 'Updated favorite: <label>' on success, or an error string. " +
                 "Example: update_favorite({ favoriteId: 'AFR123', name: 'Air France 123', notes: 'Check weekly' }).",
             inputSchema: {
-                favoriteId: entityIdSchema.describe("The entityId of the favorite to update"),
+                favoriteId: entityIdSchema.describe("The id returned by list_favorites, or the entityId of the favorite to update"),
                 name: z.string().min(1).max(120).optional().describe("New display label for the bookmark"),
                 notes: z.string().max(2000).optional().describe("Free-text annotation to store with the bookmark"),
             },
@@ -193,8 +193,18 @@ export function registerFavoritesTools(
             if (args.name !== undefined) data.label = args.name;
             if (args.notes !== undefined) data.notes = args.notes;
             try {
+                const favorite = await prisma.favorite.findFirst({
+                    where: {
+                        userId,
+                        OR: [{ id: args.favoriteId }, { entityId: args.favoriteId }],
+                    },
+                    select: { id: true },
+                });
+                if (!favorite) {
+                    return textResult("update_favorite: favorite not found");
+                }
                 const updated = await prisma.favorite.update({
-                    where: favoriteWhere(userId, args.favoriteId),
+                    where: { id: favorite.id },
                     data,
                 });
                 return textResult(`Updated favorite: ${updated.label}`);
