@@ -87,8 +87,26 @@ export function flyToPosition(
  * Returns an unsubscribe function.
  */
 export function subscribeToCameraPresets(viewer: CesiumViewer): () => void {
-    return dataBus.on("cameraPreset", ({ presetId }) => {
+    const unsubPreset = dataBus.on("cameraPreset", ({ presetId }) => {
         if (!viewer || viewer.isDestroyed()) return;
         flyToPreset(viewer, presetId);
     });
+    const unsubZoom = dataBus.on("cameraZoom", ({ direction }) => {
+        if (!viewer || viewer.isDestroyed()) return;
+        if (direction === "home") {
+            flyToPreset(viewer, "global");
+            return;
+        }
+        // Step by a fraction of the current altitude so each click feels the
+        // same from orbit down to street level.
+        const altitude = Math.max(viewer.camera.positionCartographic.height, 1);
+        const step = altitude * 0.5;
+        if (direction === "in") viewer.camera.zoomIn(step);
+        else viewer.camera.zoomOut(step);
+        viewer.scene.requestRender();
+    });
+    return () => {
+        unsubPreset();
+        unsubZoom();
+    };
 }

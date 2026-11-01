@@ -32,10 +32,10 @@ export function AlertsTabButton() {
             }}
         title="Alerts"
         aria-label="Alerts"
-        style={{ width: "100%" }}
         data-testid="alerts-tab"
       >
-        <Bell size="20" style={{ margin: 5, maxHeight: "20%" }} />
+        <Bell size={14} />
+        <span>Alerts</span>
         {unread > 0 && (
           <span className={styles.badge} data-testid="alerts-tab-badge">
             {unread > 9 ? "9+" : unread}

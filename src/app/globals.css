@@ -166,19 +166,46 @@ html, body {
   align-items: center;
   gap: var(--space-sm);
   min-width: 0;
-  overflow: hidden;
 }
 
-/* Scrollable area for region + time buttons */
+/* Foundry-style floating toolbar: the region / time / theme strip hangs
+   centred just below the app bar, as a white bar of borderless icon+label
+   items separated by hairlines (Select · Search Around · Draw …). */
 .header__controls-scroll {
+  position: fixed;
+  top: 60px;
+  left: calc(50% - (var(--ad-strip-inset, 0px) / 2));
+  transform: translateX(-50%);
+  z-index: 95;
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 0;
+  padding: 2px;
+  max-width: calc(100vw - 640px);
   overflow-x: auto;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE */
-  min-width: 0;
-  flex: 1;
+  background: var(--bg-glass);
+  border: var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+}
+
+.header__controls-scroll > .btn {
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  padding: 0 var(--space-md);
+}
+
+.header__controls-scroll > .btn + .btn {
+  margin-left: 2px;
+}
+
+.header__controls-scroll > div + div,
+.header__controls-scroll > .btn + div {
+  margin-left: var(--space-xs);
 }
 
 .header__controls-scroll::-webkit-scrollbar {
@@ -307,11 +334,9 @@ body.sidebar-force-transition .sidebar {
 }
 
 .sidebar__title {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-primary);
   margin-bottom: var(--space-sm);
 }
 
@@ -319,9 +344,9 @@ body.sidebar-force-transition .sidebar {
 .panel-tabs {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-lg);
-  padding-bottom: var(--space-sm);
+  gap: var(--space-xs);
+  margin: calc(-1 * var(--space-md)) calc(-1 * var(--space-md)) var(--space-md);
+  padding: var(--space-xs) var(--space-sm);
   border-bottom: 1px solid var(--border-subtle);
   overflow-x: auto;
   scrollbar-width: thin;
@@ -354,9 +379,11 @@ body.sidebar-force-transition .sidebar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: var(--space-xs) var(--space-sm);
   font-size: 13px;
   font-weight: 400;
+  font-family: var(--font-ui);
   color: var(--text-muted);
   background: transparent;
   border: none;
@@ -1203,16 +1230,18 @@ body.sidebar-force-transition .sidebar {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px; /* Thinner tabs */
-  height: 80px; /* Taller tabs for easier grabbing */
+  width: 24px;
+  height: 32px;
   background: var(--bg-glass);
-  backdrop-filter: var(--glass-backdrop);
-  -webkit-backdrop-filter: var(--glass-backdrop);
   border: var(--glass-border);
   color: var(--text-muted);
   cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-smooth);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: background-color var(--duration-fast) var(--ease-smooth),
+              color var(--duration-fast) var(--ease-smooth),
+              transform var(--duration-normal) var(--ease-smooth),
+              left var(--duration-normal) var(--ease-smooth),
+              right var(--duration-normal) var(--ease-smooth);
+  box-shadow: var(--glass-shadow);
 }
 
 body.is-resizing-sidebar .panel-toggle-btn,
@@ -1804,31 +1833,64 @@ body.is-resizing-sidebar .sidebar {
 /* ─── Camera Stats Panel ─────────────────────────────────── */
 .camera-stats {
   position: fixed;
-  /* Header is at top: var(--space-lg) [16px] and is 52px tall (total 68px). We tuck this 12px underneath the header so its top edge is hidden behind it */
-  top: calc(var(--space-lg) + 40px);
-  left: calc(50% - (var(--ad-strip-inset, 0px) / 2));
-  transform: translateX(-50%);
+  /* Bottom-left readout beside the zoom cluster, clear of the left panel
+     (which ends var(--sidebar-bottom) above the edge). */
+  bottom: var(--space-md);
+  /* Right of the zoom cluster, which itself clears the left panel. */
+  left: calc(var(--left-sidebar-width, 280px) + 2 * var(--space-md) + 32px + var(--space-sm));
   display: flex;
   align-items: center;
   gap: var(--space-lg);
-  /* Add extra padding top so the content clears the header's overlap */
-  padding: 16px var(--space-xl) var(--space-md);
+  padding: var(--space-xs) var(--space-md);
   background: var(--bg-glass);
-  backdrop-filter: var(--glass-backdrop);
-  -webkit-backdrop-filter: var(--glass-backdrop);
   border: var(--glass-border);
-  border-top: none;
-  /* Round only bottom to form a continuous shape downwards from the header */
-  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-secondary);
   z-index: 90; /* Less than header (100) */
   pointer-events: auto;
   user-select: none;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--glass-shadow);
   cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-bounce);
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+}
+
+/* ─── Zoom cluster (bottom-left, Foundry style) ───────────── */
+.zoom-controls {
+  position: fixed;
+  /* Sits just right of the left panel so it never covers the panel footer. */
+  left: calc(var(--left-sidebar-width, 280px) + 2 * var(--space-md));
+  bottom: var(--space-md);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-glass);
+  border: var(--glass-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+}
+
+.zoom-controls__btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.zoom-controls__btn + .zoom-controls__btn {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.zoom-controls__btn:hover {
+  background: var(--bg-glass-hover);
+  color: var(--accent-cyan);
 }
 
 .camera-stats:hover {
@@ -1963,12 +2025,14 @@ body.is-resizing-sidebar .sidebar {
 /* ─── Bottom Panel Manager ───────────────────────────────── */
 .bottom-panel-system {
     position: absolute;
-    bottom: var(--space-lg, 20px);
-    left: var(--space-lg, 20px);
-    right: calc(var(--ad-strip-inset, 0px) + var(--space-lg, 20px));
+    bottom: var(--space-md);
+    left: var(--space-md);
+    right: calc(var(--ad-strip-inset, 0px) + var(--space-md));
     display: flex;
     flex-direction: column;
-    align-items: center;
+    /* Foundry keeps its Series toggle bottom-right; stay clear of the right panel. */
+    align-items: flex-end;
+    padding-right: calc(var(--right-sidebar-width, 320px) + var(--space-md));
     z-index: 1000;
     pointer-events: none;
 }
@@ -2015,7 +2079,6 @@ body.is-resizing-sidebar .sidebar {
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.05em;
-    text-transform: uppercase;
     isolation: isolate; /* Create new stacking context so pseudo-elements don't escape */
     transition: color var(--duration-fast) var(--ease-smooth), padding var(--duration-fast) var(--ease-smooth);
 }
@@ -2032,8 +2095,8 @@ body.is-resizing-sidebar .sidebar {
     border-bottom: none;
     border-radius: var(--radius-sm) var(--radius-sm) 0 0;
     /* Create the trapezoid slant by rotating back on the X axis */
-    transform: perspective(20px) rotateX(5deg);
-    transform-origin: bottom;
+    /* Flat: the perspective skew read as sci-fi, not Foundry. */
+    transform: none;
     transition: all var(--duration-fast) var(--ease-smooth);
     opacity: 0.6; /* More transparent when inactive */
 }

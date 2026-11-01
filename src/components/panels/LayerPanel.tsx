@@ -54,7 +54,6 @@ export function LayerPanel() {
     const grouped: Record<string, typeof allPlugins> = {};
     const query = searchQuery.toLowerCase();
 
-    const buttonWidth = "100%"
 
     allPlugins.forEach((managed) => {
         if (
@@ -123,7 +122,6 @@ export function LayerPanel() {
                     }}
         />
             )}
-        <div className="sidebar__title">Data Sources</div>
 
         <div
           className="panel-tabs"
@@ -135,41 +133,41 @@ export function LayerPanel() {
             className={`panel-tab ${activeTab === "layers" ? "panel-tab--active" : ""}`}
             onClick={() => { setActiveTab("layers"); trackEvent("panel-tab-switch", { tab: "layers" }); }}
             title="Data Layers"
-            style={{width: buttonWidth}}
           >
-            <CircuitBoard size="20" style={{margin: 5, maxHeight: "20%"}} />
+            <CircuitBoard size={14} />
+            <span>Layers</span>
           </button>
           <button
             className={`panel-tab ${activeTab === "imagery" ? "panel-tab--active" : ""}`}
             onClick={() => { setActiveTab("imagery"); trackEvent("panel-tab-switch", { tab: "imagery" }); }}
             title="Imagery"
-            style={{width: buttonWidth}}
           >
-            <Globe2 size="20" style={{margin: 5, maxHeight: "20%"}} />
+            <Globe2 size={14} />
+            <span>Imagery</span>
           </button>
           <button
             className={`panel-tab ${activeTab === "favorites" ? "panel-tab--active" : ""}`}
             onClick={() => { setActiveTab("favorites"); trackEvent("panel-tab-switch", { tab: "favorites" }); }}
             title="Favorites"
-            style={{width: buttonWidth}}
           >
-            <Star size="20" style={{margin: 5, maxHeight: "20%"}} />
+            <Star size={14} />
+            <span>Favorites</span>
           </button>
           <button
             className={`panel-tab ${activeTab === "import" ? "panel-tab--active" : ""}`}
             onClick={() => { setActiveTab("import"); trackEvent("panel-tab-switch", { tab: "import" }); }}
             title="Import"
-            style={{width: buttonWidth}}
           >
-            <DownloadCloud size="20" style={{margin: 5,maxHeight: "20%"}} />
+            <DownloadCloud size={14} />
+            <span>Import</span>
           </button>
           <button
             className={`panel-tab ${activeTab === "plugins" ? "panel-tab--active" : ""}`}
             onClick={() => { setActiveTab("plugins"); trackEvent("panel-tab-switch", { tab: "plugins" }); }}
             title="Plugins"
-            style={{width: buttonWidth}}
           >
-            <Puzzle size="20" style={{margin: 5,maxHeight: "20%"}} />
+            <Puzzle size={14} />
+            <span>Plugins</span>
           </button>
         </div>
 
@@ -208,11 +206,9 @@ export function LayerPanel() {
                 <div key={category} style={{ marginBottom: "var(--space-lg)" }}>
                   <div
                     style={{
-                                        fontSize: 10,
+                                        fontSize: 13,
                                         fontWeight: 600,
-                                        letterSpacing: "0.08em",
-                                        textTransform: "uppercase",
-                                        color: "var(--text-muted)",
+                                        color: "var(--text-primary)",
                                         marginBottom: "var(--space-sm)",
                                         paddingLeft: "var(--space-md)",
                                     }}
@@ -263,10 +259,9 @@ export function LayerPanel() {
               rel="noopener noreferrer"
               className="discord-sidebar-link"
               onClick={() => trackEvent("discord-link-click")}
-              style={{width: "100%", height: "42px"}}
             >
-              <DiscordIcon size={18} />
-              <span>Join our Discord</span>
+              <DiscordIcon size={14} />
+              <span>Community</span>
             </a>
           </div>
             )}

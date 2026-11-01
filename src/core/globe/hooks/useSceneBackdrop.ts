@@ -26,6 +26,10 @@ export function useSceneBackdrop(
         if (scene.skyAtmosphere) scene.skyAtmosphere.show = !flat;
         if (scene.sun) scene.sun.show = !flat;
         if (scene.moon) scene.moon.show = !flat;
+        // Fog and the ground-atmosphere haze wash a light basemap out to near
+        // white; Foundry's map is crisp and flat, so drop both on light themes.
+        scene.fog.enabled = !flat;
+        scene.globe.showGroundAtmosphere = !flat;
         scene.backgroundColor = flat ? Color.fromCssColorString(LIGHT_BACKDROP) : Color.BLACK;
         scene.requestRender();
     }, [viewer, viewerReady, theme]);

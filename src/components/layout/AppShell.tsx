@@ -46,6 +46,7 @@ import { MobileHudBar } from "./MobileHudBar";
 import { AgentBusSubscriber } from "./AgentBusSubscriber";
 import { DataBusSubscriber } from "./DataBusSubscriber";
 import { Header } from "./Header";
+import { ZoomControls } from "./ZoomControls";
 
 const GlobeView = dynamic(() => import("@/core/globe/GlobeView"), {
     ssr: false,
@@ -228,6 +229,7 @@ export function AppShell() {
         <LayerPanel />
         <DataConfigPanel />
         {!isMobile && <CameraStatsPanel />}
+        {!isMobile && <ZoomControls />}
         <EntityInfoCard />
         <BottomPanelManager />
         <FloatingVideoManager />

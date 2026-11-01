@@ -56,8 +56,7 @@ describe("DataConfigPanel — alerts gating on the demo edition", () => {
         expect(screen.queryByTestId("alerts-tab")).toBeNull();
         expect(screen.queryByTestId("alerts-panel")).toBeNull();
         // The rest of the sidebar still renders.
-        expect(screen.getByText("Data Configuration")).toBeDefined();
-        expect(screen.getByText("Provide Feedback")).toBeDefined();
+        expect(screen.getByTitle("Intel")).toBeDefined();
         // AlertsPanel never mounts, so nothing fetches /api/alerts.
         expect(fetch).not.toHaveBeenCalledWith("/api/alerts", expect.anything());
     });
