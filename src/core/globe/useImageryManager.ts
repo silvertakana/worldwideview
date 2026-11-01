@@ -27,6 +27,7 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
 
     const currentImageryLayerRef = useRef<ImageryLayer | null>(null);
     const osmBuildingsRef = useRef<Cesium3DTileset | null>(null);
+    const osmBuildingsWarnedRef = useRef(false);
     const terrainActiveRef = useRef(false);
     const weatherLayerRef = useRef<ImageryLayer | null>(null);
 
@@ -154,7 +155,14 @@ export function useImageryManager(viewerInstance: CesiumViewer | null, viewerRea
     useEffect(() => {
         if (!viewer || !viewerReady || viewer.isDestroyed()) return;
 
-        const shouldShow = showOsmBuildings && !isGoogle3D && is3DMode;
+        // OSM Buildings is a Cesium ion asset (96188). Without a configured ion
+        // token the request is rejected with a 401 on every boot, so skip it.
+        const hasIonToken = Boolean(process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN);
+        if (showOsmBuildings && !hasIonToken && !osmBuildingsWarnedRef.current) {
+            osmBuildingsWarnedRef.current = true;
+            console.debug("[useImageryManager] OSM 3D Buildings skipped: NEXT_PUBLIC_CESIUM_ION_TOKEN is not set.");
+        }
+        const shouldShow = showOsmBuildings && hasIonToken && !isGoogle3D && is3DMode;
 
         if (shouldShow && !osmBuildingsRef.current) {
             let cancelled = false;

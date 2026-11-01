@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createAdminAccount, validateProvisionToken, activateProvisionedAccount } from "./actions";
 import { ensureAdminSeeded } from "@/lib/ensureAdminSeeded";
 import styles from "./setup.module.css";
+import { BRAND_NAME } from "@/core/brand";
 
 function SetupForm() {
     const router = useRouter();
@@ -126,7 +127,7 @@ function SetupForm() {
                 <div className={styles.card}>
                     <div className={styles.logo}>W</div>
                     <h1 className={styles.title}>Activate Your Account</h1>
-                    <p className={styles.subtitle}>Set up your password to activate your WorldWideView account</p>
+                    <p className={styles.subtitle}>Set up your password to activate your {BRAND_NAME} account</p>
                     <form onSubmit={handleCloudSubmit} className={styles.form}>
                         <label className={styles.label} htmlFor="name">
                             Display Name
@@ -160,7 +161,7 @@ function SetupForm() {
             <div className={styles.container}>
                 <div className={styles.card}>
                     <div className={styles.logo}>W</div>
-                    <h1 className={styles.title}>Welcome to WorldWideView</h1>
+                    <h1 className={styles.title}>Welcome to {BRAND_NAME}</h1>
                     <p className={styles.subtitle}>Checking setup state...</p>
                 </div>
             </div>
@@ -190,7 +191,7 @@ function SetupForm() {
         <div className={styles.container}>
             <div className={styles.card}>
                 <div className={styles.logo}>W</div>
-                <h1 className={styles.title}>Welcome to WorldWideView</h1>
+                <h1 className={styles.title}>Welcome to {BRAND_NAME}</h1>
                 <p className={styles.subtitle}>Create your admin account to get started</p>
 
                 {autoSeed.error && <p className={styles.error}>{autoSeed.error}</p>}

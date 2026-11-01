@@ -4,6 +4,7 @@ import "./globals.css";
 import "@/styles/hud-animations.css";
 import { LegalFooter } from "@/components/layout/LegalFooter";
 import { edition } from "@/core/edition";
+import { BRAND_PAGE_TITLE } from "@/core/brand";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -13,7 +14,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "WorldWideView | Geospatial Intelligence",
+  title: BRAND_PAGE_TITLE,
   description: "Next-generation, open-source geospatial intelligence platform.",
 };
 
@@ -45,7 +46,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var theme = localStorage.getItem('wwv-theme') || 'black';
+                var theme = localStorage.getItem('wwv-theme') || 'light';
                 document.documentElement.setAttribute('data-theme', theme);
               } catch (e) {}
             `,

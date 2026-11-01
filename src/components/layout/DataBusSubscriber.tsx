@@ -23,9 +23,7 @@ import { applyEntityBudget, resolveLayerBudget } from "@/core/data/entityBudget"
  */
 export function DataBusSubscriber() {
     const setPollingInterval = useStore((s) => s.setPollingInterval);
-    const setEntities = useStore((s) => s.setEntities);
-    const setEntityCount = useStore((s) => s.setEntityCount);
-    const setLayerBudget = useStore((s) => s.setLayerBudget);
+    const ingestLayerData = useStore((s) => s.ingestLayerData);
     const clearEntities = useStore((s) => s.clearEntities);
     const removeLayer = useStore((s) => s.removeLayer);
     const setLayerLoading = useStore((s) => s.setLayerLoading);
@@ -62,9 +60,7 @@ export function DataBusSubscriber() {
                         `[DataBusSubscriber] Layer "${pluginId}" exceeded entity budget: rendering ${kept.length} of ${totalCount} (cap ${budget}).`
                     );
                 }
-                setEntities(pluginId, kept);
-                setEntityCount(pluginId, totalCount);
-                setLayerBudget(pluginId, { budgetCap: budget, renderedCount: kept.length, budgetExceeded });
+                ingestLayerData(pluginId, kept, { totalCount, budgetCap: budget, budgetExceeded });
             }, 0);
         });
 
@@ -111,7 +107,7 @@ export function DataBusSubscriber() {
             unsubLoading();
             unsubError();
         };
-    }, [setPollingInterval, setEntities, setEntityCount, setLayerBudget, clearEntities, removeLayer, setLayerLoading, showErrorToast]);
+    }, [setPollingInterval, ingestLayerData, clearEntities, removeLayer, setLayerLoading, showErrorToast]);
 
     return null;
 }

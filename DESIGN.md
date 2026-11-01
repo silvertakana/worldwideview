@@ -1,27 +1,30 @@
-# Design System: WorldWideView
+# Design System: PLTR Beta
 **Project ID:** local-worldwideview-app
 
 ## 1. Visual Theme & Atmosphere
-The WorldWideView platform employs an **"Airy, High-Tech, and Geospatial-Focused"** aesthetic. The design philosophy centers around "Glassmorphism Pro Max"—keeping the user's primary focus on the rich, underlying 3D globe visualization while providing highly legible, structured, and floating Heads-Up Display (HUD) elements. 
+PLTR Beta renders a **flat, dense, instrument-panel** interface over the 3D globe, modelled on Palantir's Foundry Map / Gotham tooling and their Blueprint design system. Panels are opaque surfaces with 1px borders and tight 2–4px radii; emphasis comes from a single intent blue and typographic hierarchy, not from glow or blur. The globe stays the hero; the chrome reads as a tool, not a card.
 
-The mood is utilitarian yet premium, heavily relying on dense background blurring, delicate inner borders, and vibrant glowing accent states to establish depth, interactivity, and a sense of "live" intelligence.
+Reference material (not shipped): Palantir Foundry Map documentation screenshots (`palantir.com/docs/foundry/map/*`) and the Blueprint `@blueprintjs/colors` palette.
+
+The previous glassmorphism treatment survives only as the **Legacy** theme (`[data-theme='legacy']`), which re-enables `backdrop-filter` and large radii through tokens.
 
 ## 2. Color Palette & Roles
-WorldWideView operates using a multi-theme architecture (Default Dark, Pure Black, Legacy OLED, and Light). The core semantic roles for the **Default Dark Theme** are outlined below:
+Tokens live in `src/styles/theme-tokens.css`. The default theme is **Foundry Light** (Blueprint light ramp: `#f6f7f9` canvas, white panels, `#1c2127` text, `#2d72d2` intent blue) over the Esri Light Gray Canvas basemap with the star field and atmosphere switched off, so the globe floats on a flat grey field like Foundry's map. **Foundry Dark** uses the Blueprint dark ramp:
 
-* **Obsidian Canvas** (`#171717`) - `--bg-primary`: The foundational layer behind the application shell and globe.
-* **Translucent Slate Glass** (`rgba(38, 38, 38, 0.85)`) - `--bg-glass`: The primary background for floating HUD panels, sidebars, and dialogs. Provides a frosted glass effect that allows the map to bleed through.
-* **Frost White** (`#ffffff`) - `--text-primary`: Primary typography for headers, active states, and high-emphasis data.
-* **Muted Ash** (`#a3a3a3`) - `--text-muted`: Secondary typography used for labels, subtitles, and inactive states to establish visual hierarchy.
-* **Gossamer Edge** (`rgba(255, 255, 255, 0.15)`) - `--border-subtle`: Defines the subtle, crisp edges of glass panels, dividers, and default button states.
-* **Starlight Cyan** (`#ffffff` / *Legacy:* `#22d3ee`) - `--accent-cyan`: Used for primary actions, active tabs, timeline scrubbers, and play buttons. Often paired with a diffuse glow (`0 0 24px rgba(255, 255, 255, 0.15)`) for emphasis and technical flair.
-* **Telemetry Green** (`#22c55e`) - `--accent-green`: Used for live status indicators, pulsing connectivity badges, and positive data deltas.
-* **Warning Amber** (`#f59e0b`) - `--accent-amber`: Used for warnings, "Alpha" badges, or unavailable data states.
+* **Black** (`#111418`) - `--bg-primary`: canvas behind the app shell.
+* **Dark Gray 1** (`#1c2127`) - `--bg-glass` / `--bg-secondary`: opaque panel, header and dialog surface.
+* **Dark Gray 2/3** (`#252a31` / `#2f343c`) - `--bg-glass-hover` / `--bg-glass-active`: hover and pressed states.
+* **Divider White** (`rgba(255,255,255,0.2)`) - `--border-subtle`: every panel edge and row divider.
+* **Light Gray 5** (`#f6f7f9`) - `--text-primary`; **Gray 5** (`#c5cbd3`) - `--text-secondary`; **Gray 4** (`#abb3bf`) - `--text-muted`.
+* **Blue 4** (`#4c90f0`) - `--accent-cyan` (intent primary): active tabs, toggles, scrubber, selected rows. `--glow-cyan` is a 1px intent ring, never a diffuse glow.
+* **Green 4** (`#32a467`), **Orange 4** (`#ec9a3c`), **Red 4** (`#e76a6e`) - success / warning / danger intents.
+
+The application bar is a docked 48px strip with a coloured app tile flush left (Foundry's square icon); panels float 12px from the edges with 4px corners.
 
 ## 3. Typography Rules
 The system uses a dual-font strategy to balance clean user interfaces with technical precision.
 
-* **UI Font (Inter):** Used for all general interface elements, headers, and buttons. 
+* **UI Font (Source Sans 3):** Used for all general interface elements, headers, and buttons (Foundry's UI face; falls back to the system stack). 
   * Headers and brand elements use a bold `600/700` weight with tight letter-spacing (`-0.02em`) for a sleek, modern feel.
   * Section titles, keys, and subtitles use a very small size (`11px`), a medium weight, uppercase transformation, and wide letter-spacing (`0.05em` to `0.1em`) to mimic aerospace or military HUD interfaces.
 * **Monospace Font (JetBrains Mono):** Used strictly for data values, coordinates, telemetry, and exact timestamps (`11px` to `12px`). Ensures tabular alignment, clear distinction between similar characters (e.g., 0 and O), and technical precision.

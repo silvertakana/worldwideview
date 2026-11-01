@@ -10,6 +10,20 @@ export const ENGINE_DISCOVERY_RETRY_MS = 30_000;
 let localManifest: string[] | null = null;
 let manifestFetched = false;
 let lastFailureAt = 0;
+/** The discovery request currently on the wire, so concurrent callers share it. */
+let inFlight: Promise<string[] | null> | null = null;
+
+/**
+ * Whether this deployment should probe for a local data engine at all.
+ * Cloud and demo tenants never run one on the visitor's machine, so probing
+ * there only produced a guaranteed ERR_CONNECTION_REFUSED in every console.
+ * Setting NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT explicitly opts any edition in.
+ */
+export function isLocalEngineDiscoveryEnabled(): boolean {
+    if (process.env.NEXT_PUBLIC_WWV_LOCAL_ENGINE_PORT) return true;
+    const edition = (process.env.NEXT_PUBLIC_WWV_EDITION || "local").trim().toLowerCase();
+    return edition !== "cloud" && edition !== "demo";
+}
 
 /**
  * Resolve the base URL of the local data engine.
@@ -44,12 +58,21 @@ function getLocalEngineBase() {
  */
 export async function fetchLocalEngineManifest(): Promise<string[] | null> {
   if (manifestFetched) return localManifest;
+  if (!isLocalEngineDiscoveryEnabled()) return null;
   // Backoff: serve the previous failure from memory (no network cost) only
   // until the retry window elapses, then attempt discovery again.
   if (lastFailureAt > 0 && Date.now() - lastFailureAt < ENGINE_DISCOVERY_RETRY_MS) {
     return null;
   }
+  // Boot fires several callers (DataBusSubscriber + every enablePlugin) before
+  // the first probe resolves; share one request instead of one per caller.
+  if (inFlight) return inFlight;
 
+  inFlight = discoverLocalEngine().finally(() => { inFlight = null; });
+  return inFlight;
+}
+
+async function discoverLocalEngine(): Promise<string[] | null> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), ENGINE_DISCOVERY_TIMEOUT_MS);
@@ -105,4 +128,5 @@ export function resetManifestCache(): void {
   localManifest = null;
   manifestFetched = false;
   lastFailureAt = 0;
+  inFlight = null;
 }

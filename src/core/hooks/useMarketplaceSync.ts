@@ -13,7 +13,37 @@ import {
   denyUnverifiedPlugin,
 } from "@/lib/marketplace/trustedPlugins";
 import { getDisabledPluginIds } from "@/core/plugins/pluginPreferences";
+import type { ManifestLoadFailure } from "@/core/plugins/loadPluginFromManifest";
 import { isDemo } from "@/core/edition";
+
+/**
+ * Read the failure class off a load error. Duck-typed rather than
+ * `instanceof` so it also works when the loader module is mocked or the
+ * error crossed a bundle boundary.
+ */
+function loadFailureOf(err: unknown): ManifestLoadFailure | undefined {
+    const failure = (err as { failure?: unknown } | null)?.failure;
+    return failure === "validation" || failure === "incompatible" || failure === "network"
+        ? failure
+        : undefined;
+}
+
+/**
+ * Build the user-facing toast for a failed marketplace load. Permanent
+ * failures (incompatible bundle, malformed manifest) say so plainly; only
+ * transient failures tell the user the next sync will retry.
+ */
+function describeLoadFailure(manifest: PluginManifest, err: unknown): string {
+    const label = manifest.name || manifest.id;
+    switch (loadFailureOf(err)) {
+        case "incompatible":
+            return `Plugin "${label}" isn't compatible with this version of the app and was skipped.`;
+        case "validation":
+            return `Plugin "${label}" has an invalid manifest and was skipped.`;
+        default:
+            return `Couldn't load plugin "${label}" right now. It will be retried on the next sync.`;
+    }
+}
 
 /**
  * Syncs marketplace-installed plugins on window focus.
@@ -24,6 +54,12 @@ import { isDemo } from "@/core/edition";
 export function useMarketplaceSync(hostReady: boolean) {
     const initLayer = useStore((s) => s.initLayer);
     const loadedIds = useRef<Set<string>>(new Set());
+    /**
+     * Manifests whose load can never succeed in this session (incompatible
+     * bundle or invalid manifest). Without this, every window focus re-ran
+     * the import, re-logged the same stack trace and re-fired the toast.
+     */
+    const permanentlyFailedIds = useRef<Set<string>>(new Set());
     const initialDisabledIds = useRef<Set<string> | null>(null);
     const syncInFlightRef = useRef(false);
     const lastSyncAtRef = useRef(0);
@@ -71,6 +107,7 @@ export function useMarketplaceSync(hostReady: boolean) {
 
     async function loadManifest(manifest: PluginManifest) {
         if (!manifest.id || loadedIds.current.has(manifest.id)) return;
+        if (permanentlyFailedIds.current.has(manifest.id)) return;
         if (getDisabledPluginIds().has(manifest.id)) return;
         if (pluginManager.getPlugin(manifest.id)) {
             loadedIds.current.add(manifest.id);
@@ -102,13 +139,20 @@ export function useMarketplaceSync(hostReady: boolean) {
 
             console.log(`[MarketplaceSync] Hot-loaded plugin "${manifest.id}"`);
         } catch (err) {
-            // Release the reservation so a failed load can be retried by a
-            // later sync.
+            // Release the reservation so a transient failure can be retried
+            // by a later sync; remember permanent ones so they are not.
             loadedIds.current.delete(manifest.id);
-            console.error(`[MarketplaceSync] Failed to load "${manifest.id}":`, err);
+            const failure = loadFailureOf(err);
+            const permanent = failure === "incompatible" || failure === "validation";
+            if (permanent) {
+                permanentlyFailedIds.current.add(manifest.id);
+                console.warn(`[MarketplaceSync] Skipping "${manifest.id}" for this session:`, (err as Error).message);
+            } else {
+                console.error(`[MarketplaceSync] Failed to load "${manifest.id}":`, err);
+            }
             const store = useStore.getState();
             if (store.showErrorToast) {
-                store.showErrorToast(`Failed to load plugin: ${manifest.name || manifest.id}. Check console.`);
+                store.showErrorToast(describeLoadFailure(manifest, err));
             }
         }
     }
@@ -133,6 +177,7 @@ export function useMarketplaceSync(hostReady: boolean) {
             for (const manifest of manifests) {
                 if (!manifest.id) continue;
                 if (loadedIds.current.has(manifest.id)) continue;
+                if (permanentlyFailedIds.current.has(manifest.id)) continue;
 
                 // Unverified + not yet approved → collect for batch review.
                 // Permanently denied plugins are skipped so re-syncs don't re-open the dialog.

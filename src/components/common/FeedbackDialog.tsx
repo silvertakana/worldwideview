@@ -14,6 +14,7 @@ import { useStore } from "@/core/state/store";
 import { getCapturedLogs } from "@/lib/logCatcher";
 import { trackEvent } from "@/lib/analytics";
 import styles from "./FeedbackDialog.module.css";
+import { BRAND_NAME } from "@/core/brand";
 
 /**
  * A modal dialog that allows users to submit bug reports, feature requests,
@@ -295,7 +296,7 @@ export function FeedbackDialog() {
                   onChange={(e) => setAttachLogs(e.target.checked)}
                   className={styles.checkboxInput}
                 />
-                <span className={styles.checkboxLabel}>Attach WorldWideView diagnostic logs and information</span>
+                <span className={styles.checkboxLabel}>Attach {BRAND_NAME} diagnostic logs and information</span>
               </label>
             </div>
 

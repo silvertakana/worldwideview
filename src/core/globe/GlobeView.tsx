@@ -39,6 +39,7 @@ import { useGlobeStateSync } from "./hooks/useGlobeStateSync";
 import { useGlobeCommandBridge } from "./hooks/useGlobeCommandBridge";
 import { useMcpCatalogPublisher } from "./hooks/useMcpCatalogPublisher";
 import { useMcpRelayBridge } from "./hooks/useMcpRelayBridge";
+import { useSceneBackdrop } from "./hooks/useSceneBackdrop";
 
 /** Stable references */
 const CONTEXT_OPTIONS = { requestWebgl2: true, webgl: { antialias: true } } as const;
@@ -120,6 +121,8 @@ enableLighting,
         return result;
     }, [layers, entitiesByPlugin, filters, pluginSettings]);
 
+    const theme = useStore((s) => s.theme);
+    useSceneBackdrop(viewerRef.current, viewerReady, theme);
     const { isGoogle3D } = useImageryManager(viewerRef.current, viewerReady);
     useBorders(viewerRef.current, showLabels, isGoogle3D);
 

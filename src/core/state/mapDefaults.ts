@@ -9,11 +9,12 @@
  * A stored user preference always wins. Otherwise Google Photorealistic 3D is
  * only offered as the default when a browser-side Google Maps API key of at
  * least 20 characters exists: keyless builds must never default to a layer
- * that cannot load, so they resolve to "bing-aerial".
+ * that cannot load, so they resolve to "light-gray", the flat light-grey
+ * basemap the Foundry-style chrome is designed around.
  */
 export function resolveDefaultBaseLayerId(stored: string | null, envKey: string | undefined): string {
     if (stored !== null) {
         return stored;
     }
-    return envKey && envKey.length >= 20 ? "google-3d" : "bing-aerial";
+    return envKey && envKey.length >= 20 ? "google-3d" : "light-gray";
 }

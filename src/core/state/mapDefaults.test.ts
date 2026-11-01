@@ -6,13 +6,13 @@ describe("resolveDefaultBaseLayerId", () => {
         expect(resolveDefaultBaseLayerId(null, "a".repeat(20))).toBe("google-3d");
     });
 
-    it("defaults to bing-aerial with no browser key and no stored choice", () => {
-        expect(resolveDefaultBaseLayerId(null, undefined)).toBe("bing-aerial");
+    it("defaults to light-gray with no browser key and no stored choice", () => {
+        expect(resolveDefaultBaseLayerId(null, undefined)).toBe("light-gray");
     });
 
-    it("defaults to bing-aerial with a short browser key (< 20 chars) and no stored choice", () => {
-        expect(resolveDefaultBaseLayerId(null, "a".repeat(19))).toBe("bing-aerial");
-        expect(resolveDefaultBaseLayerId(null, "")).toBe("bing-aerial");
+    it("defaults to light-gray with a short browser key (< 20 chars) and no stored choice", () => {
+        expect(resolveDefaultBaseLayerId(null, "a".repeat(19))).toBe("light-gray");
+        expect(resolveDefaultBaseLayerId(null, "")).toBe("light-gray");
     });
 
     it("keeps a stored osm choice regardless of key", () => {

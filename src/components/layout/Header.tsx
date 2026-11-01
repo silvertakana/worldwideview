@@ -27,6 +27,7 @@ import { authClient } from "@/lib/auth-client";
 import { ApiKeysTab } from "./ApiKeysTab";
 import { PersonalApiKeysSection } from "./PersonalApiKeysSection";
 import "./timeSelect.css";
+import { BRAND_WORDMARK, BRAND_STAGE, BRAND_TAGLINE } from "@/core/brand";
 
 const REGIONS = [
     { id: "global", label: "Global", icon: Globe },
@@ -40,9 +41,9 @@ const REGIONS = [
 ];
 
 const THEMES = [
-    { id: "dark", label: "Dark", icon: Moon },
+    { id: "dark", label: "Foundry Dark", icon: Moon },
     { id: "black", label: "Black", icon: Moon },
-    { id: "light", label: "Light", icon: Sun },
+    { id: "light", label: "Foundry Light", icon: Sun },
     { id: "legacy", label: "Legacy", icon: Monitor },
     { id: "tactical", label: "Tactical", icon: Crosshair },
 ] as const;
@@ -121,9 +122,9 @@ export function Header() {
 }}
                 >
                   <Image src="/logo/logo-icon.svg" alt="Logo" width={20} height={20} style={{ objectFit: "contain" }} />
-                  <div className="header__logo header__logo--compact">WWV</div>
+                  <div className="header__logo header__logo--compact">{BRAND_WORDMARK}</div>
                 </a>
-                <span className="alpha-badge">ALPHA</span>
+                <span className="alpha-badge">{BRAND_STAGE}</span>
                 {isDemoAdmin && <span className="alpha-badge" style={{ background: "var(--accent-orange, #f59e0b)" }}>ADMIN</span>}
               </div>
 
@@ -234,14 +235,15 @@ export function Header() {
       <>
         <header className="header glass-panel">
           <div className="header__brand">
-            <a href={HUB_URL} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <a href={HUB_URL} target="_blank" rel="noopener noreferrer" className="header__brand-link" title={BRAND_TAGLINE}>
+              <span className="header__tile">
                 <Image src="/logo/logo-icon.svg" alt="Logo" width={22} height={22} style={{ objectFit: "contain" }} />
-                <div className="header__logo">WORLD WIDE VIEW</div>
-                <span className="alpha-badge">ALPHA</span>
+              </span>
+              <span className="header__brand-text">
+                <span className="header__logo">{BRAND_WORDMARK}</span>
+                <span className="alpha-badge">{BRAND_STAGE}</span>
                 {isDemoAdmin && <span className="alpha-badge" style={{ background: "var(--accent-orange, #f59e0b)" }}>ADMIN</span>}
-              </div>
-              <div className="header__subtitle">Geospatial Intelligence</div>
+              </span>
             </a>
             <div style={{ marginLeft: "var(--space-xl)" }}>
               <SearchBar />

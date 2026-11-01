@@ -68,36 +68,44 @@ export const createLayersSlice: StateCreator<AppStore, [], [], LayersSlice> = (s
                 [pluginId]: { ...state.layers[pluginId], enabled },
             },
         })),
-    setEntityCount: (pluginId, count) => set((state) => ({
-            layers: {
-                ...state.layers,
-                [pluginId]: { ...state.layers[pluginId], entityCount: count },
-            },
-        })),
-    setLayerLoading: (pluginId, loading) => set((state) => ({
-            layers: {
-                ...state.layers,
-                [pluginId]: { ...state.layers[pluginId], loading },
-            },
-        })),
-    setLayerFetchedAt: (pluginId, fetchedAt) => set((state) => ({
-            layers: {
-                ...state.layers,
-                [pluginId]: { ...state.layers[pluginId], fetchedAt },
-            },
-        })),
-    setLayerBudget: (pluginId, budget) => set((state) => ({
-            layers: {
-                ...state.layers,
-                [pluginId]: { ...state.layers[pluginId], ...budget },
-            },
-        })),
-    initLayer: (pluginId, defaultEnabled = false) => set((state) => ({
-            layers: {
-                ...state.layers,
-                [pluginId]: state.layers[pluginId] || { enabled: defaultEnabled, entityCount: 0, loading: false },
-            },
-        })),
+    // The no-op guards below matter for rendering cost, not just tidiness:
+    // every new `layers` object invalidates GlobeView's visibleEntities memo
+    // (a full primitive re-render) and re-renders the whole layer list. Data
+    // ticks fire these setters constantly with values that rarely change.
+    setEntityCount: (pluginId, count) => set((state) => {
+            const current = state.layers[pluginId];
+            if (current && current.entityCount === count) return state;
+            return { layers: { ...state.layers, [pluginId]: { ...current, entityCount: count } } };
+        }),
+    setLayerLoading: (pluginId, loading) => set((state) => {
+            const current = state.layers[pluginId];
+            if (current && current.loading === loading) return state;
+            return { layers: { ...state.layers, [pluginId]: { ...current, loading } } };
+        }),
+    setLayerFetchedAt: (pluginId, fetchedAt) => set((state) => {
+            const current = state.layers[pluginId];
+            if (current && current.fetchedAt === fetchedAt) return state;
+            return { layers: { ...state.layers, [pluginId]: { ...current, fetchedAt } } };
+        }),
+    setLayerBudget: (pluginId, budget) => set((state) => {
+            const current = state.layers[pluginId];
+            if (
+                current
+                && current.budgetCap === budget.budgetCap
+                && current.renderedCount === budget.renderedCount
+                && current.budgetExceeded === budget.budgetExceeded
+            ) return state;
+            return { layers: { ...state.layers, [pluginId]: { ...current, ...budget } } };
+        }),
+    initLayer: (pluginId, defaultEnabled = false) => set((state) => {
+            if (state.layers[pluginId]) return state;
+            return {
+                layers: {
+                    ...state.layers,
+                    [pluginId]: { enabled: defaultEnabled, entityCount: 0, loading: false },
+                },
+            };
+        }),
     removeLayer: (pluginId) => set((state) => {
         const copy = { ...state.layers };
         delete copy[pluginId];

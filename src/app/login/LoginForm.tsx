@@ -6,6 +6,7 @@ import { isDemo } from "@/core/edition";
 import { authClient } from "@/lib/auth-client";
 import { migrateLegacyUserIfNeeded } from "@/lib/auth/migrate-legacy-user";
 import styles from "../setup/setup.module.css";
+import { BRAND_NAME } from "@/core/brand";
 
 /** Every failure path resolves to one of these, so the user always sees a reason. */
 const CREDENTIALS_ERROR = "Sign in failed. Check your credentials and try again.";
@@ -101,7 +102,7 @@ export default function LoginForm() {
       <div className={styles.container}>
         <div className={styles.card}>
           <div className={styles.logo}>W</div>
-          <h1 className={styles.title}>Sign in to WorldWideView</h1>
+          <h1 className={styles.title}>Sign in to {BRAND_NAME}</h1>
           <p className={styles.subtitle}>Enter your credentials to continue</p>
 
           <form onSubmit={handleSubmit} method="post" className={styles.form}>

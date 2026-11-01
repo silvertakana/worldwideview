@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { PluginManifest } from "@/core/plugins/PluginManifest";
 import styles from "./UnverifiedPluginBatchDialog.module.css";
+import { BRAND_NAME } from "@/core/brand";
 
 interface Props {
   manifests: PluginManifest[];
@@ -47,7 +48,7 @@ export default function UnverifiedPluginBatchDialog({
             {manifests.length > 1 ? "s" : ""}
             {' '}
             not
-            verified by WorldWideView. Select which to install.
+            verified by {BRAND_NAME}. Select which to install.
           </p>
         </div>
 

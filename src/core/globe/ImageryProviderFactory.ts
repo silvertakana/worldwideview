@@ -40,6 +40,12 @@ export const IMAGERY_LAYERS: ImageryLayerEntry[] = [
         type: "imagery",
     },
     {
+        id: "light-gray",
+        name: "Light Gray Canvas",
+        description: "Esri muted grey basemap (Foundry-style)",
+        type: "imagery",
+    },
+    {
         id: "osm",
         name: "OpenStreetMap",
         description: "Community-driven map data",
@@ -125,6 +131,13 @@ export async function createImageryProvider(layerId: string) {
                 });
             }
             return await tieredFallback(4, "m");
+
+        case "light-gray":
+            // Esri World Light Gray Canvas: the muted grey cartography Foundry's
+            // map defaults to. Served without an API key, like arcgis-world below.
+            return await ArcGisMapServerImageryProvider.fromUrl(
+                "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer"
+            );
 
         case "osm":
             return createOsmProvider();

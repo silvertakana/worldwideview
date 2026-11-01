@@ -7,6 +7,7 @@ import type {
 } from "@/core/plugins/PluginTypes";
 import type { PluginManifest } from "@/core/plugins/PluginManifest";
 import { loadPluginFromManifest } from "@/core/plugins/loadPluginFromManifest";
+import { getMissingPluginMethods } from "@/core/plugins/pluginContract";
 import { dataBus } from "@/core/data/DataBus";
 import { pollingManager } from "@/core/data/PollingManager";
 import { cacheLayer } from "@/core/data/CacheLayer";
@@ -87,6 +88,17 @@ class PluginManager {
         if (this.plugins.has(plugin.id)) {
             console.warn(`[PluginManager] Plugin "${plugin.id}" already registered`);
             return;
+        }
+
+        // Reject before touching any shared state. A plugin missing part of
+        // the contract used to be inserted into the map, crash on the first
+        // missing call (e.g. getPollingInterval), and then stay registered as
+        // a zombie that the UI listed but could never enable.
+        const missing = getMissingPluginMethods(plugin);
+        if (missing.length > 0) {
+            throw new TypeError(
+                `[PluginManager] Plugin "${plugin.id}" does not implement WorldPlugin (missing: ${missing.join(", ")})`,
+            );
         }
 
         const envVars: Record<string, string> = {};
@@ -403,7 +415,8 @@ class PluginManager {
     async loadFromManifest(manifest: PluginManifest): Promise<void> {
         const plugin = await loadPluginFromManifest(manifest);
         if (manifest.id && plugin.id !== manifest.id) {
-            console.warn(`[PluginManager] Overriding plugin ID from internal '${plugin.id}' to manifest ID '${manifest.id}'`);
+            // Expected for packages whose internal id predates their marketplace id.
+            console.debug(`[PluginManager] Overriding plugin ID from internal '${plugin.id}' to manifest ID '${manifest.id}'`);
             plugin.id = manifest.id;
         }
         this.loadedManifests.set(manifest.id, manifest);

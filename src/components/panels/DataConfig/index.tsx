@@ -9,7 +9,7 @@
 import { useStore } from "@/core/state/store";
 import { FilterSection } from "@/components/panels/FilterPanel";
 import {
- Cog, FilterIcon, Info, Key, MessageSquare
+ Cog, FilterIcon, Info, Key
 } from "lucide-react";
 import { useIsMobile } from "@/core/hooks/useIsMobile";
 import { useResizablePanel } from "@/core/hooks/useResizablePanel";
@@ -35,7 +35,6 @@ export function DataConfigPanel() {
     const configPanelOpen = useStore((s) => s.configPanelOpen);
     const openMobilePanel = useStore((s) => s.openMobilePanel);
     const selectedEntity = useStore((s) => s.selectedEntity);
-    const setFeedbackDialogOpen = useStore((s) => s.setFeedbackDialogOpen);
     const activeTab = useStore((s) => s.activeConfigTab);
     const setActiveTab = useStore((s) => s.setActiveConfigTab);
 
@@ -62,14 +61,6 @@ export function DataConfigPanel() {
                     }}
         />
             )}
-        <div
-          className="sidebar__title"
-          style={{
- marginBottom: "var(--space-md)", color: "var(--text-primary)", fontSize: "14px", fontWeight: 600
-}}
-        >
-          Data Configuration
-        </div>
 
         <div
           className="panel-tabs"
@@ -82,25 +73,25 @@ export function DataConfigPanel() {
             className={`panel-tab ${activeTab === "intel" ? "panel-tab--active" : ""}`}
             onClick={() => setActiveTab("intel")}
             title="Intel"
-            style={{width: "100%"}}
           >
-            <Info size="20" style={{ margin: 5, maxHeight: "20%" }} />
+            <Info size={14} />
+            <span>Intel</span>
           </button>
           <button
             className={`panel-tab ${activeTab === "filters" ? "panel-tab--active" : ""}`}
             onClick={() => setActiveTab("filters")}
             title="Filters"
-            style={{width: "100%"}}
           >
-            <FilterIcon size="20" style={{ margin: 5, maxHeight: "20%" }} />
+            <FilterIcon size={14} />
+            <span>Filters</span>
           </button>
           <button
             className={`panel-tab ${activeTab === "overlay" ? "panel-tab--active" : ""}`}
             onClick={() => setActiveTab("overlay")}
             title="Config & Overlay"
-            style={{width: "100%"}}
           >
-            <Cog size="20" style={{ margin: 5, maxHeight: "20%" }} />
+            <Cog size={14} />
+            <span>Config</span>
           </button>
           {!isDemo && <AlertsTabButton />}
         </div>
@@ -131,14 +122,6 @@ export function DataConfigPanel() {
                 )}
         </div>
 
-        <button
-          className="feedback-sidebar-link"
-          onClick={() => setFeedbackDialogOpen(true)}
-          style={{width: "100%", height: "42px"}}
-        >
-          <MessageSquare size={16} />
-          Provide Feedback
-        </button>
       </aside>
     );
 }

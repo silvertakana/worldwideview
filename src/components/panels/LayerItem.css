@@ -1,41 +1,43 @@
 /* ─── Layer Item ──────────────────────────────────────────── */
+/* Dense Foundry layer rows: square tinted icon, name + one-line note,
+   Blueprint switch. Rows are separated by hairlines, not cards. */
 .layer-item {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  border-radius: var(--radius-md);
+  gap: var(--space-sm);
+  padding: 6px var(--space-sm);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   background: transparent;
   border: 1px solid transparent;
-  transition: all var(--duration-normal) var(--ease-spring);
-  margin-bottom: var(--space-xs);
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+}
+
+.layer-item + .layer-item {
+  border-top-color: var(--border-subtle);
+  border-radius: 0;
 }
 
 .layer-item:hover {
   background: var(--bg-glass-hover);
-  border-color: var(--glass-border-inner);
-  box-shadow: var(--glass-shadow-inner);
-  transform: scale(0.99);
 }
 
 .layer-item--selected {
-  background: var(--bg-glass-active);
-  border-color: rgba(var(--accent-rgb), 0.3);
-  box-shadow: inset 2px 0 0 0 var(--accent-cyan), var(--glass-shadow-inner);
+  background: rgba(var(--accent-rgb), 0.12);
+  box-shadow: inset 2px 0 0 0 var(--accent-cyan);
 }
 
 .layer-item__icon {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--accent-rgb), 0.15);
   border-radius: var(--radius-sm);
   flex-shrink: 0;
-  font-size: 16px;
-  color: var(--text-secondary);
+  font-size: 14px;
+  color: var(--accent-cyan);
 }
 
 .layer-item__info {
@@ -113,41 +115,38 @@
 }
 
 /* ─── Toggle ─────────────────────────────────────────────── */
+/* Blueprint switch: 28×16 track, 12px white knob, solid intent fill when on */
 .layer-item__toggle {
-  width: 36px;
-  height: 20px;
-  border-radius: 10px;
-  background: var(--bg-glass);
-  border: 1px solid var(--border-subtle);
+  width: 28px;
+  height: 16px;
+  border-radius: 8px;
+  background: rgba(17, 20, 24, 0.3);
+  border: none;
   position: relative;
   flex-shrink: 0;
   cursor: pointer;
-  box-shadow: var(--glass-shadow-inner);
-  transition: all var(--duration-normal) var(--ease-spring);
+  transition: background-color var(--duration-fast) var(--ease-smooth);
 }
 
 .layer-item__toggle::after {
   content: '';
   position: absolute;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: var(--text-muted);
+  background: #ffffff;
   top: 2px;
   left: 2px;
-  box-shadow: var(--glass-shadow);
-  transition: all var(--duration-normal) var(--ease-spring);
+  box-shadow: 0 1px 1px rgba(17, 20, 24, 0.3);
+  transition: transform var(--duration-fast) var(--ease-smooth);
 }
 
 .layer-item__toggle--on {
-  background: rgba(var(--accent-rgb), 0.2);
-  border-color: var(--accent-cyan);
+  background: var(--accent-cyan);
 }
 
 .layer-item__toggle--on::after {
-  transform: translateX(16px);
-  background: var(--accent-cyan);
-  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5), var(--glass-shadow);
+  transform: translateX(12px);
 }
 
 /* ─── Count ──────────────────────────────────────────────── */

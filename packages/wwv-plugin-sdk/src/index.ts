@@ -364,6 +364,8 @@ export type DataBusEvents = {
     layerToggled: { pluginId: string; enabled: boolean };
     timeRangeChanged: { timeRange: TimeRange };
     cameraPreset: { presetId: string };
+    /** Step the camera in/out or return home (Foundry-style zoom cluster). */
+    cameraZoom: { direction: "in" | "out" | "home" };
     cameraFaceTowards: { lat: number; lon: number; alt: number };
     cameraGoTo: { lat: number; lon: number; alt: number; distance?: number; maxPitch?: number; heading?: number };
     cameraFlyToBbox: { west: number; south: number; east: number; north: number };
