@@ -1,5 +1,12 @@
 # WorldWideView — Agent Rules
 
+> **Where agent material lives (2026-11-07).** This is a public repository. Agent personas,
+> path-scoped rules, skills, workflows, context notes and session plans are maintainer material and
+> are not shipped here: `.agents/` and `.planning/` are ignored, and the paths named in sections 8-11
+> below describe a maintainer checkout, not anything this repository contains. Do not re-add them.
+> Build, test and review rules that must ship belong in this file.
+
+
 ## 1. Project Identity
 
 WorldWideView is a **real-time geospatial intelligence engine** visualizing live global data on an interactive 3D globe, and the **Globe App + Headless MCP Server** of the WorldWideView ecosystem. Built with **Next.js 16**, **CesiumJS**, **React 19**, and **Zustand**.
