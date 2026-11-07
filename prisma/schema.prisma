@@ -353,3 +353,38 @@ model CrossServiceNonce {
   @@index([expiresAt])
   @@map("cross_service_nonces")
 }
+
+/// Per-key, per-tool, per-UTC-month MCP call counter.
+///
+/// The billing source of truth for the value metric ("MCP tool calls per API
+/// key per month"). One row per (key, month, tool): the hot path is a single
+/// atomic upsert, and a key-month total is a SUM over at most one row per tool
+/// (~25), so no rollup table is needed.
+///
+/// NO FOREIGN KEYS ON PURPOSE. This is a billing ledger: rows must survive the
+/// deletion of the key or the user they describe. A cascade here would destroy
+/// the evidence for a period that was already billed.
+model McpToolUsageMonthly {
+  id          String   @id @default(uuid())
+  /// UserApiKey.id. Deliberately not a relation -- see the doc comment.
+  keyId       String
+  /// Owner at call time, so a deleted key still reports to a person.
+  userId      String
+  /// Exact tool name as passed to server.registerTool, e.g. "investigate_area".
+  toolName    String
+  /// First instant of the UTC month, e.g. 2026-11-01T00:00:00.000Z.
+  periodStart DateTime
+  /// First instant of the NEXT UTC month -- makes every window query a
+  /// half-open range without recomputing month maths in SQL.
+  periodEnd   DateTime
+  calls       Int      @default(0)
+  lastCallAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([keyId, periodStart, toolName])
+  @@index([keyId, periodStart])
+  @@index([userId, periodStart])
+  @@index([periodStart, toolName])
+  @@map("mcp_tool_usage_monthly")
+}

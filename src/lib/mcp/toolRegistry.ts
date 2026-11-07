@@ -34,6 +34,13 @@ export interface McpToolDescriptor {
      * real description -- see toolRegistry.test.ts.
      */
     readonly requiresSession: boolean;
+    /**
+     * True when a call to this tool counts against the key's monthly call
+     * meter. This is the ONE allowlist the metering seam reads, so a tool that
+     * must stay free (get_usage: self-diagnosis) is declared here rather than in
+     * a branch inside the route.
+     */
+    readonly metered: boolean;
 }
 
 /**
@@ -47,116 +54,145 @@ export const MCP_TOOLS: readonly McpToolDescriptor[] = [
         name: "search_entities",
         summary: "search entities by name across active plugins",
         requiresSession: false,
+        metered: true,
     },
     {
         name: "get_entities_in_region",
         summary: "entities inside a lat/lng bounding box",
         requiresSession: false,
+        metered: true,
     },
     {
         name: "get_entity_details",
         summary: "full details for one entity",
         requiresSession: false,
+        metered: true,
     },
     {
         name: "get_plugin_data",
         summary: "current entity snapshot for one plugin",
         requiresSession: false,
+        metered: true,
     },
     {
         name: "find_nearby_entities",
         summary: "nearest entities around a point or entity, by distance",
         requiresSession: false,
+        metered: true,
     },
     {
         name: "get_regional_analytics",
         summary: "counts, property breakdowns and density clusters for a box",
         requiresSession: false,
+        metered: true,
     },
     // -- discovery ----------------------------------------------------------
     {
         name: "list_available_plugins",
         summary: "plugins streaming live data right now, and their status",
         requiresSession: false,
+        metered: true,
     },
     {
         name: "get_globe_context",
         summary: "sessions, camera, layers and plugins in one call",
         requiresSession: false,
+        metered: true,
     },
     {
         name: "investigate_area",
         summary: "geocode a place, find its plugin, return what is there",
         requiresSession: false,
+        metered: true,
+    },
+    {
+        name: "get_usage",
+        summary: "this key's metered call count and per-tool split for the month",
+        requiresSession: false,
+        // Unmetered on purpose: a tool that reports usage must not create it.
+        metered: false,
     },
     // -- geocoding ----------------------------------------------------------
     {
         name: "geocode_location",
         summary: "resolve a place name or address to coordinates",
         requiresSession: false,
+        metered: true,
     },
     {
         name: "fly_to",
         summary: "fly the camera to a geocoded place or bounding box",
         requiresSession: true,
+        metered: true,
     },
     // -- globe control ------------------------------------------------------
     {
         name: "pan_globe",
         summary: "fly the camera to a coordinate",
         requiresSession: true,
+        metered: true,
     },
     {
         name: "focus_entity",
         summary: "centre the camera on a known entity",
         requiresSession: true,
+        metered: true,
     },
     {
         name: "toggle_layer",
         summary: "enable or disable a plugin data layer",
         requiresSession: true,
+        metered: true,
     },
     {
         name: "set_timeline",
         summary: "set playback time, window or mode",
         requiresSession: true,
+        metered: true,
     },
     // -- live filtering -----------------------------------------------------
     {
         name: "set_filter",
         summary: "apply filters to a plugin's live layer",
         requiresSession: true,
+        metered: true,
     },
     {
         name: "clear_filter",
         summary: "clear filters on one or on every plugin",
         requiresSession: true,
+        metered: true,
     },
     {
         name: "get_plugin_filters",
         summary: "the filterable fields a plugin declares",
         requiresSession: false,
+        metered: true,
     },
     // -- favorites ----------------------------------------------------------
     {
         name: "save_favorite",
         summary: "bookmark an entity",
         requiresSession: false,
+        metered: true,
     },
     {
         name: "list_favorites",
         summary: "your bookmarks, each with a live or stale status",
         requiresSession: false,
+        metered: true,
     },
     {
         name: "update_favorite",
         summary: "rename or annotate a bookmark",
         requiresSession: false,
+        metered: true,
     },
     {
         name: "remove_favorite",
         summary: "delete a bookmark",
         requiresSession: false,
+        metered: true,
     },
 ];
 

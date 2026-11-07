@@ -176,6 +176,26 @@ a browser tab.
 
 ---
 
+## Checking your call usage
+
+Every tool call that reaches a tool handler is counted per key, per tool, per UTC month.
+Checking the counter does not advance it.
+
+| Surface | What it answers |
+|---|---|
+| `get_usage` (MCP tool) | this key's month: total calls and the per-tool split |
+| `GET /api/usage/summary` | the same for every key you own (session cookie or Bearer key) |
+| `GET /api/mcp/quota` | keyless: the published per-tier call budgets and the tool list |
+
+Budgets are per key and per minute: 30 for the free tier, 300 for paid tiers. They are
+separate from the browser bridge's own polling budget (`GET /api/mcp/invocations`), which
+stays at 100/300/1200 so an open globe tab keeps working.
+
+There is no monthly envelope and no overage in this release, so a call count is exactly
+what the table above reports: a number, not a bill.
+
+---
+
 ## Troubleshooting
 
 **"no active globe session to control"**

@@ -126,8 +126,8 @@ describe("buildAgentBrief -- detected endpoint", () => {
     it("builds from the tool list it is given, not from a fixed list", () => {
         const brief = build({
             tools: [
-                { name: "only_tool", summary: "the only tool", requiresSession: false },
-                { name: "second_tool", summary: "the second tool", requiresSession: true },
+                { name: "only_tool", summary: "the only tool", requiresSession: false, metered: true },
+                { name: "second_tool", summary: "the second tool", requiresSession: true, metered: true },
             ],
         });
 
