@@ -18,28 +18,15 @@ node_modules/
 /out/
 
 # agents
-/.agents/plans
-/.agents/research/
-/.agents/context/
-/.agents/settings.local.json
-
-# GSD tool install (vendored global tool, reinstall via the GSD installer; not committed)
-/.agents/get-shit-done/
-/.agents/commands/gsd/
-/.agents/agents/*
-!/.agents/agents/garbage-collector.md
-!/.agents/agents/security-reviewer.md
-/.agents/hooks/gsd-*
-/.agents/worktrees/
-/.agents/.gsd-profile
-/.agents/gsd-file-manifest.json
-/.agents/gsd-install-state.json
-/.agents/gsd-migration-journal/
-/.agents/scheduled_tasks.lock
-/.agents/VERSION
-/.agents/package.json
-# machine-specific (absolute hook paths); portable version TODO before open-source handoff
-/.agents/settings.json
+# Internal agentic material - agent personas, rules, skills, workflows, hook settings
+# and scripts - is maintainer material kept in a private workspace repository and never
+# published from here. The per-subdirectory rules that used to sit here (plans, research,
+# context, settings, the vendored GSD tool install) ignored leaves while the rest of the
+# tree stayed tracked, which is how .agents ended up published at all. One directory rule,
+# no re-includes. The tracked copies were removed from the index in
+# chore/untrack-globe-agents: no file content edited, no history rewritten. Add an
+# explicit `!/.agents/<path>` below only if a public agent file is ever genuinely wanted.
+/.agents/
 # stray Windows redirect artifact
 /nul
 
