@@ -17,10 +17,17 @@ import { registerGeocodingTools } from "@/app/api/mcp/geocodingTools";
 import { registerGlobeCommandTools } from "@/app/api/mcp/globeCommandTools";
 import { registerProximityTools } from "@/app/api/mcp/proximityTools";
 import { registerRegionalAnalyticsTools } from "@/app/api/mcp/regionalAnalyticsTools";
+import { registerUsageTools } from "@/app/api/mcp/usageTools";
 import { SESSION_REQUIRED_PREAMBLE } from "@/lib/mcp/toolDescriptionFragments";
 import { MCP_TOOLS, groupToolsBySession, mcpToolNames } from "./toolRegistry";
 
-type Registrar = (server: McpServer, ctx: { userId: string }) => void;
+/**
+ * The context every registrar receives from the route. `keyId` is carried
+ * because the usage tool reports one key's month; registrars that do not need it
+ * simply ignore the extra field.
+ */
+type RegistrarContext = { userId: string; keyId: string };
+type Registrar = (server: McpServer, ctx: RegistrarContext) => void;
 type RegisterToolFn = (name: string, config: unknown, handler: unknown) => unknown;
 
 /** Exactly the registrars src/app/api/mcp/route.ts calls, in the same order. */
@@ -33,6 +40,7 @@ const REGISTRARS: readonly Registrar[] = [
     registerDiscoveryTools,
     registerProximityTools,
     registerRegionalAnalyticsTools,
+    registerUsageTools,
 ];
 
 interface CapturedTool {
@@ -59,7 +67,7 @@ function captureRegisteredTools(): CapturedTool[] {
     server.registerTool = recording;
 
     for (const registrar of REGISTRARS) {
-        registrar(server, { userId: "registry-capture" });
+        registrar(server, { userId: "registry-capture", keyId: "key-capture" });
     }
 
     return captured;
@@ -93,6 +101,19 @@ describe("MCP tool registry", () => {
                 `requiresSession for ${tool.name}`,
             ).toBe(tool.requiresSession);
         }
+    });
+
+    it("declares a metered flag on every tool and leaves get_usage unmetered", () => {
+        const unmetered = MCP_TOOLS.filter((tool) => !tool.metered).map((tool) => tool.name);
+
+        // Exactly one tool is free: the one that reports the meter. A second
+        // exception would be a hole in the call count, so this list is pinned.
+        expect(unmetered).toEqual(["get_usage"]);
+        expect(MCP_TOOLS.every((tool) => typeof tool.metered === "boolean")).toBe(true);
+    });
+
+    it("registers get_usage from a real registrar, so the flag guards a live tool", () => {
+        expect(capturedNames).toContain("get_usage");
     });
 
     it("gives every tool a plain name and a non-empty one-line summary", () => {

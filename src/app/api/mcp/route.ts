@@ -31,7 +31,8 @@ import { isDemo } from "@/core/edition";
 import { authenticateApiKey } from "@/lib/apiKeyAuth";
 import { createMcpServer, registerOrientationPrompts } from "@/lib/mcp/server";
 import { mcpLimiter, getClientIp } from "@/lib/rateLimiters";
-import { redisSlidingWindow } from "@/lib/geocodingRateLimit";
+import { checkMcpCallRateLimit, resolveUserTier } from "@/lib/mcpRateLimitConfig";
+import { withMetering } from "@/lib/mcp/metering";
 import {
     demoBlockedResponse,
     unauthorizedResponse,
@@ -49,6 +50,7 @@ import { registerFilterTools } from "./filterTools";
 import { registerDiscoveryTools } from "./discoveryTools";
 import { registerProximityTools } from "./proximityTools";
 import { registerRegionalAnalyticsTools } from "./regionalAnalyticsTools";
+import { registerUsageTools } from "./usageTools";
 
 // ---------------------------------------------------------------------------
 // Route segment config (TRANS-03)
@@ -57,10 +59,6 @@ import { registerRegionalAnalyticsTools } from "./regionalAnalyticsTools";
 // ---------------------------------------------------------------------------
 
 export const maxDuration = 30;
-
-// Per-key rate-limit budget (SEC-02): 120 requests per 60-second window.
-const MCP_KEY_LIMIT = 120;
-const MCP_WINDOW_MS = 60_000;
 
 // ---------------------------------------------------------------------------
 // Header merge helper
@@ -147,13 +145,15 @@ async function handleMcpRequest(request: Request): Promise<Response> {
     }
 
     // ------------------------------------------------------------------
-    // Gate 3: Redis per-key rate limit (SEC-02).
-    // 120 req / 60s per authenticated key, complementing the coarse IP
-    // gate above. Fails OPEN on Redis outage so a broken Redis never
-    // blocks legit users.
+    // Gate 3: Redis per-key rate limit (SEC-02), at the key's tier.
+    // 30 req / 60s free, 300 for paid tiers, complementing the coarse IP
+    // gate above. Complements, never replaces, the browser bridge's own
+    // 100/300/1200 budget (GET /api/mcp/invocations) -- that one is a
+    // different endpoint with a different reason to exist.
+    // Fails OPEN on a Redis outage so a broken Redis never blocks legit users.
     // ------------------------------------------------------------------
-    const keyRateKey = `mcp:ratelimit:key:${authResult.keyId}`;
-    const keyLimit = await redisSlidingWindow(keyRateKey, MCP_KEY_LIMIT, MCP_WINDOW_MS);
+    const tier = await resolveUserTier(authResult.userId);
+    const keyLimit = await checkMcpCallRateLimit(authResult.keyId, tier);
     if (!keyLimit.allowed) {
         return rateLimitedResponse(keyLimit.retryAfterMs);
     }
@@ -163,7 +163,13 @@ async function handleMcpRequest(request: Request): Promise<Response> {
     // STATELESS INVARIANT: never hoist these to module scope.
     // Do NOT cache server or transport between requests.
     // ------------------------------------------------------------------
-    const server = createMcpServer();
+    // Every registerTool call below goes through the metering seam, so the
+    // counter is bound to this request's key without any registrar knowing
+    // that metering exists. See src/lib/mcp/metering.ts.
+    const server = withMetering(createMcpServer(), {
+        userId: authResult.userId,
+        keyId: authResult.keyId,
+    });
 
     // Registration seam (RECONCILIATION R-1):
     // Phase 18: globe resources
@@ -184,6 +190,8 @@ async function handleMcpRequest(request: Request): Promise<Response> {
     registerProximityTools(server, { userId: authResult.userId });
     // Regional spatial analytics & clustering (Gap 2)
     registerRegionalAnalyticsTools(server, { userId: authResult.userId });
+    // Meter self-diagnosis: get_usage (unmetered -- see toolRegistry.ts)
+    registerUsageTools(server, { userId: authResult.userId, keyId: authResult.keyId });
     // Phase 26: orientation prompts (INST-03, INST-04)
     await registerOrientationPrompts(server, { userId: authResult.userId });
 

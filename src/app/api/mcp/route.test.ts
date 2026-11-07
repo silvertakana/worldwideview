@@ -37,6 +37,18 @@ vi.mock("@/core/edition", () => ({
 // SDK mocks — locked stateless-construction invariant (MCP-05).
 // handleRequest returns a minimal streaming Response so the happy-path tests
 // can assert gate passage without a real transport.
+// The tier lookup is a database + Redis round trip on the request path; these
+// tests are about auth and the transport, so the budget is pinned wide open.
+// Plain functions, not vi.fn(): route.test.ts calls vi.resetAllMocks(), which
+// would strip a mock's implementation and turn this gate into a crash.
+vi.mock("@/lib/mcpRateLimitConfig", () => ({
+    resolveUserTier: async () => "free",
+    checkMcpCallRateLimit: async () => ({ allowed: true, retryAfterMs: 0 }),
+    getCallBudget: () => ({ maxRequests: 30, windowMs: 60000 }),
+    getTierBudget: () => ({ maxRequests: 100, windowMs: 60000 }),
+    checkMcpInvocationsRateLimit: async () => ({ allowed: true, retryAfterMs: 0 }),
+}));
+
 vi.mock("@modelcontextprotocol/sdk/server/mcp.js", () => {
     // Use a stable factory so vi.resetAllMocks() does not wipe the constructor
     // implementation — resetAllMocks resets call history but the factory closure
