@@ -27,7 +27,16 @@ Do not use raw `git worktree add`. Always use the `git-wt` alias provided by Wor
 - Automatically copy `.env` files so the environment works immediately.
 
 > [!IMPORTANT]
-> **For AI Agents:** You MUST append the `--yes` flag when creating worktrees to bypass the interactive approval prompt for these hooks, otherwise the command will fail in your non-interactive shell.
+> **For AI Agents:** Do **not** append `--yes` by default. The approval prompt is
+> the user's chance to see the `pre-start` hooks before they run: `pnpm install`
+> executes dependency lifecycle scripts with the user's privileges, and copying
+> `.env` files places credentials in the new worktree.
+>
+> - **Interactive:** run `git-wt switch --create <branch>` and let the user
+>   review and approve the hooks.
+> - **Non-interactive:** only after the user explicitly opts in, print the hook
+>   commands and their effects, then pass `--yes` for that invocation. Never
+>   treat `--yes` as the default, and never add it silently.
 
 ### 3. Database Lifecycle & Port Assignment
 Each worktree gets a deterministic PostgreSQL port assigned automatically based on its directory hash (to avoid collisions between multiple running worktrees).
@@ -39,15 +48,18 @@ Each worktree gets a deterministic PostgreSQL port assigned automatically based 
 
 | Action | Command | Details |
 | :--- | :--- | :--- |
-| **Create Worktree** | `git-wt switch --create <branch> --yes` | Provisions the sibling directory, branch, env files, and dependencies. |
+| **Create Worktree** | `git-wt switch --create <branch>` | Provisions the sibling directory, branch, env files, and dependencies. Review and approve the hook prompt; add `--yes` only for an explicitly opted-in non-interactive run. |
 | **Delete Worktree** | `git-wt remove` | Deletes the worktree and the associated branch cleanly. Run from within the worktree. |
 
 ## Implementation Steps
 
-1. Run the create command from the main repository (always include `--yes`):
+1. Run the create command from the main repository:
    ```bash
-   git-wt switch --create feature/my-new-idea --yes
+   git-wt switch --create feature/my-new-idea
    ```
+   Review the `pre-start` hooks in the approval prompt before accepting them.
+   Only add `--yes` for an explicitly opted-in non-interactive run, after
+   printing the hook commands and their effects (see Core Directives).
 2. **CRITICAL:** Change your working directory to the newly created worktree before editing files. Worktrunk creates it as a sibling.
    ```bash
    # Example if the main repo is c:\dev\worldwideview
