@@ -1,0 +1,16 @@
+# Worktrunk hooks - https://worktrunk.dev/hook
+#
+# Only hooks that are safe for any clone of this repository belong in this file.
+# Machine-specific and worktree-specific glue (copying a private .env, seeding
+# planning state, registering a local dev slot) is deliberately kept out of this
+# public repo and wired through a developer's own Worktrunk user config instead.
+#
+#   inspect   git-wt hook show
+#   approve   git-wt config approvals
+#   skip      git-wt switch --create <branch> --no-hooks
+#
+# post-start runs in the background, so creating a worktree returns immediately
+# and dependencies arrive a minute later. `git-wt list` shows progress.
+
+[[post-start]]
+install_deps = "pnpm install"
