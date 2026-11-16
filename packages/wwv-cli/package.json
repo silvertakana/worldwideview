@@ -14,11 +14,11 @@
     "test": "node --test \"test/**/*.test.mjs\""
   },
   "dependencies": {
-    "commander": "^15.0.0",
+    "commander": "^15.1.0",
     "prompts": "^2.4.2"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.6.6",
     "@types/prompts": "^2.4.9",
     "typescript": "^5.0.0"
   }
